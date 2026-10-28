@@ -8,7 +8,7 @@ use near_sdk::{
     log, near, require,
     serde::Serialize,
     serde_json,
-    store::{IterableMap, IterableSet},
+    store::{IterableMap, IterableSet, LookupMap},
 };
 use shade_attestation::{
     attestation::{AcceptedDstackAttestation, DstackAttestation},
@@ -27,6 +27,7 @@ pub use views::{AgentValidity, AgentView, ContractInfo};
 pub mod internal;
 pub mod owner;
 pub mod policy;
+pub mod request;
 #[cfg(test)]
 pub mod testutil;
 pub mod views;
@@ -45,9 +46,14 @@ pub struct Contract {
     pub agents: IterableMap<AccountId, Agent>,
     pub whitelisted_agents_for_local: IterableSet<AccountId>,
     // AIR-040. The state layout is final before the first testnet deploy (AIR-048), because there is no `migrate`: later tickets
-    // append their fields after these, in the order of the table in plan/tickets/AIR-040 (assets, asset_symbols, book, ...).
+    // add their fields in the order of the table in plan/tickets/AIR-040 (assets, asset_symbols, book, ...).
     pub paused: bool,
     pub flags: Flags,
+    // AIR-063: every submitted request by its derived id (the record is also the used marker of the id), and the next short number
+    // of an escalation (numbers are never reused). In the layout table `records` and `next_pending_no` come after the ledgers
+    // (AIR-062) and before `pending_by_no` (AIR-080): the ticket that adds the fields in between inserts them above these two.
+    pub records: LookupMap<String, request::RequestRecord>,
+    pub next_pending_no: u32,
 }
 
 #[near(serializers = [borsh])]
@@ -64,6 +70,8 @@ pub enum StorageKey {
     ApprovedPpids,
     Agents,
     WhitelistedAgentsForLocal,
+    // AIR-063. Later tickets insert theirs above it where the layout table in AIR-040 puts them (before the first deploy, AIR-048).
+    Records,
 }
 
 const STORAGE_BYTES_TO_REGISTER: u128 = 486;
@@ -89,6 +97,8 @@ impl Contract {
             whitelisted_agents_for_local: IterableSet::new(StorageKey::WhitelistedAgentsForLocal),
             paused: false,
             flags: Flags::default(),
+            records: LookupMap::new(StorageKey::Records),
+            next_pending_no: 1,
         }
     }
 

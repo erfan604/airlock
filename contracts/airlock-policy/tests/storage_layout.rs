@@ -14,8 +14,8 @@ use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// The number of `StorageKey` variants that exist (the template's four after AIR-040).
-const VARIANT_COUNT: usize = 4;
+/// The number of `StorageKey` variants that exist (the template's four, and `Records` from AIR-063).
+const VARIANT_COUNT: usize = 5;
 
 /// Every `StorageKey` variant, in declaration order, with its name as written in the enum.
 fn variants() -> Vec<(&'static str, StorageKey)> {
@@ -27,6 +27,7 @@ fn variants() -> Vec<(&'static str, StorageKey)> {
             "WhitelistedAgentsForLocal",
             StorageKey::WhitelistedAgentsForLocal,
         ),
+        ("Records", StorageKey::Records),
     ]
 }
 
