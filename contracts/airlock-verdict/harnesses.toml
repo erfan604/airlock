@@ -284,3 +284,43 @@ exhaustive = false
 expect = "success"
 min_covers = 1
 catches = ["AP1", "AP2", "AP3", "AP4"]
+
+[[harness]]
+name = "flood_locked_never_stores"
+property = "R4-03"
+statement = "no escalation is stored while the agent is locked, over any legal sequence of 6 events"
+bounds = "6 events, limits at least 1, unwind 8"
+exhaustive = false
+expect = "success"
+min_covers = 1
+catches = ["F1"]
+
+[[harness]]
+name = "flood_pending_never_exceeds_max"
+property = "R4-03"
+statement = "the pending counter equals the number of pending items and never exceeds max_pending, over any legal sequence of 6 events"
+bounds = "6 events, limits at least 1, unwind 8"
+exhaustive = false
+expect = "success"
+min_covers = 1
+catches = ["F2"]
+
+[[harness]]
+name = "flood_three_consecutive_rejects_lock"
+property = "R4-03"
+statement = "three consecutive rejects lock the agent"
+bounds = "3 rejects, symbolic days, unwind 8"
+exhaustive = false
+expect = "success"
+min_covers = 1
+catches = ["F5"]
+
+[[harness]]
+name = "flood_hourly_budget_holds"
+property = "R4-03"
+statement = "an escalation is admitted exactly when the agent is not locked, below the pending cap and below the hourly budget of the current hour bucket"
+bounds = "any state, any limits at least 1, any hour bucket"
+exhaustive = true
+expect = "success"
+min_covers = 3
+catches = ["F3", "F4"]
