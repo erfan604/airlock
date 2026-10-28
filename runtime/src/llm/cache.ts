@@ -64,7 +64,7 @@ let tmpCounter = 0;
 
 // every UTF-16 unit above 0x7F as a lowercase backslash-u escape; the escaped file parses back to the same strings
 function asciiOnly(text: string): string {
-  return text.replace(/[\u0080-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
+  return text.replace(/[\u0080-\uffff]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
 }
 
 /**
