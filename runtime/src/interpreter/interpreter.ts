@@ -216,12 +216,16 @@ function proposeAction(c: Ctx, step: Extract<PlanStep, { action: string }>, path
     if (e instanceof AmountError) throw new Abort('BadAmount', path, sortedLabels(amountValue.labels));
     throw e;
   }
-  if (typeof to.raw !== 'string') throw new Abort('BadRecipient', path, sortedLabels(to.labels));
+  // the trace says why: a recipient that is not text is refused here, before payeeKey sees it (which would also refuse it, as a key error)
+  if (typeof to.raw !== 'string') throw new Abort('BadRecipient', path, sortedLabels(to.labels), 'NotText');
   let payee: string;
   try {
     payee = payeeKey(target, to.raw);
   } catch (e) {
-    if (e instanceof KeyError) throw new Abort(e.code === 'TargetMismatch' ? 'TargetMismatch' : 'BadRecipient', path, sortedLabels(to.labels));
+    if (e instanceof KeyError) {
+      if (e.code === 'TargetMismatch') throw new Abort('TargetMismatch', path, sortedLabels(to.labels));
+      throw new Abort('BadRecipient', path, sortedLabels(to.labels), e.code);
+    }
     throw e;
   }
   const recipientLabels = sortedLabels(to.labels);

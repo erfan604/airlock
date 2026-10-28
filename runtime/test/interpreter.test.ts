@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { isPcTrusted, isTrusted, isValueTrusted, labelsToBits } from '../src/dsl/index.ts';
 import type { LabelName } from '../src/dsl/index.ts';
 import { defaultToolArgPolicy, join, lit, run, sortedLabels } from '../src/interpreter/index.ts';
+import { derive } from '../src/interpreter/value.ts';
 import type { LVal, Proposed, TraceEvent } from '../src/interpreter/index.ts';
 import { READ_MAIL, abortOf, extractFrom, makeDeps, okOf, pay, plan, proposedOf, ref, runPlan, stubBook, stubExtract, stubTools } from './helpers/interp.ts';
 
@@ -517,6 +518,8 @@ test('action: an unregistered asset aborts UnknownAsset', async () => {
   assert.equal(evm.cause.code, 'UnknownAsset');
 });
 
+const lastEvent = (r: { trace: TraceEvent[] }): TraceEvent | undefined => r.trace[r.trace.length - 1];
+
 test('action: a non-string recipient aborts BadRecipient', async () => {
   assert.equal(abortOf(await runPlan([pay(5, '1')])).cause.code, 'BadRecipient');
   const { tools } = stubTools({ read_inbox: { raw: { to: 7 }, label: 'Untrusted:email' } });
@@ -524,10 +527,29 @@ test('action: a non-string recipient aborts BadRecipient', async () => {
   assert.equal(abortOf(await runPlan([READ_MAIL, pay(ref('mail', ['missing']), '1')], { tools })).cause.code, 'BadRecipient');
 });
 
-test('action: a recipient that is not a valid account aborts BadRecipient', async () => {
-  assert.equal(abortOf(await runPlan([pay('Alice.testnet', '1')])).cause.code, 'BadRecipient');
-  assert.equal(abortOf(await runPlan([pay('a', '1')])).cause.code, 'BadRecipient');
-  assert.equal(abortOf(await runPlan([pay('', '1')])).cause.code, 'BadRecipient');
+test('action: a recipient that is not text is refused by the interpreter itself, before the key check, and the trace says NotText', async () => {
+  // payeeKey would also refuse it, as a key error, with the same abort code: only the detail in the error event shows who refused
+  const { tools } = stubTools({ read_inbox: { raw: { to: 7, nothing: null, list: ['alice.testnet'], nested: { a: 'alice.testnet' } }, label: 'Untrusted:email' } });
+  for (const plan of [
+    [pay(5, '1')],
+    [READ_MAIL, pay(ref('mail', ['to']), '1')],
+    [READ_MAIL, pay(ref('mail', ['nothing']), '1')],
+    [READ_MAIL, pay(ref('mail', ['missing']), '1')],
+    [READ_MAIL, pay(ref('mail', ['list']), '1')],
+    [READ_MAIL, pay(ref('mail', ['nested']), '1')],
+  ]) {
+    const r = abortOf(await runPlan(plan, { tools }));
+    assert.equal(r.cause.code, 'BadRecipient');
+    assert.equal(lastEvent(r)?.data.detail, 'NotText');
+  }
+});
+
+test('action: a recipient that is not a valid account aborts BadRecipient and the trace names the key error', async () => {
+  for (const [to, detail] of [['Alice.testnet', 'BadChar'], ['a', 'BadLength'], ['', 'BadLength'], ['bad..name', 'BadSeparator']] as const) {
+    const r = abortOf(await runPlan([pay(to, '1')]));
+    assert.equal(r.cause.code, 'BadRecipient', to);
+    assert.equal(lastEvent(r)?.data.detail, detail, to);
+  }
 });
 
 test('action: proposing does not stop the run, and several actions come out in order', async () => {
@@ -699,4 +721,13 @@ test('lit, join and sortedLabels: labels in bit order, Owner by default', () => 
   const joined = join(lit('a', ['Policy']), lit('b', ['Oracle']), lit('c'));
   assert.deepEqual(sortedLabels(joined), ['Owner', 'Policy', 'Oracle']);
   assert.equal(lit('x').origins.size, 0);
+});
+
+test('rule 7: no step removes a label: derive keeps every input label and the pc taint, and only the Owner of the pc is left out', () => {
+  const a = lit('a', ['Untrusted:email', 'Unresolved']);
+  const b = lit('b', ['Oracle']);
+  const d = derive('x', [a, b], new Set<LabelName>(['Owner', 'Untrusted:web']), ['Book']);
+  for (const label of [...a.labels, ...b.labels, 'Untrusted:web', 'Book'] as LabelName[]) assert.ok(d.labels.has(label), label);
+  assert.ok(!d.labels.has('Owner'), 'the root pc is never copied into a value');
+  assert.deepEqual(sortedLabels(derive('y', [lit('z')], new Set<LabelName>(['Owner']), []).labels), ['Owner']);
 });
