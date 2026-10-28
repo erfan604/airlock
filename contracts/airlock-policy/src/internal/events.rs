@@ -1,4 +1,5 @@
 use crate::*;
+use near_sdk::json_types::U128;
 
 // One NEP-297 standard for every event of the contract (the template used "shade-contract-template"). Each log line is
 // EVENT_JSON:{"standard":"airlock","version":"1.0.0","event":"<snake_case name>","data":[{...}]}
@@ -63,6 +64,19 @@ pub enum Event<'a> {
     },
     AgentRevoked {
         account_id: &'a AccountId,
+    },
+    // AIR-042: u128 values are decimal strings
+    AssetSet {
+        asset: &'a str,
+        symbol: &'a str,
+        decimals: u8,
+        hard_cap: U128,
+        daily_cap: U128,
+        quick_task_cap: U128,
+        path: Option<&'a str>,
+    },
+    AssetRemoved {
+        asset: &'a str,
     },
 }
 

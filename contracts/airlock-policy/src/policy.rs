@@ -1,6 +1,9 @@
-// The policy state the owner edits: the pause switch and the flood-control flags (AIR-040). The asset registry (AIR-042), the
-// address book (AIR-043) and the task key (AIR-045) join this module's owner methods in later tickets.
+// The policy state the owner edits: the pause switch and the flood-control flags (AIR-040) and the asset registry (AIR-042). The
+// address book (AIR-043) joins this module's owner methods in a later ticket.
 use crate::*;
+use airlock_verdict::decimal::MAX_DECIMALS;
+use near_sdk::json_types::U128;
+use std::str::FromStr;
 
 /// `set_flags` bound: a TTL is at most 7 days, because AIR-061 computes `now_ms + pending_ttl_ms`.
 pub const MAX_TTL_MS: u64 = 604_800_000;
@@ -122,6 +125,134 @@ pub struct PolicyView {
     pub flags: FlagsJson,
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The asset registry (AIR-042). The owner registers each payable asset once with its decimals, caps and signing path. An asset that
+// is not registered can only ever block (the verdict, rule 0). Display symbols are unique, compared case-insensitively, so the
+// approval screen never shows one symbol for two assets (AB6, SPEC R4-01).
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// The most assets the registry holds (distinct ids), so `list_assets` needs no pagination.
+pub const MAX_ASSETS: u32 = 16;
+/// The longest display symbol.
+pub const MAX_SYMBOL_LEN: usize = 12;
+/// The longest EVM signing path.
+pub const MAX_PATH_LEN: usize = 64;
+/// The least gas an EVM asset must allow: a plain transfer costs 21,000 (AIR-061 requires `gas_limit >= 21_000`).
+pub const MIN_EVM_GAS: u128 = 21_000;
+
+/// One registered asset. `max_fee_per_gas`, `max_gas` and `path` are for EVM assets only (the verdict never reads the first two for
+/// NEAR); the EVM `path` is the signing derivation path and comes from here, never from a request (R2-05).
+#[near(serializers = [borsh])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AssetEntry {
+    pub symbol: String,
+    pub decimals: u8,
+    pub hard_cap: u128,
+    pub daily_cap: u128,
+    pub max_fee_per_gas: u128,
+    pub max_gas: u128,
+    pub quick_task_cap: u128,
+    pub path: Option<String>,
+}
+
+/// `AssetEntry` as the owner sends it: every u128 is a decimal string.
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AssetEntryJson {
+    pub symbol: String,
+    pub decimals: u8,
+    pub hard_cap: U128,
+    pub daily_cap: U128,
+    pub max_fee_per_gas: U128,
+    pub max_gas: U128,
+    pub quick_task_cap: U128,
+    pub path: Option<String>,
+}
+
+/// `AssetEntry` as the views answer: the same fields as `AssetEntryJson`.
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AssetEntryView {
+    pub symbol: String,
+    pub decimals: u8,
+    pub hard_cap: U128,
+    pub daily_cap: U128,
+    pub max_fee_per_gas: U128,
+    pub max_gas: U128,
+    pub quick_task_cap: U128,
+    pub path: Option<String>,
+}
+
+impl From<AssetEntryJson> for AssetEntry {
+    fn from(e: AssetEntryJson) -> Self {
+        Self {
+            symbol: e.symbol,
+            decimals: e.decimals,
+            hard_cap: e.hard_cap.0,
+            daily_cap: e.daily_cap.0,
+            max_fee_per_gas: e.max_fee_per_gas.0,
+            max_gas: e.max_gas.0,
+            quick_task_cap: e.quick_task_cap.0,
+            path: e.path,
+        }
+    }
+}
+
+impl From<&AssetEntry> for AssetEntryView {
+    fn from(e: &AssetEntry) -> Self {
+        Self {
+            symbol: e.symbol.clone(),
+            decimals: e.decimals,
+            hard_cap: U128(e.hard_cap),
+            daily_cap: U128(e.daily_cap),
+            max_fee_per_gas: U128(e.max_fee_per_gas),
+            max_gas: U128(e.max_gas),
+            quick_task_cap: U128(e.quick_task_cap),
+            path: e.path.clone(),
+        }
+    }
+}
+
+/// The asset id grammar: `near`, `evm:<chain_id>:native` (a decimal u64 of at least 1 without a leading zero) or `ft:<account>`
+/// where the part after `ft:` parses as an `AccountId` (accepted so the bench can name tokens; there is no execution lane).
+pub fn valid_asset_id(id: &str) -> bool {
+    if id == "near" {
+        return true;
+    }
+    if let Some(rest) = id.strip_prefix("evm:") {
+        return rest.strip_suffix(":native").is_some_and(|chain| {
+            !chain.starts_with('0')
+                && chain.bytes().all(|b| b.is_ascii_digit())
+                && chain.parse::<u64>().is_ok_and(|n| n >= 1)
+        });
+    }
+    id.strip_prefix("ft:")
+        .is_some_and(|account| AccountId::from_str(account).is_ok())
+}
+
+/// A display symbol: ASCII letters, digits and dots, 1 to 12 characters.
+pub fn valid_symbol(symbol: &str) -> bool {
+    (1..=MAX_SYMBOL_LEN).contains(&symbol.len())
+        && symbol
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'.')
+}
+
+/// An EVM signing path: `[a-z0-9._-]`, 1 to 64 characters.
+pub fn valid_path(path: &str) -> bool {
+    (1..=MAX_PATH_LEN).contains(&path.len())
+        && path
+            .bytes()
+            .all(|b| matches!(b, b'a'..=b'z' | b'0'..=b'9' | b'.' | b'_' | b'-'))
+}
+
+impl Contract {
+    /// The registered asset with this id, if any.
+    pub fn asset(&self, id: &str) -> Option<AssetEntry> {
+        self.assets.get(id).cloned()
+    }
+}
+
 #[near]
 impl Contract {
     /// Owner: stop or resume the gate. While paused every request is blocked (AIR-061). Emits `paused`.
@@ -141,6 +272,108 @@ impl Contract {
             flags: FlagsJson::from(self.flags),
         }
         .emit();
+    }
+
+    /// Owner: register or replace an asset. The checks run in this order and each reverts with the quoted text: `invalid asset id`,
+    /// `invalid symbol`, `symbol already used` (case-insensitive across the registry, AB6; the entry being replaced does not count),
+    /// `decimals above 38`, `caps must satisfy 0 < hard_cap <= daily_cap`, `quick_task_cap must be above 0 and at most daily_cap`,
+    /// then for an EVM asset `evm path required`, `evm path invalid`, `evm path already used`, `evm fee and gas caps required`, for
+    /// any other asset `path not allowed` and `fee and gas caps only for evm`, and last `registry full` (more than 16 distinct ids;
+    /// a replace never trips it). A changed symbol frees the old one. Emits `asset_set`.
+    #[payable]
+    pub fn asset_set(&mut self, asset: String, entry: AssetEntryJson) {
+        self.owner_call();
+        require!(valid_asset_id(&asset), "invalid asset id");
+        require!(valid_symbol(&entry.symbol), "invalid symbol");
+        let lowered = entry.symbol.to_ascii_lowercase();
+        let taken = self
+            .asset_symbols
+            .get(&lowered)
+            .is_some_and(|owner| *owner != asset);
+        require!(!taken, "symbol already used");
+        require!(entry.decimals <= MAX_DECIMALS, "decimals above 38");
+        let (hard, daily, quick) = (entry.hard_cap.0, entry.daily_cap.0, entry.quick_task_cap.0);
+        require!(
+            hard > 0 && hard <= daily,
+            "caps must satisfy 0 < hard_cap <= daily_cap"
+        );
+        require!(
+            quick > 0 && quick <= daily,
+            "quick_task_cap must be above 0 and at most daily_cap"
+        );
+        if asset.starts_with("evm:") {
+            let path = entry.path.as_deref().filter(|p| !p.is_empty());
+            let path = path.unwrap_or_else(|| env::panic_str("evm path required"));
+            require!(valid_path(path), "evm path invalid");
+            require!(
+                !self
+                    .assets
+                    .iter()
+                    .any(|(id, e)| *id != asset && e.path.as_deref() == Some(path)),
+                "evm path already used"
+            );
+            require!(
+                entry.max_fee_per_gas.0 > 0 && entry.max_gas.0 >= MIN_EVM_GAS,
+                "evm fee and gas caps required"
+            );
+        } else {
+            require!(entry.path.is_none(), "path not allowed");
+            require!(
+                entry.max_fee_per_gas.0 == 0 && entry.max_gas.0 == 0,
+                "fee and gas caps only for evm"
+            );
+        }
+        require!(
+            self.assets.contains_key(&asset) || self.assets.len() < MAX_ASSETS,
+            "registry full"
+        );
+        let entry = AssetEntry::from(entry);
+        Event::AssetSet {
+            asset: &asset,
+            symbol: &entry.symbol,
+            decimals: entry.decimals,
+            hard_cap: U128(entry.hard_cap),
+            daily_cap: U128(entry.daily_cap),
+            quick_task_cap: U128(entry.quick_task_cap),
+            path: entry.path.as_deref(),
+        }
+        .emit();
+        if let Some(old) = self.assets.get(&asset) {
+            // a changed symbol frees the old one
+            let old_lowered = old.symbol.to_ascii_lowercase();
+            if old_lowered != lowered {
+                self.asset_symbols.remove(&old_lowered);
+            }
+        }
+        self.asset_symbols.insert(lowered, asset.clone());
+        self.assets.insert(asset, entry);
+    }
+
+    /// Owner: remove an asset and its symbol. Reverts `unknown asset` when it is not registered. Pending escalations stay in place:
+    /// their approve fails at the recheck with `Limit:UnknownAsset`. Emits `asset_removed`.
+    #[payable]
+    pub fn asset_remove(&mut self, asset: String) {
+        self.owner_call();
+        let removed = self
+            .assets
+            .remove(&asset)
+            .unwrap_or_else(|| env::panic_str("unknown asset"));
+        self.asset_symbols
+            .remove(&removed.symbol.to_ascii_lowercase());
+        Event::AssetRemoved { asset: &asset }.emit();
+    }
+
+    /// The registered asset with this id, or `None`.
+    pub fn get_asset(&self, asset: String) -> Option<AssetEntryView> {
+        self.assets.get(&asset).map(AssetEntryView::from)
+    }
+
+    /// Every registered asset (at most 16, so no pagination) in registration order.
+    pub fn list_assets(&self) -> Vec<(String, AssetEntryView)> {
+        self.assets
+            .iter()
+            .map(|(id, entry)| (id.clone(), AssetEntryView::from(entry)))
+            .collect()
     }
 
     /// The owner, the signer contract, the TEE mode, the pause switch and the flags.
@@ -326,5 +559,207 @@ mod tests {
         let low = json_with("max_pending_per_agent", json!(1));
         c.set_flags(low.clone());
         assert_eq!(c.get_policy().flags, low);
+    }
+
+    // ---- the asset registry (AIR-042) --------------------------------------------------------------------------------------
+
+    /// The panic text of a call that must revert.
+    fn panics<R>(f: impl FnOnce() -> R) -> String {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
+            Ok(_) => panic!("expected a revert, the call succeeded"),
+            Err(payload) => payload
+                .downcast_ref::<String>()
+                .cloned()
+                .or_else(|| payload.downcast_ref::<&str>().map(|s| (*s).to_string()))
+                .unwrap_or_default(),
+        }
+    }
+
+    fn near_json() -> AssetEntryJson {
+        AssetEntryJson {
+            symbol: "NEAR".to_string(),
+            decimals: 24,
+            hard_cap: U128(10_000),
+            daily_cap: U128(100_000),
+            max_fee_per_gas: U128(0),
+            max_gas: U128(0),
+            quick_task_cap: U128(100_000),
+            path: None,
+        }
+    }
+
+    fn evm_json() -> AssetEntryJson {
+        AssetEntryJson {
+            symbol: "ETH.base".to_string(),
+            decimals: 18,
+            hard_cap: U128(1_000),
+            daily_cap: U128(10_000),
+            max_fee_per_gas: U128(50),
+            max_gas: U128(100_000),
+            quick_task_cap: U128(5_000),
+            path: Some("base-sepolia-1".to_string()),
+        }
+    }
+
+    #[test]
+    fn registry_asset_id_grammar() {
+        for ok in [
+            "near",
+            "evm:1:native",
+            "evm:84532:native",
+            "evm:18446744073709551615:native",
+            "ft:usdc.near",
+            "ft:a1",
+        ] {
+            assert!(valid_asset_id(ok), "{ok} must be valid");
+        }
+        for bad in [
+            "",
+            "USD",
+            "usdc ",
+            " near",
+            "Near",
+            "NEAR",
+            "EVM:84532:native",
+            "evm:84532:Native",
+            "evm:84532:native ",
+            "evm:0:native",
+            "evm:084532:native",
+            "evm::native",
+            "evm:-1:native",
+            "evm:+1:native",
+            "evm:18446744073709551616:native",
+            "evm:84532:",
+            "evm:84532",
+            "evm:84532:native:x",
+            "ft:",
+            "ft:a",
+            "ft:USDC.near",
+            "ft:usdc..near",
+            "ft:usdc.near ",
+            "evm:1_0:native",
+        ] {
+            assert!(!valid_asset_id(bad), "{bad:?} must be refused");
+        }
+    }
+
+    #[test]
+    fn registry_ft_grammar_is_the_account_id_grammar() {
+        for account in [
+            "usdc.near",
+            "a",
+            "ab",
+            "-ab",
+            "ab-",
+            "a--b",
+            "a.b",
+            "a..b",
+            ".ab",
+            "AB",
+            "ab_c",
+            "a-b_c.d",
+            "0123456789012345678901234567890123456789012345678901234567890123",
+            "01234567890123456789012345678901234567890123456789012345678901234",
+            "\u{e9}a",
+        ] {
+            assert_eq!(
+                valid_asset_id(&format!("ft:{account}")),
+                AccountId::from_str(account).is_ok(),
+                "{account}"
+            );
+        }
+    }
+
+    #[test]
+    fn registry_symbol_and_path_grammar() {
+        for ok in ["A", "NEAR", "USDC.base", "a1.b2.c3.d4", "abcdefghijkl", "0"] {
+            assert!(valid_symbol(ok), "{ok}");
+        }
+        for bad in ["", "ABCDEFGHIJKLM", "A B", "A_B", "A-B", "\u{c9}", "A\n"] {
+            assert!(!valid_symbol(bad), "{bad:?}");
+        }
+        for ok in ["base-sepolia-1", "a", "a.b_c-d", &"a".repeat(64)] {
+            assert!(valid_path(ok), "{ok}");
+        }
+        for bad in ["", "Base", "a b", "a/b", &"a".repeat(65), "\u{e9}"] {
+            assert!(!valid_path(bad), "{bad:?}");
+        }
+    }
+
+    #[test]
+    fn registry_entry_conversions_keep_every_field() {
+        let json = evm_json();
+        let entry = AssetEntry::from(json.clone());
+        assert_eq!(entry.hard_cap, 1_000);
+        assert_eq!(entry.max_gas, 100_000);
+        assert_eq!(entry.path.as_deref(), Some("base-sepolia-1"));
+        let view = AssetEntryView::from(&entry);
+        assert_eq!(serde_json::to_value(&view).unwrap()["hard_cap"], "1000");
+        assert_eq!(
+            serde_json::to_value(&view).unwrap()["path"],
+            "base-sepolia-1"
+        );
+        assert_eq!(
+            serde_json::to_value(&json).unwrap(),
+            serde_json::to_value(&view).unwrap()
+        );
+    }
+
+    #[test]
+    fn registry_set_upsert_remove_in_process() {
+        let mut c = fresh();
+        testing_env!(ctx(OWNER, T0_MS, 1).build());
+        c.asset_set("near".to_string(), near_json());
+        c.asset_set("evm:84532:native".to_string(), evm_json());
+        assert_eq!(c.asset("near").unwrap().symbol, "NEAR");
+        assert_eq!(c.list_assets().len(), 2);
+        // the symbol of another asset, in another letter case
+        let mut taken = evm_json();
+        taken.symbol = "near".to_string();
+        let text = panics(|| c.asset_set("evm:84532:native".to_string(), taken));
+        assert!(text.contains("symbol already used"), "{text}");
+        // a changed symbol frees the old one
+        let mut renamed = near_json();
+        renamed.symbol = "N2".to_string();
+        c.asset_set("near".to_string(), renamed);
+        let mut reuse = evm_json();
+        reuse.symbol = "NEAR".to_string();
+        c.asset_set("evm:84532:native".to_string(), reuse);
+        assert_eq!(
+            c.get_asset("evm:84532:native".to_string()).unwrap().symbol,
+            "NEAR"
+        );
+        // remove frees the symbol too and answers `unknown asset` the second time
+        c.asset_remove("evm:84532:native".to_string());
+        assert!(c.asset("evm:84532:native").is_none());
+        let text = panics(|| c.asset_remove("evm:84532:native".to_string()));
+        assert!(text.contains("unknown asset"), "{text}");
+        c.asset_set("ft:x.near".to_string(), {
+            let mut e = near_json();
+            e.symbol = "near".to_string();
+            e
+        });
+    }
+
+    #[test]
+    fn registry_owner_rules_hold_in_process() {
+        let mut c = fresh();
+        testing_env!(ctx("stranger.test.near", T0_MS, 1).build());
+        let text = panics(|| c.asset_set("near".to_string(), near_json()));
+        assert!(text.contains("Caller is not the owner"), "{text}");
+        for deposit in [0u128, 2] {
+            testing_env!(ctx(OWNER, T0_MS, deposit).build());
+            let text = panics(|| c.asset_set("near".to_string(), near_json()));
+            assert!(
+                text.contains("Requires attached deposit of exactly 1 yoctoNEAR"),
+                "{text}"
+            );
+            let text = panics(|| c.asset_remove("near".to_string()));
+            assert!(
+                text.contains("Requires attached deposit of exactly 1 yoctoNEAR"),
+                "{text}"
+            );
+        }
+        assert!(c.list_assets().is_empty());
     }
 }

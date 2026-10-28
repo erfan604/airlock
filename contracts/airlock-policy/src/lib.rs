@@ -51,6 +51,10 @@ pub struct Contract {
     // add their fields in the order of the table in plan/tickets/AIR-040 (assets, asset_symbols, book, ...).
     pub paused: bool,
     pub flags: Flags,
+    // AIR-042: the payable assets by id, and the lowercase display symbol of each (unique across the registry). In the layout table
+    // they come right after `flags`, above `book` (AIR-043) and the task key.
+    pub assets: IterableMap<String, policy::AssetEntry>,
+    pub asset_symbols: LookupMap<String, String>,
     // AIR-045: the owner's one Ed25519 task key (32 raw bytes), the revoked task hashes, and the request ids created per task hash
     // (entries are never removed, they are bounded by the tasks the owner signs). In the layout table they come after `book`
     // (AIR-043) and before `allowed_agents` (AIR-046): the ticket that adds the fields in between inserts them above these three.
@@ -80,6 +84,9 @@ pub enum StorageKey {
     ApprovedPpids,
     Agents,
     WhitelistedAgentsForLocal,
+    // AIR-042 (the table puts them right after the template's four)
+    Assets,
+    AssetSymbols,
     // AIR-045 (the table puts them after `Book` and before `AllowedAgents`).
     RevokedTasks,
     TaskActions,
@@ -112,6 +119,8 @@ impl Contract {
             whitelisted_agents_for_local: IterableSet::new(StorageKey::WhitelistedAgentsForLocal),
             paused: false,
             flags: Flags::default(),
+            assets: IterableMap::new(StorageKey::Assets),
+            asset_symbols: LookupMap::new(StorageKey::AssetSymbols),
             task_key: None,
             revoked_tasks: LookupSet::new(StorageKey::RevokedTasks),
             task_actions: LookupMap::new(StorageKey::TaskActions),

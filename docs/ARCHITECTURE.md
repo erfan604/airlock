@@ -19,3 +19,7 @@ _To fill during the build: one row per rule from SPEC section 6_
 
 ## Data flow
 _To fill during the build: owner request to planner to plan to interpreter to ActionRequest to contract to MPC to broadcast to receipt_
+
+## Decisions
+- The task quick cap is a field of each registered asset (`quick_task_cap` in `asset_set`, AIR-042), not a flag: SPEC R3-09 says per asset, so `set_flags` carries only the task TTL and action maxima. SPEC 8.2 lists it under `set_flags`; the spec update of AIR-066 follows this line.
+- An asset that is not in the registry can only block (verdict rule 0). Display symbols are unique across the registry and compared without letter case, so the approval screen never shows one symbol for two assets (AB6).
