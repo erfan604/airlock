@@ -660,3 +660,109 @@ pub async fn allow_agent_for(
     .expect("allow_agent is sent")
     .assert_success();
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// AIR-060: signed owner tasks for the gate tests (AIR-061 and every later sandbox ticket)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// The seed of the test task key: 32 bytes of 01, the seed of the `owner_task` vector, so `set_test_task_key` registers the vector's
+/// public key `ed25519:AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9`.
+pub const TASK_SEED: [u8; 32] = [1; 32];
+
+/// The public key of `TASK_SEED` as the text `set_task_key` takes.
+pub const TASK_PUBLIC_KEY: &str = "ed25519:AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9";
+
+fn wall_clock_ms() -> u64 {
+    u64::try_from(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("the clock is after 1970")
+            .as_millis(),
+    )
+    .expect("the clock fits u64 milliseconds")
+}
+
+/// An unsigned task: tag `airlock-task-v1`, `contract_id` `policy.test.near` and `agent_id` `agent.test.near` (right for in-process
+/// tests; a sandbox test sets both through `signed_task_with`, because the sandbox genesis account is `sandbox` and the policy and
+/// agent accounts are `<name>.sandbox`), `issued_ms` five seconds before the wall clock and `expires_ms` 30 minutes after it. The
+/// sandbox clock is real time and its last block lags the wall clock by about half a second (blocks come every 1.5 s), so an
+/// `issued_ms` of the wall clock minus 5 s is always at or before the block time of the call. `bounds` are (payee key, max_total).
+pub fn base_task(bounds: &[(&str, u128)], max_actions: u8) -> airlock_policy::task::OwnerTask {
+    use airlock_policy::request::Hex32;
+    use airlock_policy::task::{OwnerTask, TASK_TAG, TaskBound};
+    let now = wall_clock_ms();
+    OwnerTask {
+        tag: TASK_TAG.to_string(),
+        task_id: "task-1".to_string(),
+        contract_id: "policy.test.near".parse().unwrap(),
+        agent_id: "agent.test.near".parse().unwrap(),
+        plan_sha256: Hex32([0x11; 32]),
+        instruction_sha256_salted: Hex32([0x22; 32]),
+        issued_ms: now - 5_000,
+        expires_ms: now + 1_800_000,
+        max_actions,
+        bounds: bounds
+            .iter()
+            .map(|(payee_key, max_total)| TaskBound {
+                payee_key: (*payee_key).to_string(),
+                max_total: near_sdk::json_types::U128(*max_total),
+            })
+            .collect(),
+    }
+}
+
+/// The signature of the test task key over the borsh bytes of the task, no prefix: what the console sends with a task.
+pub fn sign_task(task: &airlock_policy::task::OwnerTask) -> near_sdk::json_types::Base64VecU8 {
+    use ed25519_dalek::Signer;
+    let key = ed25519_dalek::SigningKey::from_bytes(&TASK_SEED);
+    let bytes = airlock_policy::task::task_bytes(task);
+    near_sdk::json_types::Base64VecU8(key.sign(&bytes).to_bytes().to_vec())
+}
+
+/// `base_task`, then `sign_task`.
+pub fn signed_task(
+    bounds: &[(&str, u128)],
+    max_actions: u8,
+) -> (
+    airlock_policy::task::OwnerTask,
+    near_sdk::json_types::Base64VecU8,
+) {
+    signed_task_with(bounds, max_actions, |_| {})
+}
+
+/// `base_task`, then `edit`, then `sign_task`: the negative cases (wrong tag, wrong contract, another agent, not yet valid, expired,
+/// ttl too long, `max_actions` 0 and 21, 17 bounds, a duplicate bound, a bound above the quick cap) change one field in `edit`.
+pub fn signed_task_with(
+    bounds: &[(&str, u128)],
+    max_actions: u8,
+    edit: impl FnOnce(&mut airlock_policy::task::OwnerTask),
+) -> (
+    airlock_policy::task::OwnerTask,
+    near_sdk::json_types::Base64VecU8,
+) {
+    let mut task = base_task(bounds, max_actions);
+    edit(&mut task);
+    let signature = sign_task(&task);
+    (task, signature)
+}
+
+/// The owner registers `TASK_PUBLIC_KEY` with `set_task_key` (1 yocto), asserted successful.
+pub async fn set_test_task_key(
+    contract: &AccountId,
+    owner: &AccountId,
+    owner_signer: &Arc<Signer>,
+    network: &NetworkConfig,
+) {
+    call_transaction(
+        contract,
+        "set_task_key",
+        json!({ "public_key": TASK_PUBLIC_KEY }),
+        owner,
+        owner_signer,
+        network,
+        Some(NearToken::from_yoctonear(1)),
+    )
+    .await
+    .expect("set_task_key is sent")
+    .assert_success();
+}

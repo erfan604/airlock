@@ -1,6 +1,7 @@
 // In-process test helpers shared by the unit tests of AIR-040, 060, 062, 063 and 080. `#[cfg(test)]` (see lib.rs), so it is
 // invisible to the sandbox tests in `tests/`.
 use crate::*;
+use ed25519_dalek::{Signer, SigningKey};
 use near_sdk::NearToken;
 use near_sdk::test_utils::VMContextBuilder;
 use near_sdk::testing_env;
@@ -39,4 +40,22 @@ pub fn fresh() -> Contract {
     contract.approve_measurements(create_mock_full_measurements_hex());
     contract.approve_ppids(vec![Ppid::default()]);
     contract
+}
+
+/// The seed of the test task key: 32 bytes of 01, the seed of the `owner_task` vector (so the key is the vector's public key).
+pub const TASK_SEED: [u8; 32] = [1; 32];
+
+/// The 32 raw bytes of the public key of `TASK_SEED`: what `set_task_key` stores.
+pub fn task_public_key() -> [u8; 32] {
+    SigningKey::from_bytes(&TASK_SEED)
+        .verifying_key()
+        .to_bytes()
+}
+
+/// The signature of the test task key over the borsh bytes of the task (no prefix): what the console sends with a task.
+pub fn sign(task: &crate::task::OwnerTask) -> Vec<u8> {
+    SigningKey::from_bytes(&TASK_SEED)
+        .sign(&crate::task::task_bytes(task))
+        .to_bytes()
+        .to_vec()
 }

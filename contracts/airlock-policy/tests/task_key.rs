@@ -291,3 +291,45 @@ async fn methods_are_exported() {
         .await
         .assert_success();
 }
+
+/// The signing helpers of `tests/common` sign what the contract's task key verifies: the helper key is the key of the `owner_task`
+/// vector, `sign_task` signs the borsh bytes with no prefix, and `signed_task_with` edits before it signs. No sandbox.
+#[test]
+fn signed_task_helpers_match_the_task_key() {
+    use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+    let (task, signature) = signed_task(&[("near:accountant.test.near", 100)], 3);
+    let key: near_sdk::PublicKey = TASK_PUBLIC_KEY.parse().unwrap();
+    let raw: [u8; 32] = key.as_bytes()[1..].try_into().unwrap();
+    let verifying = VerifyingKey::from_bytes(&raw).unwrap();
+    // the public key text is the one of the signing seed
+    assert_eq!(
+        ed25519_dalek::SigningKey::from_bytes(&TASK_SEED)
+            .verifying_key()
+            .to_bytes(),
+        raw
+    );
+    let sig = Signature::from_slice(&signature.0).expect("a 64 byte signature");
+    verifying
+        .verify(&airlock_policy::task::task_bytes(&task), &sig)
+        .expect("the signature covers the borsh bytes of the task");
+    // an edit made before signing is covered, an edit made after is not
+    let (edited, edited_signature) =
+        signed_task_with(&[("near:a.test.near", 1)], 2, |t| t.tag = "x".to_string());
+    assert_eq!(edited.tag, "x");
+    let sig = Signature::from_slice(&edited_signature.0).unwrap();
+    verifying
+        .verify(&airlock_policy::task::task_bytes(&edited), &sig)
+        .expect("the edit is signed");
+    let mut tampered = edited.clone();
+    tampered.max_actions = 3;
+    assert!(
+        verifying
+            .verify(&airlock_policy::task::task_bytes(&tampered), &sig)
+            .is_err()
+    );
+    // the defaults: the in-process accounts, a window around the wall clock of 5 s before and 30 minutes after
+    assert_eq!(task.contract_id.as_str(), "policy.test.near");
+    assert_eq!(task.agent_id.as_str(), "agent.test.near");
+    assert_eq!(task.expires_ms - task.issued_ms, 1_805_000);
+    assert_eq!(task.tag, airlock_policy::task::TASK_TAG);
+}
