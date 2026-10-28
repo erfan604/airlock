@@ -67,7 +67,7 @@ fn formula(id: &str, key: &str, symbol: &str, amount: &str, why: &str, book: &st
 }
 
 fn row(n: u32, description: &str, bytes: usize) {
-    println!("ROW {n} {description} {bytes}");
+    println!("\nROW {n} {description} {bytes}");
 }
 
 #[test]
