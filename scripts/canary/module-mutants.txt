@@ -12,3 +12,9 @@ DC1 @@ decimal.rs @@ s/\s*\|\|\s*s\[s\.len\(\) - 1\] == b'0'//; @@ formatted_tex
 DC2 @@ decimal.rs @@ s/\s*\|\|\s*\(int_len > 1 && s\[0\] == b'0'\)//; @@ formatted_text @@ flen == len
 DC3 @@ decimal.rs @@ s/while i > d \{/while i > d + 1 {/ @@ placement @@ formatted text must parse
 DC4 @@ decimal.rs @@ s/frac_len == 0\s*\|\|\s*frac_len > d\s*\|\|\s*/frac_len == 0 || / @@ parse_digits_never @@ attempt to subtract with overflow
+AP1 @@ approve.rs @@ s/if !same\(args\.to,\s*stored\.payee_key\)/if !same(&args.to[..args.to.len().min(3)], &stored.payee_key[..stored.payee_key.len().min(3)])/ @@ approve_each @@ r == Err(expected)
+AP2 @@ approve.rs @@ s/if !same\(args\.book,\s*book\)\s*\{\s*return Err\(ApproveError::WrongBook\);\s*\}// @@ approve_each @@ r == Err(expected)
+AP3 @@ approve.rs @@ s/if !same\(args\.amount,\s*&buf\[\.\.len\]\)/if args.amount.len() != len/ @@ approve_each @@ r == Err(expected)
+AP4 @@ approve.rs @@ s/(if !stored\.pending \{\s*return Err\(ApproveError::NotPending\);\s*\})/$1\n    if !live.agent_allowed { return Err(ApproveError::AgentNotAllowed); }/ @@ approve_each @@ r == Err(expected)
+AP5 @@ approve.rs @@ s/if paused \{\s*return Err\(Reason::Paused\);\s*\}// @@ p12 @@ !paused && r.amount > 0
+AP6 @@ approve.rs @@ s/req\.amount > a\.remaining_daily \{/req.amount > a.remaining_daily.saturating_add(1) {/ @@ p12 @@ !paused && r.amount > 0

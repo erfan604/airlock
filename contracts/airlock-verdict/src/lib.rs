@@ -247,3 +247,5 @@ pub mod labels;
 pub mod ledger;
 
 pub mod decimal;
+
+pub mod approve;

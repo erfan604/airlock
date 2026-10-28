@@ -264,3 +264,23 @@ exhaustive = true
 expect = "success"
 min_covers = 2
 catches = ["DC4"]
+
+[[harness]]
+name = "p12_recheck_ok_implies_limits"
+property = "P12"
+statement = "recheck passes only for a registered asset, not paused, with 0 < amount <= hard cap, amount <= remaining daily, and fee and gas within the caps when given"
+bounds = "every u128 amount and limit, every Option fee and gas"
+exhaustive = true
+expect = "success"
+min_covers = 2
+catches = ["AP5", "AP6"]
+
+[[harness]]
+name = "approve_each_field_mismatch"
+property = "AB10"
+statement = "changing one byte of exactly one of the five approve arguments returns that argument's Wrong* error, whatever the live state and the limits are"
+bounds = "stored strings of 1 to 6 bytes, any bytes; one of three literal amounts (0 at 0 decimals, 4.2e24 at 24, u128::MAX at 38); reason, book flag, expiry, live flags, request and asset limits symbolic; unwind 50"
+exhaustive = false
+expect = "success"
+min_covers = 1
+catches = ["AP1", "AP2", "AP3", "AP4"]
