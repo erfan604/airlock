@@ -1,0 +1,12 @@
+diff -ru a/interpreter/interpreter.ts b/interpreter/interpreter.ts
+--- a/interpreter/interpreter.ts	2026-10-28 11:37:12
++++ b/interpreter/interpreter.ts	2026-10-28 11:37:12
+@@ -129,7 +129,7 @@
+       throw new Abort('ToolError', path, sortedLabels(from.labels));
+     }
+     const fields = Object.fromEntries(Object.keys(schema).map((key) => [key, (Object.hasOwn(got, key) ? got[key] : undefined) ?? null]));
+-    const value = derive(fields, [from], pc.labels, ['Untrusted:quarantine']);
++    const value = derive(fields, [from], pc.labels, []);
+     bind(scopes, step.let, value);
+     emit(c, 'extract', { step: path, fields, labels: sortedLabels(value.labels) });
+     return;

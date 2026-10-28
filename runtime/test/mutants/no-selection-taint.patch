@@ -1,0 +1,12 @@
+diff -ru a/interpreter/value.ts b/interpreter/value.ts
+--- a/interpreter/value.ts	2026-10-28 11:37:18
++++ b/interpreter/value.ts	2026-10-28 11:37:18
+@@ -58,7 +58,7 @@
+ 
+ /** The result of a lookup that found its payee: Book, plus the key's labels when the key was not trusted (selection taint), plus the pc taint. */
+ export function bookResult(raw: string, key: LVal, pc: LabelSet): LVal {
+-  const keyIsTrusted = isTrusted(labelsToBits([...key.labels]));
++  const keyIsTrusted = true;
+   const selection = keyIsTrusted ? [] : [...key.labels].filter((label) => label !== 'Owner');
+   return mk(raw, ['Book', ...selection, ...taint(pc)], key.origins);
+ }

@@ -1,0 +1,12 @@
+diff -ru a/interpreter/interpreter.ts b/interpreter/interpreter.ts
+--- a/interpreter/interpreter.ts	2026-10-28 11:37:18
++++ b/interpreter/interpreter.ts	2026-10-28 11:37:18
+@@ -180,7 +180,7 @@
+     const items = list.raw;
+     if (!Array.isArray(items)) throw new Abort('BadLoopList', path, sortedLabels(list.labels));
+     const count = Math.min(items.length, step.max);
+-    const inner = extendPc(pc, list);
++    const inner = pc;
+     emit(c, 'branch', {
+       step: path,
+       kind: 'for',

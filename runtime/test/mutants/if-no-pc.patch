@@ -1,0 +1,12 @@
+diff -ru a/interpreter/interpreter.ts b/interpreter/interpreter.ts
+--- a/interpreter/interpreter.ts	2026-10-28 11:37:18
++++ b/interpreter/interpreter.ts	2026-10-28 11:37:18
+@@ -168,7 +168,7 @@
+     // R6: the branch runs with the pc joined with the condition's labels; there is no truthiness
+     const cond = readRef(scopes, step.if);
+     if (typeof cond.raw !== 'boolean') throw new Abort('BadCondition', path, sortedLabels(cond.labels));
+-    const inner = extendPc(pc, cond);
++    const inner = pc;
+     emit(c, 'branch', { step: path, kind: 'if', taken: cond.raw, pc: sortedLabels(inner.labels) });
+     const taken = cond.raw ? step.then : step.else;
+     await execSteps(c, taken, [...path, cond.raw ? 'then' : 'else'], [...scopes, new Map()], inner);
