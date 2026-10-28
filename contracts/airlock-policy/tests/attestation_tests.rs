@@ -103,6 +103,16 @@ async fn test_measurements_and_ppid_lifecycle()
         )
         .await?
         .assert_success();
+
+        // AIR-046: `is_agent_valid` also needs the owner's allowance
+        allow_agent_for(
+            &contract_id,
+            &genesis_account_id,
+            &genesis_signer,
+            agent_id,
+            &network_config,
+        )
+        .await;
     }
 
     sleep(Duration::from_millis(300)).await;
@@ -583,6 +593,16 @@ async fn test_attestation_expiration() -> Result<(), Box<dyn std::error::Error +
     )
     .await?
     .assert_success();
+
+    // AIR-046: `is_agent_valid` also needs the owner's allowance
+    allow_agent_for(
+        &contract_id,
+        &genesis_account_id,
+        &genesis_signer,
+        &agent_id,
+        &network_config,
+    )
+    .await;
 
     sleep(Duration::from_millis(200)).await;
 

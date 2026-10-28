@@ -88,6 +88,13 @@ fn setup_contract() -> Contract {
     contract
 }
 
+// The owner allows the agent (AIR-046): `is_agent_valid` needs the allowance as well as a valid registration.
+fn allow_agent_for_test(contract: &mut Contract, agent: &AccountId) {
+    let context = get_context(accounts(0), false);
+    testing_env!(context.build());
+    contract.allow_agent(agent.clone(), crate::agents::fingerprint(agent.as_str()));
+}
+
 // Test contract initialization with correct owner, MPC contract, and empty collections
 #[test]
 fn test_new() {
@@ -574,6 +581,7 @@ fn test_is_agent_valid_not_whitelisted() {
 
     // Verify agent is registered and valid
     assert!(contract.get_agent(agent.clone()).is_some());
+    allow_agent_for_test(&mut contract, &agent);
     assert!(contract.is_agent_valid(agent.clone()));
 
     // Remove agent from whitelist
@@ -733,6 +741,7 @@ fn test_is_agent_valid_measurements_removed() {
     let context = get_context_with_deposit(agent.clone(), false, Some(DEPOSIT_005_NEAR));
     testing_env!(context.build());
     contract.register_agent(create_mock_dstack_attestation());
+    allow_agent_for_test(&mut contract, &agent);
     assert!(contract.is_agent_valid(agent.clone()));
 
     // Remove default measurements from approved list
@@ -761,6 +770,7 @@ fn test_is_agent_valid_ppid_removed() {
     let context = get_context_with_deposit(agent.clone(), false, Some(DEPOSIT_005_NEAR));
     testing_env!(context.build());
     contract.register_agent(create_mock_dstack_attestation());
+    allow_agent_for_test(&mut contract, &agent);
     assert!(contract.is_agent_valid(agent.clone()));
 
     // Remove default PPID from approved list
@@ -795,6 +805,7 @@ fn test_is_agent_valid_expired_attestation() {
     );
     testing_env!(context.build());
     contract.register_agent(create_mock_dstack_attestation());
+    allow_agent_for_test(&mut contract, &agent);
     assert!(contract.is_agent_valid(agent.clone()));
 
     // Fast forward time past expiration (valid_until_ms = 1000 + 100000 = 101000)

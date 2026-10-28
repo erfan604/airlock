@@ -56,6 +56,14 @@ pub enum Event<'a> {
     TaskRevoked {
         task_hash: String,
     },
+    // AIR-046
+    AgentAllowed {
+        account_id: &'a AccountId,
+        fingerprint: &'a str,
+    },
+    AgentRevoked {
+        account_id: &'a AccountId,
+    },
 }
 
 impl Event<'_> {

@@ -24,6 +24,7 @@ pub use views::{AgentValidity, AgentView, ContractInfo};
 
 // Modules are `pub` and every helper without a caller yet is `pub`, so `cargo clippy -D warnings` does not flag a helper whose
 // caller lands in a later ticket (a private unused item is a `dead_code` error, a `pub` one in a `pub mod` is not).
+pub mod agents;
 pub mod internal;
 pub mod owner;
 pub mod policy;
@@ -56,6 +57,8 @@ pub struct Contract {
     pub task_key: Option<[u8; 32]>,
     pub revoked_tasks: LookupSet<[u8; 32]>,
     pub task_actions: LookupMap<[u8; 32], u8>,
+    // AIR-046: the agents the owner allowed, with the fingerprint he compared (after `task_actions` in the layout table).
+    pub allowed_agents: IterableMap<AccountId, agents::AllowedAgent>,
     // AIR-063: every submitted request by its derived id (the record is also the used marker of the id), and the next short number
     // of an escalation (numbers are never reused). In the layout table `records` and `next_pending_no` come after the ledgers
     // (AIR-062) and before `pending_by_no` (AIR-080): the ticket that adds the fields in between inserts them above these two.
@@ -80,6 +83,8 @@ pub enum StorageKey {
     // AIR-045 (the table puts them after `Book` and before `AllowedAgents`).
     RevokedTasks,
     TaskActions,
+    // AIR-046
+    AllowedAgents,
     // AIR-063. Later tickets insert theirs above it where the layout table in AIR-040 puts them (before the first deploy, AIR-048).
     Records,
 }
@@ -110,6 +115,7 @@ impl Contract {
             task_key: None,
             revoked_tasks: LookupSet::new(StorageKey::RevokedTasks),
             task_actions: LookupMap::new(StorageKey::TaskActions),
+            allowed_agents: IterableMap::new(StorageKey::AllowedAgents),
             records: LookupMap::new(StorageKey::Records),
             next_pending_no: 1,
         }
@@ -121,12 +127,17 @@ impl Contract {
         let predecessor = env::predecessor_account_id();
         let already_registered = self.agents.get(&predecessor).is_some();
 
-        // New agents must cover storage; re-registration only updates existing state (no extra storage)
+        // New agents must cover storage; re-registration only updates existing state (no extra storage).
+        // What the call does not keep goes back to the agent (AIR-046): the storage cost of a first registration stays with the
+        // contract, everything else is refunded below. A removed agent's storage deposit is not returned (the only payer is the
+        // owner's own agent account).
+        let mut kept = NearToken::from_yoctonear(0);
         if !already_registered {
             // You should update the STORAGE_BYTES_TO_REGISTER const if you store more data
             let storage_cost = env::storage_byte_cost()
                 .checked_mul(STORAGE_BYTES_TO_REGISTER)
                 .unwrap();
+            kept = storage_cost;
             require!(
                 env::attached_deposit() >= storage_cost,
                 &format!(
@@ -156,13 +167,23 @@ impl Contract {
 
         // Register the agent
         self.agents.insert(
-            predecessor,
+            predecessor.clone(),
             Agent {
                 measurements,
                 ppid,
                 valid_until_ms,
             },
         );
+
+        // Refund the deposit minus the storage it pays for (all of it on a re-registration) with a detached transfer
+        let excess = env::attached_deposit()
+            .as_yoctonear()
+            .saturating_sub(kept.as_yoctonear());
+        if excess > 0 {
+            Promise::new(predecessor)
+                .transfer(NearToken::from_yoctonear(excess))
+                .detach();
+        }
 
         true
     }

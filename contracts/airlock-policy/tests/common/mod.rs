@@ -8,6 +8,7 @@ use near_api::{
 use near_api_types::transaction::result::{ExecutionFinalResult, TransactionResult};
 use near_sandbox::{GenesisAccount, Sandbox};
 use serde_json::json;
+use shade_attestation::attestation::create_mock_dstack_attestation;
 use shade_attestation::measurements::create_mock_full_measurements_hex;
 use std::sync::Arc;
 use tokio::time::{Duration, sleep};
@@ -24,12 +25,14 @@ pub fn contract_wasm_path() -> String {
 }
 
 /// The owner methods of the Shade template that remain (AIR-041 deleted `update_owner_id`, `update_mpc_contract_id` and
-/// `update_contract`). `call_transaction` and `call_transaction_raw` attach 1 yoctoNEAR to these when the caller passed no
+/// `update_contract`) and `allow_agent` and `revoke_agent` (AIR-046). `call_transaction` and `call_transaction_raw` attach 1 yoctoNEAR to these when the caller passed no
 /// deposit (every owner method is `#[payable]` and demands exactly 1 yocto), so the template tests need no other edit. A test
 /// that wants "no deposit" passes `Some(NearToken::from_yoctonear(0))`. Later tickets add their owner methods here or call
 /// them through `owner_call`, which always attaches 1 yocto.
 pub const OWNER_METHODS: &[&str] = &[
     "update_attestation_expiration_time",
+    "allow_agent",
+    "revoke_agent",
     "approve_measurements",
     "remove_measurements",
     "approve_ppids",
@@ -580,4 +583,67 @@ pub fn wasm_exports() -> Vec<String> {
         }
     }
     names
+}
+
+/// AIR-046: registers `agent` in local mode. The owner whitelists it (`whitelist_agent_for_local`, 1 yocto), then the agent calls
+/// `register_agent` with the mock attestation and `DEPOSIT_005_NEAR` (the storage of a first registration); both calls are
+/// asserted successful. Needs a contract deployed with `deploy_contract_default` (`start`), which also approves the default
+/// measurements and PPID. The agent is not allowed yet: see `allow_agent_for`.
+pub async fn register_local_agent(
+    contract: &AccountId,
+    owner: &AccountId,
+    owner_signer: &Arc<Signer>,
+    agent: &AccountId,
+    agent_signer: &Arc<Signer>,
+    net: &NetworkConfig,
+) {
+    call_transaction(
+        contract,
+        "whitelist_agent_for_local",
+        json!({ "account_id": agent }),
+        owner,
+        owner_signer,
+        net,
+        Some(NearToken::from_yoctonear(1)),
+    )
+    .await
+    .expect("whitelist_agent_for_local is sent")
+    .assert_success();
+    call_transaction(
+        contract,
+        "register_agent",
+        json!({ "attestation": serde_json::to_value(create_mock_dstack_attestation()).unwrap() }),
+        agent,
+        agent_signer,
+        net,
+        Some(DEPOSIT_005_NEAR),
+    )
+    .await
+    .expect("register_agent is sent")
+    .assert_success();
+}
+
+/// AIR-046: the owner allows `agent` with the fingerprint the contract computes (`allow_agent`, 1 yocto), asserted successful.
+pub async fn allow_agent_for(
+    contract: &AccountId,
+    owner: &AccountId,
+    owner_signer: &Arc<Signer>,
+    agent: &AccountId,
+    net: &NetworkConfig,
+) {
+    call_transaction(
+        contract,
+        "allow_agent",
+        json!({
+            "account_id": agent,
+            "fingerprint": airlock_policy::agents::fingerprint(agent.as_str())
+        }),
+        owner,
+        owner_signer,
+        net,
+        Some(NearToken::from_yoctonear(1)),
+    )
+    .await
+    .expect("allow_agent is sent")
+    .assert_success();
 }
