@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Install: git config core.hooksPath scripts/hooks. Re-checks every commit being pushed (scripts/check-commits.sh).
+set -euo pipefail
+z=0000000000000000000000000000000000000000
+while read -r _lref lsha _rref rsha; do
+  [ "$lsha" = "$z" ] && continue                      # deleting a ref: nothing to check (the guard blocks deletes anyway)
+  if [ "$rsha" = "$z" ]; then range="$lsha"; else range="$rsha..$lsha"; fi
+  scripts/check-commits.sh "$range"
+done

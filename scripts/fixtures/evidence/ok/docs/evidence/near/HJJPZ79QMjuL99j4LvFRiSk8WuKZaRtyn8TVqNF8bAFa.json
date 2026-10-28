@@ -1,0 +1,50 @@
+{
+  "final_execution_status": "FINAL",
+  "status": {
+    "SuccessValue": ""
+  },
+  "transaction": {
+    "signer_id": "fixture-twin-vanilla.testnet",
+    "public_key": "ed25519:FixtureKey1111111111111111111111111111111111",
+    "nonce": 1,
+    "receiver_id": "fixture-payee.testnet",
+    "actions": [
+      {
+        "Transfer": {
+          "deposit": "9400000000000000000000000"
+        }
+      }
+    ],
+    "priority_fee": 0,
+    "signature": "ed25519:FixtureSignature",
+    "hash": "HJJPZ79QMjuL99j4LvFRiSk8WuKZaRtyn8TVqNF8bAFa"
+  },
+  "transaction_outcome": {
+    "block_hash": "FixtureBlock",
+    "id": "HJJPZ79QMjuL99j4LvFRiSk8WuKZaRtyn8TVqNF8bAFa",
+    "outcome": {
+      "executor_id": "fixture-twin-vanilla.testnet",
+      "logs": [],
+      "receipt_ids": [
+        "r0"
+      ],
+      "status": {
+        "SuccessReceiptId": "r0"
+      }
+    }
+  },
+  "receipts_outcome": [
+    {
+      "block_hash": "FixtureBlock",
+      "id": "r0",
+      "outcome": {
+        "executor_id": "fixture-payee.testnet",
+        "logs": [],
+        "receipt_ids": [],
+        "status": {
+          "SuccessValue": ""
+        }
+      }
+    }
+  ]
+}

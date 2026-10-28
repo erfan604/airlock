@@ -1,0 +1,693 @@
+[
+  {
+    "id": "batch",
+    "url": "https://tx.test.fastnear.com/v0/transactions",
+    "match": [
+      "\"tx_hashes\""
+    ],
+    "body": {
+      "transactions": [
+        {
+          "transaction": {
+            "signer_id": "policy.fixture-owner.testnet",
+            "public_key": "ed25519:FixtureKey1111111111111111111111111111111111",
+            "nonce": 1,
+            "receiver_id": "policy.fixture-owner.testnet",
+            "actions": [
+              {
+                "DeployContract": {
+                  "code": "RhMdBKQ/gYIl/aCuW5no+dBUy1fLET+mYEwHX99HFAI="
+                }
+              },
+              {
+                "FunctionCall": {
+                  "method_name": "new",
+                  "args": "e30=",
+                  "gas": 300000000000000,
+                  "deposit": "0"
+                }
+              }
+            ],
+            "priority_fee": 0,
+            "signature": "ed25519:FixtureSignature",
+            "hash": "CxQTsmGLdVmoCyfqjUxbKNqwQceaYJbapGeo4czMZQKv"
+          },
+          "execution_outcome": {
+            "block_hash": "FixtureBlock",
+            "block_height": 1,
+            "id": "CxQTsmGLdVmoCyfqjUxbKNqwQceaYJbapGeo4czMZQKv",
+            "outcome": {
+              "logs": [],
+              "receipt_ids": [
+                "r0"
+              ],
+              "gas_burnt": 1,
+              "tokens_burnt": "1",
+              "executor_id": "policy.fixture-owner.testnet",
+              "status": {
+                "SuccessReceiptId": "r0"
+              }
+            }
+          },
+          "receipts": [
+            {
+              "execution_outcome": {
+                "block_hash": "FixtureBlock",
+                "block_height": 2,
+                "id": "r0",
+                "outcome": {
+                  "logs": [],
+                  "receipt_ids": [],
+                  "gas_burnt": 1,
+                  "tokens_burnt": "1",
+                  "executor_id": "policy.fixture-owner.testnet",
+                  "status": {
+                    "SuccessValue": ""
+                  }
+                }
+              },
+              "receipt": {
+                "predecessor_id": "policy.fixture-owner.testnet",
+                "receiver_id": "policy.fixture-owner.testnet",
+                "receipt_id": "r0"
+              }
+            }
+          ],
+          "data_receipts": []
+        },
+        {
+          "transaction": {
+            "signer_id": "fixture-agent.testnet",
+            "public_key": "ed25519:FixtureKey1111111111111111111111111111111111",
+            "nonce": 1,
+            "receiver_id": "policy.fixture-owner.testnet",
+            "actions": [
+              {
+                "FunctionCall": {
+                  "method_name": "submit_batch",
+                  "args": "e30=",
+                  "gas": 300000000000000,
+                  "deposit": "0"
+                }
+              }
+            ],
+            "priority_fee": 0,
+            "signature": "ed25519:FixtureSignature",
+            "hash": "5xjwv5gacRrgyxsrBYei7Y2QCmHrzqH4LRkVcac1snJk"
+          },
+          "execution_outcome": {
+            "block_hash": "FixtureBlock",
+            "block_height": 1,
+            "id": "5xjwv5gacRrgyxsrBYei7Y2QCmHrzqH4LRkVcac1snJk",
+            "outcome": {
+              "logs": [],
+              "receipt_ids": [
+                "r0"
+              ],
+              "gas_burnt": 1,
+              "tokens_burnt": "1",
+              "executor_id": "fixture-agent.testnet",
+              "status": {
+                "SuccessReceiptId": "r0"
+              }
+            }
+          },
+          "receipts": [
+            {
+              "execution_outcome": {
+                "block_hash": "FixtureBlock",
+                "block_height": 2,
+                "id": "r0",
+                "outcome": {
+                  "logs": [
+                    "EVENT_JSON:{\"standard\":\"airlock\",\"version\":\"1.0.0\",\"event\":\"allowed\",\"data\":[{\"request_id\":\"u01:0\"}]}"
+                  ],
+                  "receipt_ids": [],
+                  "gas_burnt": 1,
+                  "tokens_burnt": "1",
+                  "executor_id": "policy.fixture-owner.testnet",
+                  "status": {
+                    "SuccessValue": ""
+                  }
+                }
+              },
+              "receipt": {
+                "predecessor_id": "fixture-agent.testnet",
+                "receiver_id": "policy.fixture-owner.testnet",
+                "receipt_id": "r0"
+              }
+            }
+          ],
+          "data_receipts": []
+        },
+        {
+          "transaction": {
+            "signer_id": "fixture-agent.testnet",
+            "public_key": "ed25519:FixtureKey1111111111111111111111111111111111",
+            "nonce": 1,
+            "receiver_id": "policy.fixture-owner.testnet",
+            "actions": [
+              {
+                "FunctionCall": {
+                  "method_name": "submit_batch",
+                  "args": "e30=",
+                  "gas": 300000000000000,
+                  "deposit": "0"
+                }
+              }
+            ],
+            "priority_fee": 0,
+            "signature": "ed25519:FixtureSignature",
+            "hash": "GDXXqKfrSwJ4gKvz44Mk5Yk1WaYVU3NucuRnF3Npq6fd"
+          },
+          "execution_outcome": {
+            "block_hash": "FixtureBlock",
+            "block_height": 1,
+            "id": "GDXXqKfrSwJ4gKvz44Mk5Yk1WaYVU3NucuRnF3Npq6fd",
+            "outcome": {
+              "logs": [],
+              "receipt_ids": [
+                "r0"
+              ],
+              "gas_burnt": 1,
+              "tokens_burnt": "1",
+              "executor_id": "fixture-agent.testnet",
+              "status": {
+                "SuccessReceiptId": "r0"
+              }
+            }
+          },
+          "receipts": [
+            {
+              "execution_outcome": {
+                "block_hash": "FixtureBlock",
+                "block_height": 2,
+                "id": "r0",
+                "outcome": {
+                  "logs": [
+                    "EVENT_JSON:{\"standard\":\"airlock\",\"version\":\"1.0.0\",\"event\":\"allowed\",\"data\":[{\"request_id\":\"mpc-1:0\"}]}",
+                    "EVENT_JSON:{\"standard\":\"airlock\",\"version\":\"1.0.0\",\"event\":\"evm_unsigned\",\"data\":[{\"request_id\":\"mpc-1:0\",\"unsigned_hex\":\"02aa\"}]}"
+                  ],
+                  "receipt_ids": [],
+                  "gas_burnt": 1,
+                  "tokens_burnt": "1",
+                  "executor_id": "policy.fixture-owner.testnet",
+                  "status": {
+                    "SuccessValue": ""
+                  }
+                }
+              },
+              "receipt": {
+                "predecessor_id": "fixture-agent.testnet",
+                "receiver_id": "policy.fixture-owner.testnet",
+                "receipt_id": "r0"
+              }
+            },
+            {
+              "execution_outcome": {
+                "block_hash": "FixtureBlock",
+                "block_height": 2,
+                "id": "r1",
+                "outcome": {
+                  "logs": [],
+                  "receipt_ids": [],
+                  "gas_burnt": 1,
+                  "tokens_burnt": "1",
+                  "executor_id": "v1.signer-prod.testnet",
+                  "status": {
+                    "SuccessValue": ""
+                  }
+                }
+              },
+              "receipt": {
+                "predecessor_id": "fixture-agent.testnet",
+                "receiver_id": "v1.signer-prod.testnet",
+                "receipt_id": "r1"
+              }
+            },
+            {
+              "execution_outcome": {
+                "block_hash": "FixtureBlock",
+                "block_height": 2,
+                "id": "r2",
+                "outcome": {
+                  "logs": [],
+                  "receipt_ids": [],
+                  "gas_burnt": 1,
+                  "tokens_burnt": "1",
+                  "executor_id": "v1.signer-prod.testnet",
+                  "status": {
+                    "SuccessValue": "eyJzY2hlbWUiOiJTZWNwMjU2azEiLCJiaWdfciI6eyJhZmZpbmVfcG9pbnQiOiIwMmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWIifSwicyI6eyJzY2FsYXIiOiJjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkIn0sInJlY292ZXJ5X2lkIjowfQ=="
+                  }
+                }
+              },
+              "receipt": {
+                "predecessor_id": "fixture-agent.testnet",
+                "receiver_id": "v1.signer-prod.testnet",
+                "receipt_id": "r2"
+              }
+            },
+            {
+              "execution_outcome": {
+                "block_hash": "FixtureBlock",
+                "block_height": 2,
+                "id": "r3",
+                "outcome": {
+                  "logs": [
+                    "EVENT_JSON:{\"standard\":\"airlock\",\"version\":\"1.0.0\",\"event\":\"signed\",\"data\":[{\"request_id\":\"mpc-1:0\",\"unsigned_hex\":\"02aa\",\"big_r\":\"02abababababababababababababababababababababababababababababababab\",\"s\":\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\",\"recovery_id\":0}]}"
+                  ],
+                  "receipt_ids": [],
+                  "gas_burnt": 1,
+                  "tokens_burnt": "1",
+                  "executor_id": "policy.fixture-owner.testnet",
+                  "status": {
+                    "SuccessValue": ""
+                  }
+                }
+              },
+              "receipt": {
+                "predecessor_id": "fixture-agent.testnet",
+                "receiver_id": "policy.fixture-owner.testnet",
+                "receipt_id": "r3"
+              }
+            }
+          ],
+          "data_receipts": []
+        },
+        {
+          "transaction": {
+            "signer_id": "fixture-agent.testnet",
+            "public_key": "ed25519:FixtureKey1111111111111111111111111111111111",
+            "nonce": 1,
+            "receiver_id": "policy.fixture-owner.testnet",
+            "actions": [
+              {
+                "FunctionCall": {
+                  "method_name": "submit_batch",
+                  "args": "e30=",
+                  "gas": 300000000000000,
+                  "deposit": "0"
+                }
+              }
+            ],
+            "priority_fee": 0,
+            "signature": "ed25519:FixtureSignature",
+            "hash": "3TMfquuStXyWDQMBDcn4nPG3fRKwUkrdZsZdvS52z69d"
+          },
+          "execution_outcome": {
+            "block_hash": "FixtureBlock",
+            "block_height": 1,
+            "id": "3TMfquuStXyWDQMBDcn4nPG3fRKwUkrdZsZdvS52z69d",
+            "outcome": {
+              "logs": [],
+              "receipt_ids": [
+                "r0"
+              ],
+              "gas_burnt": 1,
+              "tokens_burnt": "1",
+              "executor_id": "fixture-agent.testnet",
+              "status": {
+                "SuccessReceiptId": "r0"
+              }
+            }
+          },
+          "receipts": [
+            {
+              "execution_outcome": {
+                "block_hash": "FixtureBlock",
+                "block_height": 2,
+                "id": "r0",
+                "outcome": {
+                  "logs": [
+                    "EVENT_JSON:{\"standard\":\"airlock\",\"version\":\"1.0.0\",\"event\":\"escalated\",\"data\":[{\"request_id\":\"b01:0\",\"id\":\"1\"}]}"
+                  ],
+                  "receipt_ids": [],
+                  "gas_burnt": 1,
+                  "tokens_burnt": "1",
+                  "executor_id": "policy.fixture-owner.testnet",
+                  "status": {
+                    "SuccessValue": ""
+                  }
+                }
+              },
+              "receipt": {
+                "predecessor_id": "fixture-agent.testnet",
+                "receiver_id": "policy.fixture-owner.testnet",
+                "receipt_id": "r0"
+              }
+            }
+          ],
+          "data_receipts": []
+        },
+        {
+          "transaction": {
+            "signer_id": "fixture-owner.testnet",
+            "public_key": "ed25519:FixtureKey1111111111111111111111111111111111",
+            "nonce": 1,
+            "receiver_id": "policy.fixture-owner.testnet",
+            "actions": [
+              {
+                "FunctionCall": {
+                  "method_name": "approve",
+                  "args": "eyJpZCI6IjEifQ==",
+                  "gas": 300000000000000,
+                  "deposit": "0"
+                }
+              }
+            ],
+            "priority_fee": 0,
+            "signature": "ed25519:FixtureSignature",
+            "hash": "Dh43rqMMwY9o4ipXRvhKuC9PRhRpz6NGVkJq7FDAU1o2"
+          },
+          "execution_outcome": {
+            "block_hash": "FixtureBlock",
+            "block_height": 1,
+            "id": "Dh43rqMMwY9o4ipXRvhKuC9PRhRpz6NGVkJq7FDAU1o2",
+            "outcome": {
+              "logs": [],
+              "receipt_ids": [
+                "r0"
+              ],
+              "gas_burnt": 1,
+              "tokens_burnt": "1",
+              "executor_id": "fixture-owner.testnet",
+              "status": {
+                "SuccessReceiptId": "r0"
+              }
+            }
+          },
+          "receipts": [
+            {
+              "execution_outcome": {
+                "block_hash": "FixtureBlock",
+                "block_height": 2,
+                "id": "r0",
+                "outcome": {
+                  "logs": [
+                    "EVENT_JSON:{\"standard\":\"airlock\",\"version\":\"1.0.0\",\"event\":\"approved\",\"data\":[{\"request_id\":\"b01:0\"}]}"
+                  ],
+                  "receipt_ids": [],
+                  "gas_burnt": 1,
+                  "tokens_burnt": "1",
+                  "executor_id": "policy.fixture-owner.testnet",
+                  "status": {
+                    "SuccessValue": ""
+                  }
+                }
+              },
+              "receipt": {
+                "predecessor_id": "fixture-owner.testnet",
+                "receiver_id": "policy.fixture-owner.testnet",
+                "receipt_id": "r0"
+              }
+            }
+          ],
+          "data_receipts": []
+        },
+        {
+          "transaction": {
+            "signer_id": "fixture-owner.testnet",
+            "public_key": "ed25519:FixtureKey1111111111111111111111111111111111",
+            "nonce": 1,
+            "receiver_id": "policy.fixture-owner.testnet",
+            "actions": [
+              {
+                "FunctionCall": {
+                  "method_name": "approve",
+                  "args": "eyJpZCI6IjIifQ==",
+                  "gas": 300000000000000,
+                  "deposit": "0"
+                }
+              }
+            ],
+            "priority_fee": 0,
+            "signature": "ed25519:FixtureSignature",
+            "hash": "Ee4nQECExp2w4kqZztRq4DrgFoAn1CMupWDtrBE8TetJ"
+          },
+          "execution_outcome": {
+            "block_hash": "FixtureBlock",
+            "block_height": 1,
+            "id": "Ee4nQECExp2w4kqZztRq4DrgFoAn1CMupWDtrBE8TetJ",
+            "outcome": {
+              "logs": [],
+              "receipt_ids": [
+                "r0"
+              ],
+              "gas_burnt": 1,
+              "tokens_burnt": "1",
+              "executor_id": "fixture-owner.testnet",
+              "status": {
+                "SuccessReceiptId": "r0"
+              }
+            }
+          },
+          "receipts": [
+            {
+              "execution_outcome": {
+                "block_hash": "FixtureBlock",
+                "block_height": 2,
+                "id": "r0",
+                "outcome": {
+                  "logs": [],
+                  "receipt_ids": [],
+                  "gas_burnt": 1,
+                  "tokens_burnt": "1",
+                  "executor_id": "policy.fixture-owner.testnet",
+                  "status": {
+                    "Failure": {
+                      "ActionError": {
+                        "index": 0,
+                        "kind": {
+                          "FunctionCallError": {
+                            "ExecutionError": "Smart contract panicked: approve rejected: WrongAmount"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "receipt": {
+                "predecessor_id": "fixture-owner.testnet",
+                "receiver_id": "policy.fixture-owner.testnet",
+                "receipt_id": "r0"
+              }
+            }
+          ],
+          "data_receipts": []
+        }
+      ]
+    }
+  },
+  {
+    "id": "view-policy",
+    "url": "https://test.rpc.fastnear.com",
+    "match": [
+      "\"request_type\":\"view_account\"",
+      "\"account_id\":\"policy.fixture-owner.testnet\""
+    ],
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "amount": "1",
+        "locked": "0",
+        "code_hash": "5iYSgYQBRpLQSFn28qKxNGAJ393zvQpysdZoNS3Q25XF",
+        "storage_usage": 1,
+        "block_height": 1,
+        "block_hash": "FixtureBlock"
+      }
+    }
+  },
+  {
+    "id": "view-mpc",
+    "url": "https://test.rpc.fastnear.com",
+    "match": [
+      "\"request_type\":\"view_account\"",
+      "\"account_id\":\"v1.signer-prod.testnet\""
+    ],
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "amount": "1",
+        "locked": "0",
+        "code_hash": "DAE5ng4ZFR2ctMx9SizQBqmGkVbKUutgZ4ZECD4R8Sm9",
+        "storage_usage": 1,
+        "block_height": 1,
+        "block_hash": "FixtureBlock"
+      }
+    }
+  },
+  {
+    "id": "version",
+    "url": "https://test.rpc.fastnear.com",
+    "match": [
+      "\"method_name\":\"version\"",
+      "\"account_id\":\"v1.signer-prod.testnet\""
+    ],
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "result": [
+          34,
+          51,
+          46,
+          49,
+          55,
+          46,
+          48,
+          34
+        ],
+        "logs": [],
+        "block_height": 1,
+        "block_hash": "FixtureBlock"
+      }
+    }
+  },
+  {
+    "id": "tx-regular-unknown-block",
+    "url": "https://test.rpc.fastnear.com",
+    "match": [
+      "\"tx_hash\":\"HJJPZ79QMjuL99j4LvFRiSk8WuKZaRtyn8TVqNF8bAFa\""
+    ],
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "error": {
+        "name": "HANDLER_ERROR",
+        "cause": {
+          "info": {},
+          "name": "UNKNOWN_BLOCK"
+        },
+        "code": -32000,
+        "message": "Server error"
+      }
+    }
+  },
+  {
+    "id": "tx-twin-owner",
+    "url": "https://archival-rpc.testnet.fastnear.com",
+    "match": [
+      "\"tx_hash\":\"HJJPZ79QMjuL99j4LvFRiSk8WuKZaRtyn8TVqNF8bAFa\"",
+      "\"sender_account_id\":\"fixture-owner.testnet\""
+    ],
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "error": {
+        "name": "HANDLER_ERROR",
+        "cause": {
+          "info": {},
+          "name": "UNKNOWN_TRANSACTION"
+        },
+        "code": -32000,
+        "message": "Server error"
+      }
+    }
+  },
+  {
+    "id": "tx-twin-agent",
+    "url": "https://archival-rpc.testnet.fastnear.com",
+    "match": [
+      "\"tx_hash\":\"HJJPZ79QMjuL99j4LvFRiSk8WuKZaRtyn8TVqNF8bAFa\"",
+      "\"sender_account_id\":\"fixture-agent.testnet\""
+    ],
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "error": {
+        "name": "HANDLER_ERROR",
+        "cause": {
+          "info": {},
+          "name": "UNKNOWN_TRANSACTION"
+        },
+        "code": -32000,
+        "message": "Server error"
+      }
+    }
+  },
+  {
+    "id": "tx-twin-signer",
+    "url": "https://archival-rpc.testnet.fastnear.com",
+    "match": [
+      "\"tx_hash\":\"HJJPZ79QMjuL99j4LvFRiSk8WuKZaRtyn8TVqNF8bAFa\"",
+      "\"sender_account_id\":\"fixture-twin-vanilla.testnet\""
+    ],
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "final_execution_status": "FINAL",
+        "status": {
+          "SuccessValue": ""
+        },
+        "transaction": {
+          "signer_id": "fixture-twin-vanilla.testnet",
+          "public_key": "ed25519:FixtureKey1111111111111111111111111111111111",
+          "nonce": 1,
+          "receiver_id": "fixture-payee.testnet",
+          "actions": [
+            {
+              "Transfer": {
+                "deposit": "9400000000000000000000000"
+              }
+            }
+          ],
+          "priority_fee": 0,
+          "signature": "ed25519:FixtureSignature",
+          "hash": "HJJPZ79QMjuL99j4LvFRiSk8WuKZaRtyn8TVqNF8bAFa"
+        },
+        "transaction_outcome": {
+          "block_hash": "FixtureBlock",
+          "id": "HJJPZ79QMjuL99j4LvFRiSk8WuKZaRtyn8TVqNF8bAFa",
+          "outcome": {
+            "executor_id": "fixture-twin-vanilla.testnet",
+            "logs": [],
+            "receipt_ids": [
+              "r0"
+            ],
+            "status": {
+              "SuccessReceiptId": "r0"
+            }
+          }
+        },
+        "receipts_outcome": [
+          {
+            "block_hash": "FixtureBlock",
+            "id": "r0",
+            "outcome": {
+              "executor_id": "fixture-payee.testnet",
+              "logs": [],
+              "receipt_ids": [],
+              "status": {
+                "SuccessValue": ""
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "base-receipt",
+    "url": "https://sepolia.base.org",
+    "match": [
+      "\"method\":\"eth_getTransactionReceipt\"",
+      "\"0xdb8e05108d6e649f83f02388cb0589d03a29f2c9a30d806f424e23cf5113e900\""
+    ],
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "transactionHash": "0xdb8e05108d6e649f83f02388cb0589d03a29f2c9a30d806f424e23cf5113e900",
+        "status": "0x1",
+        "from": "0x16c089aad87decf4eaaa4a4afeb5926bcd11b410",
+        "to": "0x7eafcb38a7de2a6805db7c93ccec6365a5c7528f",
+        "blockNumber": "0x10",
+        "gasUsed": "0x5208"
+      }
+    }
+  }
+]

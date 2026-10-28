@@ -1,0 +1,65 @@
+{
+  "transaction": {
+    "signer_id": "fixture-agent.testnet",
+    "public_key": "ed25519:FixtureKey1111111111111111111111111111111111",
+    "nonce": 1,
+    "receiver_id": "policy.fixture-owner.testnet",
+    "actions": [
+      {
+        "FunctionCall": {
+          "method_name": "submit_batch",
+          "args": "e30=",
+          "gas": 300000000000000,
+          "deposit": "0"
+        }
+      }
+    ],
+    "priority_fee": 0,
+    "signature": "ed25519:FixtureSignature",
+    "hash": "3TMfquuStXyWDQMBDcn4nPG3fRKwUkrdZsZdvS52z69d"
+  },
+  "execution_outcome": {
+    "block_hash": "FixtureBlock",
+    "block_height": 1,
+    "id": "3TMfquuStXyWDQMBDcn4nPG3fRKwUkrdZsZdvS52z69d",
+    "outcome": {
+      "logs": [],
+      "receipt_ids": [
+        "r0"
+      ],
+      "gas_burnt": 1,
+      "tokens_burnt": "1",
+      "executor_id": "fixture-agent.testnet",
+      "status": {
+        "SuccessReceiptId": "r0"
+      }
+    }
+  },
+  "receipts": [
+    {
+      "execution_outcome": {
+        "block_hash": "FixtureBlock",
+        "block_height": 2,
+        "id": "r0",
+        "outcome": {
+          "logs": [
+            "EVENT_JSON:{\"standard\":\"airlock\",\"version\":\"1.0.0\",\"event\":\"escalated\",\"data\":[{\"request_id\":\"b01:0\",\"id\":\"1\"}]}"
+          ],
+          "receipt_ids": [],
+          "gas_burnt": 1,
+          "tokens_burnt": "1",
+          "executor_id": "policy.fixture-owner.testnet",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      },
+      "receipt": {
+        "predecessor_id": "fixture-agent.testnet",
+        "receiver_id": "policy.fixture-owner.testnet",
+        "receipt_id": "r0"
+      }
+    }
+  ],
+  "data_receipts": []
+}

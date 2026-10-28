@@ -1,0 +1,42 @@
+[[harness]]
+name = "ok_with_cover"
+expect = "success"
+min_covers = 2
+
+[[harness]]
+name = "unsat_cover"
+expect = "success"
+min_covers = 1
+
+[[harness]]
+name = "unreachable_cover"
+expect = "success"
+min_covers = 1
+
+[[harness]]
+name = "no_checks"
+expect = "success"
+min_covers = 0
+
+[[harness]]
+name = "expected_failure"
+expect = "should_panic"
+panic_message = "A naive thing exceeds the bound"
+min_covers = 0
+
+[[harness]]
+name = "wrong_failure"
+expect = "should_panic"
+panic_message = "A naive thing exceeds the bound"
+min_covers = 0
+
+[[harness]]
+name = "should_panic_but_passes"
+expect = "should_panic"
+panic_message = "A tautology"
+min_covers = 0
+
+[[harness]]
+name = "plain_failure"
+expect = "success"
+min_covers = 0

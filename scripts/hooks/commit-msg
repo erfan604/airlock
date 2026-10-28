@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Rejects commit messages that break the project rules. Install: git config core.hooksPath scripts/hooks
+set -euo pipefail
+msg="$1"
+if grep -qi '^co-authored-by:' "$msg"; then echo "commit-msg: no Co-Authored-By lines (project rule)"; exit 1; fi
+if grep -q $'\xe2\x80\x94' "$msg"; then echo "commit-msg: em dash in the message (style rule)"; exit 1; fi
+if ! head -1 "$msg" | grep -Eq '^(feat|fix|docs|test|chore|refactor|perf|proofs|bench|build|ci)(\([a-z0-9,_-]+\))?: .+'; then
+  echo "commit-msg: first line must be type(scope): summary"; exit 1
+fi
+# Identity (Erfan, 2026-10-22): author and committer are the same person and one of two identities. erfan604 is his GitHub
+# profile, 3 to 7 commits a day picked by ~/apps/agent-tools/scripts/commit_identity.py; erfan-7116 is everything else.
+# Set both with GIT_AUTHOR_* and GIT_COMMITTER_* for the commit (the helper does it), never with git config.
+# erfan604 commits here use his GitHub noreply address (plan D13, 2026-10-26): GitHub credits it to the same profile, and
+# this repo goes public, so his personal email never enters its history. commit_identity.py picks it for this repo.
+ALT="erfan-7116 <erfan@welcomeaide.com>"; PROFILE="erfan604 <80935804+erfan604@users.noreply.github.com>"; MAX_DAY=7
+author="$(git var GIT_AUTHOR_IDENT | sed 's/ [0-9]* [-+][0-9]*$//')"
+committer="$(git var GIT_COMMITTER_IDENT | sed 's/ [0-9]* [-+][0-9]*$//')"
+if [ "$author" != "$ALT" ] && [ "$author" != "$PROFILE" ]; then
+  echo "commit-msg: author must be $ALT or $PROFILE (got: $author); commit through commit_identity.py run"; exit 1
+fi
+if [ "$committer" != "$author" ]; then
+  echo "commit-msg: committer must equal the author (got: $committer); set GIT_COMMITTER_NAME and GIT_COMMITTER_EMAIL, never git config"; exit 1
+fi
+if [ "$author" = "$PROFILE" ]; then
+  today=$(date +%Y-%m-%d)
+  n=$(git log --all --since="$today 00:00" --date=format-local:%Y-%m-%d --pretty='%ae %ad' 2>/dev/null | awk -v d="$today" -v e="${PROFILE#*<}" 'BEGIN{sub(/>$/,"",e)} $1==e && $2==d' | wc -l | tr -d ' ')
+  if [ "$n" -ge "$MAX_DAY" ]; then echo "commit-msg: already $n erfan604 commits today (max $MAX_DAY); commit as $ALT"; exit 1; fi
+fi

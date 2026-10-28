@@ -1,0 +1,14 @@
+# Gate artifacts that scripts/check.sh must find in every mode (AIR-002).
+# Format: one path per line, relative to the repo root (CHECK_ROOT in tests). Blank lines and lines starting with # are ignored.
+# A path that is absent fails the run in quick, full and nightly with "MISSING REQUIRED: <path>" (a step_if would only name it
+# in the skipped list, so a deleted script could otherwise stay green).
+# Each ticket that creates a gate artifact appends its path here in the same commit that wires its step into check.sh.
+# Examples of the paths later tickets add: proofs/Verdict.lean, scripts/gen_verdict_cases.py
+scripts/lint-money.sh
+scripts/kani-check.sh
+scripts/kani_parse.py
+scripts/fixtures/kani-probe.log
+scripts/harness-table.py
+scripts/check-payloads.sh
+scripts/payload-scan.sh
+scripts/payload-markers.mjs

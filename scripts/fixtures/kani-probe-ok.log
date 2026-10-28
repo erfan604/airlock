@@ -1,0 +1,175 @@
+Kani Rust Verifier 0.68.0 (cargo plugin)
+CBMC 6.11.0
+   Compiling probe v0.1.0 (/ABS
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+Checking harness proofs::expected_failure...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Runtime Symex: 0.00084475s
+size of program expression: 114 steps
+slicing removed 52 assignments
+Generated 2 VCC(s), 2 remaining after simplification
+Runtime Postprocess Equation: 1.9e-05s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 8.5167e-05s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 5.417e-06s
+Solving with CaDiCaL 3.0.0
+20 variables, 22 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 3.0125e-05s
+Runtime decision procedure: 0.000141417s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+21 variables, 23 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 1.2959e-05s
+Runtime decision procedure: 2.2541e-05s
+
+RESULTS:
+Check 1: proofs::expected_failure.assertion.1
+	 - Status: FAILURE
+	 - Description: ""A naive thing exceeds the bound""
+	 - Location: src/lib.rs:19:91 in function proofs::expected_failure
+
+
+SUMMARY:
+ ** 1 of 1 failed
+Failed Checks: "A naive thing exceeds the bound"
+ File: "src/lib.rs", line 19, in proofs::expected_failure
+
+VERIFICATION:- SUCCESSFUL (encountered one or more panics as expected)
+Verification Time: 0.005275041s
+
+Checking harness proofs::ok_with_cover...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+aborting path on assume(false) at file /ABS line 633 column 5 function core::option::Option::<u8>::is_some thread 0
+aborting path on assume(false) at file /ABS line 633 column 5 function core::option::Option::<u8>::is_some thread 0
+aborting path on assume(false) at file src/lib.rs line 6 column 20 function proofs::ok_with_cover thread 0
+Runtime Symex: 0.00392512s
+size of program expression: 372 steps
+slicing removed 165 assignments
+Generated 22 VCC(s), 10 remaining after simplification
+Runtime Postprocess Equation: 3.9209e-05s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.000344917s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 5.25e-06s
+Solving with CaDiCaL 3.0.0
+339 variables, 562 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 3.4667e-05s
+Runtime decision procedure: 0.000415666s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+340 variables, 563 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 2.2583e-05s
+Runtime decision procedure: 3.6e-05s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+341 variables, 564 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 0.000107667s
+Runtime decision procedure: 0.000116709s
+
+RESULTS:
+Check 1: core::option::Option::<u8>::is_some.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 2: proofs::ok_with_cover.cover.1
+	 - Status: SATISFIED
+	 - Description: "sum fits"
+	 - Location: src/lib.rs:9:9 in function proofs::ok_with_cover
+
+Check 3: proofs::ok_with_cover.cover.2
+	 - Status: SATISFIED
+	 - Description: "sum overflows"
+	 - Location: src/lib.rs:9:48 in function proofs::ok_with_cover
+
+Check 4: proofs::ok_with_cover.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:6:20 in function proofs::ok_with_cover
+
+Check 5: proofs::ok_with_cover.assertion.1
+	 - Status: SUCCESS
+	 - Description: "assertion failed: s >= a"
+	 - Location: src/lib.rs:10:30 in function proofs::ok_with_cover
+
+Check 6: core::num::<impl u8>::checked_add.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../../../../../../ABS in function core::num::<impl u8>::checked_add
+
+Check 7: core::option::Option::<u8>::is_some.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 8: core::option::Option::<u8>::is_some.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 9: core::option::Option::<u8>::is_some.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 10: core::option::Option::<u8>::is_some.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 11: core::option::Option::<u8>::is_some.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 12: core::option::Option::<u8>::is_some.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+
+SUMMARY:
+ ** 0 of 10 failed
+
+ ** 2 of 2 cover properties satisfied
+
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.017890291s
+
+Manual Harness Summary:
+Complete - 2 successfully verified harnesses, 0 failures, 2 total.

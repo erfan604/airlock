@@ -1,0 +1,462 @@
+Kani Rust Verifier 0.68.0 (cargo plugin)
+CBMC 6.11.0
+   Compiling probe v0.1.0 (/ABS
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.43s
+Checking harness proofs::plain_failure...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Runtime Symex: 0.00102871s
+size of program expression: 72 steps
+slicing removed 31 assignments
+Generated 2 VCC(s), 2 remaining after simplification
+Runtime Postprocess Equation: 2.125e-05s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.000158167s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 1.3458e-05s
+Solving with CaDiCaL 3.0.0
+20 variables, 22 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 6.4166e-05s
+Runtime decision procedure: 0.000247125s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+21 variables, 23 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 1.2292e-05s
+Runtime decision procedure: 2.2e-05s
+
+RESULTS:
+Check 1: proofs::plain_failure.assertion.1
+	 - Status: FAILURE
+	 - Description: ""plain fail""
+	 - Location: src/lib.rs:26:66 in function proofs::plain_failure
+
+
+SUMMARY:
+ ** 1 of 1 failed
+Failed Checks: "plain fail"
+ File: "src/lib.rs", line 26, in proofs::plain_failure
+
+VERIFICATION:- FAILED
+Verification Time: 0.010836708s
+
+Checking harness proofs::should_panic_but_passes...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Runtime Symex: 0.000615209s
+size of program expression: 72 steps
+slicing removed 41 assignments
+Generated 2 VCC(s), 1 remaining after simplification
+Runtime Postprocess Equation: 1.4208e-05s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 2.8375e-05s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 5.042e-06s
+Solving with CaDiCaL 3.0.0
+1 variables, 0 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 3.3166e-05s
+Runtime decision procedure: 8.6167e-05s
+
+RESULTS:
+Check 1: proofs::should_panic_but_passes.assertion.1
+	 - Status: SUCCESS
+	 - Description: ""A tautology""
+	 - Location: src/lib.rs:25:98 in function proofs::should_panic_but_passes
+
+
+SUMMARY:
+ ** 0 of 1 failed
+
+VERIFICATION:- FAILED (encountered no panics, but at least one was expected)
+Verification Time: 0.0043395s
+
+Checking harness proofs::wrong_failure...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Runtime Symex: 0.00117571s
+size of program expression: 165 steps
+slicing removed 77 assignments
+Generated 4 VCC(s), 4 remaining after simplification
+Runtime Postprocess Equation: 2.3125e-05s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.000112542s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 5.541e-06s
+Solving with CaDiCaL 3.0.0
+32 variables, 47 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 2.9291e-05s
+Runtime decision procedure: 0.000167917s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+33 variables, 48 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 1.4333e-05s
+Runtime decision procedure: 2.4708e-05s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+34 variables, 49 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 1.075e-05s
+Runtime decision procedure: 1.9042e-05s
+
+RESULTS:
+Check 1: proofs::wrong_failure.assertion.1
+	 - Status: FAILURE
+	 - Description: ""some other message""
+	 - Location: src/lib.rs:22:9 in function proofs::wrong_failure
+
+Check 2: proofs::wrong_failure.assertion.2
+	 - Status: SUCCESS
+	 - Description: ""A naive thing exceeds the bound""
+	 - Location: src/lib.rs:23:9 in function proofs::wrong_failure
+
+
+SUMMARY:
+ ** 1 of 2 failed
+Failed Checks: "some other message"
+ File: "src/lib.rs", line 22, in proofs::wrong_failure
+
+VERIFICATION:- SUCCESSFUL (encountered one or more panics as expected)
+Verification Time: 0.006162s
+
+Checking harness proofs::expected_failure...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Runtime Symex: 0.000770167s
+size of program expression: 114 steps
+slicing removed 52 assignments
+Generated 2 VCC(s), 2 remaining after simplification
+Runtime Postprocess Equation: 1.8625e-05s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 7.8458e-05s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 5.5e-06s
+Solving with CaDiCaL 3.0.0
+20 variables, 22 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 2.9042e-05s
+Runtime decision procedure: 0.000131084s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+21 variables, 23 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 1.2917e-05s
+Runtime decision procedure: 2.225e-05s
+
+RESULTS:
+Check 1: proofs::expected_failure.assertion.1
+	 - Status: FAILURE
+	 - Description: ""A naive thing exceeds the bound""
+	 - Location: src/lib.rs:19:91 in function proofs::expected_failure
+
+
+SUMMARY:
+ ** 1 of 1 failed
+Failed Checks: "A naive thing exceeds the bound"
+ File: "src/lib.rs", line 19, in proofs::expected_failure
+
+VERIFICATION:- SUCCESSFUL (encountered one or more panics as expected)
+Verification Time: 0.004942959s
+
+Checking harness proofs::no_checks...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Runtime Symex: 0.000343625s
+size of program expression: 37 steps
+slicing removed 17 assignments
+Generated 0 VCC(s), 0 remaining after simplification
+Runtime Postprocess Equation: 1.2625e-05s
+
+RESULTS:
+
+SUMMARY:
+ ** 0 of 0 failed
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.004116959s
+
+Checking harness proofs::unreachable_cover...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Runtime Symex: 0.000697125s
+size of program expression: 90 steps
+slicing removed 39 assignments
+Generated 4 VCC(s), 4 remaining after simplification
+Runtime Postprocess Equation: 2.0083e-05s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 8.7542e-05s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 4.959e-06s
+Solving with CaDiCaL 3.0.0
+34 variables, 60 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 2.8791e-05s
+Runtime decision procedure: 0.000140292s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+35 variables, 61 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 1.3041e-05s
+Runtime decision procedure: 2.2833e-05s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+36 variables, 62 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 9.5e-06s
+Runtime decision procedure: 1.775e-05s
+
+RESULTS:
+Check 1: proofs::unreachable_cover.cover.1
+	 - Status: UNREACHABLE
+	 - Description: "dead branch"
+	 - Location: src/lib.rs:15:30 in function proofs::unreachable_cover
+
+Check 2: proofs::unreachable_cover.cover.2
+	 - Status: SATISFIED
+	 - Description: "three"
+	 - Location: src/lib.rs:16:9 in function proofs::unreachable_cover
+
+
+SUMMARY:
+ ** 0 of 0 failed
+
+ ** 1 of 2 cover properties satisfied (1 unreachable)
+
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.005138583s
+
+Checking harness proofs::unsat_cover...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Runtime Symex: 0.000631542s
+size of program expression: 73 steps
+slicing removed 31 assignments
+Generated 4 VCC(s), 4 remaining after simplification
+Runtime Postprocess Equation: 2.0334e-05s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 8.0875e-05s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 5.875e-06s
+Solving with CaDiCaL 3.0.0
+38 variables, 62 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 3.0958e-05s
+Runtime decision procedure: 0.000139042s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+39 variables, 63 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 1.0459e-05s
+Runtime decision procedure: 1.9709e-05s
+
+RESULTS:
+Check 1: proofs::unsat_cover.cover.1
+	 - Status: UNSATISFIABLE
+	 - Description: "never"
+	 - Location: src/lib.rs:12:86 in function proofs::unsat_cover
+
+Check 2: proofs::unsat_cover.cover.2
+	 - Status: SATISFIED
+	 - Description: "small"
+	 - Location: src/lib.rs:12:117 in function proofs::unsat_cover
+
+
+SUMMARY:
+ ** 0 of 0 failed
+
+ ** 1 of 2 cover properties satisfied
+
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.005376833s
+
+Checking harness proofs::ok_with_cover...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit arm64 macos
+Reading GOTO program from file /ABS
+Generating GOTO Program
+Adding CPROVER library (arm64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+aborting path on assume(false) at file /ABS line 633 column 5 function core::option::Option::<u8>::is_some thread 0
+aborting path on assume(false) at file /ABS line 633 column 5 function core::option::Option::<u8>::is_some thread 0
+aborting path on assume(false) at file src/lib.rs line 6 column 20 function proofs::ok_with_cover thread 0
+Runtime Symex: 0.00380954s
+size of program expression: 372 steps
+slicing removed 165 assignments
+Generated 22 VCC(s), 10 remaining after simplification
+Runtime Postprocess Equation: 4.4167e-05s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.00034525s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 6.75e-06s
+Solving with CaDiCaL 3.0.0
+339 variables, 562 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 3.7667e-05s
+Runtime decision procedure: 0.000422958s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+340 variables, 563 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 2.5583e-05s
+Runtime decision procedure: 4.0125e-05s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+341 variables, 564 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 0.000131459s
+Runtime decision procedure: 0.000143625s
+
+RESULTS:
+Check 1: core::option::Option::<u8>::is_some.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 2: proofs::ok_with_cover.cover.1
+	 - Status: SATISFIED
+	 - Description: "sum fits"
+	 - Location: src/lib.rs:9:9 in function proofs::ok_with_cover
+
+Check 3: proofs::ok_with_cover.cover.2
+	 - Status: SATISFIED
+	 - Description: "sum overflows"
+	 - Location: src/lib.rs:9:48 in function proofs::ok_with_cover
+
+Check 4: proofs::ok_with_cover.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:6:20 in function proofs::ok_with_cover
+
+Check 5: proofs::ok_with_cover.assertion.1
+	 - Status: SUCCESS
+	 - Description: "assertion failed: s >= a"
+	 - Location: src/lib.rs:10:30 in function proofs::ok_with_cover
+
+Check 6: core::num::<impl u8>::checked_add.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../../../../../../ABS in function core::num::<impl u8>::checked_add
+
+Check 7: core::option::Option::<u8>::is_some.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 8: core::option::Option::<u8>::is_some.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 9: core::option::Option::<u8>::is_some.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 10: core::option::Option::<u8>::is_some.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 11: core::option::Option::<u8>::is_some.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+Check 12: core::option::Option::<u8>::is_some.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../../ABS in function core::option::Option::<u8>::is_some
+
+
+SUMMARY:
+ ** 0 of 10 failed
+
+ ** 2 of 2 cover properties satisfied
+
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.017204458s
+
+Manual Harness Summary:
+Verification failed for - proofs::plain_failure
+Verification failed for - proofs::should_panic_but_passes
+Complete - 6 successfully verified harnesses, 2 failures, 8 total.

@@ -1,0 +1,10 @@
+[[harness]]
+name = "ok_with_cover"
+expect = "success"
+min_covers = 2
+
+[[harness]]
+name = "expected_failure"
+expect = "should_panic"
+panic_message = "A naive thing exceeds the bound"
+min_covers = 0

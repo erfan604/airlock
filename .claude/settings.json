@@ -1,0 +1,84 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo kani:*)",
+      "Bash(cargo near build:*)",
+      "Bash(pnpm -r typecheck)",
+      "Bash(pnpm -r test)",
+      "Bash(pnpm -C runtime test)",
+      "Bash(pnpm -C runtime test:prop)",
+      "Bash(pnpm -C web build)",
+      "Bash(pnpm demo)",
+      "Bash(pnpm bench:replay)",
+      "Bash(lake build)",
+      "Bash(scripts/check.sh)",
+      "Bash(scripts/check.sh quick)",
+      "Bash(scripts/check.sh full)",
+      "Bash(scripts/doctor.sh)",
+      "Bash(scripts/diff-verdict.sh)",
+      "Bash(near contract call-function as-read-only:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(cat .env:*)",
+      "Bash(cat ./.env:*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Bash(cat .env.*:*)",
+      "Bash(git commit --no-verify:*)",
+      "Bash(git commit -n:*)",
+      "Bash(git add -A:*)",
+      "Bash(git add --all:*)",
+      "Bash(git add .:*)",
+      "Bash(git config:*)",
+      "Bash(git -c:*)",
+      "Bash(git push --mirror:*)",
+      "Bash(git push --delete:*)"
+    ],
+    "ask": [
+      "Edit(**/scripts/hooks/**)",
+      "Edit(**/scripts/check.sh)",
+      "Edit(**/scripts/check-commits.sh)",
+      "Edit(**/.claude/settings.json)",
+      "Edit(**/.claude/settings.local.json)",
+      "Edit(**/.claude/hooks/**)",
+      "Edit(**/.github/workflows/**)",
+      "Write(**/scripts/hooks/**)",
+      "Write(**/scripts/check.sh)",
+      "Write(**/scripts/check-commits.sh)",
+      "Write(**/.claude/settings.json)",
+      "Write(**/.claude/settings.local.json)",
+      "Write(**/.claude/hooks/**)",
+      "Write(**/.github/workflows/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard_bash.py"
+          }
+        ]
+      }
+    ]
+  }
+}

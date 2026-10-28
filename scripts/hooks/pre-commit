@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Install: git config core.hooksPath scripts/hooks
+set -euo pipefail
+# The secret scan is mandatory: a missing gitleaks refuses the commit instead of skipping the scan (fail closed).
+command -v gitleaks >/dev/null || { echo "pre-commit: gitleaks is not installed (brew install gitleaks); refusing to commit unscanned"; exit 1; }
+gitleaks git --staged --no-banner --redact --log-level error
+# Key and env files by name: any *.env or .env.* (except .env.example), .envrc, private keys, NEAR credential files,
+# and the submission payload.
+if git diff --cached --name-only --diff-filter=ACMR | grep -Ev '(^|/)\.env\.example$' \
+   | grep -Eiq '(^|/)[^/]*\.env(\.[^/]*)?$|(^|/)\.env[^/]*$|(^|/)\.envrc$|\.(pem|key|p12|pfx)$|(^|/)id_(rsa|ed25519|ecdsa)$|near-credentials|submission[^/]*\.json$'; then
+  echo "pre-commit: refusing to commit an env file, a key file, NEAR credentials or a submission payload"; exit 1
+fi
+if git diff --cached -U0 | grep -E '^\+' | grep -q $'\xe2\x80\x94'; then
+  echo "pre-commit: em dash found in staged changes (style rule)"; exit 1
+fi
