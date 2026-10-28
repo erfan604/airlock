@@ -1,0 +1,32 @@
+{
+ "version": 1,
+ "requestHash": "44b371c2743ec143c993186927354e4dd4f3673e40b3259c1122544a1672bd71",
+ "request": {
+  "role": "planner",
+  "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+  "system": "S",
+  "user": "Owner request: pay",
+  "schema": {
+   "type": "array",
+   "maxItems": 64,
+   "items": {
+    "type": "object",
+    "additionalProperties": false
+   }
+  },
+  "params": {
+   "max_tokens": 4096,
+   "reasoning": null,
+   "seed": 3,
+   "temperature": 0.7
+  }
+ },
+ "responseBody": "{\"id\":\"chatcmpl-fixture-1\",\"object\":\"chat.completion\",\"created\":1700000000,\"model\":\"Qwen/Qwen3.6-35B-A3B-FP8\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"say\\\":\\\"Invoice paid \u2014 thanks\\\"}]\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":120,\"completion_tokens\":45,\"total_tokens\":165}}",
+ "responseHash": "0bd2ba45e4b4beb3d4abe5f25be7ed090fd0112fb97804c3dbf3f474ad392f0b",
+ "latencyMs": 1234,
+ "recordedAt": "2026-10-28T00:00:00.000Z",
+ "route": "nearai",
+ "sourceModel": "Qwen/Qwen3.6-35B-A3B-FP8",
+ "effort": null,
+ "isStandIn": false
+}
