@@ -1,0 +1,12 @@
+[package]
+name = "airlock-verdict"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.86"
+description = "The AIRLOCK on-chain verdict as a pure no_std function: ALLOW, ESCALATE or BLOCK for one payment request"
+publish = false
+
+[dependencies]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
