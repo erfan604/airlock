@@ -1,0 +1,10 @@
+# id @@ file @@ perl substitution (run with -0pi -e) @@ harness substring that must fail @@ text of the failing check
+LG1 @@ ledger.rs @@ s/spent\.checked_add\(amount\)/Some(spent.wrapping_add(amount))/ @@ p13_spend @@ n <= c && n >= s
+LG2 @@ ledger.rs @@ s/task:\s*spend\(s\.task,\s*ch\.task,\s*c\.task_bound\)\?,/task: s.task.wrapping_add(ch.task),/ @@ l3_ @@ s.task <= c.task_bound
+LG3 @@ ledger.rs @@ s/payee_untrusted_day:\s*spend\(\s*s\.payee_untrusted_day,\s*ch\.payee_untrusted_day,\s*c\.payee_budget,?\s*\)\?,/payee_untrusted_day: s.payee_untrusted_day.wrapping_add(ch.payee_untrusted_day),/ @@ l1_ @@ s.payee_untrusted_day <= c.payee_budget
+LG4 @@ ledger.rs @@ s/let asset_day = spend\(s\.asset_day,\s*ch\.asset_day,\s*c\.asset_daily\)\?;/let asset_day = s.asset_day.wrapping_add(ch.asset_day);/ @@ l2_ @@ s.asset_day <= c.asset_daily
+LG5 @@ ledger.rs @@ s/let asset_day = spend\(s\.asset_day,\s*ch\.asset_day,\s*c\.asset_daily\)\?;/let asset_day = s.asset_day;/ @@ l2_ @@ d.applied.asset_day
+LG6 @@ ledger.rs @@ s/let \(task, applied_task\) = saturate\(s\.task,\s*ch\.task,\s*c\.task_bound\);/let (task, applied_task) = (s.task.wrapping_add(ch.task), ch.task);/ @@ l3_ @@ s.task <= c.task_bound
+LG7 @@ ledger.rs @@ s/task:\s*s\.task\.checked_sub\(applied\.task\)\?,/task: s.task,/ @@ l4_ @@ refund(&s1, &da.applied)
+LG8 @@ ledger.rs @@ s/if amount_untrusted \{\s*amount\s*\} else \{\s*0\s*\}/amount/ @@ l1_ @@ apply_allow refuses
+LG9 @@ ledger.rs @@ s/Some\(n\) if n <= cap/Some(n) if n < cap/ @@ l2_ @@ apply_allow refuses

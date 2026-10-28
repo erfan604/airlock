@@ -152,3 +152,85 @@ exhaustive = true
 expect = "success"
 min_covers = 15
 catches = []
+
+[[harness]]
+name = "p13_spend_exact_and_total"
+property = "P13"
+statement = "spend never panics and returns Some(n) only when spent plus amount fits under the cap, with n minus spent equal to the amount"
+bounds = "every u128 triple, no assumption"
+exhaustive = true
+expect = "success"
+min_covers = 2
+catches = ["LG1"]
+
+[[harness]]
+name = "l1_untrusted_budget_holds"
+property = "L1"
+statement = "one step (verdict-gated Allow, apply_allow with an arbitrary charge, or an approval) keeps the payee untrusted budget at or under its cap, its change equals the applied untrusted charge, and an approval charges it 0"
+bounds = "one step from any state with every ledger at or under its cap (inductive: holds for sequences of any length while the caps stay fixed); every u128 amount, u16 label set and asset limit"
+exhaustive = true
+expect = "success"
+min_covers = 4
+catches = ["LG3", "LG8"]
+
+[[harness]]
+name = "l2_asset_daily_holds"
+property = "L2"
+statement = "one step keeps the asset day ledger at or under the daily cap, its change equals the applied charge, and an executed step applies its full requested amount (an approval over the cap is refused, never partial)"
+bounds = "as l1_untrusted_budget_holds"
+exhaustive = true
+expect = "success"
+min_covers = 3
+catches = ["LG4", "LG5", "LG9"]
+
+[[harness]]
+name = "l3_task_bound_holds"
+property = "L3"
+statement = "one step keeps the task ledger at or under the bound; an Allow charges its full amount; an approval applies at most its amount and may use the bound up (R3-03, R5-10)"
+bounds = "as l1_untrusted_budget_holds"
+exhaustive = true
+expect = "success"
+min_covers = 3
+catches = ["LG2", "LG6"]
+
+[[harness]]
+name = "l4_charge_then_refund_restores"
+property = "L4"
+statement = "refunding the applied charge of a step restores the prior ledgers exactly; refunding the first of two charges leaves exactly the second charge"
+bounds = "two steps from any state inside the caps; every u128 amount and label set"
+exhaustive = true
+expect = "success"
+min_covers = 3
+catches = ["LG7"]
+
+[[harness]]
+name = "l5_batch_equals_sequential_within_bounds"
+property = "L5"
+statement = "three verdict-gated steps on one threaded state keep every ledger inside its cap and move each ledger by at most what was left at the start of the batch"
+bounds = "three requests from any state inside the caps; every u128 amount and label set"
+exhaustive = true
+expect = "success"
+min_covers = 2
+catches = []
+
+[[harness]]
+name = "l6a_naive_snapshot_batch_exceeds_task_bound"
+property = "L6a"
+statement = "documentation: three requests each judged against one snapshot of the ledgers can together exceed the task bound (the design R3-02 rejects)"
+bounds = "three symbolic requests"
+exhaustive = false
+expect = "should_panic"
+panic_message = "L6a naive snapshot batch exceeds task bound"
+min_covers = 1
+catches = []
+
+[[harness]]
+name = "l6b_uncharged_approvals_exceed_daily_cap"
+property = "L6b"
+statement = "documentation: two approvals that each pass the daily recheck but charge no ledger can together exceed the daily cap (the design R3-03 rejects)"
+bounds = "two symbolic requests"
+exhaustive = false
+expect = "should_panic"
+panic_message = "L6b uncharged approvals exceed daily cap"
+min_covers = 1
+catches = []
