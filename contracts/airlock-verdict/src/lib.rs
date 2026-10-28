@@ -251,3 +251,4 @@ pub mod decimal;
 pub mod approve;
 
 pub mod flood;
+pub mod keys;

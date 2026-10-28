@@ -324,3 +324,43 @@ exhaustive = true
 expect = "success"
 min_covers = 3
 catches = ["F3", "F4"]
+
+[[harness]]
+name = "p16_non_ascii_never_accepted_near"
+property = "P16"
+statement = "A payee key of up to 24 bytes with a byte above 0x7f is never accepted: the ASCII check runs on the raw bytes before any case folding."
+bounds = "keys of 0 to 24 bytes over every byte value (reaches an accepted near: key), unwind 30"
+exhaustive = true
+expect = "success"
+min_covers = 2
+catches = []
+
+[[harness]]
+name = "p16_non_ascii_never_accepted_evm"
+property = "P16"
+statement = "The key evm:1:0x followed by 40 symbolic bytes never accepts a byte above 0x7f."
+bounds = "48 byte keys, the 40 address bytes symbolic over every byte value (an accepted evm key is at least 48 bytes), unwind 52"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = []
+
+[[harness]]
+name = "p16_validated_key_is_canonical_fixed_point"
+property = "P16"
+statement = "An accepted near: key uses only lowercase letters, digits and the separators - _ . after the prefix, so it is its own canonical form."
+bounds = "keys of 0 to 20 bytes over every byte value, unwind 26"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = []
+
+[[harness]]
+name = "p16_evm_canonical_round_trip"
+property = "P16"
+statement = "An EVM address of 40 or 42 symbolic bytes that canonicalizes becomes 0x plus 40 lowercase hex digits, which a payee key accepts and which canonicalizes to itself."
+bounds = "42 symbolic bytes taken at length 40 or 42, unwind 52"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = []

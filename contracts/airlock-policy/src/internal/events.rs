@@ -78,6 +78,17 @@ pub enum Event<'a> {
     AssetRemoved {
         asset: &'a str,
     },
+    // AIR-043: `cap` is a decimal string or null
+    BookAdded {
+        key: &'a str,
+        label: &'a str,
+        cap: Option<U128>,
+        daily_untrusted_budget: U128,
+        daily_limit: U128,
+    },
+    BookRemoved {
+        key: &'a str,
+    },
 }
 
 impl Event<'_> {

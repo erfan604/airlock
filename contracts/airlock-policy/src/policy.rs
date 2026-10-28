@@ -1,5 +1,5 @@
-// The policy state the owner edits: the pause switch and the flood-control flags (AIR-040) and the asset registry (AIR-042). The
-// address book (AIR-043) joins this module's owner methods in a later ticket.
+// The policy state the owner edits: the pause switch and the flood-control flags (AIR-040), the asset registry (AIR-042) and the
+// address book (AIR-043).
 use crate::*;
 use airlock_verdict::decimal::MAX_DECIMALS;
 use near_sdk::json_types::U128;
@@ -253,6 +253,64 @@ impl Contract {
     }
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The address book (AIR-043). Payees are stored and matched by exact canonical ASCII keys (`crate::keys`): there is no fuzzy or
+// nearest-key matching anywhere in the contract, and only the owner adds or removes a payee (I3).
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// The most characters of a payee label.
+pub const MAX_LABEL_LEN: usize = 40;
+/// The most entries `get_book` returns in one call.
+pub const MAX_BOOK_PAGE: u32 = 50;
+
+/// One payee. `cap` is the largest single untrusted amount the owner accepts for this payee (`None`: never, which is how strict
+/// configuration is expressed), `daily_untrusted_budget` the untrusted amount per UTC day, `daily_limit` the payee's daily limit for
+/// any amount (the verdict's `limit_remaining`). `label` is display only and never used for matching.
+#[near(serializers = [borsh])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BookEntry {
+    pub cap: Option<u128>,
+    pub daily_untrusted_budget: u128,
+    pub daily_limit: u128,
+    pub label: String,
+}
+
+/// `BookEntry` as the views answer: every u128 is a decimal string, `cap` is a string or null.
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BookEntryView {
+    pub cap: Option<U128>,
+    pub daily_untrusted_budget: U128,
+    pub daily_limit: U128,
+    pub label: String,
+}
+
+impl From<&BookEntry> for BookEntryView {
+    fn from(e: &BookEntry) -> Self {
+        Self {
+            cap: e.cap.map(U128),
+            daily_untrusted_budget: U128(e.daily_untrusted_budget),
+            daily_limit: U128(e.daily_limit),
+            label: e.label.clone(),
+        }
+    }
+}
+
+/// A payee label: at most 40 characters of `[A-Za-z0-9 ._-]` (empty is allowed).
+pub fn valid_label(label: &str) -> bool {
+    label.len() <= MAX_LABEL_LEN
+        && label
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b' ' | b'.' | b'_' | b'-'))
+}
+
+impl Contract {
+    /// The address book entry for a canonical payee key, if any. An exact match: no folding, no prefix match.
+    pub fn payee(&self, key: &str) -> Option<BookEntry> {
+        self.book.get(key).cloned()
+    }
+}
+
 #[near]
 impl Contract {
     /// Owner: stop or resume the gate. While paused every request is blocked (AIR-061). Emits `paused`.
@@ -361,6 +419,74 @@ impl Contract {
         self.asset_symbols
             .remove(&removed.symbol.to_ascii_lowercase());
         Event::AssetRemoved { asset: &asset }.emit();
+    }
+
+    /// Owner: add a payee, or replace its whole entry. The key must be canonical (`bad payee key: <KeyError name>`), the asset it is paid
+    /// in must be in the registry (`unknown asset for payee key`), and the label is at most 40 characters of `[A-Za-z0-9 ._-]`
+    /// (`invalid label`). Two payees may share a label. Emits `book_added`.
+    #[payable]
+    pub fn book_add(
+        &mut self,
+        key: String,
+        cap: Option<U128>,
+        daily_untrusted_budget: U128,
+        daily_limit: U128,
+        label: String,
+    ) {
+        self.owner_call();
+        crate::keys::validate_payee_key(&key);
+        require!(
+            self.assets
+                .contains_key(&crate::keys::asset_for_payee_key(&key)),
+            "unknown asset for payee key"
+        );
+        require!(valid_label(&label), "invalid label");
+        Event::BookAdded {
+            key: &key,
+            label: &label,
+            cap,
+            daily_untrusted_budget,
+            daily_limit,
+        }
+        .emit();
+        self.book.insert(
+            key,
+            BookEntry {
+                cap: cap.map(|c| c.0),
+                daily_untrusted_budget: daily_untrusted_budget.0,
+                daily_limit: daily_limit.0,
+                label,
+            },
+        );
+    }
+
+    /// Owner: remove a payee. Reverts `payee not in book` when the key is not in the book. Emits `book_removed`.
+    #[payable]
+    pub fn book_remove(&mut self, key: String) {
+        self.owner_call();
+        require!(self.book.remove(&key).is_some(), "payee not in book");
+        Event::BookRemoved { key: &key }.emit();
+    }
+
+    /// The book entry for an exact canonical key, or `None`.
+    pub fn get_book_entry(&self, key: String) -> Option<BookEntryView> {
+        self.book.get(&key).map(BookEntryView::from)
+    }
+
+    /// The book in insertion order. `limit` is clamped to 50 and the call never reverts (an index past the end answers an empty list).
+    pub fn get_book(
+        &self,
+        from_index: Option<u32>,
+        limit: Option<u32>,
+    ) -> Vec<(String, BookEntryView)> {
+        let from = from_index.unwrap_or(0) as usize;
+        let limit = limit.unwrap_or(MAX_BOOK_PAGE).min(MAX_BOOK_PAGE) as usize;
+        self.book
+            .iter()
+            .skip(from)
+            .take(limit)
+            .map(|(key, entry)| (key.clone(), BookEntryView::from(entry)))
+            .collect()
     }
 
     /// The registered asset with this id, or `None`.
@@ -761,5 +887,137 @@ mod tests {
             );
         }
         assert!(c.list_assets().is_empty());
+    }
+
+    // ---- the address book (AIR-043) -----------------------------------------------------------------------------------------
+
+    const NEAR_KEY: &str = "near:accountant.test.near";
+    const EVM_KEY: &str = "evm:84532:0xd8da6bf26964af9d7eed9e03e53415d37aa96045";
+
+    fn book_add(c: &mut Contract, key: &str, cap: Option<u128>, label: &str) {
+        c.book_add(
+            key.to_string(),
+            cap.map(U128),
+            U128(1_000),
+            U128(5_000),
+            label.to_string(),
+        );
+    }
+
+    fn with_assets() -> Contract {
+        let mut c = fresh();
+        testing_env!(ctx(OWNER, T0_MS, 1).build());
+        c.asset_set("near".to_string(), near_json());
+        c.asset_set("evm:84532:native".to_string(), evm_json());
+        c
+    }
+
+    #[test]
+    fn book_add_stores_replaces_and_removes() {
+        let mut c = with_assets();
+        book_add(&mut c, NEAR_KEY, Some(100), "Accountant");
+        let entry = c.payee(NEAR_KEY).expect("the payee is in the book");
+        assert_eq!(entry.cap, Some(100));
+        assert_eq!(entry.daily_untrusted_budget, 1_000);
+        assert_eq!(entry.daily_limit, 5_000);
+        assert_eq!(entry.label, "Accountant");
+        let view = c.get_book_entry(NEAR_KEY.to_string()).unwrap();
+        assert_eq!(serde_json::to_value(&view).unwrap()["cap"], "100");
+        // the same label under another key coexists, and a null cap is `None`
+        book_add(&mut c, EVM_KEY, None, "Accountant");
+        assert_eq!(c.get_book(None, None).len(), 2);
+        assert_eq!(c.payee(EVM_KEY).unwrap().cap, None);
+        // a second add replaces the whole entry
+        book_add(&mut c, NEAR_KEY, None, "Second");
+        assert_eq!(c.payee(NEAR_KEY).unwrap().label, "Second");
+        assert_eq!(c.payee(NEAR_KEY).unwrap().cap, None);
+        assert_eq!(c.get_book(None, None).len(), 2);
+        // matching is exact
+        assert!(c.payee("near:accountant.test.nea").is_none());
+        assert!(c.payee("NEAR:accountant.test.near").is_none());
+        c.book_remove(NEAR_KEY.to_string());
+        assert!(c.payee(NEAR_KEY).is_none());
+        let text = panics(|| c.book_remove(NEAR_KEY.to_string()));
+        assert!(text.contains("payee not in book"), "{text}");
+    }
+
+    #[test]
+    fn book_add_checks_run_key_then_asset_then_label() {
+        let mut c = fresh();
+        testing_env!(ctx(OWNER, T0_MS, 1).build());
+        // nothing registered: a bad key says so before the asset is looked up
+        let text = panics(|| book_add(&mut c, "near:Accountant", Some(1), "ok"));
+        assert!(text.contains("bad payee key: BadChar"), "{text}");
+        let text = panics(|| book_add(&mut c, NEAR_KEY, Some(1), "bad label!"));
+        assert!(text.contains("unknown asset for payee key"), "{text}");
+        c.asset_set("near".to_string(), near_json());
+        let text = panics(|| book_add(&mut c, NEAR_KEY, Some(1), "bad label!"));
+        assert!(text.contains("invalid label"), "{text}");
+        let text = panics(|| book_add(&mut c, EVM_KEY, Some(1), "ok"));
+        assert!(text.contains("unknown asset for payee key"), "{text}");
+        assert!(c.get_book(None, None).is_empty());
+    }
+
+    #[test]
+    fn book_labels_are_limited() {
+        assert!(valid_label(""));
+        assert!(valid_label(&"a".repeat(40)));
+        assert!(valid_label("A b.c_d-e 9"));
+        for bad in [
+            "a".repeat(41),
+            "A!".to_string(),
+            "a/b".to_string(),
+            "a\tb".to_string(),
+        ] {
+            assert!(!valid_label(&bad), "{bad:?}");
+        }
+        assert!(!valid_label(&format!(
+            "Caf{}",
+            char::from_u32(0xE9).unwrap()
+        )));
+    }
+
+    #[test]
+    fn book_owner_rules_hold_in_process() {
+        let mut c = with_assets();
+        testing_env!(ctx("stranger.test.near", T0_MS, 1).build());
+        let text = panics(|| book_add(&mut c, NEAR_KEY, Some(1), "x"));
+        assert!(text.contains("Caller is not the owner"), "{text}");
+        for deposit in [0u128, 2] {
+            testing_env!(ctx(OWNER, T0_MS, deposit).build());
+            let text = panics(|| book_add(&mut c, NEAR_KEY, Some(1), "x"));
+            assert!(
+                text.contains("Requires attached deposit of exactly 1 yoctoNEAR"),
+                "{text}"
+            );
+            let text = panics(|| c.book_remove(NEAR_KEY.to_string()));
+            assert!(
+                text.contains("Requires attached deposit of exactly 1 yoctoNEAR"),
+                "{text}"
+            );
+        }
+        assert!(c.get_book(None, None).is_empty());
+    }
+
+    #[test]
+    fn book_get_book_clamps_to_50_and_never_reverts() {
+        let mut c = with_assets();
+        testing_env!(ctx(OWNER, T0_MS, 1).build());
+        for i in 0..60 {
+            book_add(
+                &mut c,
+                &format!("near:payee{i:02}.test.near"),
+                Some(1),
+                "Payee",
+            );
+        }
+        assert_eq!(c.get_book(None, Some(500)).len(), 50);
+        assert_eq!(c.get_book(None, Some(500))[0].0, "near:payee00.test.near");
+        assert_eq!(c.get_book(Some(50), Some(500)).len(), 10);
+        assert_eq!(c.get_book(Some(1_000), None).len(), 0);
+        assert_eq!(c.get_book(Some(u32::MAX), Some(u32::MAX)).len(), 0);
+        assert_eq!(c.get_book(Some(3), Some(2)).len(), 2);
+        assert_eq!(c.get_book(None, Some(0)).len(), 0);
+        assert_eq!(c.get_book(None, None).len(), 50);
     }
 }
