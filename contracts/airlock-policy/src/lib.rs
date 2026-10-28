@@ -27,12 +27,14 @@ pub use views::{AgentValidity, AgentView, ContractInfo};
 pub mod agents;
 pub mod internal;
 pub mod keys;
+pub mod ledgers;
 pub mod owner;
 pub mod policy;
 pub mod request;
 pub mod task;
 #[cfg(test)]
 pub mod testutil;
+pub mod time;
 pub mod views;
 
 pub type Ppid = HexBytes<16>;
@@ -66,6 +68,12 @@ pub struct Contract {
     pub task_actions: LookupMap<[u8; 32], u8>,
     // AIR-046: the agents the owner allowed, with the fingerprint he compared (after `task_actions` in the layout table).
     pub allowed_agents: IterableMap<AccountId, agents::AllowedAgent>,
+    // AIR-062: the four ledgers (src/ledgers.rs). The three day ledgers hold `(day, spent)` and a value from an earlier day reads as 0, so
+    // they are bounded by the number of assets and payees; the task ledger is keyed by (task hash, payee key) and never freed.
+    pub asset_spent: LookupMap<String, ledgers::DayValue>,
+    pub payee_spent: LookupMap<String, ledgers::DayValue>,
+    pub payee_untrusted_spent: LookupMap<String, ledgers::DayValue>,
+    pub task_spent: LookupMap<([u8; 32], String), u128>,
     // AIR-063: every submitted request by its derived id (the record is also the used marker of the id), and the next short number
     // of an escalation (numbers are never reused). In the layout table `records` and `next_pending_no` come after the ledgers
     // (AIR-062) and before `pending_by_no` (AIR-080): the ticket that adds the fields in between inserts them above these two.
@@ -97,6 +105,11 @@ pub enum StorageKey {
     TaskActions,
     // AIR-046
     AllowedAgents,
+    // AIR-062 (the table puts the ledgers after `AllowedAgents` and before `Records`)
+    AssetSpent,
+    PayeeSpent,
+    PayeeUntrustedSpent,
+    TaskSpent,
     // AIR-063. Later tickets insert theirs above it where the layout table in AIR-040 puts them (before the first deploy, AIR-048).
     Records,
 }
@@ -131,6 +144,10 @@ impl Contract {
             revoked_tasks: LookupSet::new(StorageKey::RevokedTasks),
             task_actions: LookupMap::new(StorageKey::TaskActions),
             allowed_agents: IterableMap::new(StorageKey::AllowedAgents),
+            asset_spent: LookupMap::new(StorageKey::AssetSpent),
+            payee_spent: LookupMap::new(StorageKey::PayeeSpent),
+            payee_untrusted_spent: LookupMap::new(StorageKey::PayeeUntrustedSpent),
+            task_spent: LookupMap::new(StorageKey::TaskSpent),
             records: LookupMap::new(StorageKey::Records),
             next_pending_no: 1,
         }
