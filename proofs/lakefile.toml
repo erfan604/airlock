@@ -3,4 +3,8 @@ defaultTargets = ["AirlockProofs"]
 
 [[lean_lib]]
 name = "AirlockProofs"
-roots = ["Verdict", "NI", "NI_recipients"]
+roots = ["VerdictModel", "Verdict"]
+
+[[lean_exe]]
+name = "verdict-run"
+root = "VerdictRun"
