@@ -89,6 +89,35 @@ pub enum Event<'a> {
     BookRemoved {
         key: &'a str,
     },
+    // AIR-061, the events of `submit_batch`. No agent free text: every string here is a canonical key, a registry id, a reason name
+    // or a number the contract derived. u128 values are decimal strings.
+    /// One per call, after the task verified: the task hash (64 hex), how many requests the call carries and who sent it.
+    Submitted {
+        task_hash: String,
+        count: u8,
+        agent: &'a AccountId,
+    },
+    /// One per new Allow, with what is left of the three ledgers after its own charge.
+    Allowed {
+        request_id: &'a str,
+        asset: &'a str,
+        payee: &'a str,
+        amount: U128,
+        asset_day_remaining: U128,
+        payee_day_remaining: U128,
+        task_remaining: Option<U128>,
+    },
+    /// One per new escalation. `id` is the decimal pending number (the value `approve` takes).
+    Escalated {
+        request_id: &'a str,
+        id: String,
+        reason: &'a str,
+    },
+    /// One per new Block, with the `Reason::as_str()` name.
+    Blocked {
+        request_id: &'a str,
+        reason: &'a str,
+    },
 }
 
 impl Event<'_> {

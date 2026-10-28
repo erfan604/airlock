@@ -25,6 +25,7 @@ pub use views::{AgentValidity, AgentView, ContractInfo};
 // Modules are `pub` and every helper without a caller yet is `pub`, so `cargo clippy -D warnings` does not flag a helper whose
 // caller lands in a later ticket (a private unused item is a `dead_code` error, a `pub` one in a `pub mod` is not).
 pub mod agents;
+pub mod gate;
 pub mod internal;
 pub mod keys;
 pub mod ledgers;
