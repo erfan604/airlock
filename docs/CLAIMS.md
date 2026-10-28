@@ -14,7 +14,7 @@ Every claim sentence in the README ends with a tag such as `[C1a]` that names a 
 | C2 | For the EVM lane the contract builds the unsigned transaction bytes from the stored request, so the signature covers exactly the recipient and amount the verdict saw. Broadcast and ordering are off chain; an issued signature stays valid until its nonce is used and is not revoked by pause. |  | `pending: AIR-240` |  | none | AIR-240 |
 | C3 | If the runtime lies about provenance it can act only while an owner-signed task is open, only toward payees and amounts inside that task's confirmed bounds, only to address-book payees, and only within per-asset and per-payee limits. |  | `pending: AIR-240` |  | none | AIR-240 |
 | C4 | Only an agent account the owner allowlisted can submit. In TEE mode (registration tx linked in docs/EVIDENCE.md) the registration quote is evidence that a certified Intel CPU on the owner-approved PPID list signed measurements matching the owner-approved build; it is not proof of physical integrity (docs/KNOWN_LIMITATIONS.md). In local mode the guarantee is C3 only. |  | `pending: AIR-240` |  | none | AIR-240 |
-| C5 | The verdict is model-checked for every input each Kani harness admits (bounds listed per harness in docs/harnesses.md) | contracts/airlock-verdict/harnesses.toml, docs/harnesses.md | `scripts/kani-check.sh` | `KANI OK: 32 harnesses,` | kani | AIR-240 |
+| C5 | The verdict is model-checked for every input each Kani harness admits (bounds listed per harness in docs/harnesses.md) | contracts/airlock-verdict/harnesses.toml, docs/harnesses.md | `scripts/kani-check.sh` | `KANI OK: 36 harnesses,` | kani | AIR-240 |
 | C6 | Bench: no attack auto-executed outside the task, cap and budget envelope (K2) and none in strict mode (K1), with n and 95% Wilson intervals; K1 and K2 are reported separately. |  | `pending: AIR-240 pnpm bench:replay` | table in docs/BENCH.md | none | AIR-240 |
 
 ## Kani harnesses
@@ -54,8 +54,12 @@ Every claim sentence in the README ends with a tag such as `[C1a]` that names a 
 | flood_pending_never_exceeds_max | R4-03 | the pending counter equals the number of pending items and never exceeds max_pending, over any legal sequence of 6 events | 6 events, limits at least 1, unwind 8 | no | 1 | success | F2 |
 | flood_three_consecutive_rejects_lock | R4-03 | three consecutive rejects lock the agent | 3 rejects, symbolic days, unwind 8 | no | 1 | success | F5 |
 | flood_hourly_budget_holds | R4-03 | an escalation is admitted exactly when the agent is not locked, below the pending cap and below the hourly budget of the current hour bucket | any state, any limits at least 1, any hour bucket | yes | 3 | success | F3, F4 |
+| p16_non_ascii_never_accepted_near | P16 | A payee key of up to 24 bytes with a byte above 0x7f is never accepted: the ASCII check runs on the raw bytes before any case folding. | keys of 0 to 24 bytes over every byte value (reaches an accepted near: key), unwind 30 | yes | 2 | success | - |
+| p16_non_ascii_never_accepted_evm | P16 | The key evm:1:0x followed by 40 symbolic bytes never accepts a byte above 0x7f. | 48 byte keys, the 40 address bytes symbolic over every byte value (an accepted evm key is at least 48 bytes), unwind 52 | yes | 1 | success | - |
+| p16_validated_key_is_canonical_fixed_point | P16 | An accepted near: key uses only lowercase letters, digits and the separators - _ . after the prefix, so it is its own canonical form. | keys of 0 to 20 bytes over every byte value, unwind 26 | yes | 1 | success | - |
+| p16_evm_canonical_round_trip | P16 | An EVM address of 40 or 42 symbolic bytes that canonicalizes becomes 0x plus 40 lowercase hex digits, which a payee key accepts and which canonicalizes to itself. | 42 symbolic bytes taken at length 40 or 42, unwind 52 | yes | 1 | success | - |
 
-Kani harnesses in total: 32
+Kani harnesses in total: 36
 <!-- harness-table:end -->
 
 ## Lean theorems
