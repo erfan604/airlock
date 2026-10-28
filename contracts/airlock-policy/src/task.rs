@@ -1073,11 +1073,21 @@ mod tests {
     #[test]
     fn task_verify_overflowing_hard_cap_product() {
         // hard_cap * max_actions overflows u128: there is no limit from it, only the quick cap and `u128::MAX` bound the task
+        // `asset_set` refuses such caps (the 200 byte approve argument guard, AIR-086), so the entry goes into the registry directly: this
+        // pins `verify_bounds` against state that the owner method cannot produce, which is the point of a defensive check
         let mut c = ready();
-        testing_env!(ctx(OWNER, 1_000, 1).build());
-        c.asset_set(
+        c.assets.insert(
             "near".to_string(),
-            asset(u128::MAX, u128::MAX, u128::MAX, false),
+            crate::policy::AssetEntry {
+                symbol: "NEAR".to_string(),
+                decimals: 18,
+                hard_cap: u128::MAX,
+                daily_cap: u128::MAX,
+                max_fee_per_gas: 0,
+                max_gas: 0,
+                quick_task_cap: u128::MAX,
+                path: None,
+            },
         );
         let vt = verify(&c, &base_task(&[(NEAR_PAYEE, u128::MAX - 1)], 2), NOW);
         assert_eq!(c.bound_for(&vt, NEAR_PAYEE), Some(u128::MAX - 1));

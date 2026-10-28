@@ -1,6 +1,7 @@
 // The policy state the owner edits: the pause switch and the flood-control flags (AIR-040), the asset registry (AIR-042) and the
 // address book (AIR-043).
 use crate::*;
+use airlock_verdict::approve;
 use airlock_verdict::decimal::MAX_DECIMALS;
 use near_sdk::json_types::U128;
 use std::str::FromStr;
@@ -335,8 +336,8 @@ impl Contract {
     /// Owner: register or replace an asset. The checks run in this order and each reverts with the quoted text: `invalid asset id`,
     /// `invalid symbol`, `symbol already used` (case-insensitive across the registry, AB6; the entry being replaced does not count),
     /// `decimals above 38`, `caps must satisfy 0 < hard_cap <= daily_cap`, `quick_task_cap must be above 0 and at most daily_cap`,
-    /// then for an EVM asset `evm path required`, `evm path invalid`, `evm path already used`, `evm fee and gas caps required`, for
-    /// any other asset `path not allowed` and `fee and gas caps only for evm`, and last `registry full` (more than 16 distinct ids;
+    /// `approve arguments could exceed 200 bytes` (AIR-086), then for an EVM asset `evm path required`, `evm path invalid`,
+    /// `evm path already used`, `evm fee and gas caps required`, for any other asset `path not allowed` and `fee and gas caps only for evm`, and last `registry full` (more than 16 distinct ids;
     /// a replace never trips it). A changed symbol frees the old one. Emits `asset_set`.
     #[payable]
     pub fn asset_set(&mut self, asset: String, entry: AssetEntryJson) {
@@ -358,6 +359,20 @@ impl Contract {
         require!(
             quick > 0 && quick <= daily,
             "quick_task_cap must be above 0 and at most daily_cap"
+        );
+        // AIR-086 (R4-12): a Ledger device shows the arguments of `approve` only under 200 bytes, so refuse an asset whose worst-case
+        // arguments could reach that: the longest payee key, reason and book status, a ten digit pending number, this symbol and the
+        // longest amount text up to the hard cap. The effective decimals ceiling is 33, and NEAR's hard cap stays below 10,000,000 NEAR.
+        require!(
+            approve::approve_args_len(
+                approve::MAX_ID_DIGITS,
+                approve::MAX_TO,
+                entry.symbol.len(),
+                approve::amount_text_len(hard, entry.decimals),
+                approve::MAX_WHY,
+                approve::MAX_BOOK,
+            ) < approve::LEDGER_LIMIT,
+            "approve arguments could exceed 200 bytes"
         );
         if asset.starts_with("evm:") {
             let path = entry.path.as_deref().filter(|p| !p.is_empty());

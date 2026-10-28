@@ -57,9 +57,19 @@ fn evm_entry() -> Value {
     })
 }
 
-/// A token entry with its own symbol (NEAR shaped: no fee, gas or path).
+/// A token entry with its own symbol (NEAR shaped: no fee, gas or path), 6 decimals and a hard cap of 10,000 units, so that even a
+/// 12 character symbol stays under the 200 byte approve argument guard (AIR-086).
 fn ft_entry(symbol: &str) -> Value {
-    with(&near_entry(), "symbol", json!(symbol))
+    json!({
+        "symbol": symbol,
+        "decimals": 6,
+        "hard_cap": "10000000000",
+        "daily_cap": "100000000000",
+        "max_fee_per_gas": "0",
+        "max_gas": "0",
+        "quick_task_cap": "100000000000",
+        "path": null
+    })
 }
 
 /// `entry` with one field replaced.
@@ -228,12 +238,7 @@ async fn invalid_symbol_reverts() {
         .await;
     }
     // 12 characters, digits and dots are fine
-    set_ok(
-        &s,
-        "near",
-        &with(&near_entry(), "symbol", json!("A1.B2.C3.D4.")),
-    )
-    .await;
+    set_ok(&s, "near", &ft_entry("A1.B2.C3.D4.")).await;
     assert_eq!(get_asset(&s, "near").await["symbol"], "A1.B2.C3.D4.");
 }
 
@@ -273,32 +278,121 @@ async fn ab6_symbols_unique() {
     );
 }
 
+/// `10^decimals` as a decimal string: a hard cap of one whole unit.
+fn one_unit(decimals: u32) -> String {
+    10u128.pow(decimals).to_string()
+}
+
+/// The entry of the decimals tests: symbol `A`, a hard cap (and daily and quick cap) of one whole unit of `decimals` places.
+fn unit_entry(decimals: u32) -> Value {
+    json!({
+        "symbol": "A",
+        "decimals": decimals,
+        "hard_cap": one_unit(decimals),
+        "daily_cap": one_unit(decimals),
+        "max_fee_per_gas": "0",
+        "max_gas": "0",
+        "quick_task_cap": one_unit(decimals),
+        "path": null
+    })
+}
+
+/// The registry accepts decimals up to 33 (symbol `A`, a hard cap of one whole unit: the approve arguments are 199 bytes); 38 reverts
+/// on the 200 byte guard (AIR-086) and 39 on the older `decimals above 38`, which runs first. `decimal::parse` and `format` still
+/// handle 38 places (F13); only the registry refuses an asset whose approve arguments could not be shown on a Ledger.
 #[tokio::test]
 async fn decimals_bound() {
     let _slot = slot().await;
     let s = start().await;
-    set_ok(&s, "near", &with(&near_entry(), "decimals", json!(38))).await;
-    assert_eq!(get_asset(&s, "near").await["decimals"], 38);
+    let guard = "approve arguments could exceed 200 bytes";
+    set_ok(&s, "near", &unit_entry(33)).await;
+    assert_eq!(get_asset(&s, "near").await["decimals"], 33);
+    set_fails(&s, "near", &unit_entry(34), guard).await;
+    set_fails(&s, "near", &unit_entry(38), guard).await;
     set_fails(
         &s,
         "near",
-        &with(&near_entry(), "decimals", json!(39)),
+        &with(&unit_entry(38), "decimals", json!(39)),
         "decimals above 38",
     )
     .await;
     set_fails(
         &s,
         "near",
-        &with(&near_entry(), "decimals", json!(255)),
+        &with(&unit_entry(38), "decimals", json!(255)),
         "decimals above 38",
     )
     .await;
     assert_eq!(
         get_asset(&s, "near").await["decimals"],
-        38,
+        33,
         "a rejected call changed nothing"
     );
-    set_ok(&s, "near", &with(&near_entry(), "decimals", json!(0))).await;
+    set_ok(&s, "near", &unit_entry(0)).await;
+}
+
+/// The size guard of `asset_set` (AIR-086, decision R4-12): the worst-case approve arguments of an asset (the longest payee key, the
+/// longest reason and book status, a ten digit pending number, the symbol, and the longest amount text up to the hard cap) must stay
+/// under the 200 bytes a Ledger device shows.
+#[tokio::test]
+async fn approve_args_guard() {
+    use airlock_verdict::approve::{
+        LEDGER_LIMIT, MAX_BOOK, MAX_ID_DIGITS, MAX_TO, MAX_WHY, approve_args_len,
+    };
+    let _slot = slot().await;
+    let s = start().await;
+    let guard = "approve arguments could exceed 200 bytes";
+    // a 12 character symbol, 38 decimals and a hard cap of 10^38: a 40 character worst case amount, 215 bytes
+    let worst = json!({
+        "symbol": "ABCDEFGHIJKL",
+        "decimals": 38,
+        "hard_cap": one_unit(38),
+        "daily_cap": one_unit(38),
+        "max_fee_per_gas": "0",
+        "max_gas": "0",
+        "quick_task_cap": one_unit(38),
+        "path": null
+    });
+    set_fails(&s, "near", &worst, guard).await;
+    assert_eq!(get_asset(&s, "near").await, Value::Null);
+    // the demo assets register: NEAR at 10,000 NEAR (197 bytes) and ETH.base at 1 ETH (191)
+    set_ok(&s, "near", &near_entry()).await;
+    set_ok(&s, EVM_ID, &evm_entry()).await;
+    // NEAR registers at 1,000,000 NEAR (199 bytes) and reverts at 10,000,000 NEAR (200)
+    let near_at = |units: u128| {
+        let cap = (units * NEAR).to_string();
+        let mut e = with(&near_entry(), "hard_cap", json!(cap));
+        e["daily_cap"] = json!(cap);
+        e["quick_task_cap"] = json!(cap);
+        e
+    };
+    set_ok(&s, "near", &near_at(1_000_000)).await;
+    set_fails(&s, "near", &near_at(10_000_000), guard).await;
+    assert_eq!(
+        get_asset(&s, "near").await["hard_cap"],
+        (1_000_000 * NEAR).to_string().as_str()
+    );
+    // symbol `A` registers at 33 decimals and reverts at 34, both with a hard cap of one whole unit
+    set_ok(&s, "ft:a.near", &unit_entry(33)).await;
+    set_fails(&s, "ft:a.near", &unit_entry(34), guard).await;
+    // decimals above 38 are refused by the older check, which runs first
+    set_fails(
+        &s,
+        "ft:a.near",
+        &with(&unit_entry(38), "decimals", json!(39)),
+        "decimals above 38",
+    )
+    .await;
+    // for each demo asset the longest possible amount (the hard cap minus one base unit, formatted by the real `decimal::format`)
+    // keeps the arguments under 200 bytes
+    for (symbol, cap, decimals) in [
+        ("NEAR", 10_000 * NEAR, 24u8),
+        ("ETH.base", 10u128.pow(18), 18),
+    ] {
+        let (_, len) = airlock_verdict::decimal::format(cap - 1, decimals).unwrap();
+        let args = approve_args_len(MAX_ID_DIGITS, MAX_TO, symbol.len(), len, MAX_WHY, MAX_BOOK);
+        assert!(args < LEDGER_LIMIT, "{symbol}: {args} bytes");
+    }
 }
 
 #[tokio::test]
@@ -324,7 +418,7 @@ async fn caps_order() {
         caps,
     )
     .await;
-    // equal caps are fine, and so is the largest u128
+    // equal caps are fine, and so is a very large cap
     let equal = with(
         &near_entry(),
         "daily_cap",
@@ -332,6 +426,19 @@ async fn caps_order() {
     );
     let equal = with(&equal, "quick_task_cap", json!((10_000 * NEAR).to_string()));
     set_ok(&s, "near", &equal).await;
+    let big = 10u128.pow(20).to_string();
+    let top = with(
+        &with(
+            &with(&near_entry(), "hard_cap", json!(big)),
+            "daily_cap",
+            json!(big),
+        ),
+        "quick_task_cap",
+        json!(big),
+    );
+    set_ok(&s, "near", &top).await;
+    // the largest u128 is a legal cap for `caps must satisfy`, but its 40 character amount text pushes the approve arguments of NEAR to
+    // 207 bytes, so the size guard refuses it (AIR-086)
     let max = u128::MAX.to_string();
     let top = with(
         &with(
@@ -342,7 +449,7 @@ async fn caps_order() {
         "quick_task_cap",
         json!(max),
     );
-    set_ok(&s, "near", &top).await;
+    set_fails(&s, "near", &top, "approve arguments could exceed 200 bytes").await;
 }
 
 #[tokio::test]
@@ -620,21 +727,10 @@ async fn changed_symbol_frees_the_old_one() {
         "symbol already used",
     )
     .await;
-    set_ok(
-        &s,
-        "near",
-        &with(&near_entry(), "symbol", json!("NEAR.native")),
-    )
-    .await;
-    // `NEAR` is free now, and `NEAR.native` is taken
+    set_ok(&s, "near", &with(&near_entry(), "symbol", json!("N2"))).await;
+    // `NEAR` is free now, and `N2` is taken
     set_ok(&s, EVM_ID, &with(&evm_entry(), "symbol", json!("NEAR"))).await;
-    set_fails(
-        &s,
-        "ft:x.near",
-        &ft_entry("near.native"),
-        "symbol already used",
-    )
-    .await;
+    set_fails(&s, "ft:x.near", &ft_entry("n2"), "symbol already used").await;
 }
 
 #[tokio::test]

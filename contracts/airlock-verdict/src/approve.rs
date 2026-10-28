@@ -183,6 +183,79 @@ pub fn approve_check(
     recheck(req, asset, live.paused).map_err(ApproveError::Limit)
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The size of the `approve` arguments (AIR-086, decision R4-12). A Ledger device shows the arguments of a call only when the minified
+// JSON stays under 200 bytes, so the method is `approve(id, to, asset, amount, why, book)` with `id` the short pending number, and the
+// asset registry refuses an asset whose worst-case arguments could reach 200 bytes. docs/design/approve-args.md has the measurements.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// What a Ledger device shows: the arguments must be shorter than this many bytes.
+pub const LEDGER_LIMIT: usize = 200;
+/// The bytes of `{"id":"","to":"","asset":"","amount":"","why":"","book":""}`, measured: everything of the minified JSON except the
+/// six values.
+pub const ARGS_OVERHEAD: usize = 59;
+/// The longest `id`: the pending number is a u32, at most 10 decimal digits.
+pub const MAX_ID_DIGITS: usize = 10;
+/// The longest display symbol (the asset registry's limit).
+pub const MAX_SYMBOL: usize = 12;
+/// The longest `why`: `UntrustedRecipient`, the longest of the reasons that escalate.
+pub const MAX_WHY: usize = 18;
+/// The longest `book`: `in_book` (a new payee says `new`).
+pub const MAX_BOOK: usize = 7;
+/// The longest payee key: `near:` plus a 64 character account. The longest EVM key is `evm:`, a 20 digit chain id, `:0x` and 40 hex
+/// digits, 67 characters.
+pub const MAX_TO: usize = 69;
+
+/// The byte length of the minified JSON arguments of `approve` for values of these lengths. Saturating, because this crate is built
+/// with overflow checks.
+pub fn approve_args_len(
+    id: usize,
+    to: usize,
+    asset: usize,
+    amount: usize,
+    why: usize,
+    book: usize,
+) -> usize {
+    ARGS_OVERHEAD
+        .saturating_add(id)
+        .saturating_add(to)
+        .saturating_add(asset)
+        .saturating_add(amount)
+        .saturating_add(why)
+        .saturating_add(book)
+}
+
+/// The number of decimal digits of `n` (at least 1: 0 prints as one digit).
+fn int_digits(n: u128) -> usize {
+    let mut rest = n;
+    let mut digits = 1;
+    while rest >= 10 {
+        rest /= 10;
+        digits += 1;
+    }
+    digits
+}
+
+/// An upper bound on the length of the longest `decimal::format` text of any amount up to `hard_cap` at `decimals` places: the digits of
+/// the whole part of the cap, plus the point and every fraction digit. A cap below one whole unit still prints `0.` and the fraction
+/// (`int_digits(0)` is 1). It is one character high when the cap is an exact power of ten above one unit (a cap of 10,000 NEAR gives
+/// 30, the longest real text is 29). The formatted cap itself is too short a measure: a round cap `10000` has 5 characters while the
+/// amount just below it can have 29. `decimals` above 38 count as 38 (`10^38` is the largest power of ten of a u128).
+pub fn amount_text_len(hard_cap: u128, decimals: u8) -> usize {
+    let places = if decimals > decimal::MAX_DECIMALS {
+        decimal::MAX_DECIMALS
+    } else {
+        decimals
+    };
+    let whole = hard_cap / 10u128.pow(u32::from(places));
+    let fraction = if places > 0 {
+        1 + usize::from(places)
+    } else {
+        0
+    };
+    int_digits(whole) + fraction
+}
+
 #[cfg(kani)]
 mod proofs {
     use super::*;
