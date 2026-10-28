@@ -9,7 +9,10 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "tsx --test \"test/**/*.test.ts\""
+    "test": "tsx --test \"test/**/*.test.ts\"",
+    "test:prop": "FC_RUNS=10000 FC_SEED=random tsx --test test/interpreter.prop.test.ts",
+    "test:prop:quick": "FC_RUNS=1000 tsx --test test/interpreter.prop.test.ts",
+    "test:prop:canary": "../scripts/prop-canary.sh"
   },
   "dependencies": {
     "@noble/hashes": "1.8.0",
