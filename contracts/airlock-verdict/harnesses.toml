@@ -234,3 +234,33 @@ expect = "should_panic"
 panic_message = "L6b uncharged approvals exceed daily cap"
 min_covers = 1
 catches = []
+
+[[harness]]
+name = "placement_round_trip"
+property = "D1"
+statement = "the digits of any canonical value format to text that parse_digits turns back into exactly the same digits"
+bounds = "digit level: 1 to 10 significant digits, decimals 0 to 24, unwind 50; the u128 to digits step and the full 40 digit width are covered by unit tests (16 digits take 69 s here, the full range of 40 digits and 38 decimals takes 597 s)"
+exhaustive = true
+expect = "success"
+min_covers = 3
+catches = ["DC3"]
+
+[[harness]]
+name = "formatted_text_is_canonical"
+property = "D2"
+statement = "any text that parse_digits accepts is exactly the canonical text of its value: formatting its normalised digits reproduces it byte for byte"
+bounds = "texts of 1 to 12 bytes over every byte value, decimals 0 to 8, unwind 50"
+exhaustive = true
+expect = "success"
+min_covers = 3
+catches = ["DC1", "DC2"]
+
+[[harness]]
+name = "parse_digits_never_panics"
+property = "D3"
+statement = "parse_digits returns without panic or overflow for any bytes and any decimals"
+bounds = "any bytes up to MAX_LEN (48), any u8 decimals, unwind 50"
+exhaustive = true
+expect = "success"
+min_covers = 2
+catches = ["DC4"]

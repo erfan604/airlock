@@ -245,3 +245,5 @@ mod proofs;
 pub mod labels;
 
 pub mod ledger;
+
+pub mod decimal;

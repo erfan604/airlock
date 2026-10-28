@@ -8,3 +8,7 @@ LG6 @@ ledger.rs @@ s/let \(task, applied_task\) = saturate\(s\.task,\s*ch\.task
 LG7 @@ ledger.rs @@ s/task:\s*s\.task\.checked_sub\(applied\.task\)\?,/task: s.task,/ @@ l4_ @@ refund(&s1, &da.applied)
 LG8 @@ ledger.rs @@ s/if amount_untrusted \{\s*amount\s*\} else \{\s*0\s*\}/amount/ @@ l1_ @@ apply_allow refuses
 LG9 @@ ledger.rs @@ s/Some\(n\) if n <= cap/Some(n) if n < cap/ @@ l2_ @@ apply_allow refuses
+DC1 @@ decimal.rs @@ s/\s*\|\|\s*s\[s\.len\(\) - 1\] == b'0'//; @@ formatted_text @@ flen == len
+DC2 @@ decimal.rs @@ s/\s*\|\|\s*\(int_len > 1 && s\[0\] == b'0'\)//; @@ formatted_text @@ flen == len
+DC3 @@ decimal.rs @@ s/while i > d \{/while i > d + 1 {/ @@ placement @@ formatted text must parse
+DC4 @@ decimal.rs @@ s/frac_len == 0\s*\|\|\s*frac_len > d\s*\|\|\s*/frac_len == 0 || / @@ parse_digits_never @@ attempt to subtract with overflow
