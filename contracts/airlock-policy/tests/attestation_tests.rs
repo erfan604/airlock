@@ -7,13 +7,29 @@ use serde_json::json;
 use shade_attestation::attestation::create_mock_dstack_attestation;
 use tokio::time::{Duration, sleep};
 
-/// Tests measurements/PPID lifecycle with multiple agents:
+/// The read-only view `is_agent_valid` (AIR-041: it replaces the probe through the deleted `request_signature`).
+async fn agent_is_valid(
+    contract_id: &near_api::AccountId,
+    network_config: &near_api::NetworkConfig,
+    account_id: &near_api::AccountId,
+) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+    let valid: Data<bool> = call_view(
+        contract_id,
+        "is_agent_valid",
+        json!({ "account_id": account_id }),
+        network_config,
+    )
+    .await?;
+    Ok(valid.data)
+}
+
+/// Tests measurements/PPID lifecycle with multiple agents, probing validity through the `is_agent_valid` view:
 /// - Verifies that measurements removal affects all registered agents (validity -> Invalid with InvalidMeasurements)
-/// - Ensures agents with removed measurements and PPID cannot request signatures and are removed with both InvalidMeasurements and InvalidPpid reasons
-/// - Ensures agents with removed PPID only cannot request signatures and are removed with InvalidPpid reason
-/// - Confirms that re-approving measurements restores access for remaining registered agents
-/// - Validates that removed agents cannot be re-registered even after measurements re-approval
-/// - Verifies that signature requests are re-enabled after measurements re-approval
+/// - Ensures agents with removed measurements and PPID are invalid with both InvalidMeasurements and InvalidPpid reasons,
+///   and that the view removes nothing (the lazy removal belongs to the gate, AIR-061)
+/// - Ensures agents with removed PPID only are invalid with the InvalidPpid reason
+/// - Confirms that re-approving measurements and PPID makes the registered agents valid again
+/// - Validates that an agent the owner removed cannot be re-registered once it left the whitelist
 #[tokio::test]
 async fn test_measurements_and_ppid_lifecycle()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -149,45 +165,11 @@ async fn test_measurements_and_ppid_lifecycle()
 
     sleep(Duration::from_millis(200)).await;
 
-    // Attempt to request a signature with removed measurements and PPID
-    // This will remove the agent, emit an event with both reasons, and the Promise (fail_on_invalid_agent) resolves to panic
-    let result = call_transaction(
-        &contract_id,
-        "request_signature",
-        json!({
-            "path": "path",
-            "payload": "test_payload",
-            "key_type": "Ecdsa"
-        }),
-        &agent1_id,
-        &agent1_signer,
-        &network_config,
-        None,
-    )
-    .await?;
-
-    // Extract event logs before consuming result
-    let events = extract_event_logs(&result)?;
-
-    // Verify the promise resolves to an error (fail_on_invalid_agent panics with both InvalidMeasurements and InvalidPpid)
-    match result.into_result() {
-        Ok(_) => panic!(
-            "Expected request_signature to fail (promise resolves to error) when agent has invalid measurements and PPID, but it succeeded"
-        ),
-        Err(e) => {
-            let error_str = format!("{:?}", e);
-            assert!(
-                error_str.contains("Invalid agent")
-                    && error_str.contains("InvalidMeasurements")
-                    && error_str.contains("InvalidPpid"),
-                "Expected panic to contain 'Invalid agent', 'InvalidMeasurements' and 'InvalidPpid', got: {:?}",
-                e
-            );
-        }
-    }
-
-    // Verify agent is removed from map (require_valid_agent removed it)
-    sleep(Duration::from_millis(200)).await;
+    // The agent is invalid now, for both reasons. The view reads only: nothing is removed
+    assert!(
+        !agent_is_valid(&contract_id, &network_config, &agent1_id).await?,
+        "Agent1 must not be valid without approved measurements and PPID"
+    );
     let agent_info: Data<Option<AgentView>> = call_view(
         &contract_id,
         "get_agent",
@@ -197,34 +179,12 @@ async fn test_measurements_and_ppid_lifecycle()
         &network_config,
     )
     .await?;
-
+    let agent = agent_info
+        .data
+        .expect("Agent1 stays registered: is_agent_valid is read only");
     assert!(
-        agent_info.data.is_none(),
-        "Agent1 should be removed from map"
-    );
-
-    // Check event logs to verify removal reasons are InvalidMeasurements and InvalidPpid
-    let agent_removed_events: Vec<_> = events
-        .iter()
-        .filter(|e| {
-            e["event"].as_str() == Some("agent_removed")
-                && e["data"][0]["account_id"].as_str() == Some(agent1_id.as_str())
-        })
-        .collect();
-
-    assert_eq!(
-        agent_removed_events.len(),
-        1,
-        "Should have exactly one agent_removed event for agent1"
-    );
-
-    let reasons = &agent_removed_events[0]["data"][0]["reasons"];
-    let reasons_arr = reasons.as_array().expect("reasons should be array");
-    assert!(
-        reasons_arr.contains(&json!("InvalidMeasurements"))
-            && reasons_arr.contains(&json!("InvalidPpid")),
-        "Event should contain both 'InvalidMeasurements' and 'InvalidPpid' reasons, got: {:?}",
-        reasons
+        matches!(agent.validity, AgentValidity::Invalid(ref r) if r.contains(&AgentRemovalReason::InvalidMeasurements) && r.contains(&AgentRemovalReason::InvalidPpid)),
+        "Agent1 should be invalid for both InvalidMeasurements and InvalidPpid"
     );
 
     // Remove agent3 from agents map
@@ -333,70 +293,13 @@ async fn test_measurements_and_ppid_lifecycle()
         "Agent2 should have approved measurements and PPID again"
     );
 
-    // Agent1 was removed, so request_signature should fail with "Agent not registered"
-    // Agent2 can request signatures again (will fail with AccountDoesNotExist for mpc-contract)
-    let result = call_transaction(
-        &contract_id,
-        "request_signature",
-        json!({
-            "path": "path",
-            "payload": "test_payload",
-            "key_type": "Ecdsa"
-        }),
-        &agent1_id,
-        &agent1_signer,
-        &network_config,
-        None,
-    )
-    .await?
-    .into_result();
-
-    match result {
-        Ok(_) => {
-            panic!("Expected transaction to fail with 'Agent not registered', but it succeeded");
-        }
-        Err(e) => {
-            let error_str = format!("{:?}", e);
-            assert!(
-                error_str.contains("Agent not registered"),
-                "Expected 'Agent not registered' error, but got: {:?}",
-                e
-            );
-        }
-    }
-
-    // Agent2 can request signatures again (will fail with AccountDoesNotExist for mpc-contract)
-    let result = call_transaction(
-        &contract_id,
-        "request_signature",
-        json!({
-            "path": "path",
-            "payload": "test_payload",
-            "key_type": "Ecdsa"
-        }),
-        &agent2_id,
-        &agent2_signer,
-        &network_config,
-        None,
-    )
-    .await?
-    .into_result();
-
-    match result {
-        Ok(_) => {
-            panic!(
-                "Expected transaction to fail with AccountDoesNotExist for mpc-contract, but it succeeded"
-            );
-        }
-        Err(e) => {
-            let error_str = format!("{:?}", e);
-            assert!(
-                error_str.contains("AccountDoesNotExist") && error_str.contains("mpc-contract"),
-                "Expected AccountDoesNotExist error for mpc-contract, but got: {:?}",
-                e
-            );
-        }
-    }
+    // Agents 1 and 2 stayed registered, so they are valid again; agent3 was removed by the owner
+    assert!(agent_is_valid(&contract_id, &network_config, &agent1_id).await?);
+    assert!(agent_is_valid(&contract_id, &network_config, &agent2_id).await?);
+    assert!(
+        !agent_is_valid(&contract_id, &network_config, &agent3_id).await?,
+        "Agent3 was removed, so it is not valid"
+    );
 
     // Now test PPID removal
     // Remove default PPID
@@ -431,43 +334,9 @@ async fn test_measurements_and_ppid_lifecycle()
         "Agent2 should have approved measurements but not approved PPID"
     );
 
-    // Attempt to request a signature with removed PPID using agent2
-    // This will remove agent2, emit an event, and the Promise (fail_on_invalid_agent) resolves to panic
-    let result = call_transaction(
-        &contract_id,
-        "request_signature",
-        json!({
-            "path": "path",
-            "payload": "test_payload",
-            "key_type": "Ecdsa"
-        }),
-        &agent2_id,
-        &agent2_signer,
-        &network_config,
-        None,
-    )
-    .await?;
-
-    // Extract event logs before consuming result
-    let events = extract_event_logs(&result)?;
-
-    // Verify the promise resolves to an error (fail_on_invalid_agent panics with "Invalid agent: [InvalidPpid]")
-    match result.into_result() {
-        Ok(_) => panic!(
-            "Expected request_signature to fail (promise resolves to error) when agent has invalid PPID, but it succeeded"
-        ),
-        Err(e) => {
-            let error_str = format!("{:?}", e);
-            assert!(
-                error_str.contains("Invalid agent") && error_str.contains("InvalidPpid"),
-                "Expected panic to contain 'Invalid agent' and 'InvalidPpid', got: {:?}",
-                e
-            );
-        }
-    }
-
-    // Verify agent2 is removed from map (require_valid_agent removed it)
-    sleep(Duration::from_millis(200)).await;
+    // Only the PPID is gone: agent2 is invalid, agent1 as well, and neither is removed by the view
+    assert!(!agent_is_valid(&contract_id, &network_config, &agent2_id).await?);
+    assert!(!agent_is_valid(&contract_id, &network_config, &agent1_id).await?);
     let agent2_info: Data<Option<AgentView>> = call_view(
         &contract_id,
         "get_agent",
@@ -477,34 +346,9 @@ async fn test_measurements_and_ppid_lifecycle()
         &network_config,
     )
     .await?;
-
     assert!(
-        agent2_info.data.is_none(),
-        "Agent2 should be removed from map"
-    );
-
-    // Check event logs to verify removal reason is InvalidPpid
-    let agent_removed_events: Vec<_> = events
-        .iter()
-        .filter(|e| {
-            e["event"].as_str() == Some("agent_removed")
-                && e["data"][0]["account_id"].as_str() == Some(agent2_id.as_str())
-        })
-        .collect();
-
-    assert_eq!(
-        agent_removed_events.len(),
-        1,
-        "Should have exactly one agent_removed event for agent2"
-    );
-
-    let reasons = &agent_removed_events[0]["data"][0]["reasons"];
-    assert!(
-        reasons
-            .as_array()
-            .is_some_and(|r| r.contains(&json!("InvalidPpid"))),
-        "Event should contain 'InvalidPpid' reason, got: {:?}",
-        reasons
+        agent2_info.data.is_some(),
+        "Agent2 stays registered: is_agent_valid is read only"
     );
 
     // Re-approve PPID
@@ -522,36 +366,10 @@ async fn test_measurements_and_ppid_lifecycle()
 
     sleep(Duration::from_millis(200)).await;
 
-    // request_signature should fail with "Agent not registered" (agent1 was removed earlier)
-    let result = call_transaction(
-        &contract_id,
-        "request_signature",
-        json!({
-            "path": "path",
-            "payload": "test_payload",
-            "key_type": "Ecdsa"
-        }),
-        &agent1_id,
-        &agent1_signer,
-        &network_config,
-        None,
-    )
-    .await?
-    .into_result();
-
-    match result {
-        Ok(_) => {
-            panic!("Expected transaction to fail with 'Agent not registered', but it succeeded");
-        }
-        Err(e) => {
-            let error_str = format!("{:?}", e);
-            assert!(
-                error_str.contains("Agent not registered"),
-                "Expected 'Agent not registered' error, but got: {:?}",
-                e
-            );
-        }
-    }
+    // With the PPID approved again agents 1 and 2 are valid; agent3 (removed by the owner) is still not
+    assert!(agent_is_valid(&contract_id, &network_config, &agent1_id).await?);
+    assert!(agent_is_valid(&contract_id, &network_config, &agent2_id).await?);
+    assert!(!agent_is_valid(&contract_id, &network_config, &agent3_id).await?);
 
     Ok(())
 }
@@ -809,44 +627,11 @@ async fn test_attestation_expiration() -> Result<(), Box<dyn std::error::Error +
         "Agent should not be valid (expired)"
     );
 
-    // Try to request signature - should remove agent, emit event with ExpiredAttestation reason,
-    // and the Promise (fail_on_invalid_agent) resolves to panic
-    let result = call_transaction(
-        &contract_id,
-        "request_signature",
-        json!({
-            "path": "path",
-            "payload": "test_payload",
-            "key_type": "Ecdsa"
-        }),
-        &agent_id,
-        &agent_signer,
-        &network_config,
-        None,
-    )
-    .await?;
-
-    // Extract event logs before consuming result
-    let events = extract_event_logs(&result)?;
-
-    // Verify the promise resolves to an error (fail_on_invalid_agent panics with "Invalid agent: [ExpiredAttestation]")
-    match result.into_result() {
-        Ok(_) => panic!(
-            "Expected request_signature to fail (promise resolves to error) when agent attestation is expired, but it succeeded"
-        ),
-        Err(e) => {
-            let error_str = format!("{:?}", e);
-            assert!(
-                error_str.contains("Invalid agent") && error_str.contains("ExpiredAttestation"),
-                "Expected panic to contain 'Invalid agent' and 'ExpiredAttestation', got: {:?}",
-                e
-            );
-        }
-    }
-
-    sleep(Duration::from_millis(200)).await;
-
-    // Verify agent is removed from map
+    // The view reports the expired agent invalid and removes nothing
+    assert!(
+        !agent_is_valid(&contract_id, &network_config, &agent_id).await?,
+        "Agent should not be valid (expired)"
+    );
     let agent_info: Data<Option<AgentView>> = call_view(
         &contract_id,
         "get_agent",
@@ -856,68 +641,12 @@ async fn test_attestation_expiration() -> Result<(), Box<dyn std::error::Error +
         &network_config,
     )
     .await?;
-
     assert!(
-        agent_info.data.is_none(),
-        "Agent should be removed from map"
+        agent_info.data.is_some(),
+        "Agent stays registered: is_agent_valid is read only"
     );
 
-    // Check event logs to verify removal reason
-    let agent_removed_events: Vec<_> = events
-        .iter()
-        .filter(|e| {
-            e["event"].as_str() == Some("agent_removed")
-                && e["data"][0]["account_id"].as_str() == Some(agent_id.as_str())
-        })
-        .collect();
-
-    assert_eq!(
-        agent_removed_events.len(),
-        1,
-        "Should have exactly one agent_removed event"
-    );
-
-    let reasons = &agent_removed_events[0]["data"][0]["reasons"];
-    assert!(
-        reasons
-            .as_array()
-            .is_some_and(|r| r.contains(&json!("ExpiredAttestation"))),
-        "Event should contain 'ExpiredAttestation' reason, got: {:?}",
-        reasons
-    );
-
-    // Next call should panic because agent is not registered
-    let result = call_transaction(
-        &contract_id,
-        "request_signature",
-        json!({
-            "path": "path",
-            "payload": "test_payload",
-            "key_type": "Ecdsa"
-        }),
-        &agent_id,
-        &agent_signer,
-        &network_config,
-        None,
-    )
-    .await?
-    .into_result();
-
-    match result {
-        Ok(_) => {
-            panic!("Expected transaction to fail with 'Agent not registered', but it succeeded");
-        }
-        Err(e) => {
-            let error_str = format!("{:?}", e);
-            assert!(
-                error_str.contains("Agent not registered"),
-                "Expected 'Agent not registered' error, but got: {:?}",
-                e
-            );
-        }
-    }
-
-    // Agent is still whitelisted, so they can re-register after expiration
+    // Agent is still whitelisted, so it can register again after expiration (re-registration needs no new storage stake)
     let _ = call_transaction(
         &contract_id,
         "register_agent",
@@ -950,6 +679,7 @@ async fn test_attestation_expiration() -> Result<(), Box<dyn std::error::Error +
         matches!(agent.validity, AgentValidity::Valid),
         "Agent should be valid after re-registration"
     );
+    assert!(agent_is_valid(&contract_id, &network_config, &agent_id).await?);
 
     Ok(())
 }

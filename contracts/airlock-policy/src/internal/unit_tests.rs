@@ -431,54 +431,6 @@ fn test_register_agent_errors_when_storage_deposit_insufficient() {
     contract.register_agent(create_mock_dstack_attestation());
 }
 
-// Test that owner can update the owner ID
-#[test]
-fn test_update_owner_id() {
-    let mut contract = setup_contract();
-    let new_owner = accounts(3);
-
-    contract.update_owner_id(new_owner.clone());
-    let contract_info = contract.get_contract_info();
-    assert_eq!(contract_info.owner_id, new_owner);
-}
-
-// Test that non-owner cannot update the owner ID
-#[test]
-#[should_panic(expected = "Caller is not the owner")]
-fn test_update_owner_id_not_owner() {
-    let mut contract = setup_contract();
-    let non_owner = accounts(2);
-    let new_owner = accounts(3);
-    let context = get_context(non_owner, false);
-    testing_env!(context.build());
-
-    contract.update_owner_id(new_owner);
-}
-
-// Test that owner can update the MPC contract ID
-#[test]
-fn test_update_mpc_contract_id() {
-    let mut contract = setup_contract();
-    let new_mpc = accounts(4);
-
-    contract.update_mpc_contract_id(new_mpc.clone());
-    let contract_info = contract.get_contract_info();
-    assert_eq!(contract_info.mpc_contract_id, new_mpc);
-}
-
-// Test that non-owner cannot update the MPC contract ID
-#[test]
-#[should_panic(expected = "Caller is not the owner")]
-fn test_update_mpc_contract_id_not_owner() {
-    let mut contract = setup_contract();
-    let non_owner = accounts(2);
-    let new_mpc = accounts(4);
-    let context = get_context(non_owner, false);
-    testing_env!(context.build());
-
-    contract.update_mpc_contract_id(new_mpc);
-}
-
 // Test that owner can update the attestation expiration time
 #[test]
 fn test_update_attestation_expiration_time() {
@@ -607,10 +559,10 @@ fn test_get_agent() {
     assert!(matches!(agent_info.validity, AgentValidity::Valid));
 }
 
-// Test that request_signature removes agent if the agent is registered but not whitelisted for local.
-// Returns a failure promise (fail_on_invalid_agent) that resolves to panic; integration tests verify the promise resolves to error.
+// Test that is_agent_valid is false for an agent that is registered but no longer whitelisted for local, and that the view
+// changes no state: the agent stays registered (only `require_valid_agent` removes it, lazily, when the gate runs).
 #[test]
-fn test_request_signature_not_whitelisted() {
+fn test_is_agent_valid_not_whitelisted() {
     let mut contract = setup_contract();
     let agent = accounts(2);
 
@@ -620,43 +572,32 @@ fn test_request_signature_not_whitelisted() {
     testing_env!(context.build());
     contract.register_agent(create_mock_dstack_attestation());
 
-    // Verify agent is registered
+    // Verify agent is registered and valid
     assert!(contract.get_agent(agent.clone()).is_some());
+    assert!(contract.is_agent_valid(agent.clone()));
 
     // Remove agent from whitelist
     let context = get_context(accounts(0), false);
     testing_env!(context.build());
     contract.remove_agent_from_whitelist_for_local(agent.clone());
 
-    // Call request_signature - should remove agent because it's not whitelisted
-    let context = get_context(agent.clone(), false);
-    testing_env!(context.build());
-    let _promise = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "Ecdsa".to_string(),
-    );
-
-    // Agent should be removed from map
-    assert!(contract.get_agent(agent).is_none());
+    // Not valid any more, and the view did not remove the agent
+    assert!(!contract.is_agent_valid(agent.clone()));
+    assert!(contract.get_agent(agent).is_some());
 }
 
-// Test that request_signature fails if the agent is whitelisted but not registered
+// Test that is_agent_valid is false (and does not panic) for an account that is whitelisted but not registered
 #[test]
-#[should_panic(expected = "Agent not registered")]
-fn test_request_signature_not_registered() {
+fn test_is_agent_valid_not_registered() {
     let mut contract = setup_contract();
     let agent = accounts(2);
 
     contract.whitelist_agent_for_local(agent.clone());
 
-    let context = get_context(agent, false);
-    testing_env!(context.build());
-    let _ = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "Ecdsa".to_string(),
-    );
+    assert!(!contract.is_agent_valid(agent.clone()));
+    // an account nobody knows is not valid either
+    assert!(!contract.is_agent_valid(accounts(3)));
+    assert!(contract.get_agent(agent).is_none());
 }
 
 // Test that require_valid_agent removes agent and emits event when measurements are invalid
@@ -781,9 +722,9 @@ fn test_require_valid_agent_removes_with_multiple_reasons() {
     assert!(contract.get_agent(agent).is_none());
 }
 
-// Test that request_signature removes agent when measurements are removed from the approved list
+// Test that is_agent_valid turns false when the measurements are removed from the approved list, and the agent stays registered
 #[test]
-fn test_request_signature_measurements_removed() {
+fn test_is_agent_valid_measurements_removed() {
     let mut contract = setup_contract();
     let agent = accounts(2);
 
@@ -792,14 +733,7 @@ fn test_request_signature_measurements_removed() {
     let context = get_context_with_deposit(agent.clone(), false, Some(DEPOSIT_005_NEAR));
     testing_env!(context.build());
     contract.register_agent(create_mock_dstack_attestation());
-
-    let context = get_context(agent.clone(), false);
-    testing_env!(context.build());
-    let _promise = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "Ecdsa".to_string(),
-    );
+    assert!(contract.is_agent_valid(agent.clone()));
 
     // Remove default measurements from approved list
     let context = get_context(accounts(0), false);
@@ -810,25 +744,15 @@ fn test_request_signature_measurements_removed() {
     assert!(
         matches!(agent_info.validity, AgentValidity::Invalid(ref r) if r.contains(&AgentRemovalReason::InvalidMeasurements))
     );
+    assert!(!contract.is_agent_valid(agent.clone()));
 
-    // Call request_signature - should remove agent and emit event, then continue
-    // The agent is removed, so on next call it will panic
-    let context = get_context(agent.clone(), false);
-    testing_env!(context.build());
-    let _promise2 = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "Ecdsa".to_string(),
-    );
-
-    // Agent should be removed from map after require_valid_agent removed it
-    assert!(contract.get_agent(agent).is_none());
+    // The view removes nothing
+    assert!(contract.get_agent(agent).is_some());
 }
 
-// Test that request_signature removes agent when PPID is removed from the approved list.
-// Returns a failure promise (fail_on_invalid_agent) that resolves to panic; integration tests verify the promise resolves to error.
+// Test that is_agent_valid turns false when the PPID is removed from the approved list, and the agent stays registered
 #[test]
-fn test_request_signature_ppid_removed() {
+fn test_is_agent_valid_ppid_removed() {
     let mut contract = setup_contract();
     let agent = accounts(2);
 
@@ -837,14 +761,7 @@ fn test_request_signature_ppid_removed() {
     let context = get_context_with_deposit(agent.clone(), false, Some(DEPOSIT_005_NEAR));
     testing_env!(context.build());
     contract.register_agent(create_mock_dstack_attestation());
-
-    let context = get_context(agent.clone(), false);
-    testing_env!(context.build());
-    let _promise = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "Ecdsa".to_string(),
-    );
+    assert!(contract.is_agent_valid(agent.clone()));
 
     // Remove default PPID from approved list
     let context = get_context(accounts(0), false);
@@ -855,88 +772,15 @@ fn test_request_signature_ppid_removed() {
     assert!(
         matches!(agent_info.validity, AgentValidity::Invalid(ref r) if r.contains(&AgentRemovalReason::InvalidPpid))
     );
+    assert!(!contract.is_agent_valid(agent.clone()));
 
-    // Call request_signature - should remove agent and emit event, then continue
-    // The agent is removed, so on next call it will panic
-    let context = get_context(agent.clone(), false);
-    testing_env!(context.build());
-    let _promise2 = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "Ecdsa".to_string(),
-    );
-
-    // Agent should be removed from map after require_valid_agent removed it
-    assert!(contract.get_agent(agent).is_none());
+    // The view removes nothing
+    assert!(contract.get_agent(agent).is_some());
 }
 
-// Test that request_signature succeeds when agent is whitelisted, registered, and measurements/PPID approved (Ecdsa)
+// Test that is_agent_valid turns false when the attestation expires, and the agent stays registered.
 #[test]
-fn test_request_signature_success() {
-    let mut contract = setup_contract();
-    let agent = accounts(2);
-
-    contract.whitelist_agent_for_local(agent.clone());
-
-    let context = get_context_with_deposit(agent.clone(), false, Some(DEPOSIT_005_NEAR));
-    testing_env!(context.build());
-    contract.register_agent(create_mock_dstack_attestation());
-
-    let context = get_context(agent, false);
-    testing_env!(context.build());
-    let _promise = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "Ecdsa".to_string(),
-    );
-}
-
-// Test that request_signature succeeds with Eddsa key type
-#[test]
-fn test_request_signature_with_eddsa() {
-    let mut contract = setup_contract();
-    let agent = accounts(2);
-
-    contract.whitelist_agent_for_local(agent.clone());
-
-    let context = get_context_with_deposit(agent.clone(), false, Some(DEPOSIT_005_NEAR));
-    testing_env!(context.build());
-    contract.register_agent(create_mock_dstack_attestation());
-
-    let context = get_context(agent, false);
-    testing_env!(context.build());
-    let _promise = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "Eddsa".to_string(),
-    );
-}
-
-// Test that request_signature panics when key_type is not exactly "Ecdsa" or "Eddsa"
-#[test]
-#[should_panic(expected = "Invalid key type")]
-fn test_request_signature_invalid_key_type() {
-    let mut contract = setup_contract();
-    let agent = accounts(2);
-
-    contract.whitelist_agent_for_local(agent.clone());
-
-    let context = get_context_with_deposit(agent.clone(), false, Some(DEPOSIT_005_NEAR));
-    testing_env!(context.build());
-    contract.register_agent(create_mock_dstack_attestation());
-
-    let context = get_context(agent, false);
-    testing_env!(context.build());
-    let _ = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "invalid".to_string(),
-    );
-}
-
-// Test that request_signature removes agent when attestation expires.
-#[test]
-fn test_request_signature_expired_attestation() {
+fn test_is_agent_valid_expired_attestation() {
     let mut contract = setup_contract();
     let agent = accounts(2);
 
@@ -951,26 +795,21 @@ fn test_request_signature_expired_attestation() {
     );
     testing_env!(context.build());
     contract.register_agent(create_mock_dstack_attestation());
+    assert!(contract.is_agent_valid(agent.clone()));
 
     // Fast forward time past expiration (valid_until_ms = 1000 + 100000 = 101000)
     let context =
         get_context_with_deposit_and_timestamp(agent.clone(), false, None, Some(101001u64));
     testing_env!(context.build());
 
-    // Call request_signature - should remove agent
-    // Promise will fail but this can't be tested in unit tests
-    let _promise = contract.request_signature(
-        "path".to_string(),
-        "payload".to_string(),
-        "Ecdsa".to_string(),
-    );
+    assert!(!contract.is_agent_valid(agent.clone()));
 
-    // Agent should be removed from map
-    assert!(contract.get_agent(agent).is_none());
+    // The view removes nothing
+    assert!(contract.get_agent(agent).is_some());
 }
 
 // Test that require_valid_agent removes agent when attestation expires.
-// When called via request_signature, returns a failure promise; integration tests verify the promise resolves to error.
+// It returns a failure promise (fail_on_invalid_agent); integration tests verify the promise resolves to error.
 #[test]
 fn test_require_valid_agent_removes_on_expired_attestation() {
     let mut contract = setup_contract();

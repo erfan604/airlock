@@ -1,6 +1,9 @@
-// Test Helpers
+// Test Helpers, shared by every sandbox test through `mod common;`.
+// Every integration test file compiles its own copy of this module, so a helper that one file does not call would otherwise
+// fail `clippy -D warnings`; the allow below covers the whole module.
+#![allow(dead_code)]
 use near_api::{
-    Account, AccountId, Contract, NearToken, NetworkConfig, RPCEndpoint, Signer, signer,
+    Account, AccountId, Contract, NearGas, NearToken, NetworkConfig, RPCEndpoint, Signer, signer,
 };
 use near_api_types::transaction::result::{ExecutionFinalResult, TransactionResult};
 use near_sandbox::{GenesisAccount, Sandbox};
@@ -10,33 +13,28 @@ use std::sync::Arc;
 use tokio::time::{Duration, sleep};
 
 // Deposit constants for integration tests
-#[allow(dead_code)]
 pub const DEPOSIT_005_NEAR: NearToken = NearToken::from_yoctonear(5_000_000_000_000_000_000_000); // 0.005 NEAR
 
 /// Where `cargo near build` writes the contract wasm: `$CARGO_TARGET_DIR/near/airlock_policy.wasm` (scripts/env.sh exports
 /// `CARGO_TARGET_DIR`, so the crate has no `target/`).
-#[allow(dead_code)]
 pub fn contract_wasm_path() -> String {
     let dir = std::env::var("CARGO_TARGET_DIR")
         .unwrap_or_else(|_| format!("{}/target", env!("CARGO_MANIFEST_DIR")));
     format!("{dir}/near/airlock_policy.wasm")
 }
 
-/// The eleven owner methods of the Shade template. `call_transaction` and `call_transaction_raw` attach 1 yoctoNEAR to these
-/// when the caller passed no deposit (every owner method is `#[payable]` and demands exactly 1 yocto), so the template tests
-/// need no other edit. A test that wants "no deposit" passes `Some(NearToken::from_yoctonear(0))`. Later tickets add their
-/// owner methods here or use AIR-041's `owner_call`.
-#[allow(dead_code)]
+/// The owner methods of the Shade template that remain (AIR-041 deleted `update_owner_id`, `update_mpc_contract_id` and
+/// `update_contract`). `call_transaction` and `call_transaction_raw` attach 1 yoctoNEAR to these when the caller passed no
+/// deposit (every owner method is `#[payable]` and demands exactly 1 yocto), so the template tests need no other edit. A test
+/// that wants "no deposit" passes `Some(NearToken::from_yoctonear(0))`. Later tickets add their owner methods here or call
+/// them through `owner_call`, which always attaches 1 yocto.
 pub const OWNER_METHODS: &[&str] = &[
     "update_attestation_expiration_time",
-    "update_owner_id",
-    "update_mpc_contract_id",
     "approve_measurements",
     "remove_measurements",
     "approve_ppids",
     "remove_ppids",
     "remove_agent",
-    "update_contract",
     "whitelist_agent_for_local",
     "remove_agent_from_whitelist_for_local",
 ];
@@ -50,11 +48,9 @@ fn deposit_or_default(method_name: &str, deposit: Option<NearToken>) -> Option<N
     }
 }
 
-#[allow(dead_code)]
 pub const MOCK_MPC_WASM_PATH: &str =
     concat!(env!("CARGO_MANIFEST_DIR"), "/tests/contracts/mock_mpc.wasm");
 
-#[allow(dead_code)]
 pub fn create_network_config(sandbox: &Sandbox) -> NetworkConfig {
     NetworkConfig {
         network_name: "sandbox".to_string(),
@@ -63,7 +59,6 @@ pub fn create_network_config(sandbox: &Sandbox) -> NetworkConfig {
     }
 }
 
-#[allow(dead_code)]
 pub async fn setup_genesis_account() -> (AccountId, Arc<Signer>) {
     let genesis_account_default = GenesisAccount::default();
     let genesis_account_id: AccountId = genesis_account_default
@@ -77,7 +72,6 @@ pub async fn setup_genesis_account() -> (AccountId, Arc<Signer>) {
     (genesis_account_id, genesis_signer)
 }
 
-#[allow(dead_code)]
 pub async fn deploy_contract(
     network_config: &NetworkConfig,
     genesis_account_id: &AccountId,
@@ -190,7 +184,6 @@ pub async fn deploy_contract(
 
 /// Deploys the contract wasm to a new account and does NOT call `new`. Returns the account id and the signer of its key,
 /// because `new` is `#[private]` and only the account itself may call it (AIR-040 `init_runs_once_and_only_by_the_contract`).
-#[allow(dead_code)]
 pub async fn deploy_uninitialized(
     network_config: &NetworkConfig,
     genesis_account_id: &AccountId,
@@ -219,7 +212,6 @@ pub async fn deploy_uninitialized(
 /// The failure text of a transaction that did not succeed: every failed receipt, as the sandbox prints it (it contains
 /// `Smart contract panicked: <message>` for a panic). Empty when nothing failed, so `assert_failure()` stays the first check;
 /// a missing method also fails, so a test that expects one reason checks this text too.
-#[allow(dead_code)]
 pub fn failure_text(result: &ExecutionFinalResult) -> String {
     let failures = result.failures();
     if failures.is_empty() {
@@ -229,7 +221,6 @@ pub fn failure_text(result: &ExecutionFinalResult) -> String {
     }
 }
 
-#[allow(dead_code)]
 pub async fn deploy_contract_default(
     network_config: &NetworkConfig,
     genesis_account_id: &AccountId,
@@ -291,20 +282,17 @@ pub async fn deploy_contract_default(
 
 /// Returns JSON for mock full measurements (all zeros). Used for local mode registration.
 /// Uses the same type as the contract so serialization matches exactly.
-#[allow(dead_code)]
 pub fn default_measurements_json() -> serde_json::Value {
     serde_json::to_value(create_mock_full_measurements_hex())
         .expect("create_mock_full_measurements_hex() serializes")
 }
 
 /// Args for approve_measurements with default measurements (parameter name required by contract).
-#[allow(dead_code)]
 pub fn approve_measurements_default_args() -> serde_json::Value {
     json!({ "measurements": default_measurements_json() })
 }
 
 /// Returns JSON for approve_ppids with default PPID (16 zero bytes = 32 hex chars).
-#[allow(dead_code)]
 pub fn default_ppids_json() -> serde_json::Value {
     json!({
         "ppids": ["0".repeat(32)]
@@ -313,7 +301,6 @@ pub fn default_ppids_json() -> serde_json::Value {
 
 /// Returns JSON for non-default measurements (one byte differs from default).
 /// Used to test that registration fails when default measurements are not approved.
-#[allow(dead_code)]
 pub fn non_default_measurements_json() -> serde_json::Value {
     let mut m = default_measurements_json();
     let mrtd = m["rtmrs"]["mrtd"].as_str().expect("mrtd is string");
@@ -324,20 +311,17 @@ pub fn non_default_measurements_json() -> serde_json::Value {
 }
 
 /// Returns JSON for approve_measurements with non-default measurements.
-#[allow(dead_code)]
 pub fn approve_non_default_measurements_args() -> serde_json::Value {
     json!({ "measurements": non_default_measurements_json() })
 }
 
 /// Returns JSON for approve_ppids with non-default PPID (differs from 16 zero bytes).
-#[allow(dead_code)]
 pub fn non_default_ppids_json() -> serde_json::Value {
     json!({
         "ppids": ["0".repeat(31) + "1"]
     })
 }
 
-#[allow(dead_code)]
 pub async fn create_user_account(
     network_config: &NetworkConfig,
     genesis_account_id: &AccountId,
@@ -358,7 +342,6 @@ pub async fn create_user_account(
     Ok((user_id, user_signer))
 }
 
-#[allow(dead_code)]
 pub async fn call_view<T: serde::de::DeserializeOwned + Send + Sync>(
     contract_id: &AccountId,
     method_name: &str,
@@ -374,7 +357,6 @@ pub async fn call_view<T: serde::de::DeserializeOwned + Send + Sync>(
     Ok(result)
 }
 
-#[allow(dead_code)]
 pub async fn call_transaction(
     contract_id: &AccountId,
     method_name: &str,
@@ -401,7 +383,6 @@ pub async fn call_transaction(
     unwrap_full(tx_result)
 }
 
-#[allow(dead_code)]
 pub async fn call_transaction_raw(
     contract_id: &AccountId,
     method_name: &str,
@@ -427,7 +408,6 @@ pub async fn call_transaction_raw(
     unwrap_full(tx_result)
 }
 
-#[allow(dead_code)]
 fn unwrap_full(
     tx_result: TransactionResult,
 ) -> Result<ExecutionFinalResult, Box<dyn std::error::Error + Send + Sync>> {
@@ -439,7 +419,6 @@ fn unwrap_full(
     }
 }
 
-#[allow(dead_code)]
 pub async fn deploy_mock_mpc_contract(
     network_config: &NetworkConfig,
     genesis_account_id: &AccountId,
@@ -465,7 +444,6 @@ pub async fn deploy_mock_mpc_contract(
 
 /// Extract and parse EVENT_JSON logs from a transaction result
 /// Returns a vector of parsed event JSON objects
-#[allow(dead_code)]
 pub fn extract_event_logs(
     result: &ExecutionFinalResult,
 ) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error + Send + Sync>> {
@@ -485,4 +463,121 @@ pub fn extract_event_logs(
     }
 
     Ok(events)
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// AIR-041: the shared sandbox setup of every later contract test
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A sandbox with the policy contract deployed and initialized (`start`).
+pub struct Started {
+    pub sandbox: Sandbox,
+    pub net: NetworkConfig,
+    /// The genesis account `sandbox`: it owns the contract and funds every other account.
+    pub owner: AccountId,
+    pub owner_signer: Arc<Signer>,
+    /// The policy contract: `new(requires_tee = false, attestation_expiration_time_ms = 100000, owner = genesis account, mpc
+    /// "mpc-contract")` has run and the default measurements and PPID are approved, so a whitelisted agent can register.
+    pub contract: AccountId,
+}
+
+/// Starts a sandbox and deploys the wasm at `contract_wasm_path()` (build it first: `cargo near build non-reproducible-wasm
+/// --no-abi`). Panics with the reason when the wasm is missing or the deploy fails.
+pub async fn start() -> Started {
+    let path = contract_wasm_path();
+    assert!(
+        std::path::Path::new(&path).exists(),
+        "{path} does not exist: run `cargo near build non-reproducible-wasm --no-abi` in the crate first"
+    );
+    let sandbox = Sandbox::start_sandbox().await.expect("the sandbox starts");
+    let net = create_network_config(&sandbox);
+    let (owner, owner_signer) = setup_genesis_account().await;
+    let contract = deploy_contract_default(&net, &owner, &owner_signer)
+        .await
+        .expect("the policy contract deploys and initializes");
+    Started {
+        sandbox,
+        net,
+        owner,
+        owner_signer,
+        contract,
+    }
+}
+
+/// Deploys the mock MPC (the wasm at `MOCK_MPC_WASM_PATH`, which AIR-103 replaces by its own build) to `<name>.sandbox` and
+/// returns its account. AIR-103 makes this call the mock's `version` view and assert `mock-3.17.0`, so a template or stale
+/// wasm fails loudly.
+pub async fn deploy_mock_mpc(s: &Started, name: &str) -> AccountId {
+    deploy_mock_mpc_contract(&s.net, &s.owner, &s.owner_signer, name)
+        .await
+        .expect("the mock MPC deploys")
+}
+
+/// Calls a method of the policy contract as the owner with exactly 1 yoctoNEAR (the default gas of the builder, 100 Tgas).
+pub async fn owner_call(
+    s: &Started,
+    method: &str,
+    args: serde_json::Value,
+) -> ExecutionFinalResult {
+    call_transaction(
+        &s.contract,
+        method,
+        args,
+        &s.owner,
+        &s.owner_signer,
+        &s.net,
+        Some(NearToken::from_yoctonear(1)),
+    )
+    .await
+    .expect("the owner call is sent")
+}
+
+/// Calls a method of the policy contract as an agent (or any account) with no deposit and 300 Tgas, the budget of a
+/// `submit_batch`. A failed receipt is not an error: inspect the result (`failure_text`).
+pub async fn agent_call(
+    s: &Started,
+    agent: &AccountId,
+    agent_signer: &Arc<Signer>,
+    method: &str,
+    args: serde_json::Value,
+) -> ExecutionFinalResult {
+    let sent = Contract(s.contract.clone())
+        .call_function(method, args)
+        .transaction()
+        .gas(NearGas::from_tgas(300))
+        .with_signer(agent.clone(), agent_signer.clone())
+        .send_to(&s.net)
+        .await
+        .expect("the agent call is sent");
+    unwrap_full(sent).expect("the agent call finished")
+}
+
+/// Prints the gas the whole transaction burnt (all receipts) in Tgas and returns it in gas units. Sandbox neard 2.11.0 is
+/// protocol 83, so the number is indicative; AIR-107 measures on testnet.
+pub fn gas_report(outcome: &ExecutionFinalResult) -> u64 {
+    let gas = outcome.total_gas_burnt.as_gas();
+    println!("gas: {:.2} Tgas ({gas} gas)", gas as f64 / 1e12);
+    gas
+}
+
+/// Every function export of the wasm at `contract_wasm_path()`, in file order, **unfiltered**: `abi_snapshot.rs` applies the
+/// ignore rules (`memory`, a leading `_`, `contract_source_metadata`, a leading `ring_core_`), and AIR-084's `ab03_` reads
+/// this raw list. Panics when the wasm is missing or does not parse.
+pub fn wasm_exports() -> Vec<String> {
+    let path = contract_wasm_path();
+    let bytes = std::fs::read(&path).unwrap_or_else(|e| {
+        panic!("read {path}: {e} (run `cargo near build non-reproducible-wasm --no-abi` first)")
+    });
+    let mut names = Vec::new();
+    for payload in wasmparser::Parser::new(0).parse_all(&bytes) {
+        if let wasmparser::Payload::ExportSection(reader) = payload.expect("the wasm parses") {
+            for export in reader {
+                let export = export.expect("an export entry parses");
+                if export.kind == wasmparser::ExternalKind::Func {
+                    names.push(export.name.to_string());
+                }
+            }
+        }
+    }
+    names
 }

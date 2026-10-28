@@ -28,7 +28,9 @@ impl Contract {
     // Require the caller to be a valid agent or remove it from the agents map
     // Just because an agent is registered does not mean it is currently valid
     // Returns Some(Promise) if agent is invalid (to fail the request), None if valid
-    pub(crate) fn require_valid_agent(&mut self) -> Option<Promise> {
+    // `pub` because its caller lands in a later ticket (AIR-046 moves it to src/agents.rs, AIR-061 calls it): a private unused
+    // function is a `dead_code` error under `clippy -D warnings`, a `pub` one is not. It is in a plain `impl`, so not exported.
+    pub fn require_valid_agent(&mut self) -> Option<Promise> {
         // Get the agent and check if it is registered
         let account_id = env::predecessor_account_id();
         let agent = self.agents.get(&account_id).expect("Agent not registered");

@@ -1,0 +1,68 @@
+# The final ABI of the policy contract: one exported function name per line. Blank lines are ignored, a line starting with # is a
+# comment. tests/abi_snapshot.rs fails when the built wasm exports a function that is not listed here (after ignoring `memory`,
+# names starting with `_`, `contract_source_metadata` and names starting with `ring_core_`). AIR-066 reads the owner-method
+# list from this file. Every later ticket that adds an exported method appends its name here in the same commit, and proves the
+# method is exported with a sandbox test that calls it; this file is only the allow list.
+#
+# Owner methods (`#[payable]`, exactly 1 yoctoNEAR, owner only)
+new
+approve_measurements
+remove_measurements
+approve_ppids
+remove_ppids
+remove_agent
+whitelist_agent_for_local
+remove_agent_from_whitelist_for_local
+update_attestation_expiration_time
+allow_agent
+revoke_agent
+asset_set
+asset_remove
+book_add
+book_remove
+set_flags
+set_task_key
+revoke_task
+set_nonce
+approve
+reject
+reset_escalations
+pause
+#
+# Anyone
+expire
+#
+# Agent
+register_agent
+submit_batch
+#
+# Callbacks (`#[private]`)
+on_signed
+on_transfer
+fail_on_invalid_agent
+#
+# Views
+preview
+get_pending
+get_request
+get_policy
+get_asset
+list_assets
+get_book_entry
+get_book
+get_task_state
+get_task_key
+get_allowed_agents
+is_agent_allowed
+is_agent_valid
+get_nonce
+get_ledgers
+get_escalation_state
+#
+# Template views
+get_contract_info
+get_approved_ppids
+get_approved_measurements
+get_agent
+get_agents
+get_whitelisted_agents_for_local

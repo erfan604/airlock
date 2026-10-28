@@ -84,6 +84,15 @@ impl Contract {
         })
     }
 
+    // Whether the account is a registered agent that is valid right now (attestation not expired, measurements and PPID still
+    // approved, and in local mode still whitelisted). False for an account that is not registered. Read only: unlike
+    // `require_valid_agent` it removes nothing.
+    pub fn is_agent_valid(&self, account_id: AccountId) -> bool {
+        self.agents
+            .get(&account_id)
+            .is_some_and(|agent| self.check_invalid_reasons(&account_id, agent).is_empty())
+    }
+
     // Get the list of registered agents and their details
     pub fn get_agents(&self, from_index: &Option<u32>, limit: &Option<u32>) -> Vec<AgentView> {
         let from = from_index.unwrap_or(0);

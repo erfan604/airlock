@@ -4,7 +4,6 @@
 use near_sdk::{
     AccountId, BorshStorageKey, Gas, NearToken, PanicOnDefault, Promise,
     env::{self, block_timestamp_ms},
-    ext_contract,
     json_types::U64,
     log, near, require,
     serde::Serialize,
@@ -31,7 +30,6 @@ pub mod policy;
 #[cfg(test)]
 pub mod testutil;
 pub mod views;
-pub mod your_functions;
 
 pub type Ppid = HexBytes<16>;
 

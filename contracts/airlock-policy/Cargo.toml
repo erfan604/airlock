@@ -42,6 +42,8 @@ near-sdk = { version = "=5.26.1", features = ["unit-testing"] }
 serde_json = "=1.0.149"
 shade-attestation = "=0.2.0"
 tokio = { version = "=1.52.1", features = ["full"] }
+# reads the function exports of the built wasm (tests/abi_snapshot.rs); the version is the one already in Cargo.lock
+wasmparser = { version = "=0.244.0", default-features = false, features = ["std"] }
 
 [profile.release]
 codegen-units = 1
