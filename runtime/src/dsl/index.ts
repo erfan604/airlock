@@ -25,3 +25,12 @@ export type {
 export { checkRule12 } from './rule12.ts';
 export { checkPlan } from './check.ts';
 export type { CheckedPlan } from './check.ts';
+// AIR-122: labels, payee keys, the book alias rule, the request and task schemas, the hashes
+export { BIT, LabelError, bitsToLabels, isPcTrusted, isTrusted, isValueTrusted, labelFromName, labelsToBits, untrustedChannels } from './labels.ts';
+export type { Channel, ChannelName, LabelName } from './labels.ts';
+export { KeyError, assetForPayeeKey, assetOfTarget, canonicalEvm, canonicalNear, payeeKey, validatePayeeKey } from './keys.ts';
+export type { KeyErrorCode, Target } from './keys.ts';
+export { resolveAlias } from './book.ts';
+export type { BookEntryJson, BookRows } from './book.ts';
+export { ActionRequest, RequestError, parseActionRequest } from './request.ts';
+export { OwnerTask, TASK_TAG, TaskBound, TaskError, decodeOwnerTask, jcs, ownerTaskBorsh, planSha256, taskHash } from './task.ts';

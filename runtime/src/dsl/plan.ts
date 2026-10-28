@@ -178,15 +178,15 @@ function reject(code: PlanRejectCode, path: PlanPath): never {
 }
 
 // an own `__proto__` key anywhere in the raw JSON, and a depth no legal plan reaches
-function scan(node: unknown, path: PlanPath, depth: number): void {
-  if (typeof node !== 'object' || node === null) return;
+function scan(value: unknown, path: PlanPath, depth: number): void {
+  if (typeof value !== 'object' || value === null) return;
   if (depth >= MAX_JSON_DEPTH) reject('Malformed', path);
-  if (Array.isArray(node)) {
-    node.forEach((child, i) => scan(child, [...path, i], depth + 1));
+  if (Array.isArray(value)) {
+    value.forEach((child, i) => scan(child, [...path, i], depth + 1));
     return;
   }
-  if (Object.hasOwn(node, '__proto__')) reject('Malformed', path);
-  for (const [key, child] of Object.entries(node)) scan(child, [...path, key], depth + 1);
+  if (Object.hasOwn(value, '__proto__')) reject('Malformed', path);
+  for (const [key, child] of Object.entries(value)) scan(child, [...path, key], depth + 1);
 }
 
 function noExtraKeys(o: Obj, allowed: readonly string[], path: PlanPath): void {
