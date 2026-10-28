@@ -14,7 +14,7 @@ Every claim sentence in the README ends with a tag such as `[C1a]` that names a 
 | C2 | For the EVM lane the contract builds the unsigned transaction bytes from the stored request, so the signature covers exactly the recipient and amount the verdict saw. Broadcast and ordering are off chain; an issued signature stays valid until its nonce is used and is not revoked by pause. |  | `pending: AIR-240` |  | none | AIR-240 |
 | C3 | If the runtime lies about provenance it can act only while an owner-signed task is open, only toward payees and amounts inside that task's confirmed bounds, only to address-book payees, and only within per-asset and per-payee limits. |  | `pending: AIR-240` |  | none | AIR-240 |
 | C4 | Only an agent account the owner allowlisted can submit. In TEE mode (registration tx linked in docs/EVIDENCE.md) the registration quote is evidence that a certified Intel CPU on the owner-approved PPID list signed measurements matching the owner-approved build; it is not proof of physical integrity (docs/KNOWN_LIMITATIONS.md). In local mode the guarantee is C3 only. |  | `pending: AIR-240` |  | none | AIR-240 |
-| C5 | The verdict is model-checked for every input each Kani harness admits (bounds listed per harness in docs/harnesses.md) | contracts/airlock-verdict/harnesses.toml, docs/harnesses.md | `scripts/kani-check.sh` | `KANI OK: 28 harnesses,` | kani | AIR-240 |
+| C5 | The verdict is model-checked for every input each Kani harness admits (bounds listed per harness in docs/harnesses.md) | contracts/airlock-verdict/harnesses.toml, docs/harnesses.md | `scripts/kani-check.sh` | `KANI OK: 32 harnesses,` | kani | AIR-240 |
 | C6 | Bench: no attack auto-executed outside the task, cap and budget envelope (K2) and none in strict mode (K1), with n and 95% Wilson intervals; K1 and K2 are reported separately. |  | `pending: AIR-240 pnpm bench:replay` | table in docs/BENCH.md | none | AIR-240 |
 
 ## Kani harnesses
@@ -50,8 +50,12 @@ Every claim sentence in the README ends with a tag such as `[C1a]` that names a 
 | parse_digits_never_panics | D3 | parse_digits returns without panic or overflow for any bytes and any decimals | any bytes up to MAX_LEN (48), any u8 decimals, unwind 50 | yes | 2 | success | DC4 |
 | p12_recheck_ok_implies_limits | P12 | recheck passes only for a registered asset, not paused, with 0 < amount <= hard cap, amount <= remaining daily, and fee and gas within the caps when given | every u128 amount and limit, every Option fee and gas | yes | 2 | success | AP5, AP6 |
 | approve_each_field_mismatch | AB10 | changing one byte of exactly one of the five approve arguments returns that argument's Wrong* error, whatever the live state and the limits are | stored strings of 1 to 6 bytes, any bytes; one of three literal amounts (0 at 0 decimals, 4.2e24 at 24, u128::MAX at 38); reason, book flag, expiry, live flags, request and asset limits symbolic; unwind 50 | no | 1 | success | AP1, AP2, AP3, AP4 |
+| flood_locked_never_stores | R4-03 | no escalation is stored while the agent is locked, over any legal sequence of 6 events | 6 events, limits at least 1, unwind 8 | no | 1 | success | F1 |
+| flood_pending_never_exceeds_max | R4-03 | the pending counter equals the number of pending items and never exceeds max_pending, over any legal sequence of 6 events | 6 events, limits at least 1, unwind 8 | no | 1 | success | F2 |
+| flood_three_consecutive_rejects_lock | R4-03 | three consecutive rejects lock the agent | 3 rejects, symbolic days, unwind 8 | no | 1 | success | F5 |
+| flood_hourly_budget_holds | R4-03 | an escalation is admitted exactly when the agent is not locked, below the pending cap and below the hourly budget of the current hour bucket | any state, any limits at least 1, any hour bucket | yes | 3 | success | F3, F4 |
 
-Kani harnesses in total: 28
+Kani harnesses in total: 32
 <!-- harness-table:end -->
 
 ## Lean theorems
