@@ -430,14 +430,14 @@ pub async fn deploy_mock_mpc_contract(
 ) -> Result<AccountId, Box<dyn std::error::Error + Send + Sync>> {
     let mpc_contract_id: AccountId = format!("{}.{}", contract_name, genesis_account_id).parse()?;
 
-    // Deploy mock MPC contract without init using deploy_contract
+    // Deploy the AIRLOCK mock MPC (contracts/mock-mpc) and run its `new` (AIR-103: the mock keeps state, unlike the template's)
     deploy_contract(
         network_config,
         genesis_account_id,
         genesis_signer,
         MOCK_MPC_WASM_PATH,
-        None,
-        None,
+        Some("new"),
+        Some(json!({})),
         Some(mpc_contract_id.clone()),
     )
     .await?;
@@ -507,13 +507,26 @@ pub async fn start() -> Started {
     }
 }
 
-/// Deploys the mock MPC (the wasm at `MOCK_MPC_WASM_PATH`, which AIR-103 replaces by its own build) to `<name>.sandbox` and
-/// returns its account. AIR-103 makes this call the mock's `version` view and assert `mock-3.17.0`, so a template or stale
-/// wasm fails loudly.
+/// Deploys the mock MPC (the wasm at `MOCK_MPC_WASM_PATH`, built by `scripts/build-mock-mpc.sh` from `contracts/mock-mpc`) to
+/// `<name>.sandbox` and returns its account. AIR-103: after deploying it calls the mock's `version` view and asserts
+/// `mock-3.17.0`, so a template or stale wasm (which has no such view) fails every sandbox test loudly.
 pub async fn deploy_mock_mpc(s: &Started, name: &str) -> AccountId {
-    deploy_mock_mpc_contract(&s.net, &s.owner, &s.owner_signer, name)
+    let id = deploy_mock_mpc_contract(&s.net, &s.owner, &s.owner_signer, name)
         .await
-        .expect("the mock MPC deploys")
+        .unwrap_or_else(|e| {
+            panic!(
+                "the mock MPC does not deploy and initialize ({e}); tests/contracts/mock_mpc.wasm may be the template's: run scripts/build-mock-mpc.sh"
+            )
+        });
+    let version = call_view::<String>(&id, "version", json!({}), &s.net)
+        .await
+        .map(|v| v.data)
+        .unwrap_or_default();
+    assert_eq!(
+        version, "mock-3.17.0",
+        "tests/contracts/mock_mpc.wasm is not the AIRLOCK mock: run scripts/build-mock-mpc.sh"
+    );
+    id
 }
 
 /// Calls a method of the policy contract as the owner with exactly 1 yoctoNEAR (the default gas of the builder, 100 Tgas).
