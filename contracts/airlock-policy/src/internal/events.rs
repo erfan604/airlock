@@ -49,6 +49,13 @@ pub enum Event<'a> {
     FlagsSet {
         flags: FlagsJson,
     },
+    // AIR-045
+    TaskKeySet {
+        public_key: String,
+    },
+    TaskRevoked {
+        task_hash: String,
+    },
 }
 
 impl Event<'_> {
