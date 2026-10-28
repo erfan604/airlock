@@ -124,6 +124,26 @@ min_covers = 1
 catches = ["M7"]
 
 [[harness]]
+name = "p17_label_conversion_closed"
+property = "P17"
+statement = "A string that converts to a label mask has exactly one bit and converts back to itself; every other string, the empty one included, maps to nothing."
+bounds = "every byte string of 0 to 28 bytes (longer than the longest name of 26 characters); unwind 30"
+exhaustive = true
+expect = "success"
+min_covers = 2
+catches = []
+
+[[harness]]
+name = "p17b_to_name_from_name_roundtrip"
+property = "P17"
+statement = "A u16 mask that has a name converts back to the same mask."
+bounds = "every u16 mask; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = []
+
+[[harness]]
 name = "cover_every_reason"
 property = "non-vacuity"
 statement = "With unconstrained inputs, Allow and each of the 14 reasons verdict can return (7 Block, 7 Escalate) are reachable; no assertion."
