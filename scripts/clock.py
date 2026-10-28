@@ -52,6 +52,10 @@ def main():
         if not s:
             sys.exit(f"{a.ticket}: no started time; run start first (or pass --at to start)")
         t0 = dt.datetime.strptime(s.group(1), "%Y-%m-%dT%H:%M")
+        ps = re.search(r"^paused:\s*(\S+)", fm, re.M)
+        if ps and dt.datetime.strptime(ps.group(1), "%Y-%m-%dT%H:%M") >= t0:
+            # the hours up to the pause are already in logged_h; counting from started again would add them twice
+            sys.exit(f"{a.ticket}: paused at {ps.group(1)}; run start to resume the clock first, then {a.action}")
         session = max(0.0, (now - t0).total_seconds() / 3600 - a.minus / 60)
         lg = re.search(r"^logged_h:\s*([\d.]+)", fm, re.M)
         banked = float(lg.group(1)) if lg else 0.0
