@@ -1,0 +1,12 @@
+diff --git a/contracts/airlock-verdict/src/lib.rs b/contracts/airlock-verdict/src/lib.rs
+--- a/contracts/airlock-verdict/src/lib.rs
++++ b/contracts/airlock-verdict/src/lib.rs
+@@ -180,7 +180,7 @@ pub fn verdict(
+         return Verdict::Block(Reason::Paused);
+     }
+     // Rule 2: amount 0, over the hard cap, or over the remaining daily cap.
+-    if req.amount == 0 || req.amount > a.hard_cap {
++    if req.amount == 0 {
+         return Verdict::Block(Reason::AmountOutOfBounds);
+     }
+     if req.amount > a.remaining_daily {

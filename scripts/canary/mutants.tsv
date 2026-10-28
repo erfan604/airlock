@@ -1,0 +1,16 @@
+# AIR-021 verdict mutants. Columns, tab separated: id, patch file (in scripts/canary), harness name substring that must fail on it.
+# `-` means the patch must survive Kani (unit tests and the differential catch it). A comma lists several substrings that must all fail.
+# C1, C3 and C4 are the canary names AIR-031 expects; scripts/mutants.sh runs every row.
+M1	m01-skip-pc-rule.patch	p01
+M2	m02-oracle-recipient.patch	p02
+M3	m03-default-payee.patch	p03
+M3b	m03b-default-payee-no-rule5.patch	p03,p06
+M4	m04-untrusted-no-cap.patch	p04
+M5	m05-no-hard-cap.patch	p05
+M6	m06-no-task-remainder.patch	p21
+M7	m07-no-payee-limit.patch	p22
+M8	m08-ignore-unresolved.patch	p04
+M9	m09-no-missing-provenance.patch	p09
+C1	untrusted-recipient.patch	p02
+C4	lying-book.patch	p06
+C3	cap-off-by-one.patch	-

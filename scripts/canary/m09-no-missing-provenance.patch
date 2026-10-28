@@ -1,0 +1,13 @@
+diff --git a/contracts/airlock-verdict/src/lib.rs b/contracts/airlock-verdict/src/lib.rs
+--- a/contracts/airlock-verdict/src/lib.rs
++++ b/contracts/airlock-verdict/src/lib.rs
+@@ -192,9 +192,6 @@ pub fn verdict(
+     }
+     // Rule 4: an empty label set for the recipient, the amount or the pc.
+     let l = req.labels;
+-    if l.recipient == 0 || l.amount == 0 || l.pc == 0 {
+-        return Verdict::Block(Reason::MissingProvenance);
+-    }
+     // Rule 5: labelled Book but not in the on-chain book (a lying runtime).
+     if l.recipient & BOOK != 0 && payee.is_none() {
+         return Verdict::Block(Reason::BookLabelNotInBook);

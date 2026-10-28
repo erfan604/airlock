@@ -1,0 +1,134 @@
+# Kani harnesses of contracts/airlock-verdict. AIR-029 (scripts/kani_parse.py) checks `cargo kani` against this file and AIR-028
+# renders it into docs/harnesses.md. Fields: name (the function name), property (SPEC 8.3a numbers), statement (one line),
+# bounds, exhaustive, expect (success or should_panic), panic_message (only for should_panic), min_covers (satisfied
+# kani::cover! checks the harness must show), catches (ids of the mutants in scripts/canary/mutants.tsv that it must kill).
+
+[[harness]]
+name = "p01_untrusted_pc_never_allowed"
+property = "P1"
+statement = "A request whose pc carries any label outside Owner, Book, Policy and Oracle is never Allow."
+bounds = "every u128 amount, every u16 label set, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = ["M1"]
+
+[[harness]]
+name = "p02_p15_allowed_recipient_trust_set"
+property = "P2, P15"
+statement = "Allow implies a non-empty recipient label set within Owner, Book and Policy, never Oracle (mask written as a literal)."
+bounds = "every u128 amount, every u16 label set, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = ["M2", "C1"]
+
+[[harness]]
+name = "p03_allowed_recipient_in_book"
+property = "P3"
+statement = "Allow implies the payee has an address-book entry (a new recipient always escalates)."
+bounds = "every u128 amount, every u16 label set, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = ["M3", "M3b"]
+
+[[harness]]
+name = "p04_p14_p23_untrusted_amount_inside_cap_and_budget"
+property = "P4, P14, P23"
+statement = "Allow with untrusted amount labels implies a payee cap, amount at or under the cap, at or under the remaining untrusted budget, and not Unresolved."
+bounds = "every u128 amount, every u16 label set, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = ["M4", "M8"]
+
+[[harness]]
+name = "p05_p10_p18_limits_hold_for_any_labels"
+property = "P5, P10, P18"
+statement = "Any outcome other than Block implies a registered asset, not paused, 0 < amount <= hard cap, amount <= remaining daily, and fee and gas within caps."
+bounds = "every u128 amount, every u16 label set, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 2
+catches = ["M5"]
+
+[[harness]]
+name = "p06_lying_book_label_blocked"
+property = "P6"
+statement = "With the asset, pause, amount, fee and gas checks passed and all label sets non-empty, a Book recipient label with no payee entry is exactly Block(BookLabelNotInBook)."
+bounds = "every u128 amount, every u16 label set with the Book bit, every limit combination, any task scope; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = ["M3b", "C4"]
+
+[[harness]]
+name = "p07_more_taint_never_allows"
+property = "P7"
+statement = "For a well-formed request (all three label sets non-empty), adding untrusted bits to any label set never turns a non-Allow into Allow."
+bounds = "every u128 amount, every u16 label set and every untrusted bit pattern, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = []
+
+[[harness]]
+name = "p08_total"
+property = "P8"
+statement = "verdict returns for every input and the outcome is Allow, Escalate or Block, with no panic and no overflow."
+bounds = "every u128 amount, every u16 label set, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = []
+
+[[harness]]
+name = "p09_p20_missing_provenance_never_allowed"
+property = "P9, P20"
+statement = "A request with an empty label set for the recipient, the amount or the pc is never Allow."
+bounds = "every u128 amount, every u16 label set with one empty, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = ["M9"]
+
+[[harness]]
+name = "p11_tightening_never_opens"
+property = "P11"
+statement = "Removing the asset, payee or task scope, lowering any limit, cap, budget or remainder, or turning pause on never turns a non-Allow into Allow."
+bounds = "every u128 amount, every u16 label set, every pair of loose and tight limits; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 2
+catches = []
+
+[[harness]]
+name = "p21_allowed_inside_task_bound"
+property = "P21"
+statement = "Allow implies a task scope exists and the amount is at or under what is left of it."
+bounds = "every u128 amount, every u16 label set, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = ["M6"]
+
+[[harness]]
+name = "p22_allowed_within_payee_limit"
+property = "P22"
+statement = "Allow implies the payee exists and the amount is at or under its remaining limit for any amount, trusted or not."
+bounds = "every u128 amount, every u16 label set, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 1
+catches = ["M7"]
+
+[[harness]]
+name = "cover_every_reason"
+property = "non-vacuity"
+statement = "With unconstrained inputs, Allow and each of the 14 reasons verdict can return (7 Block, 7 Escalate) are reachable; no assertion."
+bounds = "every u128 amount, every u16 label set, every limit combination; no unwind"
+exhaustive = true
+expect = "success"
+min_covers = 15
+catches = []

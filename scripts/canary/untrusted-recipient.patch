@@ -1,0 +1,14 @@
+diff --git a/contracts/airlock-verdict/src/lib.rs b/contracts/airlock-verdict/src/lib.rs
+--- a/contracts/airlock-verdict/src/lib.rs
++++ b/contracts/airlock-verdict/src/lib.rs
+@@ -211,10 +211,6 @@ pub fn verdict(
+     if l.pc & !TRUSTED_MASK != 0 {
+         return Verdict::Escalate(Reason::UntrustedTrigger);
+     }
+-    // Rule 8: the recipient labels are not within {Owner, Book, Policy}.
+-    if !recipient_trusted(l.recipient) {
+-        return Verdict::Escalate(Reason::UntrustedRecipient);
+-    }
+     // Rule 9: the recipient is not in the book: always escalate.
+     let p = match payee {
+         None => return Verdict::Escalate(Reason::NewRecipient),

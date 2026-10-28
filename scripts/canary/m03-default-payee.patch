@@ -1,0 +1,12 @@
+diff --git a/contracts/airlock-verdict/src/lib.rs b/contracts/airlock-verdict/src/lib.rs
+--- a/contracts/airlock-verdict/src/lib.rs
++++ b/contracts/airlock-verdict/src/lib.rs
+@@ -217,7 +217,7 @@ pub fn verdict(
+     }
+     // Rule 9: the recipient is not in the book: always escalate.
+     let p = match payee {
+-        None => return Verdict::Escalate(Reason::NewRecipient),
++        None => Payee { cap: None, budget_remaining: 0, limit_remaining: u128::MAX },
+         Some(p) => p,
+     };
+     // Rule 10: above what is left of the payee's daily limit, for any amount.

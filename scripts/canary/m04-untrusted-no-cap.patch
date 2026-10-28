@@ -1,0 +1,11 @@
+diff --git a/contracts/airlock-verdict/src/lib.rs b/contracts/airlock-verdict/src/lib.rs
+--- a/contracts/airlock-verdict/src/lib.rs
++++ b/contracts/airlock-verdict/src/lib.rs
+@@ -232,6 +232,7 @@ pub fn verdict(
+             Some(cap) if !unresolved && req.amount <= cap && req.amount <= p.budget_remaining => {
+                 Verdict::Allow
+             }
++            None if !unresolved => Verdict::Allow,
+             _ => Verdict::Escalate(Reason::UntrustedAmount),
+         };
+     }

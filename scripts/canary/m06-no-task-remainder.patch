@@ -1,0 +1,13 @@
+diff --git a/contracts/airlock-verdict/src/lib.rs b/contracts/airlock-verdict/src/lib.rs
+--- a/contracts/airlock-verdict/src/lib.rs
++++ b/contracts/airlock-verdict/src/lib.rs
+@@ -204,9 +204,6 @@ pub fn verdict(
+         None => return Verdict::Escalate(Reason::OutsideTask),
+         Some(t) => t,
+     };
+-    if req.amount > t.remaining {
+-        return Verdict::Escalate(Reason::OverTaskBound);
+-    }
+     // Rule 7: the pc carries a label that is not trusted.
+     if l.pc & !TRUSTED_MASK != 0 {
+         return Verdict::Escalate(Reason::UntrustedTrigger);

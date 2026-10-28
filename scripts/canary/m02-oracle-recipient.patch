@@ -1,0 +1,12 @@
+diff --git a/contracts/airlock-verdict/src/lib.rs b/contracts/airlock-verdict/src/lib.rs
+--- a/contracts/airlock-verdict/src/lib.rs
++++ b/contracts/airlock-verdict/src/lib.rs
+@@ -27,7 +27,7 @@
+ /// Labels a value (amount or pc) may carry and still be trusted. Oracle is for numbers (SPEC R5-03).
+ pub const TRUSTED_MASK: u16 = OWNER | BOOK | POLICY | ORACLE;
+ /// Labels a recipient may carry and still be trusted: never Oracle, which is for numbers, not addresses.
+-pub const RECIPIENT_TRUSTED: u16 = OWNER | BOOK | POLICY;
++pub const RECIPIENT_TRUSTED: u16 = OWNER | BOOK | POLICY | ORACLE;
+
+ /// A recipient label set is trusted when it is non-empty and within {Owner, Book, Policy}.
+ pub fn recipient_trusted(l: u16) -> bool {

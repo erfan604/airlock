@@ -1,0 +1,14 @@
+diff --git a/contracts/airlock-verdict/src/lib.rs b/contracts/airlock-verdict/src/lib.rs
+--- a/contracts/airlock-verdict/src/lib.rs
++++ b/contracts/airlock-verdict/src/lib.rs
+@@ -220,10 +220,6 @@ pub fn verdict(
+         None => return Verdict::Escalate(Reason::NewRecipient),
+         Some(p) => p,
+     };
+-    // Rule 10: above what is left of the payee's daily limit, for any amount.
+-    if req.amount > p.limit_remaining {
+-        return Verdict::Escalate(Reason::OverPayeeLimit);
+-    }
+     // Rule 11: an untrusted amount passes only if it is not Unresolved, the payee has a cap, and the amount is within the
+     // cap and within the payee's remaining untrusted budget.
+     if !value_trusted(l.amount) {

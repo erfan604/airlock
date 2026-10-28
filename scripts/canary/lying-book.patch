@@ -1,0 +1,14 @@
+diff --git a/contracts/airlock-verdict/src/lib.rs b/contracts/airlock-verdict/src/lib.rs
+--- a/contracts/airlock-verdict/src/lib.rs
++++ b/contracts/airlock-verdict/src/lib.rs
+@@ -195,10 +195,6 @@ pub fn verdict(
+     if l.recipient == 0 || l.amount == 0 || l.pc == 0 {
+         return Verdict::Block(Reason::MissingProvenance);
+     }
+-    // Rule 5: labelled Book but not in the on-chain book (a lying runtime).
+-    if l.recipient & BOOK != 0 && payee.is_none() {
+-        return Verdict::Block(Reason::BookLabelNotInBook);
+-    }
+     // Rule 6: outside every bound of the owner-signed task, or above what is left of that bound.
+     let t = match task {
+         None => return Verdict::Escalate(Reason::OutsideTask),

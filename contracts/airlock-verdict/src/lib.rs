@@ -238,3 +238,6 @@ pub fn verdict(
     // Rule 12.
     Verdict::Allow
 }
+
+#[cfg(kani)]
+mod proofs;
