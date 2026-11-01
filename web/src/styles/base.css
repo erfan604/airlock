@@ -1,0 +1,84 @@
+/* Base layer: the page, type roles, focus, buttons and the tape stripe. Colours and spacing come from tokens.css only.
+   Radius 0 everywhere, no shadow, no blur, no gradient except the stripe (DESIGN.md 2.1). */
+:root {
+  --font-system: 'B612', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-data: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-evidence: 'Courier Prime', 'Courier New', ui-monospace, monospace;
+  --stripe: repeating-linear-gradient(-45deg, var(--signal) 0 6px, var(--ink) 6px 12px);
+  --press: 90ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-system);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  border-radius: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.wordmark {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 2.125rem;
+  letter-spacing: 0.08em;
+}
+
+.page {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+/* The one pattern: stripes mean outside. Only the seal swatch of an untrusted label and the tape frame use it. */
+.tape-frame,
+.seal-swatch-tape {
+  background: var(--stripe);
+}
+
+@media (forced-colors: active) {
+  .tape-frame {
+    background: none;
+    border: 4px dashed CanvasText;
+  }
+  .seal-swatch-tape {
+    background: none;
+    border: 2px dashed CanvasText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0ms !important;
+  }
+}

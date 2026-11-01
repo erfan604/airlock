@@ -1,0 +1,328 @@
+/* Seal, TapeFrame, Manifest, Door, VerdictStamp and Specimen (AIR-183). Plain classes, tokens only. */
+
+/* Seal: a square-cut plate, a swatch for the zone, a word for the kind */
+.seal {
+  --seal-h: 32px;
+  --seal-inner: 28px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  max-width: 100%;
+  vertical-align: middle;
+}
+.seal-S {
+  --seal-h: 24px;
+  --seal-inner: 20px;
+}
+.seal-plate {
+  display: inline-flex;
+  align-items: stretch;
+  height: var(--seal-h);
+  border: 2px solid var(--ink);
+  background: var(--paper);
+}
+.seal-swatch {
+  position: relative;
+  flex: none;
+  width: var(--seal-inner);
+  height: var(--seal-inner);
+}
+.seal-swatch-solid,
+.seal-swatch-square,
+.seal-swatch-slot,
+.seal-swatch-round {
+  background: var(--ink);
+}
+.seal-swatch-square::after,
+.seal-swatch-slot::after,
+.seal-swatch-round::after {
+  content: '';
+  position: absolute;
+  background: var(--paper);
+}
+.seal-swatch-square::after {
+  inset: 30%;
+}
+.seal-swatch-slot::after {
+  inset: 42% 18%;
+}
+.seal-swatch-round::after {
+  inset: 25%;
+  border-radius: 50%;
+}
+.seal-swatch-tape {
+  border-right: 2px solid var(--ink);
+}
+.seal-swatch-dashed {
+  margin: 3px;
+  width: calc(var(--seal-inner) - 6px);
+  height: calc(var(--seal-inner) - 6px);
+  border: 2px dashed var(--ink);
+}
+.seal-word {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  font-family: var(--font-system);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.seal-S .seal-word {
+  font-size: 12px;
+}
+.seal-source {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* TapeFrame: stripes surround text, never sit behind it */
+.tape-frame {
+  border: 2px solid var(--ink);
+  min-width: 0;
+}
+.tape-frame-t8 {
+  padding: 8px;
+}
+.tape-frame-t10 {
+  padding: 10px;
+}
+.tape-frame-t20 {
+  padding: 20px;
+}
+.tape-frame-interior {
+  min-width: 0;
+  padding: var(--space-3);
+  border: 2px solid var(--ink);
+}
+.tape-frame-interior-paper {
+  background: var(--paper);
+}
+.tape-frame-interior-sunk {
+  background: var(--sunk);
+}
+.frame-dashed {
+  min-width: 0;
+  padding: var(--space-3);
+  border: 2px dashed var(--ink);
+}
+
+/* Manifest */
+.manifest {
+  display: grid;
+  gap: var(--space-5);
+}
+.manifest-row {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.manifest-name {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.manifest-body {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.manifest-value {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 26px;
+  overflow-wrap: anywhere;
+}
+.manifest-row-emphasized .manifest-value {
+  font-size: 32px;
+  line-height: 36px;
+}
+.manifest-seals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.manifest-source {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* Door */
+.door {
+  display: inline-block;
+  flex: none;
+}
+.door-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+.door-fill-ink {
+  fill: var(--ink);
+}
+.door-fill-ink2 {
+  fill: var(--ink-2);
+}
+.door-fill-signal {
+  fill: var(--signal);
+}
+.door-fill-none {
+  fill: none;
+}
+.door-stroke-ink {
+  stroke: var(--ink);
+}
+.door-stroke-ink2 {
+  stroke: var(--ink-2);
+}
+.door-stroke-paper {
+  stroke: var(--paper);
+}
+
+/* VerdictStamp: plain neutral card, colour only on the word */
+.verdict-stamp {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--ink);
+  background: var(--raised);
+  min-width: 0;
+}
+.verdict-text {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.verdict-word {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.verdict-allowed .verdict-word,
+.verdict-approved .verdict-word {
+  color: var(--clear);
+}
+.verdict-blocked .verdict-word {
+  color: var(--alarm);
+}
+.verdict-waiting .verdict-word,
+.verdict-expired .verdict-word,
+.verdict-stopped .verdict-word {
+  color: var(--ink-2);
+}
+.verdict-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.verdict-sentence {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* Specimen: outsider text, always in Courier Prime, always in a tape frame */
+.specimen {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.specimen-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  min-width: 0;
+}
+.specimen-verbatim {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+}
+.specimen-source {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.specimen-count {
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-3);
+}
+.specimen-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.specimen-line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  min-height: 22px;
+}
+.specimen-ln {
+  min-width: 2ch;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 22px;
+  text-align: right;
+  color: var(--ink-2);
+  user-select: none;
+}
+.specimen-text {
+  min-width: 0;
+  font-family: var(--font-evidence);
+  font-size: 15px;
+  line-height: 22px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.specimen-expand {
+  justify-self: start;
+  max-width: 100%;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-4);
+  border: 2px solid var(--ink);
+  background: var(--raised);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: transform var(--press);
+}
+.specimen-expand:active {
+  background: var(--ink);
+  color: var(--paper);
+  transform: translateY(1px);
+}
+.specimen-more {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+}

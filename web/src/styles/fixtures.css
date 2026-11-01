@@ -1,0 +1,41 @@
+/* Layout of the fixture routes only: a column of labelled sections. Nothing here is used by a product screen. */
+.fixture {
+  display: grid;
+  gap: var(--space-6);
+}
+.fixture-section {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.fixture-title {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.fixture-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.fixture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-4);
+}
+.fixture-note {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+/* the planted failure: 600 px wide at every audited width */
+.audit-bad {
+  width: 600px;
+  height: 24px;
+  background: var(--ink);
+}
