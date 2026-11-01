@@ -59,7 +59,6 @@ const TABLE: [ToolName, LabelName][] = [
 for (const [name, label] of TABLE) {
   test(`table: ${name} is labelled ${label}`, async () => {
     assert.equal(TOOL_CHANNEL[name], label);
-    if (name === 'fetch_paid') return; // the label only: the body is AIR-128's
     const out = await fixtureTools(WORLD).call(name, ARGS[name]);
     assert.equal(out.label, label);
   });
@@ -278,11 +277,6 @@ test('isolation: EMPTY_WORLD cannot be changed through a spread world', () => {
   const world: World = { ...EMPTY_WORLD };
   assert.throws(() => world.inbox.push({ id: 'x', from: 'x', subject: 'x', body: 'x', attachments: [] }), TypeError);
   assert.equal(EMPTY_WORLD.inbox.length, 0);
-});
-
-// ---- fetch_paid placeholder (AIR-128 deletes this one test with the placeholder) ----
-test('fetch_paid: the placeholder rejects', async () => {
-  await assert.rejects(fixtureTools(WORLD).call('fetch_paid', { url: 'https://vendor.example/report' }), { message: 'FETCH_PAID_PLACEHOLDER' });
 });
 
 // ---- X402Server ----

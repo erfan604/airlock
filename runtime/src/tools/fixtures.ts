@@ -7,6 +7,7 @@ import type { ToolName } from '../dsl/tools.ts';
 import type { Tools } from '../interpreter/types.ts';
 import { TOOL_CHANNEL } from './channels.ts';
 import type { World } from './world.ts';
+import { fetchPaid } from './x402.ts';
 
 /** A required argument is missing or not a string, or an oracle has no value: the interpreter turns it into the abort ToolError. */
 export class ToolArgError extends Error {
@@ -63,8 +64,7 @@ function read(world: World, name: ToolName, args: Args): unknown {
     case 'read_paste':
       return world.paste ?? '';
     case 'fetch_paid':
-      // AIR-128 replaces this entry with the x402 body
-      throw new Error('FETCH_PAID_PLACEHOLDER');
+      return fetchPaid(world, args);
     case 'get_balance':
       return oracle(name, world.balances, strArg(name, args, 'asset'));
     case 'get_price':
