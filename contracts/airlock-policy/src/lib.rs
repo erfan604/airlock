@@ -29,6 +29,7 @@ pub mod gate;
 pub mod internal;
 pub mod keys;
 pub mod ledgers;
+pub mod nonces;
 pub mod owner;
 pub mod policy;
 pub mod request;
@@ -80,6 +81,11 @@ pub struct Contract {
     // (AIR-062) and before `pending_by_no` (AIR-080): the ticket that adds the fields in between inserts them above these two.
     pub records: LookupMap<String, request::RequestRecord>,
     pub next_pending_no: u32,
+    // AIR-104: the next EVM nonce to hand out per registry `path`, and the one transaction each request id was signed as (entries of
+    // `evm_attempts` are never removed, they are bounded by the EVM requests the owner's tasks admit). In the layout table they are
+    // the last two fields, after `flood` (AIR-083): the tickets that add fields in between insert them above these two.
+    pub nonces: LookupMap<String, u64>,
+    pub evm_attempts: LookupMap<String, nonces::EvmAttempt>,
 }
 
 #[near(serializers = [borsh])]
@@ -113,6 +119,9 @@ pub enum StorageKey {
     TaskSpent,
     // AIR-063. Later tickets insert theirs above it where the layout table in AIR-040 puts them (before the first deploy, AIR-048).
     Records,
+    // AIR-104 (the table puts them last, after `Flood` of AIR-083: AIR-080 and AIR-083 insert theirs above these two)
+    Nonces,
+    EvmAttempts,
 }
 
 const STORAGE_BYTES_TO_REGISTER: u128 = 486;
@@ -151,6 +160,8 @@ impl Contract {
             task_spent: LookupMap::new(StorageKey::TaskSpent),
             records: LookupMap::new(StorageKey::Records),
             next_pending_no: 1,
+            nonces: LookupMap::new(StorageKey::Nonces),
+            evm_attempts: LookupMap::new(StorageKey::EvmAttempts),
         }
     }
 

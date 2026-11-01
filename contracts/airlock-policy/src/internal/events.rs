@@ -118,6 +118,11 @@ pub enum Event<'a> {
         request_id: &'a str,
         reason: &'a str,
     },
+    // AIR-104: the owner set the next EVM nonce of a derivation path; `nonce` is a decimal string
+    NonceSet {
+        path: &'a str,
+        nonce: U64,
+    },
 }
 
 impl Event<'_> {
