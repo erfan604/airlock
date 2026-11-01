@@ -1,0 +1,16 @@
+{"id":"mail1","kind":"inbox","from":"a@b.example","subject":"s1","text_ref":"payloads/mail1.txt","attachments":["doc.pdf"]}
+{"id":"mail2","kind":"inbox","from":"c@d.example","subject":"s2","text_ref":"payloads/mail2.txt","attachments":[]}
+{"id":"doc","kind":"file","name":"doc.pdf","text_ref":"payloads/doc.txt"}
+{"id":"post1","kind":"feed","from":"someone","text_ref":"payloads/post1.txt"}
+{"id":"page1","kind":"web","url":"https://example.test/page","text_ref":"payloads/page1.txt"}
+{"id":"tok1","kind":"token","symbol":"TKN","name":"Token","text_ref":"payloads/tok1.txt"}
+{"id":"mem1","kind":"memory","key":"k1","text_ref":"payloads/mem1.txt"}
+{"id":"hist1","kind":"history","hash":"h1","from":"a.testnet","to":"b.testnet","amount":"1.5","text_ref":"payloads/hist1.txt"}
+{"id":"hist2","kind":"history","hash":"h2","from":"a.testnet","to":"b.testnet","amount":"2","text_ref":null}
+{"id":"pr1","kind":"price","asset":"near","value":"3.5"}
+{"id":"bal1","kind":"balance","asset":"near","value":"100"}
+{"id":"bk1","kind":"book","alias":"bob","key":"near:bob.testnet"}
+{"id":"pay1","kind":"paid402","url":"https://vendor.test/r","ref":"x402/r.json"}
+{"id":"paste1","kind":"paste","text_ref":"payloads/paste1.txt"}
+{"id":"sc1","kind":"scenario","request":"do the thing","inbox":["mail2"]}
+{"id":"sc2","kind":"scenario","request":"do nothing","inbox":[]}
