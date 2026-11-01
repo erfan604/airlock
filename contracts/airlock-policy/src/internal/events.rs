@@ -132,6 +132,21 @@ pub enum Event<'a> {
         path: &'a str,
         nonce: U64,
     },
+    // AIR-105, the events of the signing callback. Lane events name the request `request_id`, never `id` (`id` is the pending number).
+    /// `on_signed` stored a signature. `unsigned_hex` is lowercase hex without `0x`, first byte `02`; `big_r` is 66 characters, `s` 64.
+    Signed {
+        request_id: &'a str,
+        unsigned_hex: &'a str,
+        big_r: &'a str,
+        s: &'a str,
+        recovery_id: u8,
+    },
+    /// The refund path (`fail_request`): `reason` is a `FailReason` name, `retryable` is true when the request may run once more.
+    Failed {
+        request_id: &'a str,
+        reason: &'a str,
+        retryable: bool,
+    },
 }
 
 impl Event<'_> {

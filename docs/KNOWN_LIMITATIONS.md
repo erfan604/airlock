@@ -9,6 +9,7 @@
 - The console is in the trusted computing base.
 - Tools are fixtures (no real connectors); testnet only.
 - No cancel (an issued but unbroadcast signature blocks later nonces for that path; use set_nonce or a new path); no owner transfer.
+- A signing or transfer callback that runs out of gas leaves its request `Executing` and charged: no owner method clears it in this version, and the task ledger never resets, so that request's amount stays counted against its task. The lane reserves the callback's gas and AIR-107 measures the real burn on both the success and the refund path.
 - Lean covers semantic models of the gate and the interpreter, not the shipped TypeScript (the TypeScript interpreter is covered by a property test).
 - Future work, not attempted: extracting the Lean model from the Rust verdict crate with Aeneas (AeneasVerif/aeneas) so that the code-to-model link is itself a proof. Today the link is the differential test and Kani on the shipped Rust. The Aeneas Lean backend pins Lean v4.35.0 like we do, but it needs Mathlib, OCaml 5.3 and a pinned Charon, which this build does not carry.
 - Local mode is unattested; host powers (a host can stop, delay or read the runtime) are not removed by any check here; oracle dust moves; plan_hash and evidence are unauthenticated hints; UTC-boundary burst.

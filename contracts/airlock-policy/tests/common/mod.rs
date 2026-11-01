@@ -3,11 +3,12 @@
 // fail `clippy -D warnings`; the allow below covers the whole module.
 #![allow(dead_code)]
 use near_api::{
-    Account, AccountId, Contract, NearGas, NearToken, NetworkConfig, RPCEndpoint, Signer, signer,
+    Account, AccountId, Contract, NearGas, NearToken, NetworkConfig, RPCEndpoint, Signer, Tokens,
+    signer,
 };
 use near_api_types::transaction::result::{ExecutionFinalResult, TransactionResult};
 use near_sandbox::{GenesisAccount, Sandbox};
-use serde_json::json;
+use serde_json::{Value, json};
 use shade_attestation::attestation::create_mock_dstack_attestation;
 use shade_attestation::measurements::create_mock_full_measurements_hex;
 use std::sync::Arc;
@@ -231,10 +232,32 @@ pub async fn deploy_contract_default(
     genesis_account_id: &AccountId,
     genesis_signer: &Arc<Signer>,
 ) -> Result<AccountId, Box<dyn std::error::Error + Send + Sync>> {
-    let owner = genesis_account_id.clone();
     let mpc_contract: AccountId = "mpc-contract".parse().unwrap();
-
     // Use a short expiration time for tests: 100 seconds = 100000 ms
+    deploy_policy(
+        network_config,
+        genesis_account_id,
+        genesis_signer,
+        None,
+        &mpc_contract,
+        "100000",
+    )
+    .await
+}
+
+/// Deploys the policy wasm to `account_id` (`contract.<genesis account>` when `None`), runs `new(requires_tee = false, owner = the
+/// genesis account, mpc_contract_id, attestation_expiration_time_ms)` and approves the default measurements and PPID, so a
+/// whitelisted agent can register in local mode. `deploy_contract_default` and `world_with` (AIR-105) are the two callers.
+pub async fn deploy_policy(
+    network_config: &NetworkConfig,
+    genesis_account_id: &AccountId,
+    genesis_signer: &Arc<Signer>,
+    account_id: Option<AccountId>,
+    mpc_contract: &AccountId,
+    attestation_expiration_time_ms: &str,
+) -> Result<AccountId, Box<dyn std::error::Error + Send + Sync>> {
+    let owner = genesis_account_id.clone();
+
     let contract_id = deploy_contract(
         network_config,
         genesis_account_id,
@@ -245,9 +268,9 @@ pub async fn deploy_contract_default(
             "owner_id": owner,
             "mpc_contract_id": mpc_contract,
             "requires_tee": false,
-            "attestation_expiration_time_ms": "100000"
+            "attestation_expiration_time_ms": attestation_expiration_time_ms
         })),
-        None,
+        account_id,
     )
     .await?;
 
@@ -513,14 +536,24 @@ pub async fn start() -> Started {
 /// `<name>.sandbox` and returns its account. AIR-103: after deploying it calls the mock's `version` view and asserts
 /// `mock-3.17.0`, so a template or stale wasm (which has no such view) fails every sandbox test loudly.
 pub async fn deploy_mock_mpc(s: &Started, name: &str) -> AccountId {
-    let id = deploy_mock_mpc_contract(&s.net, &s.owner, &s.owner_signer, name)
+    deploy_checked_mock_mpc(&s.net, &s.owner, &s.owner_signer, name).await
+}
+
+/// `deploy_mock_mpc` without a `Started`: the same deploy and the same `version` assertion (`world_with` calls it).
+pub async fn deploy_checked_mock_mpc(
+    net: &NetworkConfig,
+    owner: &AccountId,
+    owner_signer: &Arc<Signer>,
+    name: &str,
+) -> AccountId {
+    let id = deploy_mock_mpc_contract(net, owner, owner_signer, name)
         .await
         .unwrap_or_else(|e| {
             panic!(
                 "the mock MPC does not deploy and initialize ({e}); tests/contracts/mock_mpc.wasm may be the template's: run scripts/build-mock-mpc.sh"
             )
         });
-    let version = call_view::<String>(&id, "version", json!({}), &s.net)
+    let version = call_view::<String>(&id, "version", json!({}), net)
         .await
         .map(|v| v.data)
         .unwrap_or_default();
@@ -559,15 +592,27 @@ pub async fn agent_call(
     method: &str,
     args: serde_json::Value,
 ) -> ExecutionFinalResult {
-    let sent = Contract(s.contract.clone())
+    call_300_tgas(&s.contract, &s.net, agent, agent_signer, method, args).await
+}
+
+/// `agent_call` for any contract and network: no deposit, 300 Tgas, a failed receipt is not an error.
+pub async fn call_300_tgas(
+    contract: &AccountId,
+    net: &NetworkConfig,
+    caller: &AccountId,
+    caller_signer: &Arc<Signer>,
+    method: &str,
+    args: serde_json::Value,
+) -> ExecutionFinalResult {
+    let sent = Contract(contract.clone())
         .call_function(method, args)
         .transaction()
         .gas(NearGas::from_tgas(300))
-        .with_signer(agent.clone(), agent_signer.clone())
-        .send_to(&s.net)
+        .with_signer(caller.clone(), caller_signer.clone())
+        .send_to(net)
         .await
-        .expect("the agent call is sent");
-    unwrap_full(sent).expect("the agent call finished")
+        .expect("the call is sent");
+    unwrap_full(sent).expect("the call finished")
 }
 
 /// Prints the gas the whole transaction burnt (all receipts) in Tgas and returns it in gas units. Sandbox neard 2.11.0 is
@@ -767,4 +812,367 @@ pub async fn set_test_task_key(
     .await
     .expect("set_task_key is sent")
     .assert_success();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// AIR-105: the shared sandbox world of the lane tickets (AIR-100, 101, 106, 107, 108)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// Base units of one whole NEAR (24 decimals) and of one ETH (18 decimals).
+pub const ONE_NEAR: u128 = 1_000_000_000_000_000_000_000_000;
+pub const ONE_ETH: u128 = 1_000_000_000_000_000_000;
+
+/// The EVM asset of the world: Base Sepolia, derivation path `base-sepolia-1`.
+pub const WORLD_EVM_ASSET: &str = "evm:84532:native";
+pub const WORLD_EVM_PATH: &str = "base-sepolia-1";
+/// The booked EVM payee: 40 lowercase hex characters, no `0x` (its book key is `evm:84532:0x<this>`).
+pub const WORLD_EVM_PAYEE: &str = "d8da6bf26964af9d7eed9e03e53415d37aa96045";
+
+/// The registry entry of asset `near` (symbol NEAR, 24 decimals): hard cap 10_000, daily cap 100_000 and quick task cap 100_000 whole units,
+/// each times `unit` base units per whole unit. `world_with` registers it with `ONE_NEAR`; tests/gate.rs registers it with 1 (its amounts
+/// are yoctoNEAR).
+pub fn near_asset_entry(unit: u128) -> Value {
+    json!({
+        "symbol": "NEAR",
+        "decimals": 24,
+        "hard_cap": (10_000 * unit).to_string(),
+        "daily_cap": (100_000 * unit).to_string(),
+        "max_fee_per_gas": "0",
+        "max_gas": "0",
+        "quick_task_cap": (100_000 * unit).to_string(),
+        "path": null
+    })
+}
+
+/// The registry entry of asset `evm:84532:native` (ETH.base, 18 decimals, path `base-sepolia-1`): hard cap 1 ETH, daily cap 10 ETH, quick
+/// task cap 5 ETH, max fee 50 gwei, max gas 100_000.
+pub fn evm_asset_entry() -> Value {
+    json!({
+        "symbol": "ETH.base",
+        "decimals": 18,
+        "hard_cap": ONE_ETH.to_string(),
+        "daily_cap": (10 * ONE_ETH).to_string(),
+        "max_fee_per_gas": "50000000000",
+        "max_gas": "100000",
+        "quick_task_cap": (5 * ONE_ETH).to_string(),
+        "path": WORLD_EVM_PATH
+    })
+}
+
+/// An owner call (1 yocto) that must succeed: a failed receipt panics with its text.
+pub async fn owner_call_ok(
+    contract: &AccountId,
+    owner: &AccountId,
+    owner_signer: &Arc<Signer>,
+    net: &NetworkConfig,
+    method: &str,
+    args: Value,
+) {
+    let result = call_transaction(
+        contract,
+        method,
+        args,
+        owner,
+        owner_signer,
+        net,
+        Some(NearToken::from_yoctonear(1)),
+    )
+    .await
+    .unwrap_or_else(|e| panic!("{method} is not sent: {e}"));
+    let text = failure_text(&result);
+    assert!(text.is_empty(), "{method} failed: {text}");
+    result.assert_success();
+}
+
+/// A sandbox with the whole AIRLOCK setup, so a lane test only submits requests (`world`, `world_with`). Accounts are `<name>.sandbox`
+/// (the genesis account is `sandbox`, which is both `root` and `owner`).
+pub struct World {
+    pub sandbox: Sandbox,
+    pub net: NetworkConfig,
+    pub root: AccountId,
+    pub owner: AccountId,
+    pub owner_signer: Arc<Signer>,
+    pub agent: AccountId,
+    pub agent_signer: Arc<Signer>,
+    pub policy: AccountId,
+    pub mpc: AccountId,
+    /// `alice.sandbox`: an account that exists, so a NEAR payment to it can succeed. Its book key is `near:alice.sandbox`.
+    pub payee_near: AccountId,
+    /// 40 lowercase hex characters (`WORLD_EVM_PAYEE`).
+    pub payee_evm: String,
+}
+
+/// What `world_with` varies. The default is `nonce: Some(0)`: `set_nonce("base-sepolia-1", 0)` has run; `None` skips it (the nonce is then
+/// unset, which AIR-104's lane treats as an error).
+#[derive(Clone, Copy, Debug)]
+pub struct WorldOpts {
+    pub nonce: Option<u64>,
+}
+
+impl Default for WorldOpts {
+    fn default() -> Self {
+        Self { nonce: Some(0) }
+    }
+}
+
+/// `world_with(WorldOpts::default())`.
+pub async fn world() -> World {
+    world_with(WorldOpts::default()).await
+}
+
+/// Starts a sandbox and sets up: the mock MPC (`mpc.sandbox`, AIR-103) first, then the policy wasm at `policy.sandbox` with
+/// `new(requires_tee = false, attestation_expiration_time_ms = "86400000", owner = the genesis account, mpc = the mock)`, the default
+/// measurements and PPID approved, and 50 NEAR transferred to the policy account on top of the deploy funding (30 NEAR in `deploy_contract`,
+/// about 80 NEAR in all, about 10 of it locked by the wasm). Then, as the owner: assets `near` (hard cap 10_000, daily cap 100_000, quick task cap 100_000
+/// NEAR) and `evm:84532:native` (`evm_asset_entry`); book payees `near:alice.sandbox` (cap 100 NEAR, untrusted budget 1_000 NEAR, daily
+/// limit 5_000 NEAR, label Alice) and `evm:84532:0xd8da6bf26964af9d7eed9e03e53415d37aa96045` (cap null, budget 0, daily limit 10 ETH);
+/// the task key of `TASK_SEED`; `agent.sandbox` whitelisted, registered and allowed; the nonce of `opts`. Flags are the defaults.
+/// Build the wasm first: `cargo near build non-reproducible-wasm --no-abi`.
+pub async fn world_with(o: WorldOpts) -> World {
+    let path = contract_wasm_path();
+    assert!(
+        std::path::Path::new(&path).exists(),
+        "{path} does not exist: run `cargo near build non-reproducible-wasm --no-abi` in the crate first"
+    );
+    let sandbox = Sandbox::start_sandbox().await.expect("the sandbox starts");
+    let net = create_network_config(&sandbox);
+    let (root, root_signer) = setup_genesis_account().await;
+    let mpc = deploy_checked_mock_mpc(&net, &root, &root_signer, "mpc").await;
+    let policy: AccountId = format!("policy.{root}").parse().unwrap();
+    deploy_policy(
+        &net,
+        &root,
+        &root_signer,
+        Some(policy.clone()),
+        &mpc,
+        "86400000",
+    )
+    .await
+    .expect("the policy contract deploys and initializes");
+    let funding = Tokens::account(root.clone())
+        .send_to(policy.clone())
+        .near(NearToken::from_near(50))
+        .with_signer(root_signer.clone())
+        .send_to(&net)
+        .await
+        .expect("the funding transfer is sent");
+    unwrap_full(funding)
+        .expect("the funding transfer finished")
+        .assert_success();
+
+    let owner = |method: &'static str, args: Value| {
+        let (policy, root, root_signer, net) = (
+            policy.clone(),
+            root.clone(),
+            root_signer.clone(),
+            net.clone(),
+        );
+        async move { owner_call_ok(&policy, &root, &root_signer, &net, method, args).await }
+    };
+    owner(
+        "asset_set",
+        json!({ "asset": "near", "entry": near_asset_entry(ONE_NEAR) }),
+    )
+    .await;
+    owner(
+        "asset_set",
+        json!({ "asset": WORLD_EVM_ASSET, "entry": evm_asset_entry() }),
+    )
+    .await;
+    let (payee_near, _) = create_user_account(&net, &root, &root_signer, "alice")
+        .await
+        .expect("the payee account is created");
+    owner(
+        "book_add",
+        json!({
+            "key": format!("near:{payee_near}"),
+            "cap": (100 * ONE_NEAR).to_string(),
+            "daily_untrusted_budget": (1_000 * ONE_NEAR).to_string(),
+            "daily_limit": (5_000 * ONE_NEAR).to_string(),
+            "label": "Alice"
+        }),
+    )
+    .await;
+    owner(
+        "book_add",
+        json!({
+            "key": format!("evm:84532:0x{WORLD_EVM_PAYEE}"),
+            "cap": null,
+            "daily_untrusted_budget": "0",
+            "daily_limit": (10 * ONE_ETH).to_string(),
+            "label": "Base Sepolia payee"
+        }),
+    )
+    .await;
+    set_test_task_key(&policy, &root, &root_signer, &net).await;
+    let (agent, agent_signer) = create_user_account(&net, &root, &root_signer, "agent")
+        .await
+        .expect("the agent account is created");
+    register_local_agent(&policy, &root, &root_signer, &agent, &agent_signer, &net).await;
+    allow_agent_for(&policy, &root, &root_signer, &agent, &net).await;
+    if let Some(nonce) = o.nonce {
+        owner(
+            "set_nonce",
+            json!({ "path": WORLD_EVM_PATH, "nonce": nonce.to_string() }),
+        )
+        .await;
+    }
+    World {
+        sandbox,
+        net,
+        owner: root.clone(),
+        root,
+        owner_signer: root_signer,
+        agent,
+        agent_signer,
+        policy,
+        mpc,
+        payee_near,
+        payee_evm: WORLD_EVM_PAYEE.to_string(),
+    }
+}
+
+impl World {
+    /// AIR-060 `signed_task_with` with `contract_id = self.policy` and `agent_id = self.agent` (the vector's `policy.test.near` cannot be
+    /// deployed in the sandbox).
+    pub fn signed_task(
+        &self,
+        bounds: &[(&str, u128)],
+        max_actions: u8,
+    ) -> (
+        airlock_policy::task::OwnerTask,
+        near_sdk::json_types::Base64VecU8,
+    ) {
+        let policy: near_sdk::AccountId = self.policy.as_str().parse().unwrap();
+        let agent: near_sdk::AccountId = self.agent.as_str().parse().unwrap();
+        signed_task_with(bounds, max_actions, |task| {
+            task.contract_id = policy;
+            task.agent_id = agent;
+        })
+    }
+
+    /// One request of `task`: `task_id` and `hints.plan_hash` are copied from the task (the gate compares both), `hints.trace_digest` is 64
+    /// zeros. `labels` are the (recipient, amount, pc) masks; `evm` is (gas_limit, max_fee_per_gas, max_priority_fee_per_gas) for an EVM
+    /// asset and `None` for NEAR.
+    #[allow(clippy::too_many_arguments)]
+    pub fn request_json(
+        &self,
+        task: &airlock_policy::task::OwnerTask,
+        action_index: u8,
+        asset: &str,
+        payee: &str,
+        amount: u128,
+        labels: (u16, u16, u16),
+        evm: Option<(u128, u128, u128)>,
+    ) -> Value {
+        json!({
+            "task_id": task.task_id,
+            "action_index": action_index,
+            "asset": asset,
+            "payee": payee,
+            "amount": amount.to_string(),
+            "labels": { "recipient": labels.0, "amount": labels.1, "pc": labels.2 },
+            "evm": evm.map(|(gas_limit, max_fee, priority)| json!({
+                "gas_limit": gas_limit.to_string(),
+                "max_fee_per_gas": max_fee.to_string(),
+                "max_priority_fee_per_gas": priority.to_string()
+            })),
+            "hints": {
+                "plan_hash": task.plan_sha256.to_hex(),
+                "trace_digest": "0".repeat(64)
+            }
+        })
+    }
+
+    /// `submit_batch` as the agent, 300 Tgas, no deposit. A failed receipt is not an error: inspect the result (`failure_text`).
+    pub async fn submit(
+        &self,
+        reqs: Vec<Value>,
+        task: &(
+            airlock_policy::task::OwnerTask,
+            near_sdk::json_types::Base64VecU8,
+        ),
+    ) -> ExecutionFinalResult {
+        call_300_tgas(
+            &self.policy,
+            &self.net,
+            &self.agent,
+            &self.agent_signer,
+            "submit_batch",
+            json!({ "reqs": reqs, "task": task.0, "task_sig": task.1 }),
+        )
+        .await
+    }
+
+    /// `get_request`: the view of a request, or `None` for an unknown id.
+    pub async fn request(&self, id: &str) -> Option<Value> {
+        call_view::<Option<Value>>(&self.policy, "get_request", json!({ "id": id }), &self.net)
+            .await
+            .unwrap_or_else(|e| panic!("get_request must answer: {e:?}"))
+            .data
+    }
+
+    /// `get_ledgers` for the payee key and asset id, with no task (`task_spent` is null).
+    pub async fn ledgers(&self, payee: &str, asset: &str) -> Value {
+        call_view::<Value>(
+            &self.policy,
+            "get_ledgers",
+            json!({ "payee": payee, "asset": asset, "task": null }),
+            &self.net,
+        )
+        .await
+        .unwrap_or_else(|e| panic!("get_ledgers must answer: {e:?}"))
+        .data
+    }
+
+    /// The mock's `set_mode`: `ok`, `fail`, `garbage` or `yield`.
+    pub async fn set_mpc_mode(&self, mode: &str) {
+        call_transaction(
+            &self.mpc,
+            "set_mode",
+            json!({ "mode": mode }),
+            &self.owner,
+            &self.owner_signer,
+            &self.net,
+            None,
+        )
+        .await
+        .expect("set_mode is sent")
+        .assert_success();
+    }
+
+    /// The mock's `resume`: answers the oldest parked request that is still waiting (yield mode skips timed-out ids), no deposit.
+    pub async fn resume_mpc(&self) {
+        call_transaction(
+            &self.mpc,
+            "resume",
+            json!({}),
+            &self.owner,
+            &self.owner_signer,
+            &self.net,
+            None,
+        )
+        .await
+        .expect("resume is sent")
+        .assert_success();
+    }
+
+    /// The mock's `parked` view: requests waiting for a resume or the timeout, plus any that already timed out (compare with the value
+    /// before the submit).
+    pub async fn mpc_parked(&self) -> u64 {
+        call_view::<u64>(&self.mpc, "parked", json!({}), &self.net)
+            .await
+            .unwrap_or_else(|e| panic!("parked must answer: {e:?}"))
+            .data
+    }
+}
+
+/// Every `EVENT_JSON:` log of `r` whose `event` is `name`, each as its `data[0]`, in the order they were logged.
+pub fn events(r: &ExecutionFinalResult, name: &str) -> Vec<Value> {
+    extract_event_logs(r)
+        .expect("the events parse")
+        .into_iter()
+        .filter(|event| event["event"] == name)
+        .map(|event| event["data"][0].clone())
+        .collect()
 }

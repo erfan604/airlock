@@ -46,30 +46,14 @@ async fn slot() -> tokio::sync::SemaphorePermit<'static> {
         .expect("the semaphore is never closed")
 }
 
+/// Asset `near` with the amounts of this file in yoctoNEAR (hard cap 10_000, daily cap 100_000, quick task cap 100_000 base units): the
+/// shared entry of tests/common with one base unit per whole unit (AIR-105).
 fn near_entry() -> Value {
-    json!({
-        "symbol": "NEAR",
-        "decimals": 24,
-        "hard_cap": "10000",
-        "daily_cap": "100000",
-        "max_fee_per_gas": "0",
-        "max_gas": "0",
-        "quick_task_cap": "100000",
-        "path": null
-    })
+    near_asset_entry(1)
 }
 
 fn evm_entry() -> Value {
-    json!({
-        "symbol": "ETH.base",
-        "decimals": 18,
-        "hard_cap": "1000000000000000000",
-        "daily_cap": "10000000000000000000",
-        "max_fee_per_gas": "50000000000",
-        "max_gas": "100000",
-        "quick_task_cap": "5000000000000000000",
-        "path": "base-sepolia-1"
-    })
+    evm_asset_entry()
 }
 
 /// A request JSON: task `task-1`, the asset the payee key implies, no `evm`, fixed hints (the plan hash is the one of `base_task`).
