@@ -3,9 +3,10 @@
 // before, charges the four ledgers of every Allow before the next verdict, stores one record per request and emits the events. The
 // verdict decides every outcome; this file only loads its inputs, stores what it answered and moves the ledgers.
 //
-// Placement (security): `submit_batch` is the only `pub fn` in a `#[near]` impl here. `evaluate`, `store_pending`, `start_execution`
-// and every other helper live in a plain `impl Contract`, so none of them is an exported method: a helper in the `#[near]` block would
-// be callable by anyone, and `start_execution` reaches MPC signing once AIR-100 and AIR-101 land (`tests/gate.rs::helpers_not_exported`).
+// Placement (security): `submit_batch` and the read only `preview` (AIR-064) are the only `pub fn`s in a `#[near]` impl here. `evaluate`,
+// `store_pending`, `start_execution` and every other helper live in a plain `impl Contract`, so none of them is an exported method: a
+// helper in the `#[near]` block would be callable by anyone, and `start_execution` reaches MPC signing once AIR-100 and AIR-101 land
+// (`tests/gate.rs::helpers_not_exported`).
 //
 // The agent never chooses an id, a nonce, a path or an asset: the request id is derived from the task hash and the action index
 // (`request_id`), and the asset must be the one the payee key implies. Pause blocks every request (verdict rule 1), and there is no
@@ -14,13 +15,13 @@ use crate::keys::{asset_for_payee_key, validate_payee_key};
 use crate::ledgers::{LedgerKey, caps_for, is_untrusted_amount, verdict_inputs};
 use crate::policy::{AssetEntry, BookEntry, MIN_EVM_GAS};
 use crate::request::{
-    Hex32, PendingInfo, RequestRecord, RequestState, SubmitOutcome, SubmitRequest, check_labels,
-    request_id, same_content,
+    ChargeRec, Hex32, PendingInfo, RequestRecord, RequestState, SubmitOutcome, SubmitRequest,
+    check_labels, request_id, same_content,
 };
-use crate::task::{OwnerTask, VerifiedTask};
+use crate::task::{OwnerTask, VerifiedTask, task_hash};
 use crate::time::utc_day;
 use crate::*;
-use airlock_verdict::ledger::Spent;
+use airlock_verdict::ledger::{Spent, charge_for_allow};
 use airlock_verdict::{Reason, Verdict};
 use near_sdk::PromiseOrValue;
 use near_sdk::json_types::{Base64VecU8, U128};
@@ -47,6 +48,37 @@ pub struct EvalCtx {
 pub struct Evaluated {
     pub verdict: Verdict,
     pub ctx: EvalCtx,
+}
+
+/// What an Allow would charge to the four ledgers, as decimal strings (`ChargeRec` on the wire, AIR-064).
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ChargeView {
+    pub asset_day: U128,
+    pub payee_day: U128,
+    pub payee_untrusted_day: U128,
+    pub task: U128,
+}
+
+impl From<ChargeRec> for ChargeView {
+    fn from(c: ChargeRec) -> Self {
+        Self {
+            asset_day: U128(c.asset_day),
+            payee_day: U128(c.payee_day),
+            payee_untrusted_day: U128(c.payee_untrusted_day),
+            task: U128(c.task),
+        }
+    }
+}
+
+/// What `preview` answers: the outcome name (`allowed`, `escalated` or `blocked`, the names `submit_batch` answers), the verdict
+/// reason (none for an Allow) and, for an Allow only, the charge `submit_batch` would apply. Advisory: see `preview`.
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PreviewView {
+    pub outcome: String,
+    pub reason: Option<String>,
+    pub would_charge: Option<ChargeView>,
 }
 
 /// What the replay table says about a request id (`replay_step`).
@@ -156,6 +188,33 @@ impl Contract {
                 spent,
                 now_ms,
             },
+        }
+    }
+
+    /// The body of `preview` at block time `now_ms`, read only (AIR-064). The task is not verified, because a view cannot see a
+    /// signature or a caller: its hash and its bounds are built the way `verify_task` builds them (`task_hash`, `verify_bounds`, the
+    /// same reverts), then the request shape is checked (`check_request_shape`, the same reverts as step c of `submit_batch`) and the
+    /// same `evaluate` that `submit_batch` runs gives the verdict. There is no id, agent, state, replay or action count check, so a
+    /// request that `submit_batch` would answer from its replay table, or refuse for its agent or its task, still gets a verdict
+    /// here. `would_charge` is the charge `charge_allow` applies (`charge_for_allow`), for an Allow only.
+    pub fn preview_at(&self, req: &SubmitRequest, task: &OwnerTask, now_ms: u64) -> PreviewView {
+        let vt = VerifiedTask {
+            hash: task_hash(task),
+            bounds: self.verify_bounds(task),
+        };
+        check_request_shape(req);
+        let (outcome, reason, would_charge) = match self.evaluate(req, &vt, now_ms).verdict {
+            Verdict::Allow => {
+                let charge = charge_for_allow(req.amount.0, is_untrusted_amount(&req.labels));
+                ("allowed", None, Some(ChargeRec::from(charge).into()))
+            }
+            Verdict::Escalate(reason) => ("escalated", Some(reason), None),
+            Verdict::Block(reason) => ("blocked", Some(reason), None),
+        };
+        PreviewView {
+            outcome: outcome.to_string(),
+            reason: reason.map(|r| r.as_str().to_string()),
+            would_charge,
         }
     }
 
@@ -406,6 +465,14 @@ impl Contract {
             }
         }
         PromiseOrValue::Value(outcomes)
+    }
+
+    /// What `submit_batch` would answer for `req` under `task` right now, without changing anything: the outcome, the reason and, for
+    /// an Allow, the charge (`preview_at`). For the console's verdict display and the bench loader. A view has no caller, so this is
+    /// advisory: it checks no signature, agent, id or replay state, and `submit_batch` decides. Never treat an answer as authorization.
+    /// Label, key and bound errors revert with the messages `submit_batch` uses.
+    pub fn preview(&self, req: SubmitRequest, task: OwnerTask) -> PreviewView {
+        self.preview_at(&req, &task, block_timestamp_ms())
     }
 }
 
@@ -692,6 +759,108 @@ mod tests {
         assert_eq!(
             c.evaluate(&alice, &vt, NOW).verdict,
             Verdict::Block(Reason::Paused)
+        );
+    }
+
+    /// `preview_at` (AIR-064) writes nothing: no record, no ledger change, no event. Before and after a `submit_batch` of the same three
+    /// requests it answers the outcome and reason the batch then gives, and for the Allow the charge the ledgers then hold.
+    #[test]
+    fn preview_is_read_only_and_agrees_with_submit_batch() {
+        let mut c = setup();
+        let task = owner_task(&[(ALICE, 1_000), (BOB, 1_000)], 20);
+        let owner_labels = Labels {
+            recipient: OWNER_MASK,
+            amount: OWNER_MASK,
+            pc: OWNER_MASK,
+        };
+        let reqs = vec![
+            clean(0, ALICE, 10),
+            request(1, BOB, 10, owner_labels),
+            clean(2, ALICE, 10_001),
+        ];
+        let key = key_for(&task, ALICE);
+        testing_env!(ctx(AGENT, NOW, 0).build());
+        let before = c.spent_now(&key, NOW);
+        let previews: Vec<PreviewView> = reqs.iter().map(|r| c.preview_at(r, &task, NOW)).collect();
+        assert_eq!(c.spent_now(&key, NOW), before, "preview moved a ledger");
+        assert!(get_logs().is_empty(), "preview emitted an event");
+        assert!(
+            c.records
+                .get(&request_id(&crate::task::task_hash(&task), 0))
+                .is_none()
+        );
+        assert_eq!(c.next_pending_no, 1);
+        assert_eq!(c.actions_used(&crate::task::task_hash(&task)), 0);
+        assert_eq!(previews[0].outcome, "allowed");
+        assert_eq!(previews[0].reason, None);
+        assert_eq!(
+            previews[0].would_charge,
+            Some(ChargeView {
+                asset_day: U128(10),
+                payee_day: U128(10),
+                payee_untrusted_day: U128(0),
+                task: U128(10)
+            })
+        );
+        assert_eq!(previews[1].outcome, "escalated");
+        assert_eq!(previews[1].reason.as_deref(), Some("NewRecipient"));
+        assert_eq!(previews[1].would_charge, None);
+        assert_eq!(previews[2].outcome, "blocked");
+        assert_eq!(previews[2].reason.as_deref(), Some("AmountOutOfBounds"));
+        assert_eq!(previews[2].would_charge, None);
+        let outs = submit(&mut c, &task, reqs);
+        for (preview, out) in previews.iter().zip(&outs) {
+            assert_eq!(preview.outcome, out.outcome);
+            assert_eq!(preview.reason, out.reason);
+        }
+        let after = c.spent_now(&key, NOW);
+        assert_eq!(
+            (
+                after.asset_day,
+                after.payee_day,
+                after.payee_untrusted_day,
+                after.task
+            ),
+            (10, 10, 0, 10)
+        );
+    }
+
+    /// An untrusted amount charges the untrusted budget in the preview exactly as `charge_allow` does, and the shape errors of
+    /// `submit_batch` revert in the preview with the same text.
+    #[test]
+    fn preview_charges_the_untrusted_budget_and_checks_the_shape() {
+        let c = setup();
+        let task = owner_task(&[(ALICE, 1_000)], 20);
+        testing_env!(ctx(AGENT, NOW, 0).build());
+        let untrusted = request(
+            0,
+            ALICE,
+            100,
+            Labels {
+                recipient: BOOK_MASK,
+                amount: airlock_verdict::labels::EMAIL,
+                pc: OWNER_MASK,
+            },
+        );
+        let answer = c.preview_at(&untrusted, &task, NOW);
+        assert_eq!(answer.outcome, "allowed");
+        assert_eq!(
+            answer.would_charge.map(|w| w.payee_untrusted_day),
+            Some(U128(100))
+        );
+        let mut bad_bit = clean(0, ALICE, 10);
+        bad_bit.labels.pc = 0x8000;
+        assert!(panics(|| c.preview_at(&bad_bit, &task, NOW)).contains("unknown label bit"));
+        let mut wrong_asset = clean(0, ALICE, 10);
+        wrong_asset.asset = "evm:84532:native".to_string();
+        assert!(
+            panics(|| c.preview_at(&wrong_asset, &task, NOW))
+                .contains("asset does not match payee")
+        );
+        let no_bounds = owner_task(&[], 20);
+        assert!(
+            panics(|| c.preview_at(&clean(0, ALICE, 10), &no_bounds, NOW))
+                .contains("bad bound count")
         );
     }
 
