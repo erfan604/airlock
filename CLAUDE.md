@@ -29,7 +29,7 @@ must keep the test that proves each claim green.
   `$AIRLOCK_RESEARCH/spikes/model-bakeoff/DECISION.md`, the grant balance read before any spend) plus the A5 cap of
   `$AIRLOCK_RESEARCH/plan/AUTHORIZATIONS.md`, minus what is already spent (the bake-off `SPEND usd <x>` of
   `spikes/model-bakeoff/spend.py` plus each earlier run's `total cost`). A5 `usd 0` means no money beyond the free credit,
-  not a zero budget. Erfan still says yes in chat to the exact first live command.
+  not a zero budget. Erfan still says yes in chat to the exact first live command. Per-ticket caps, the affordable models (GLM-5.3-flash, Qwen3.6 low; Qwen3.8, Kimi K3 and grok-4.7 are out on cost) and the spend ledger: `$AIRLOCK_RESEARCH/plan/LLM_BUDGET.md` (one $10 credit for the whole project, nothing is bought).
 
 ## Toolchain facts (verified 2026-10-21)
 - Contracts compile with rustc 1.86.0 only (`contracts/airlock-policy/rust-toolchain.toml`); cargo-near 0.22 rejects newer rustc for near-sdk 5.26.
