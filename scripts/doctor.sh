@@ -31,10 +31,11 @@ check "gh" "gh --version" "gh version"
 check "NEAR AI key (Erfan)" "grep -q '^NEARAI_API_KEY=.\{16,\}' ~/.airlock-research.env 2>/dev/null && echo present || echo 'missing: write NEARAI_API_KEY to ~/.airlock-research.env (research folder, plan/ERFAN_TODO.md, Accounts and keys item 1)'" "present"
 check "testnet RPC" "curl -s -m 10 https://rpc.testnet.near.org/status | grep -o '\"chain_id\":\"testnet\"'" "testnet"
 check "MPC signer live" "near contract call-function as-read-only v1.signer-prod.testnet version json-args '{}' network-config testnet now 2>&1 | grep -o '\"3\.[0-9.]*\"'" "\"3."
-# the signer can be upgraded without notice. Accepted: the code hashes of releases 3.17.0, 3.17.1 and 3.17.2, recomputed from
-# the near/mpc release wasm on 2026-10-24 (3.17.1 and 3.17.2 leave the contract source and ABI unchanged). A FAIL here means a
+# the signer can be upgraded without notice. Accepted: the code hashes of releases 3.17.0, 3.17.1, 3.17.2 (recomputed from
+# the near/mpc release wasm on 2026-10-24) and 3.18.0 (live since 2026-10-30, recomputed 2026-11-01; it removes only the
+# latest_key_version view, sign args, deposit, gas and response are unchanged). A FAIL here means a
 # release outside that set: re-check the sign request shape and gas in kit CLAUDE.md "Toolchain facts" before trusting a demo run
-check "MPC signer code 3.17.x" "curl -s -m 10 -A airlock https://test.rpc.fastnear.com -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"query\",\"params\":{\"request_type\":\"view_account\",\"finality\":\"final\",\"account_id\":\"v1.signer-prod.testnet\"}}' | grep -oE 'DAE5ng4ZFR2ctMx9SizQBqmGkVbKUutgZ4ZECD4R8Sm9|DrZ9PnDATDW5G9UiMUveLrnkCaHSNJAtWCRkW5Yg4qtX|Dg8Pt8mkGxnpFAUSWHoji95Ss8g3yeF6gz3FjMuzp4ZX' | head -1 | grep -c ." "1"
+check "MPC signer code 3.17.x/3.18.0" "curl -s -m 10 -A airlock https://test.rpc.fastnear.com -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"query\",\"params\":{\"request_type\":\"view_account\",\"finality\":\"final\",\"account_id\":\"v1.signer-prod.testnet\"}}' | grep -oE 'DAE5ng4ZFR2ctMx9SizQBqmGkVbKUutgZ4ZECD4R8Sm9|DrZ9PnDATDW5G9UiMUveLrnkCaHSNJAtWCRkW5Yg4qtX|Dg8Pt8mkGxnpFAUSWHoji95Ss8g3yeF6gz3FjMuzp4ZX|CpGX8ywXJwvWPgZFDDCTCuPJBHF7BATT51gSfc3APERJ' | head -1 | grep -c ." "1"
 df -h /System/Volumes/Data | awk 'NR==2 {print "  disk free: " $4}'
 [ $fail -eq 0 ] && echo "DOCTOR: ALL OK" || echo "DOCTOR: fix the FAIL lines"
 exit $fail

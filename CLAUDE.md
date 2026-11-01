@@ -35,7 +35,7 @@ must keep the test that proves each claim green.
 - Contracts compile with rustc 1.86.0 only (`contracts/airlock-policy/rust-toolchain.toml`); cargo-near 0.22 rejects newer rustc for near-sdk 5.26.
 - `ring` needs a wasm-capable clang: `scripts/env.sh` sets `CC_wasm32_unknown_unknown`, `AR_wasm32_unknown_unknown` (Homebrew llvm) and `CFLAGS_wasm32_unknown_unknown=-mcpu=mvp`. Without `-mcpu=mvp` the wasm fails validation.
 - Pinned: `near-sdk =5.26.1`, `shade-attestation =0.2.0`, `omni-transaction =0.5.0` (evm feature only), `near-sandbox =0.3.9`.
-- MPC signer (verified live 2026-10-21, near/mpc 3.17.0; 3.17.1 and 3.17.2 change no contract source or ABI, so a newer version on the live view is not a reason to stop): `sign({request:{path, payload_v2:{Ecdsa: <hex32>}, domain_id: 0}})`, 1 yocto,
+- MPC signer (verified live 2026-10-21, near/mpc 3.17.0; 3.17.1 and 3.17.2 change no contract source or ABI; 3.18.0, live since 2026-10-30 and re-verified 2026-11-01, only removes the `latest_key_version` view and adds signing leader failover; so a newer version on the live view is not a reason to stop): `sign({request:{path, payload_v2:{Ecdsa: <hex32>}, domain_id: 0}})`, 1 yocto,
   at least 15 Tgas prepaid; response `{scheme:"Secp256k1", big_r:{affine_point}, s:{scalar}, recovery_id}`; read callbacks with
   `env::promise_result_checked(idx, max_len)` (the old `promise_result` is deprecated). NEAR's agent-skills rule
   `near-smart-contracts/rules/chain-signatures.md` is stale (250 Tgas, an older response shape, omni 0.4): ignore it;
