@@ -1,6 +1,6 @@
 // CSP builder, the per-response nonce plugin and the preview proxy (AIR-183).
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -115,6 +115,8 @@ before(async () => {
   stubOrigin = `http://127.0.0.1:${(stub.address() as AddressInfo).port}`;
 
   const dist = mkdtempSync(join(tmpdir(), 'airlock-csp-'));
+  mkdirSync(join(dist, 'assets'));
+  writeFileSync(join(dist, 'assets', 'x.js'), 'export const x = 1;\n');
   writeFileSync(
     join(dist, 'index.html'),
     `<!doctype html><html><head><meta property="csp-nonce" nonce="${CSP_NONCE_PLACEHOLDER}"></head><body><div id="root"></div>` +
@@ -187,4 +189,91 @@ test('proxy: a streaming SSE body from /runs/x/events arrives in more than one c
   assert.ok(chunks.length > 1, `got ${chunks.length} chunk(s)`);
   const all = chunks.join('');
   for (let n = 1; n <= 4; n++) assert.ok(all.includes(`data: {"n":${n}}`), String(n));
+});
+
+// ---- parser differentials: the header must not depend on how the path is spelled or what the client accepts ----
+
+type Raw = { status: number; headers: http.IncomingHttpHeaders; body: string };
+
+/** A GET with the path exactly as written: fetch would resolve dot segments before sending, a raw request does not. */
+function raw(path: string, headers: Record<string, string> = {}, method = 'GET'): Promise<Raw> {
+  const u = new URL(base);
+  return new Promise((resolve, reject) => {
+    const req = http.request({ host: u.hostname, port: Number(u.port), path, method, headers }, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (c: Buffer) => chunks.push(c));
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, headers: res.headers, body: Buffer.concat(chunks).toString('utf8') }));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+const cspOf = (r: Raw): string => {
+  const h = r.headers['content-security-policy'];
+  assert.equal(typeof h, 'string', 'no content-security-policy header');
+  return h as string;
+};
+
+test('differential: other spellings of index.html carry the policy and get the nonce rewrite', async () => {
+  for (const path of ['/%69ndex.html', '/./index.html', '//index.html', '/a/../index.html', '/%2e/index.html', '/index.html?x=1']) {
+    const r = await raw(path);
+    assert.equal(r.status, 200, path);
+    const csp = cspOf(r);
+    assert.equal(normalizeNonce(csp), normalizeNonce(buildCsp({ ...defaultCspInputs(), runtimeOrigin: stubOrigin, nonce: 'x' })), path);
+    assert.equal(r.body.includes(CSP_NONCE_PLACEHOLDER), false, `${path}: placeholder left in the page`);
+    const attrs = [...r.body.matchAll(/nonce="([^"]+)"/g)].map((m) => m[1]);
+    assert.ok(attrs.length >= 2, path);
+    for (const a of attrs) assert.equal(a, nonceOf(csp), path);
+  }
+});
+
+test('differential: a document route requested with another Accept still carries the policy', async () => {
+  for (const accept of ['application/json', 'text/plain', 'image/png']) {
+    const r = await raw('/approve', { Accept: accept });
+    cspOf(r);
+    // whatever answers it, an HTML page is never served with the placeholder nonce in the open
+    if (r.body.includes('<html')) assert.equal(r.body.includes(CSP_NONCE_PLACEHOLDER), false);
+  }
+});
+
+test('differential: static files and unknown paths carry the policy too', async () => {
+  const js = await raw('/assets/x.js');
+  assert.equal(js.status, 200);
+  assert.equal(js.body, 'export const x = 1;\n');
+  cspOf(js);
+  cspOf(await raw('/no/such/file.png'));
+  cspOf(await raw('/assets/'));
+});
+
+test('differential: HEAD requests carry the policy as well', async () => {
+  const r = await raw('/%69ndex.html', {}, 'HEAD');
+  assert.equal(r.status, 200);
+  cspOf(r);
+  assert.equal(r.body, '');
+});
+
+test('differential: a malformed escape answers 400 and still carries the policy', async () => {
+  for (const path of ['/%E0%A4%A', '/%', '/%zz', '/a%00b']) {
+    const r = await raw(path);
+    assert.equal(r.status, 400, path);
+    cspOf(r);
+  }
+});
+
+test('differential: a path that only looks proxied after normalizing is a console page, not the runtime', async () => {
+  // Vite proxies on the raw url prefix. These do not start with /session, so Vite serves the console page: with the policy.
+  for (const path of ['/%2Fsession', '/./session', '//session', '/%73ession']) {
+    const r = await raw(path);
+    assert.equal(r.status, 200, path);
+    cspOf(r);
+    assert.equal(r.body.includes('"ok":true'), false, `${path}: reached the runtime stub`);
+  }
+});
+
+test('differential: proxied runtime paths are left to the runtime (no policy of ours, cookie and body intact)', async () => {
+  const r = await raw('/session', { Cookie: 'sid=prev' });
+  assert.equal(r.status, 200);
+  assert.equal(r.headers['content-security-policy'], undefined);
+  assert.deepEqual(JSON.parse(r.body), { ok: true });
 });

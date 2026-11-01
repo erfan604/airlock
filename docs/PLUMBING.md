@@ -39,6 +39,12 @@ The nonce rule:
 3. Send `Cache-Control: no-store` with the HTML, so a cached page never meets a header with another nonce.
 4. `script-src` never contains `unsafe-inline`, `unsafe-eval` or `data:`. A host that cannot add a nonce must serve no inline script
    at all and may then use `script-src 'self'`.
+5. Send the header on every response the host answers for the console, not only on the page you rewrite. `vite-csp.ts` sets it on
+   every GET and HEAD that Vite does not proxy before it passes the request on, so a static file, the single page fallback and an
+   error page carry it however the path is spelled (`/%69ndex.html`, `/./index.html`) and whatever `Accept` says. An HTML file
+   served without the nonce rewrite keeps the placeholder, so its inline scripts stay blocked, which is the intended failure.
+   Rewrite the page only for a request that reduces to a document path after decoding once, collapsing slashes and resolving dot
+   segments, and answer a malformed escape with a bad request status.
 
 What each list is for:
 
