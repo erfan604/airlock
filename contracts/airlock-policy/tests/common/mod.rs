@@ -89,8 +89,10 @@ pub async fn deploy_contract(
         account_id.unwrap_or_else(|| format!("contract.{}", genesis_account_id).parse().unwrap());
     let contract_secret_key = signer::generate_secret_key()?;
 
+    // The wasm is about 1 MB and storing it locks about 9.9 NEAR (1e19 yocto per byte), so 10 NEAR left room for a few dozen stored
+    // records only (`LackBalanceForState`, hit by tests/book.rs at its 41st payee when AIR-080 grew the wasm); 30 NEAR leaves about 20.
     let _ = Account::create_account(contract_id.clone())
-        .fund_myself(genesis_account_id.clone(), NearToken::from_near(10))
+        .fund_myself(genesis_account_id.clone(), NearToken::from_near(30))
         .with_public_key(contract_secret_key.public_key())
         .with_signer(genesis_signer.clone())
         .send_to(network_config)

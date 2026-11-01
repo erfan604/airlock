@@ -25,6 +25,7 @@ pub use views::{AgentValidity, AgentView, ContractInfo};
 // Modules are `pub` and every helper without a caller yet is `pub`, so `cargo clippy -D warnings` does not flag a helper whose
 // caller lands in a later ticket (a private unused item is a `dead_code` error, a `pub` one in a `pub mod` is not).
 pub mod agents;
+pub mod escalation;
 pub mod gate;
 pub mod internal;
 pub mod keys;
@@ -78,9 +79,14 @@ pub struct Contract {
     pub task_spent: LookupMap<([u8; 32], String), u128>,
     // AIR-063: every submitted request by its derived id (the record is also the used marker of the id), and the next short number
     // of an escalation (numbers are never reused). In the layout table `records` and `next_pending_no` come after the ledgers
-    // (AIR-062) and before `pending_by_no` (AIR-080): the ticket that adds the fields in between inserts them above these two.
+    // (AIR-062) and before `pending_by_no` (AIR-080).
     pub records: LookupMap<String, request::RequestRecord>,
     pub next_pending_no: u32,
+    // AIR-080: the request id of every escalation by its short pending number (never removed from, so `get_request(no)` works after the
+    // approval and a second approve says `NotPending`), and the numbers still Pending (approve, reject and expire remove a number here
+    // only). In the layout table they come right after `next_pending_no` and before `flood` (AIR-083).
+    pub pending_by_no: LookupMap<u32, String>,
+    pub pending_nos: IterableSet<u32>,
     // AIR-104: the next EVM nonce to hand out per registry `path`, and the one transaction each request id was signed as (entries of
     // `evm_attempts` are never removed, they are bounded by the EVM requests the owner's tasks admit). In the layout table they are
     // the last two fields, after `flood` (AIR-083): the tickets that add fields in between insert them above these two.
@@ -119,7 +125,10 @@ pub enum StorageKey {
     TaskSpent,
     // AIR-063. Later tickets insert theirs above it where the layout table in AIR-040 puts them (before the first deploy, AIR-048).
     Records,
-    // AIR-104 (the table puts them last, after `Flood` of AIR-083: AIR-080 and AIR-083 insert theirs above these two)
+    // AIR-080 (the table puts them right after `Records`, above `Flood` of AIR-083 and the nonce keys of AIR-104)
+    PendingByNo,
+    PendingNos,
+    // AIR-104 (the table puts them last, after `Flood` of AIR-083: AIR-083 inserts its key above these two)
     Nonces,
     EvmAttempts,
 }
@@ -160,6 +169,8 @@ impl Contract {
             task_spent: LookupMap::new(StorageKey::TaskSpent),
             records: LookupMap::new(StorageKey::Records),
             next_pending_no: 1,
+            pending_by_no: LookupMap::new(StorageKey::PendingByNo),
+            pending_nos: IterableSet::new(StorageKey::PendingNos),
             nonces: LookupMap::new(StorageKey::Nonces),
             evm_attempts: LookupMap::new(StorageKey::EvmAttempts),
         }

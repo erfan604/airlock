@@ -11,12 +11,13 @@
 // The agent never chooses an id, a nonce, a path or an asset: the request id is derived from the task hash and the action index
 // (`request_id`), and the asset must be the one the payee key implies. Pause blocks every request (verdict rule 1), and there is no
 // other signing path.
+use crate::escalation::pending_info;
 use crate::keys::{asset_for_payee_key, validate_payee_key};
 use crate::ledgers::{LedgerKey, caps_for, is_untrusted_amount, verdict_inputs};
 use crate::policy::{AssetEntry, BookEntry, MIN_EVM_GAS};
 use crate::request::{
-    ChargeRec, Hex32, PendingInfo, RequestRecord, RequestState, SubmitOutcome, SubmitRequest,
-    check_labels, request_id, same_content,
+    ChargeRec, RequestRecord, RequestState, SubmitOutcome, SubmitRequest, check_labels, request_id,
+    same_content,
 };
 use crate::task::{OwnerTask, VerifiedTask, task_hash};
 use crate::time::utc_day;
@@ -263,8 +264,8 @@ impl Contract {
 
     /// Stores an escalation: the record `Pending` with its `PendingInfo`, then the `escalated` event. The number is the next one of
     /// `next_pending_no` and is never reused (`pending counter overflow` at the end of `u32`): it is what `approve` takes. AIR-083 puts the
-    /// flood gate in front of this call; AIR-080 fills the digest and the display fields and inserts the number into its pending index.
-    /// Returns the number.
+    /// flood gate in front of this call. The display strings and the digest come from `escalation::pending_info` (AIR-080), and the
+    /// number goes into both pending indexes (`index_pending`). Returns the number.
     pub fn store_pending(&mut self, mut rec: RequestRecord, ctx: &EvalCtx, reason: Reason) -> u32 {
         let no = self.next_pending_no;
         self.next_pending_no = no
@@ -276,16 +277,7 @@ impl Contract {
             .unwrap_or_else(|| env::panic_str("pending expiry overflow"));
         rec.state = RequestState::Pending;
         rec.reason = Some(reason.as_str().to_string());
-        rec.pending = Some(PendingInfo {
-            no,
-            expires_ms,
-            book_in: ctx.payee.is_some(),
-            task_bound: ctx.bound.unwrap_or(0),
-            // AIR-080 computes the display strings and the digest
-            display_symbol: String::new(),
-            display_amount: String::new(),
-            digest: Hex32([0; 32]),
-        });
+        rec.pending = Some(pending_info(&rec, ctx, no, expires_ms));
         let id = request_id(&rec.task_hash, rec.index);
         Event::Escalated {
             request_id: &id,
@@ -293,6 +285,7 @@ impl Contract {
             reason: reason.as_str(),
         }
         .emit();
+        self.index_pending(no, &id);
         self.records.insert(id, rec);
         no
     }
@@ -480,7 +473,7 @@ impl Contract {
 mod tests {
     use super::*;
     use crate::agents::{AllowedAgent, fingerprint};
-    use crate::request::{EvmParams, Hints, Labels};
+    use crate::request::{EvmParams, Hex32, Hints, Labels};
     use crate::task::{TASK_TAG, TaskBound, VerifiedBound};
     use crate::testutil::{POLICY, ctx, fresh, sign, task_public_key};
     use near_sdk::test_utils::get_logs;

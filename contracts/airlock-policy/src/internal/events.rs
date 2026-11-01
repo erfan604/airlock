@@ -113,6 +113,15 @@ pub enum Event<'a> {
         id: String,
         reason: &'a str,
     },
+    /// One per approval (AIR-080): `digest` is the 64 lowercase hex characters of the stored escalation digest, `approver` the owner
+    /// account and `block_height` the block of the approval as a decimal string. `id` is the decimal pending number.
+    Approved {
+        request_id: &'a str,
+        id: String,
+        digest: String,
+        approver: &'a AccountId,
+        block_height: U64,
+    },
     /// One per new Block, with the `Reason::as_str()` name.
     Blocked {
         request_id: &'a str,

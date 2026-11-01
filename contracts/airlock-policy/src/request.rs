@@ -9,6 +9,7 @@
 //  - labels are three u16 masks on the wire, bit 15 is never set (`check_labels`), a mask of 0 is allowed here and blocked by the
 //    verdict (`MissingProvenance`);
 //  - no free text is stored: `hints` are read from the wire and not kept.
+use crate::escalation::book_status;
 use crate::*;
 use airlock_verdict::labels::is_valid_mask;
 use near_sdk::json_types::U128;
@@ -256,7 +257,7 @@ pub struct SubmitOutcome {
     pub pending_id: Option<String>,
 }
 
-/// The readable form of the escalation display strings (AIR-080 fills it).
+/// The readable form of the escalation display strings (AIR-080 fills it at store time).
 #[near(serializers = [json])]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RequestDisplay {
@@ -310,8 +311,9 @@ impl RequestView {
         rec.state == RequestState::Expired && rec.pending.is_none()
     }
 
-    /// The view of a stored record. AIR-080 fills `book_status`, `display`, `expires_ms` and `digest` for every record that has
-    /// `pending`; AIR-105 reads `exec`.
+    /// The view of a stored record. `book_status`, `display`, `expires_ms` and `digest` are filled for every record that has `pending`
+    /// and is not `Expired` (AIR-080): after `approve` the record is `Executing`, later `Executed`, `Retryable` or `Failed`, and
+    /// still shows the card, because AIR-085 reads it at the approval block. AIR-105 reads `exec`.
     pub fn from_record(rec: &RequestRecord) -> Self {
         let request_id = request_id(&rec.task_hash, rec.index);
         let id = rec.pending.as_ref().map(|p| p.no.to_string());
@@ -335,6 +337,11 @@ impl RequestView {
                 exec: None,
             };
         }
+        // the card of an escalation: absent for a request that was never escalated, and for an `Expired` record
+        let card = rec
+            .pending
+            .as_ref()
+            .filter(|_| rec.state != RequestState::Expired);
         Self {
             request_id,
             id,
@@ -346,11 +353,14 @@ impl RequestView {
             amount: Some(U128(rec.amount)),
             labels: Some(rec.labels),
             reason: rec.reason.clone(),
-            book_status: None,
-            display: None,
+            book_status: card.map(|p| book_status(p.book_in).to_string()),
+            display: card.map(|p| RequestDisplay {
+                asset_symbol: p.display_symbol.clone(),
+                amount_decimal: p.display_amount.clone(),
+            }),
             created_ms: Some(U64(rec.created_ms)),
-            expires_ms: None,
-            digest: None,
+            expires_ms: card.map(|p| U64(p.expires_ms)),
+            digest: card.map(|p| p.digest.to_hex()),
             exec: rec.exec.clone(),
         }
     }
@@ -359,13 +369,16 @@ impl RequestView {
 #[near]
 impl Contract {
     /// The record of a request. `id` is either the derived request id (it contains `:`) or the short pending number of an
-    /// escalation, which is looked up through `pending_by_no` once AIR-080 adds it (until then a number answers `None`). An unknown
-    /// id answers `None`.
+    /// escalation, which is looked up through `pending_by_no` (AIR-080) and keeps answering after the approval, because the index is
+    /// never removed from. A number must be the canonical decimal of a `u32` (`+7` and `007` answer `None`). An unknown id answers
+    /// `None`.
     pub fn get_request(&self, id: String) -> Option<RequestView> {
-        if !id.contains(':') {
-            return None;
+        if id.contains(':') {
+            return self.records.get(&id).map(RequestView::from_record);
         }
-        self.records.get(&id).map(RequestView::from_record)
+        let no = crate::escalation::parse_pending_no(&id)?;
+        let (_, rec) = self.pending_record(no)?;
+        Some(RequestView::from_record(&rec))
     }
 }
 
@@ -479,7 +492,7 @@ mod tests {
         assert!(Hex32::parse("").is_err());
         // not hex at all, and a multi byte character that makes the byte length 64
         assert!(Hex32::parse(&"g".repeat(64)).is_err());
-        assert!(Hex32::parse(&format!("{}é", "a".repeat(62))).is_err());
+        assert!(Hex32::parse(&format!("{}\u{e9}", "a".repeat(62))).is_err());
         assert!(serde_json::from_value::<Hex32>(json!(&ok[..63])).is_err());
         // a JSON array of numbers is not a hash either
         assert!(serde_json::from_value::<Hex32>(json!(vec![0u8; 32])).is_err());
@@ -875,7 +888,7 @@ mod tests {
     fn request_view_unknown_id_is_none() {
         let c = fresh();
         assert_eq!(c.get_request(request_id(&[1; 32], 0)), None);
-        // a pending number answers None until AIR-080 adds `pending_by_no`
+        // a pending number nobody was given answers None
         assert_eq!(c.get_request("1".to_string()), None);
         assert_eq!(c.get_request(String::new()), None);
     }

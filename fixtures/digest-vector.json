@@ -1,0 +1,71 @@
+{
+  "record": {
+    "request_id": "c8822ec553e350b4bdfdc236c8b7646fbb7151c524ffabb1019f7a5470b2f3b4:3",
+    "no": 7,
+    "agent": "agent.sandbox",
+    "task_hash": "c8822ec553e350b4bdfdc236c8b7646fbb7151c524ffabb1019f7a5470b2f3b4",
+    "asset": "evm:84532:native",
+    "payee": "evm:84532:0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+    "amount": "20000000000000000000",
+    "labels": [
+      2,
+      32,
+      1
+    ],
+    "reason": "UntrustedAmount",
+    "book_status": "in_book",
+    "evm": [
+      "21000",
+      "2000000000",
+      "1000000000"
+    ]
+  },
+  "preimage_layout": [
+    {
+      "name": "request_id",
+      "borsh_type": "String"
+    },
+    {
+      "name": "no",
+      "borsh_type": "u32"
+    },
+    {
+      "name": "agent",
+      "borsh_type": "String"
+    },
+    {
+      "name": "task_hash",
+      "borsh_type": "[u8; 32]"
+    },
+    {
+      "name": "asset",
+      "borsh_type": "String"
+    },
+    {
+      "name": "payee",
+      "borsh_type": "String"
+    },
+    {
+      "name": "amount",
+      "borsh_type": "u128"
+    },
+    {
+      "name": "labels",
+      "borsh_type": "[u16; 3]"
+    },
+    {
+      "name": "reason",
+      "borsh_type": "String"
+    },
+    {
+      "name": "book_status",
+      "borsh_type": "String"
+    },
+    {
+      "name": "evm",
+      "borsh_type": "Option<[u128; 3]>"
+    }
+  ],
+  "borsh_hex": "42000000633838323265633535336533353062346264666463323336633862373634366662623731353163353234666661626231303139663761353437306232663362343a33070000000d0000006167656e742e73616e64626f78c8822ec553e350b4bdfdc236c8b7646fbb7151c524ffabb1019f7a5470b2f3b41000000065766d3a38343533323a6e61746976653400000065766d3a38343533323a3078643864613662663236393634616639643765656439653033653533343135643337616139363034350000d01309468e1501000000000000000200200001000f000000556e74727573746564416d6f756e7407000000696e5f626f6f6b01085200000000000000000000000000000094357700000000000000000000000000ca9a3b000000000000000000000000",
+  "digest": "3078da7cbaabaf355558339311d5292f2598faa8e72a540ce87cfa45806741ad"
+}
