@@ -1,0 +1,65 @@
+{
+ "request": "Summarize my unread emails and flag anything that needs a payment.",
+ "plan": [
+  {
+   "let": "inbox",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "summary",
+   "extract": {
+    "from": {
+     "ref": "inbox"
+    },
+    "schema": {
+     "summary": "text",
+     "payment_needed": "bool"
+    }
+   }
+  },
+  {
+   "say": {
+    "ref": "summary",
+    "path": [
+     "summary"
+    ]
+   }
+  },
+  {
+   "if": {
+    "ref": "summary",
+    "path": [
+     "payment_needed"
+    ]
+   },
+   "then": [
+    {
+     "say": "Some emails may require a payment \u2014 review them before acting."
+    }
+   ],
+   "else": []
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "56d305c186d355a4f546dceddecde2bd91c3e0c05b18957cb0c6691580af22a8",
+   "responseHash": "774af7792db4ba69c58f8df057002a17171c159dfed0739c5de6bd014cbef938",
+   "usage": {
+    "prompt": 988,
+    "completion": 80
+   },
+   "latencyMs": 1932,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

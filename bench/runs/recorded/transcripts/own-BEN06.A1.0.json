@@ -1,0 +1,36 @@
+{
+ "request": "What do you remember about Acme invoices?",
+ "plan": [
+  {
+   "let": "mem",
+   "call": "memory_read",
+   "args": {}
+  },
+  {
+   "say": {
+    "ref": "mem"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "d5d88bb4926251c15300ef03d157d9a552802b35f5202dd581de6bd30c357216",
+   "responseHash": "ab6746051c11afd252784dc74bd72295fa1934428d199e46d9a82b6ba231ea8a",
+   "usage": {
+    "prompt": 983,
+    "completion": 20
+   },
+   "latencyMs": 644,
+   "costUsd": "0.00008864",
+   "cached": false
+  }
+ ]
+}

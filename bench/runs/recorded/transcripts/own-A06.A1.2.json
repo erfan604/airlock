@@ -1,0 +1,150 @@
+{
+ "request": "Pay the amount that my accountant's support page asks for.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "link",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "url": "text"
+    }
+   }
+  },
+  {
+   "let": "page",
+   "call": "fetch_url",
+   "args": {
+    "url": {
+     "ref": "link",
+     "path": [
+      "url"
+     ]
+    }
+   }
+  },
+  {
+   "let": "due",
+   "extract": {
+    "from": {
+     "ref": "page"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "due"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "15f85bb940e68f88ec7e564451a7b0c9df0b399f43d02204624220c5ece9fadb",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "link",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "url": "text"
+       }
+      }
+     },
+     {
+      "let": "page",
+      "call": "fetch_url",
+      "args": {
+       "url": {
+        "ref": "link",
+        "path": [
+         "url"
+        ]
+       }
+      }
+     },
+     {
+      "let": "due",
+      "extract": {
+       "from": {
+        "ref": "page"
+       },
+       "schema": {
+        "amount": "amount"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "due"
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "9219cfe1fff3936f7f1741b53e48d3158227a87082bd206cb4f817c744a1d1ed",
+   "responseHash": "f243e951cb6d10e741b76c72e1bf483d58f738c43a070f73e0195eb8bcb00128",
+   "usage": {
+    "prompt": 986,
+    "completion": 150
+   },
+   "latencyMs": 9547,
+   "costUsd": "0.00015388",
+   "cached": false
+  }
+ ]
+}

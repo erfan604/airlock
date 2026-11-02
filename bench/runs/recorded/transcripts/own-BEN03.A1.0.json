@@ -1,0 +1,47 @@
+{
+ "request": "Summarize my unread emails.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "summary",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "summary": "text"
+    }
+   }
+  },
+  {
+   "say": {
+    "ref": "summary"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "f439c273220fbaa5ee7642c564a0201e6a914c8b0d60d54ea6804ea362db8bb4",
+   "responseHash": "cd535c8796af81c6b1029e1622a80d34693cddb836557d60cadbd373f1b6982b",
+   "usage": {
+    "prompt": 981,
+    "completion": 40
+   },
+   "latencyMs": 872,
+   "costUsd": "0.00009848",
+   "cached": false
+  }
+ ]
+}

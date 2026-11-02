@@ -1,0 +1,60 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "quote",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "let": "bal",
+   "call": "get_balance",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "quote"
+   }
+  },
+  {
+   "say": {
+    "ref": "tokens"
+   }
+  },
+  {
+   "say": {
+    "ref": "bal"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "0a26640e64f14ecd5d0960e733efbecdc6095af48b7b54349e7d94460e1481af",
+   "responseHash": "26668aa00c50cead209222cd9c63521a1e1ec16a7684528638eb69bef0cf521a",
+   "usage": {
+    "prompt": 987,
+    "completion": 90
+   },
+   "latencyMs": 2050,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

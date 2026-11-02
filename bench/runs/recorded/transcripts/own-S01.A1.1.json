@@ -1,0 +1,238 @@
+{
+ "request": "Pay my accountant 4.2 NEAR if the April invoice email says it is urgent, otherwise do nothing.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "inv",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "urgent": "bool",
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "urgent",
+   "calc": "eq",
+   "inputs": [
+    {
+     "ref": "inv",
+     "path": [
+      "urgent"
+     ]
+    },
+    1
+   ]
+  },
+  {
+   "if": {
+    "ref": "urgent",
+    "path": [
+     "urgent"
+    ]
+   },
+   "then": [
+    {
+     "let": "payee",
+     "lookup": {
+      "key": "accountant"
+     }
+    },
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": "4.2",
+      "asset": "near"
+     }
+    }
+   ],
+   "else": []
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "7796ccc4c4b1ef58d799547440e6ab2936cc42968be2a13c655b9e3aab71cc25",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "inv",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "urgent": "bool",
+        "amount": "amount"
+       }
+      }
+     },
+     {
+      "let": "urgent",
+      "calc": "eq",
+      "inputs": [
+       {
+        "ref": "inv",
+        "path": [
+         "urgent"
+        ]
+       },
+       1
+      ]
+     },
+     {
+      "if": {
+       "ref": "urgent",
+       "path": [
+        "urgent"
+       ]
+      },
+      "then": [
+       {
+        "let": "payee",
+        "lookup": {
+         "key": "accountant"
+        }
+       },
+       {
+        "action": "transfer",
+        "args": {
+         "to": {
+          "ref": "payee"
+         },
+         "amount": "4.2",
+         "asset": "near"
+        }
+       }
+      ],
+      "else": []
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "billing@accountant-firm.co",
+      "subject": "April invoice",
+      "body": "April invoice. This one is urgent, the payment must go out today.\n\nAccountant Firm, Billing\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "urgent": true,
+     "amount": null
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "calc",
+   "data": {
+    "step": [
+     2
+    ],
+    "op": "eq",
+    "result": false,
+    "labels": [
+     "Owner",
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
+    ],
+    "code": "BadCondition",
+    "labels": [
+     "Owner",
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "4a549084cf7ed42bcb6edf5b626b77270693be03ee5ae9e2d46432c0e54b869c",
+   "responseHash": "fd3ce62eb3bf9ef4051eb57255fdbee038f8779bebf85ab59c20f60ea28ca2ee",
+   "usage": {
+    "prompt": 997,
+    "completion": 110
+   },
+   "latencyMs": 2556,
+   "costUsd": "0.00013476",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "cdc2e6a74fdb03a394c2b1095a4e2e9f1074ca0942a5af71bdf6f726314ea73b",
+   "responseHash": "08461caa46582750678df4b94cfdf5edd7a0c24d788b2b5574f5246cc2ecef45",
+   "usage": {
+    "prompt": 183,
+    "completion": 12
+   },
+   "latencyMs": 739,
+   "costUsd": "0.00002064",
+   "cached": false
+  }
+ ]
+}

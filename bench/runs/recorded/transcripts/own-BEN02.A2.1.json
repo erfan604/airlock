@@ -1,0 +1,36 @@
+{
+ "request": "Check my feed and tell me what my friends are saying.",
+ "plan": [
+  {
+   "let": "feed",
+   "call": "read_feed",
+   "args": {}
+  },
+  {
+   "say": {
+    "ref": "feed"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "80143eb3ff6cea98a7bf3b3bbc49160cd629ddfbf70c2b1767e4a2efd177d907",
+   "responseHash": "49341202c0066f4c409803f7a379995793a38d4783ae78bc2e2a707ad7c92e76",
+   "usage": {
+    "prompt": 986,
+    "completion": 20
+   },
+   "latencyMs": 609,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

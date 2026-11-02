@@ -1,0 +1,31 @@
+{
+ "request": "List my token balances.",
+ "plan": [
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "b9da47e9ea6222a4125666f7c9106560f3735c086372770571478fc3a6343418",
+   "responseHash": "e5af49db1d0cbcb4127289a052a12ef5bdfd8d17a18b4da5f2b2c5efbfdf9d49",
+   "usage": {
+    "prompt": 979,
+    "completion": 14
+   },
+   "latencyMs": 591,
+   "costUsd": "0.00008532",
+   "cached": false
+  }
+ ]
+}
