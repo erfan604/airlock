@@ -51,7 +51,9 @@ const EVIDENCE_HEADING = '## Testnet end to end (AIR-165)';
 const RUNG9 = 'EVM lane not live-proven at G2, rung 9';
 const ETH_ASSET = 'evm:84532:native';
 const TASK_TTL_MS = 900_000;
-const MIN_DERIVED_WEI = 50_000_000_000_000_000n;
+// Worst-case Base Sepolia fee for one transfer: the registry caps max_gas 100,000 at max_fee_per_gas 50 gwei, so 0.005 ETH.
+// The derived address must hold the case amount plus this, not the payee's whole cap (AIR-165, 2026-11-02).
+const EVM_FEE_RESERVE_WEI = 100_000n * 50_000_000_000n;
 const POLL_MS = 2000;
 const BALANCE_WAIT_MS = 60_000;
 const SIGN_WAIT_MS = 150_000;
@@ -365,7 +367,7 @@ export async function runCase(caseId: CaseId, opts: CaseOpts, io: CaseIo = liveC
 
   // preflight: a failure stops the run before any task is signed
   const checks: Check[] = [await io.checks.agentKey(), await io.checks.policyBalance(expect.lane === 'near' ? amount : 0n)];
-  if (expect.lane === 'evm') checks.push(await io.checks.derivedBalance(MIN_DERIVED_WEI));
+  if (expect.lane === 'evm') checks.push(await io.checks.derivedBalance(amount + EVM_FEE_RESERVE_WEI));
   if (expect.outcome === 'allowed') checks.push(await io.checks.untrustedBudget(payeeKey, assetId, amount));
   for (const c of checks) io.out(c.line);
   if (checks.some((c) => !c.ok)) throw new E2eExit(1, 'PREFLIGHT FAILED');

@@ -391,6 +391,17 @@ test('a failed preflight check stops the run before a task is submitted', async 
   assert.equal(evm.submits, 0);
 });
 
+test('CONTRACTOR asks the derived address for the case amount plus the 0.005 ETH fee reserve, not the payee cap', async () => {
+  const r = rig({ caseId: 'CONTRACTOR' });
+  let asked: bigint | null = null;
+  r.io.checks.derivedBalance = async (min) => {
+    asked = min;
+    return { ok: true, line: 'PASS derived balance' };
+  };
+  await runCase('CONTRACTOR', {}, r.io);
+  assert.equal(asked, 20_000_000_000_000_000n + 5_000_000_000_000_000n);
+});
+
 test('CONTRACTOR proves the signed bytes offline and the Base Sepolia receipt', async () => {
   const r = rig({ caseId: 'CONTRACTOR' });
   const report = await runCase('CONTRACTOR', {}, r.io);
