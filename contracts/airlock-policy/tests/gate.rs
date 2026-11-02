@@ -153,6 +153,12 @@ async fn registered_agent(s: &Started, name: &str) -> (AccountId, Arc<Signer>) {
 
 async fn fixture() -> Fx {
     let s = start().await;
+    // AIR-101: an Allow of a `near:` payee is paid by the contract in the same transaction, so the payees must exist
+    for name in ["alice", "bob"] {
+        create_user_account(&s.net, &s.owner, &s.owner_signer, name)
+            .await
+            .expect("the payee account is created");
+    }
     owner_ok(
         &s,
         "asset_set",
@@ -356,7 +362,7 @@ async fn assert_nothing_charged(fx: &Fx, payee: &str, task: &Task) {
 // ---------------------------------------------------------------------------------------------------------------------
 
 /// I1: a clean request (Book recipient in the book, Owner amount, pc Owner) is allowed: one outcome with null `reason` and
-/// `pending_id`, a 66 character derived id, the record `Executing` and the `allowed` event with the post-charge remainders.
+/// `pending_id`, a 66 character derived id, the record `Executed` (the NEAR lane pays in the same transaction, AIR-101) and the `allowed` event with the post-charge remainders.
 #[tokio::test]
 async fn i1_clean_allow_emits_allowed() {
     let _slot = slot().await;
@@ -371,7 +377,7 @@ async fn i1_clean_allow_emits_allowed() {
     assert_eq!(id.len(), 66);
     assert_eq!(id, format!("{}:0", task.hash_hex()));
     let view = fx.request(id).await;
-    assert_eq!(view["state"], "Executing", "{view}");
+    assert_eq!(view["state"], "Executed", "{view}");
     let allowed = named(&events, "allowed");
     assert_eq!(allowed.len(), 1, "{events:?}");
     assert_eq!(allowed[0]["standard"], "airlock");
@@ -1386,37 +1392,6 @@ async fn extra_request_fields_are_ignored_and_the_id_is_derived() {
 // ---------------------------------------------------------------------------------------------------------------------
 // 7. Seam, events and the action count
 // ---------------------------------------------------------------------------------------------------------------------
-
-/// Until AIR-100 and AIR-101 land, `start_execution` returns no promise: an Allow stays `Executing` and no receipt reaches the
-/// payee or any account other than the policy contract (the agent's own account only gets the gas refund). AIR-100 and AIR-101
-/// replace this test with signing and payment tests.
-#[tokio::test]
-async fn allow_stays_executing_and_creates_no_promise() {
-    let _slot = slot().await;
-    let fx = fixture().await;
-    let task = fx.task(&[(ALICE, 1_000)], 20);
-    let result = fx
-        .submit(&task, vec![req(0, ALICE, 10, [BOOK, OWNER, OWNER])])
-        .await;
-    for outcome in result.receipt_outcomes() {
-        assert!(
-            outcome.executor_id == fx.s.contract || outcome.executor_id == fx.agent,
-            "a receipt ran on {}",
-            outcome.executor_id
-        );
-    }
-    assert_eq!(
-        result.receipt_outcomes()[0].executor_id,
-        fx.s.contract,
-        "the first receipt is the call itself"
-    );
-    let value: Value = result.json().expect("the outcomes parse");
-    let id = value[0]["request_id"].as_str().expect("a request id");
-    assert_eq!(fx.request(id).await["state"], "Executing");
-    // nothing else ever moves it
-    tokio::time::sleep(std::time::Duration::from_millis(1_500)).await;
-    assert_eq!(fx.request(id).await["state"], "Executing");
-}
 
 /// `submit_batch` is the only new export and no helper of the gate is a method: the wasm exports `submit_batch` and none of the
 /// helpers (`start_execution` reaches MPC signing once AIR-100 lands, so exporting it would be a signing backdoor).

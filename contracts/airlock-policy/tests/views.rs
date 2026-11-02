@@ -92,6 +92,10 @@ async fn owner_ok(s: &Started, method: &str, args: Value) {
 
 async fn fixture() -> Fx {
     let s = start().await;
+    // AIR-101: an Allow of a `near:` payee is paid by the contract in the same transaction, so the payee must exist
+    create_user_account(&s.net, &s.owner, &s.owner_signer, "alice")
+        .await
+        .expect("the payee account is created");
     owner_ok(
         &s,
         "asset_set",

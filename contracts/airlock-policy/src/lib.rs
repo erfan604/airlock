@@ -1,6 +1,8 @@
 // adapted from NearDeFi/shade-agent-template@816b75b agent-contract/ (Apache-2.0): this crate is a fork of the Shade Agent
 // template contract. LICENSE and NOTICE.txt are next to Cargo.toml; docs/THIRD_PARTY.md lists what changed. The struct is
 // still called `Contract`.
+// A restriction lint, off by default: with it a `10^24` constant (XOR, 18) fails `cargo clippy` (AIR-101).
+#![deny(clippy::suspicious_xor_used_as_pow)]
 use near_sdk::{
     AccountId, BorshStorageKey, Gas, NearToken, PanicOnDefault, Promise,
     env::{self, block_timestamp_ms},

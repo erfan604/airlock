@@ -54,10 +54,11 @@ const CLOSED_LIST: [&str; 26] = [
 ];
 
 /// The events the contract emits today: the scenario must produce every one of them. Later tickets add the rest of the closed
-/// list, and the scenario may then produce those too (a NEAR Allow will add `paid`).
-const EMITTED_TODAY: [&str; 16] = [
+/// list, and the scenario may then produce those too (AIR-101: a NEAR Allow pays in the same transaction, so `paid` is produced).
+const EMITTED_TODAY: [&str; 17] = [
     "submitted",
     "allowed",
+    "paid",
     "escalated",
     "blocked",
     "agent_allowed",
@@ -218,6 +219,10 @@ async fn run_scenario() -> Scenario {
     let owner_label: u16 = airlock_verdict::OWNER;
     let book_label: u16 = airlock_verdict::BOOK;
     let s = start().await;
+    // AIR-101: the Allow of the batch below is paid by the contract, so its payee must exist
+    create_user_account(&s.net, &s.owner, &s.owner_signer, "alice")
+        .await
+        .expect("the payee account is created");
     let mut lines = Vec::new();
     let l = &mut lines;
     // the owner's policy: assets, the book, flags, pause and resume, the task key

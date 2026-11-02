@@ -147,6 +147,12 @@ pub enum Event<'a> {
         request_id: &'a str,
         unsigned_hex: &'a str,
     },
+    /// AIR-101: `on_transfer` saw the NEAR transfer succeed. `payee` is the stored canonical key, `amount` decimal base units.
+    Paid {
+        request_id: &'a str,
+        payee: &'a str,
+        amount: String,
+    },
     /// The failure path: `reason` is a `FailReason` name, `retryable` is true when the request may run once more. `fail_request` refunds
     /// the charges (`MpcFailed`, `TransferFailed`, `InsufficientBalance`); `fail_kept_charged` keeps them and always says `retryable`
     /// false (`MpcBadResponse`: the signer answered, so a signature may still exist).

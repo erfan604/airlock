@@ -985,10 +985,10 @@ mod tests {
         assert!(text.contains("pending counter overflow"), "{text}");
     }
 
-    /// An Allow stores the charge it applied and the UTC day, and `start_execution` is the seam: it answers no promise for an
-    /// `Executing` record and refuses any other state.
+    /// An Allow stores the charge it applied and the UTC day, and `start_execution` is the seam: it answers the NEAR transfer for an
+    /// `Executing` near record and refuses any other state.
     #[test]
-    fn allow_stores_its_charge_and_the_seam_returns_none() {
+    fn allow_stores_its_charge_and_the_seam_refuses_other_states() {
         let mut c = setup();
         let task = owner_task(&[(ALICE, 1_000)], 20);
         submit(&mut c, &task, vec![clean(0, ALICE, 10)]);
@@ -1007,7 +1007,7 @@ mod tests {
         assert_eq!(rec.charge_day, NOW / 86_400_000);
         assert!(rec.evm.is_none());
         let id = request_id(&crate::task::task_hash(&task), 0);
-        assert!(c.start_execution(&id).is_none());
+        assert!(c.start_execution(&id).is_some());
         let mut blocked = rec;
         blocked.state = RequestState::Blocked;
         c.records.insert(id.clone(), blocked);

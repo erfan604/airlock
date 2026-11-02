@@ -140,6 +140,21 @@ async fn owner_ok(s: &Started, method: &str, args: Value) {
 
 async fn fixture() -> Fx {
     let s = start().await;
+    // AIR-101: an approval of a `near:` payee is paid by the contract, so the payees must exist and the policy account must hold the
+    // amounts below (30 NEAR from the deploy, about 10 of them locked by the wasm, plus 50)
+    for name in ["alice", "bob", "carol"] {
+        create_user_account(&s.net, &s.owner, &s.owner_signer, name)
+            .await
+            .expect("the payee account is created");
+    }
+    Tokens::account(s.owner.clone())
+        .send_to(s.contract.clone())
+        .near(NearToken::from_near(50))
+        .with_signer(s.owner_signer.clone())
+        .send_to(&s.net)
+        .await
+        .expect("the funding is sent")
+        .assert_success();
     owner_ok(
         &s,
         "asset_set",
@@ -495,7 +510,7 @@ async fn wrong_book_reverts_wrong_book() {
 // ---------------------------------------------------------------------------------------------------------------------
 
 /// The correct call emits one `approved` event with exactly the five documented fields whose `digest` is the stored one and the one
-/// recomputed from the record; `get_request` afterwards still shows the card (the record is `Executing` now).
+/// recomputed from the record; `get_request` afterwards still shows the card (the record is `Executed` now).
 #[tokio::test]
 async fn approve_emits_approved_with_the_stored_and_recomputed_digest() {
     let _slot = slot().await;
@@ -507,7 +522,9 @@ async fn approve_emits_approved_with_the_stored_and_recomputed_digest() {
     let events = extract_event_logs(&result).expect("the events parse");
     let approved = named(&events, "approved");
     assert_eq!(approved.len(), 1, "{events:?}");
-    assert_eq!(events.len(), 1, "approve emits nothing else: {events:?}");
+    // the NEAR lane (AIR-101) pays in the same transaction: `approved`, then `paid`, nothing else
+    assert_eq!(named(&events, "paid").len(), 1, "{events:?}");
+    assert_eq!(events.len(), 2, "approve emits nothing else: {events:?}");
     assert_eq!(approved[0]["standard"], "airlock");
     assert_eq!(approved[0]["version"], "1.0.0");
     let data = &approved[0]["data"][0];
@@ -538,7 +555,7 @@ async fn approve_emits_approved_with_the_stored_and_recomputed_digest() {
     assert_eq!(data["digest"], recomputed_digest(&rec).as_str(), "{data}");
     // the record moved on and still shows the card, for the verifier that reads it at the approval block
     let after = fx.request(&esc.request_id).await;
-    assert_eq!(after["state"], "Executing", "{after}");
+    assert_eq!(after["state"], "Executed", "{after}");
     for key in ["id", "book_status", "display", "digest", "expires_ms"] {
         assert_eq!(after[key], before[key], "{key} changed: {after}");
     }
@@ -554,7 +571,7 @@ async fn get_request_by_short_number_works_after_approve() {
     let _ = fx.approve_ok(fx.card(&esc).await).await;
     let by_number = fx.request(&esc.no).await;
     assert_eq!(by_number["request_id"], esc.request_id.as_str());
-    assert_eq!(by_number["state"], "Executing");
+    assert_eq!(by_number["state"], "Executed");
     assert_eq!(by_number, fx.request(&esc.request_id).await);
     for text in ["+1", "01", "2", ""] {
         assert!(
@@ -804,7 +821,7 @@ async fn approve_after_the_payee_left_the_book() {
     assert_eq!(card["book"], "in_book", "{card}");
     owner_ok(&fx.s, "book_remove", json!({ "key": ALICE })).await;
     let _ = fx.approve_ok(card).await;
-    assert_eq!(fx.state(&esc).await, "Executing");
+    assert_eq!(fx.state(&esc).await, "Executed");
     let l = fx.ledgers(ALICE, &task).await;
     assert_eq!(l["payee_day"]["spent"], near(25).to_string(), "{l}");
     assert_eq!(l["asset_day"]["spent"], near(25).to_string(), "{l}");
@@ -1137,26 +1154,6 @@ async fn approve_gas_near_under_30_tgas() {
     let gas = gas_report(&result);
     println!("GAS approve_near={} Tgas", tgas(gas));
     assert!(gas < GAS_CEILING, "approve burnt {} Tgas", tgas(gas));
-}
-
-/// Until AIR-100 and AIR-101 land, `start_execution` returns no promise: the approved record stays `Executing` and no receipt reaches
-/// any account but the policy contract (the owner's own account only gets the gas refund).
-#[tokio::test]
-async fn approve_starts_no_lane_yet() {
-    let _slot = slot().await;
-    let fx = fixture().await;
-    let task = fx.task(&[(BOB, near(100))], 20);
-    let esc = fx.new_recipient(&task, 0, near(3)).await;
-    let result = fx.approve_ok(fx.card(&esc).await).await;
-    for outcome in result.receipt_outcomes() {
-        assert!(
-            outcome.executor_id == fx.s.contract || outcome.executor_id == fx.s.owner,
-            "a receipt ran on {}",
-            outcome.executor_id
-        );
-    }
-    tokio::time::sleep(std::time::Duration::from_millis(1_500)).await;
-    assert_eq!(fx.state(&esc).await, "Executing");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
