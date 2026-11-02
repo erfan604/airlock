@@ -4,8 +4,8 @@
 //
 // Needs the wasm: `cargo near build non-reproducible-wasm --no-abi` in the crate first (the tests read `contract_wasm_path()`).
 //
-// Three tests: `every_export_is_listed` and `no_backdoor_exports` run now, `abi_complete_equals_spec` is switched on by AIR-066
-// (when every method of the spec exists).
+// Three tests: `every_export_is_listed`, `no_backdoor_exports` and `abi_complete_equals_spec` (switched on by AIR-066, every method
+// of the spec exists; the invariant map counts it as I10).
 
 mod common;
 
@@ -103,7 +103,6 @@ fn no_backdoor_exports() {
 }
 
 #[test]
-#[ignore = "enabled by AIR-066"]
 fn abi_complete_equals_spec() {
     let listed = expected();
     let exported = exported_methods();
