@@ -1,10 +1,15 @@
-//! AIR-105: what happens when the MPC answers, and the one path every failed execution takes. `on_signed` stores and announces a
-//! signature or, when the signer fails or answers something that is not a signature, refunds exactly what the request charged and marks
-//! it `Retryable` (once) or `Failed`. `fail_request` is the only failure path for both lanes: AIR-101's `on_transfer` calls it too.
+//! AIR-105: what happens when the MPC answers, and the two ways an execution fails. `on_signed` stores and announces a signature. When
+//! the signer's receipt failed, no signature can exist, so `fail_request` refunds exactly what the request charged and marks it
+//! `Retryable` (once) or `Failed`. When the signer's receipt succeeded but its answer is unusable, a signature may still exist (the value
+//! of a successful receipt is public in the transaction outcome and can be broadcast), so `fail_kept_charged` keeps every charge and marks
+//! the request `Failed`, never `Retryable` (a retry would ask for a second signature). `fail_request` is the only refunding path for both
+//! lanes: AIR-101's `on_transfer` calls it too, for `TransferFailed` and `InsufficientBalance`.
 //!
 //! Pinned behaviour (SPEC R5-07, F05 L4, F06 section 3.1; verified on near-sdk 5.26.1):
+//!  - money fails closed: the ledgers are released only when no signature and no payment can exist (`FailReason::refunds`). A signer
+//!    interface change that made every answer unparseable must cost a request its budget, never let its signature be spent twice;
 //!  - the response is read with `env::promise_result_checked(0, MAX_MPC_RESPONSE)` and parsed by hand, never with `#[callback_result]` and
-//!    a typed result: a payload that fails to deserialize would panic the callback and leave the ledgers charged. `env::promise_result`
+//!    a typed result: a payload that fails to deserialize would panic the callback and roll the state back. `env::promise_result`
 //!    is `#[deprecated]` and `clippy -D warnings` rejects it;
 //!  - the record is the idempotency guard: only a record in state `Executing` is ever changed, so a duplicated or late callback, and a
 //!    callback for a record that is already final, do nothing and emit nothing (a second refund is impossible);
@@ -17,7 +22,8 @@ use crate::request::{ExecInfo, RequestState};
 use crate::*;
 use near_sdk::PromiseError;
 
-/// The longest MPC response `on_signed` reads, in bytes. A real response is about 215 bytes; a longer one is `MpcBadResponse`.
+/// The longest MPC response `on_signed` reads, in bytes. A real response is about 215 bytes; a longer one is `MpcBadResponse` (the
+/// request keeps its charges and is `Failed`).
 pub const MAX_MPC_RESPONSE: usize = 1024;
 
 /// The highest `recovery_id` of an EVM signature: EIP-1559 `yParity` is 0 or 1, while nearcore's `ecrecover` (and the signer) accept 0 to 3.
@@ -28,7 +34,8 @@ pub const MAX_EVM_RECOVERY_ID: u8 = 1;
 pub enum FailReason {
     /// The signer's receipt failed (a rejection, a missing domain, too little gas, or the 200 block timeout).
     MpcFailed,
-    /// The signer answered, but not with a well formed secp256k1 signature (or too long an answer).
+    /// The signer's receipt succeeded, but its answer is not a usable secp256k1 signature (it does not parse, it is too long, or an EVM
+    /// `recovery_id` is above `MAX_EVM_RECOVERY_ID`). A signature may still exist, so this reason never refunds.
     MpcBadResponse,
     /// The NEAR transfer failed (AIR-101).
     TransferFailed,
@@ -44,6 +51,18 @@ impl FailReason {
             FailReason::MpcBadResponse => "MpcBadResponse",
             FailReason::TransferFailed => "TransferFailed",
             FailReason::InsufficientBalance => "InsufficientBalance",
+        }
+    }
+
+    /// Whether the failure may release the request's ledger charges: only when no signature and no payment can exist. `MpcBadResponse`
+    /// does not: the signer's receipt succeeded, so whatever signature it holds is public and may still be broadcast. The match has no
+    /// wildcard, so a new reason must decide.
+    pub fn refunds(&self) -> bool {
+        match self {
+            FailReason::MpcFailed
+            | FailReason::TransferFailed
+            | FailReason::InsufficientBalance => true,
+            FailReason::MpcBadResponse => false,
         }
     }
 }
@@ -83,7 +102,8 @@ fn is_hex_of(text: &str, len: usize) -> bool {
 }
 
 /// Parses and checks the signer's answer; the error is the text of the first check that fails (`bad scheme`, `bad big_r`, `bad s`,
-/// `bad recovery_id`, or the serde error). Fails closed: the caller turns any error into a refund.
+/// `bad recovery_id`, or the serde error). Fails closed: the caller turns any error into `fail_kept_charged` (the request keeps its
+/// charges and is `Failed`).
 pub fn parse_signature(bytes: &[u8]) -> Result<ParsedSignature, String> {
     let response: SignatureResponse =
         serde_json::from_slice(bytes).map_err(|error| error.to_string())?;
@@ -109,12 +129,18 @@ pub fn parse_signature(bytes: &[u8]) -> Result<ParsedSignature, String> {
 }
 
 impl Contract {
-    /// The one failure path of both lanes. A missing record, or one whose state is not `Executing`, is left alone and emits nothing, so a
-    /// duplicated or late callback cannot refund twice. Otherwise: refund what the request charged (`refund`, which must run before the
-    /// state changes), then `Retryable` when the request has not been retried (`retried` is false) and `Failed` when it has, with
-    /// `reason` replacing the record's reason (the escalation reason of an approved request survives in the `approved` event and in
-    /// the stored digest), then the `failed` event. Plain `impl`: never exported.
+    /// The one refunding path of both lanes, for a failure after which no signature and no payment can exist: `MpcFailed` (the signer's
+    /// receipt failed), `TransferFailed` and `InsufficientBalance`. A missing record, or one whose state is not `Executing`, is left
+    /// alone and emits nothing, so a duplicated or late callback cannot refund twice. Otherwise: refund what the request charged
+    /// (`refund`, which must run before the state changes), then `Retryable` when the request has not been retried (`retried` is false)
+    /// and `Failed` when it has, with `reason` replacing the record's reason (the escalation reason of an approved request survives in the
+    /// `approved` event and in the stored digest), then the `failed` event. A reason that does not refund (`MpcBadResponse`) is sent to
+    /// `fail_kept_charged`, so no caller can reopen the double spend by passing the wrong reason. Plain `impl`: never exported.
     pub fn fail_request(&mut self, id: &str, reason: FailReason) {
+        if !reason.refunds() {
+            self.fail_kept_charged(id, reason);
+            return;
+        }
         let Some(mut rec) = self.records.get(id).cloned() else {
             return;
         };
@@ -138,10 +164,34 @@ impl Contract {
         .emit();
     }
 
+    /// The failure after which a signature may still exist: the signer's receipt succeeded, but its answer is unusable. Every ledger keeps
+    /// its charge (nothing is refunded: the answer is public in the transaction outcome, so any signature in it can still be broadcast),
+    /// the record becomes `Failed`, never `Retryable` (a retry would ask for a second signature), `reason` replaces the record's reason,
+    /// and `failed` is emitted with `retryable` false, so the owner can see it. The same idempotency guard as `fail_request`: a missing
+    /// record, or one whose state is not `Executing`, is left alone and emits nothing. Plain `impl`: never exported.
+    pub fn fail_kept_charged(&mut self, id: &str, reason: FailReason) {
+        let Some(mut rec) = self.records.get(id).cloned() else {
+            return;
+        };
+        if rec.state != RequestState::Executing {
+            return;
+        }
+        rec.state = RequestState::Failed;
+        rec.reason = Some(reason.as_str().to_string());
+        self.records.insert(id.to_string(), rec);
+        Event::Failed {
+            request_id: id,
+            reason: reason.as_str(),
+            retryable: false,
+        }
+        .emit();
+    }
+
     /// Stores a checked signature on an `Executing` record (state `Executed`, `exec` with the unsigned transaction and the signature) and
     /// emits `signed`; on any other state it does nothing. In the EVM lane (`rec.evm` is `Some`) a `recovery_id` above
-    /// `MAX_EVM_RECOVERY_ID` is a bad response: the runtime could not assemble such a transaction, so it is refunded and `Retryable`.
-    /// Plain `impl`: never exported.
+    /// `MAX_EVM_RECOVERY_ID` cannot be assembled into a transaction by the runtime, but the signature is public in the signer's outcome
+    /// and may still be used, so the request keeps its charges and is `Failed` with `MpcBadResponse` (`fail_kept_charged`). Plain
+    /// `impl`: never exported.
     pub fn store_signature(&mut self, id: &str, unsigned_hex: String, sig: ParsedSignature) {
         let Some(mut rec) = self.records.get(id).cloned() else {
             return;
@@ -150,7 +200,7 @@ impl Contract {
             return;
         }
         if rec.evm.is_some() && sig.recovery_id > MAX_EVM_RECOVERY_ID {
-            self.fail_request(id, FailReason::MpcBadResponse);
+            self.fail_kept_charged(id, FailReason::MpcBadResponse);
             return;
         }
         Event::Signed {
@@ -174,10 +224,15 @@ impl Contract {
 
 #[near]
 impl Contract {
-    /// The callback of the MPC `sign` call (AIR-100 attaches it with the request id and the hex of the unsigned transaction). A failed
-    /// receipt is `MpcFailed`; a response that is too long, is not a well formed signature, or any other promise error is
-    /// `MpcBadResponse`; both go through `fail_request`. A good signature on an `Executing` record is stored (`store_signature`). Never
-    /// panics on a payload: a panic here would roll back the refund.
+    /// The callback of the MPC `sign` call (AIR-100 attaches it with the request id and the hex of the unsigned transaction).
+    /// - A failed receipt (`PromiseError::Failed`: a rejection, or the 200 block timeout) means no signature can exist: `MpcFailed`
+    ///   through `fail_request`, which refunds and marks the request `Retryable` (once) or `Failed`.
+    /// - A receipt that succeeded with an answer the contract cannot use (bytes that do not parse, `PromiseError::TooLong`, any other
+    ///   promise error) may still hold a signature, which is public in the transaction outcome: `MpcBadResponse` through
+    ///   `fail_kept_charged`, which keeps every charge and marks the request `Failed`.
+    /// - A good signature on an `Executing` record is stored (`store_signature`).
+    ///
+    /// Never panics on a payload: a panic here would roll the state back.
     #[private]
     pub fn on_signed(&mut self, request_id: String, unsigned_hex: String) {
         let outcome = match env::promise_result_checked(0, MAX_MPC_RESPONSE) {
@@ -189,7 +244,8 @@ impl Contract {
         };
         match outcome {
             Ok(sig) => self.store_signature(&request_id, unsigned_hex, sig),
-            Err(reason) => self.fail_request(&request_id, reason),
+            Err(reason) if reason.refunds() => self.fail_request(&request_id, reason),
+            Err(reason) => self.fail_kept_charged(&request_id, reason),
         }
     }
 }
@@ -407,6 +463,31 @@ mod tests {
         assert_eq!(c.spent_now(&key(1), now_ms), zero(), "{id}");
     }
 
+    /// A request whose signer receipt succeeded but whose answer the contract could not use: the signature may still exist and be
+    /// broadcast, so every ledger keeps the value it had when the callback started (`charged`), the record is `Failed` (never
+    /// `Retryable`: a retry would ask for a second signature) with `MpcBadResponse` and no stored signature, the one `failed` event says
+    /// `retryable` false, and a second callback of any kind changes nothing and emits nothing.
+    fn assert_failed_kept_charged(
+        c: &mut Contract,
+        id: &str,
+        charged: &Spent,
+        logs: &[Value],
+        now_ms: u64,
+    ) {
+        let rec = stored(c, id);
+        assert_eq!(rec.state, RequestState::Failed, "{id}");
+        assert_eq!(rec.reason.as_deref(), Some("MpcBadResponse"), "{id}");
+        assert!(rec.exec.is_none(), "{id}: no signature is stored");
+        assert_eq!(&c.spent_now(&key(1), now_ms), charged, "{id}: charges kept");
+        assert_failed_event(logs, id, "MpcBadResponse", false);
+        for result in [PromiseResult::Failed, ok(&good()), ok("garbage")] {
+            let again = callback(c, id, result, now_ms + 1_000);
+            assert!(again.is_empty(), "{id}: {again:?}");
+            assert_eq!(stored(c, id), rec, "{id}: the second callback changed it");
+            assert_eq!(&c.spent_now(&key(1), now_ms + 1_000), charged, "{id}");
+        }
+    }
+
     #[test]
     fn callback_ok_stores_signature() {
         let mut c = setup();
@@ -468,8 +549,10 @@ mod tests {
         assert_failed_event(&logs, &id, "MpcFailed", false);
     }
 
+    /// A signer receipt that succeeded with bytes that are not a well formed signature keeps every charge and ends `Failed`: the bytes are
+    /// public in the transaction outcome, so a signature may still be usable, and refunding would let the caps be spent twice.
     #[test]
-    fn callback_garbage_is_bad_response() {
+    fn callback_bad_response_keeps_charges() {
         let mut c = setup();
         let ed25519 = r#"{"scheme":"Ed25519","signature":[1,2,3]}"#.to_string();
         let bodies: Vec<(&str, Vec<u8>)> = vec![
@@ -482,10 +565,10 @@ mod tests {
         for (i, (name, body)) in bodies.into_iter().enumerate() {
             let index = u8::try_from(i).unwrap();
             let id = executing(&mut c, 1, index, 500);
+            let charged = c.spent_now(&key(1), T0 + 5_000);
+            assert!(charged.task >= 500, "{name}: the request is charged");
             let logs = callback(&mut c, &id, PromiseResult::Successful(body), T0 + 5_000);
-            assert_refunded_retryable(&c, &id, "MpcBadResponse", T0 + 5_000);
-            assert_failed_event(&logs, &id, "MpcBadResponse", true);
-            assert!(stored(&c, &id).exec.is_none(), "{name}");
+            assert_failed_kept_charged(&mut c, &id, &charged, &logs, T0 + 5_000);
         }
     }
 
@@ -846,9 +929,9 @@ mod tests {
     #[test]
     fn callback_fail_request_reason_overwrites_reason() {
         let mut c = setup();
+        // the reasons for which no signature can exist: the failure refunds
         let reasons = [
             FailReason::MpcFailed,
-            FailReason::MpcBadResponse,
             FailReason::TransferFailed,
             FailReason::InsufficientBalance,
         ];
@@ -868,6 +951,19 @@ mod tests {
         }
     }
 
+    /// `fail_request` is the refunding path, and a bad response must never take it: given `MpcBadResponse` it keeps the charges and ends
+    /// `Failed`, exactly like `fail_kept_charged`, so no caller can reopen the bypass by passing the wrong reason.
+    #[test]
+    fn callback_fail_request_never_refunds_a_bad_response() {
+        let mut c = setup();
+        let id = executing(&mut c, 1, 0, 500);
+        let charged = c.spent_now(&key(1), T0 + 5_000);
+        testing_env!(ctx(POLICY, T0 + 5_000, 0).build());
+        c.fail_request(&id, FailReason::MpcBadResponse);
+        let logs = events();
+        assert_failed_kept_charged(&mut c, &id, &charged, &logs, T0 + 5_000);
+    }
+
     #[test]
     fn callback_fail_reason_names_are_the_variant_names() {
         assert_eq!(FailReason::MpcFailed.as_str(), "MpcFailed");
@@ -877,6 +973,15 @@ mod tests {
             FailReason::InsufficientBalance.as_str(),
             "InsufficientBalance"
         );
+    }
+
+    /// Only the reasons for which no signature can exist refund.
+    #[test]
+    fn callback_only_no_signature_reasons_refund() {
+        assert!(FailReason::MpcFailed.refunds());
+        assert!(FailReason::TransferFailed.refunds());
+        assert!(FailReason::InsufficientBalance.refunds());
+        assert!(!FailReason::MpcBadResponse.refunds());
     }
 
     /// A success body of exactly `len` bytes: the good response plus an unknown field that serde ignores.
@@ -892,14 +997,16 @@ mod tests {
         body
     }
 
+    /// One byte over the bound is `PromiseError::TooLong` although the body is a valid response: the signer's receipt succeeded, so the
+    /// signature in it may still be broadcast, and the request keeps its charges and ends `Failed`.
     #[test]
-    fn callback_too_long_is_bad_response() {
+    fn callback_too_long_keeps_charges() {
         let mut c = setup();
-        // one byte over the bound: `PromiseError::TooLong`, although the body is a valid response
         let long = executing(&mut c, 1, 0, 500);
+        let charged = c.spent_now(&key(1), T0 + 5_000);
+        assert_eq!(charged.task, 500);
         let logs = callback(&mut c, &long, ok(&padded(MAX_MPC_RESPONSE + 1)), T0 + 5_000);
-        assert_refunded_retryable(&c, &long, "MpcBadResponse", T0 + 5_000);
-        assert_failed_event(&logs, &long, "MpcBadResponse", true);
+        assert_failed_kept_charged(&mut c, &long, &charged, &logs, T0 + 5_000);
         // exactly at the bound the same body is accepted
         let at_bound = executing(&mut c, 1, 1, 500);
         let logs = callback(&mut c, &at_bound, ok(&padded(MAX_MPC_RESPONSE)), T0 + 6_000);
@@ -908,9 +1015,10 @@ mod tests {
     }
 
     /// The EVM lane (`rec.evm` is `Some`): nearcore's `ecrecover` takes 0 to 3, an EIP-1559 `yParity` only 0 or 1, so a stored id of 2
-    /// or 3 could never be assembled into a transaction: `MpcBadResponse`, refunded and `Retryable`. The NEAR lane keeps 0 to 3.
+    /// or 3 could never be assembled into a transaction by the runtime. The signer's receipt still succeeded and the signature is public
+    /// in its outcome, so the request keeps its charges and ends `Failed` with `MpcBadResponse`. The NEAR lane keeps 0 to 3.
     #[test]
-    fn callback_evm_recovery_id_above_one_is_bad_response() {
+    fn callback_evm_recovery_id_2_keeps_charges() {
         let mut c = setup();
         let evm = Some(EvmParams {
             gas_limit: U128(21_000),
@@ -918,23 +1026,23 @@ mod tests {
             max_priority_fee_per_gas: U128(1_000_000_000),
         });
         let mut index = 0u8;
+        // the callback's id, its events and what the ledgers held just before it
         let mut run = |c: &mut Contract, evm: Option<EvmParams>, recovery_id: u8| {
             let id = executing(c, 1, index, 100);
             index += 1;
             let mut rec = stored(c, &id);
             rec.evm = evm;
             store(c, rec);
+            let charged = c.spent_now(&key(1), T0 + 5_000);
             let logs = callback(c, &id, ok(&good_with_recovery_id(recovery_id)), T0 + 5_000);
-            (id, logs)
+            (id, logs, charged)
         };
         for recovery_id in [2u8, 3] {
-            let (id, logs) = run(&mut c, evm, recovery_id);
-            assert_refunded_retryable(&c, &id, "MpcBadResponse", T0 + 5_000);
-            assert_failed_event(&logs, &id, "MpcBadResponse", true);
-            assert!(stored(&c, &id).exec.is_none());
+            let (id, logs, charged) = run(&mut c, evm, recovery_id);
+            assert_failed_kept_charged(&mut c, &id, &charged, &logs, T0 + 5_000);
         }
         for recovery_id in [0u8, 1] {
-            let (id, logs) = run(&mut c, evm, recovery_id);
+            let (id, logs, _) = run(&mut c, evm, recovery_id);
             assert_eq!(names(&logs), vec!["signed"], "{logs:?}");
             assert_eq!(stored(&c, &id).state, RequestState::Executed);
             assert_eq!(
@@ -943,7 +1051,7 @@ mod tests {
             );
         }
         for recovery_id in [0u8, 1, 2, 3] {
-            let (id, logs) = run(&mut c, None, recovery_id);
+            let (id, logs, _) = run(&mut c, None, recovery_id);
             assert_eq!(names(&logs), vec!["signed"], "{logs:?}");
             assert_eq!(
                 stored(&c, &id).exec.and_then(|e| e.recovery_id),

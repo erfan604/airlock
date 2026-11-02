@@ -141,7 +141,9 @@ pub enum Event<'a> {
         s: &'a str,
         recovery_id: u8,
     },
-    /// The refund path (`fail_request`): `reason` is a `FailReason` name, `retryable` is true when the request may run once more.
+    /// The failure path: `reason` is a `FailReason` name, `retryable` is true when the request may run once more. `fail_request` refunds
+    /// the charges (`MpcFailed`, `TransferFailed`, `InsufficientBalance`); `fail_kept_charged` keeps them and always says `retryable`
+    /// false (`MpcBadResponse`: the signer answered, so a signature may still exist).
     Failed {
         request_id: &'a str,
         reason: &'a str,

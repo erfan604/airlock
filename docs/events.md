@@ -65,7 +65,7 @@ Types: `string`, `number`, `boolean`, `object`, `array of strings`; `string or n
 | `evm_unsigned` | `request_id: string`, `unsigned_hex: string` | The EVM lane (AIR-100), before the signature exists. `unsigned_hex` is lowercase hex without `0x`, first byte `02`. A retry emits it again with the same value. |
 | `signed` | `request_id: string`, `unsigned_hex: string`, `big_r: string`, `s: string`, `recovery_id: number` | `on_signed` (AIR-105). `big_r` is 66 characters, `s` is 64 characters, `recovery_id` is 0 to 3. |
 | `paid` | `request_id: string`, `payee: string`, `amount: string` | `on_transfer` (AIR-101), the NEAR lane. `payee` is the stored canonical key, `amount` decimal base units. |
-| `failed` | `request_id: string`, `reason: string`, `retryable: boolean` | The refund path (AIR-105, AIR-101). `reason` is one of the failed reasons of rule 4. |
+| `failed` | `request_id: string`, `reason: string`, `retryable: boolean` | The failure path (AIR-105, AIR-101). `reason` is one of the failed reasons of rule 4. `MpcFailed`, `TransferFailed` and `InsufficientBalance` refund the request's charges; `MpcBadResponse` (the signer answered, but the answer is unusable) keeps them, and `retryable` is then always false. |
 | `nonce_set` | `path: string`, `nonce: string` | `set_nonce` (AIR-104), owner only. `nonce` is a decimal string. |
 
 ### Owner and agent plane (AIR-040, AIR-042, AIR-043, AIR-045, AIR-046, template)
