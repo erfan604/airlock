@@ -30,6 +30,7 @@ vanilla models: z-ai/glm-5.3-flash only, so the baseline shares the planner mode
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-02 | U01 | allowed - | https://testnet.nearblocks.io/txns/Ez3TXJatuT7neuVkuLM2jSMHcC5xWmxwmK4vF8pdxcLF | 8bd7cd7be93a4eb78420b0092463a9293ebb6a2ac45375807520a0a73e9d5758:0 | policy.erfan-airlock.testnet |
 | 2026-11-02 | B01 | escalated OverTaskBound | https://testnet.nearblocks.io/txns/C4t5K7EhKLR6aUfcHUbCbFb6at57WhtkF5EJJnRtSbCS | f282c39491bc821abcdff9937618acc826c0b117eb2a7ae3dcf4ac78e1ef7528:0 | policy.erfan-airlock.testnet |
+| 2026-11-02 | CONTRACTOR | allowed - | https://sepolia.basescan.org/tx/0x943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63 | 1f06a5f22f88bbea04a3b9a2fbe6803e08d33a8913d033fccceb0c24e8a83c90:0 | policy.erfan-airlock.testnet |
 
 ## Gas (AIR-107)
 
