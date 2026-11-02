@@ -2,8 +2,8 @@
 
 | What | Network | Id / hash / link | Date |
 | --- | --- | --- | --- |
-| Planner and vanilla model | NEAR AI Cloud | `z-ai/glm-5.3-flash` (providerType vllm, NEAR private TEE); results.md sha256 7ffd8aa01233 | 2026-11-01 |
-| Quarantine model | NEAR AI Cloud | `z-ai/glm-5.3-flash` (providerType vllm, NEAR private TEE); results.md sha256 7ffd8aa01233 | 2026-11-01 |
+| Planner and vanilla model | NEAR AI Cloud | `z-ai/glm-5.3-flash` (providerType vllm, NEAR private TEE); results.md sha256 aa0fdca3570f | 2026-11-01 |
+| Quarantine model | NEAR AI Cloud | `z-ai/glm-5.3-flash` (providerType vllm, NEAR private TEE); results.md sha256 aa0fdca3570f | 2026-11-01 |
 _To fill during the build: contract account, code hash, wasm sha256, agent registration tx, measurements, MPC sign txs, Base Sepolia txs, escalation and approval txs_
 
 ## Model choice
