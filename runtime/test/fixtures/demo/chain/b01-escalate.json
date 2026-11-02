@@ -1,0 +1,136 @@
+{
+ "version": 1,
+ "contractId": "policy.synthetic.testnet",
+ "entries": [
+  {
+   "kind": "view",
+   "method": "get_request",
+   "args": {
+    "id": "8"
+   },
+   "result": {
+    "request_id": "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12:1",
+    "id": "8",
+    "state": "Pending",
+    "agent": "nova-agent.testnet",
+    "task_id": "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
+    "asset": "near",
+    "payee": "near:acct-firm.near",
+    "amount": "9400000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 4128,
+     "pc": 1
+    },
+    "reason": "OverTaskBound",
+    "book_status": "in_book",
+    "display": {
+     "asset_symbol": "NEAR",
+     "amount_decimal": "9.4"
+    },
+    "created_ms": "1793000000000",
+    "expires_ms": "1793003600000",
+    "digest": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
+    "exec": null
+   }
+  },
+  {
+   "kind": "view",
+   "method": "get_request",
+   "args": {
+    "id": "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12:1"
+   },
+   "result": {
+    "request_id": "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12:1",
+    "id": "8",
+    "state": "Pending",
+    "agent": "nova-agent.testnet",
+    "task_id": "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
+    "asset": "near",
+    "payee": "near:acct-firm.near",
+    "amount": "9400000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 4128,
+     "pc": 1
+    },
+    "reason": "OverTaskBound",
+    "book_status": "in_book",
+    "display": {
+     "asset_symbol": "NEAR",
+     "amount_decimal": "9.4"
+    },
+    "created_ms": "1793000000000",
+    "expires_ms": "1793003600000",
+    "digest": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
+    "exec": null
+   }
+  },
+  {
+   "kind": "view",
+   "method": "get_ledgers",
+   "args": {
+    "payee": "near:acct-firm.near",
+    "asset": "near",
+    "task": null
+   },
+   "result": {
+    "asset_day": {
+     "spent": "0",
+     "cap": "50000000000000000000000000",
+     "remaining": "50000000000000000000000000"
+    },
+    "payee_day": {
+     "spent": "0",
+     "cap": "20000000000000000000000000",
+     "remaining": "20000000000000000000000000"
+    },
+    "payee_untrusted_day": {
+     "spent": "0",
+     "cap": "10000000000000000000000000",
+     "remaining": "10000000000000000000000000"
+    },
+    "task_spent": "0"
+   }
+  },
+  {
+   "kind": "view",
+   "method": "get_book",
+   "args": {
+    "from_index": 0,
+    "limit": 50
+   },
+   "result": [
+    [
+     "near:acct-firm.near",
+     {
+      "cap": "5000000000000000000000000",
+      "daily_untrusted_budget": "10000000000000000000000000",
+      "daily_limit": "20000000000000000000000000",
+      "label": "accountant"
+     }
+    ]
+   ]
+  },
+  {
+   "kind": "view",
+   "method": "list_assets",
+   "args": {},
+   "result": [
+    [
+     "near",
+     {
+      "symbol": "NEAR",
+      "decimals": 24,
+      "hard_cap": "10000000000000000000000000",
+      "daily_cap": "50000000000000000000000000",
+      "max_fee_per_gas": "0",
+      "max_gas": "0",
+      "quick_task_cap": "5000000000000000000000000",
+      "path": null
+     }
+    ]
+   ]
+  }
+ ]
+}

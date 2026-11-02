@@ -1,0 +1,111 @@
+/* The replay console (AIR-246). Long hashes wrap: nothing here may push the page wider than the viewport at 320 px. */
+.replay {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 48rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.replay-banner {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--signal);
+  border-radius: var(--radius-l);
+  font-family: var(--font-data);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0.02em;
+  color: var(--signal);
+  overflow-wrap: anywhere;
+}
+.replay-date {
+  color: var(--ink-2);
+}
+.replay-lede,
+.replay-line,
+.replay-words {
+  margin: 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.replay-words {
+  color: var(--ink);
+}
+.replay-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.replay-tab {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+.replay-tab[aria-pressed='true'] {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.replay-act,
+.replay-card,
+.replay-tamper {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.replay-title {
+  margin: 0;
+  font-family: var(--font-system);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 30px;
+  letter-spacing: -0.02em;
+}
+.replay-label {
+  margin: 0;
+  font-family: var(--font-data);
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.replay-links {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.replay-link {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+}
+.replay-link-label {
+  color: var(--ink-3);
+}
+.replay-link a,
+.replay-approved a {
+  color: var(--info);
+  overflow-wrap: anywhere;
+}
+.replay-failure {
+  margin: 0;
+  font-family: var(--font-data);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 22px;
+  color: var(--alarm);
+  overflow-wrap: anywhere;
+}
+.replay-note,
+.replay-approved {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}

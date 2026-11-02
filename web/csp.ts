@@ -20,7 +20,7 @@ export const NEAR_RPC = [
 ] as const;
 
 /** Paths the console and the runtime share one origin for, so the session cookie is sent (AIR-161's routes). */
-export const PROXY_PATHS = ['/session', '/tasks', '/runs', '/api'] as const;
+export const PROXY_PATHS = ['/session', '/tasks', '/runs', '/api', '/replay'] as const;
 
 /**
  * What a wallet's executor iframe loads beyond the origins its manifest names, measured per executor (AIR-182, headless Chromium 153,
