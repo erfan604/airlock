@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import type { ChannelName } from '@airlock/runtime/dsl';
 import { ChannelSeal } from './Seal.tsx';
-import { countCodePoints, sanitizeUntrusted, takeCodePoints } from './sanitize.ts';
+import { codePointToken, countCodePoints, sanitizeUntrusted, takeCodePoints } from './sanitize.ts';
 import { TapeFrame } from './TapeFrame.tsx';
 import { revealUntrusted } from './untrusted.ts';
 import type { Untrusted } from './untrusted.ts';
@@ -93,4 +93,33 @@ export function SpecimenView({ text, channel, source, maxLines = SPECIMEN_CAPS.l
 export function Specimen(props: SpecimenProps) {
   const [expanded, setExpanded] = useState(false);
   return <SpecimenView {...props} expanded={expanded} onExpand={() => setExpanded(true)} />;
+}
+
+// Longer than this and the text is first cut to its two ends, so a hostile megabyte costs nothing to shorten
+const INLINE_BOUND = 4096;
+
+/**
+ * The text of one inline line of outsider text, such as a sender address: invisible characters and line breaks become `<U+XXXX>`
+ * tokens, and more than `max` code points lose their middle (`...` in its place). The ends are cut before the tokens are made, so a
+ * token never splits.
+ */
+export function inlineText(raw: string, max: number): string {
+  const bounded = raw.length > INLINE_BOUND ? raw.slice(0, INLINE_BOUND / 2) + raw.slice(-INLINE_BOUND / 2) : raw;
+  const cps = Array.from(bounded);
+  const line = (part: string): string => sanitizeUntrusted(part).shown.replace(/\n/g, codePointToken(10));
+  if (cps.length <= max) return line(bounded);
+  const keep = Math.max(max - 3, 2);
+  const head = Math.ceil(keep / 2);
+  return `${line(cps.slice(0, head).join(''))}...${line(cps.slice(cps.length - (keep - head)).join(''))}`;
+}
+
+export type UntrustedInlineProps = { text: Untrusted; max?: number };
+
+/** One line of outsider text in Courier Prime, a React text node: no markup, no link. The caller names its source in system voice. */
+export function UntrustedInline({ text, max = 40 }: UntrustedInlineProps) {
+  return (
+    <span className="untrusted-inline" data-testid="untrusted-inline">
+      {inlineText(revealUntrusted(text), max)}
+    </span>
+  );
 }

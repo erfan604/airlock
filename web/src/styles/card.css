@@ -1,0 +1,275 @@
+/* The approval card (AIR-181, DESIGN.md 4b). Tokens only, radius 0, no shadow. Plain neutral cards: colour only on label text. */
+
+/* a block, not a grid: the pinned bar sticks inside the card, and a grid item cannot leave its own row */
+.card {
+  display: block;
+  max-width: 30rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.card-body {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.card-title {
+  font-family: var(--font-system);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 28px;
+  overflow-wrap: anywhere;
+}
+.card-ref {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+.card-reason {
+  font-size: 16px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.card-status,
+.card-notice {
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.card-notice,
+.card-alert {
+  padding: var(--space-3);
+  border: 2px solid var(--ink);
+  background: var(--raised);
+}
+.card-alert {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.card-alert-label {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  color: var(--alarm);
+}
+.card-alert-line {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+.card-alert-text {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* the stamp sits above the fold of a 667 px phone, so inside the card it is one compact line: the word, then the contract term */
+.card .verdict-stamp {
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+.card .verdict-stamp .door {
+  width: 32px;
+  height: 32px;
+}
+.card .verdict-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+/* the cap line: an engineering dimension line, not a chart */
+.cap-line {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  min-width: 0;
+}
+.cap-line-svg {
+  display: block;
+  width: 100%;
+  height: 20px;
+}
+.cap-line-rule,
+.cap-line-end,
+.cap-line-tick {
+  stroke: var(--ink);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+.cap-line-labels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+.cap-line-labels > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.source-chip {
+  overflow-wrap: anywhere;
+}
+
+/* what the wallet will show: the five readable values, in the argument order of approve() */
+.card-label {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.card-args {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.card-arg-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+.card-arg {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.card-arg dt {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 22px;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+.card-arg dd {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 15px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+.card-footnote {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+
+/* buttons: Reject is solid ink, Approve is outlined, both full width and 56 px tall */
+.card-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 var(--space-4);
+  border: 2px solid var(--ink);
+  font-family: var(--font-system);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 24px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition:
+    transform var(--press),
+    background var(--press),
+    color var(--press);
+}
+.card-btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.card-btn-outline {
+  background: var(--raised);
+  color: var(--ink);
+}
+.card-btn-quiet {
+  min-height: 48px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.card-btn:active:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+  transform: translateY(1px);
+}
+.card-btn-primary:active:not(:disabled) {
+  background: var(--paper);
+  color: var(--ink);
+}
+.card-btn:disabled {
+  background: var(--paper);
+  border-color: var(--hair);
+  color: var(--ink-3);
+  cursor: default;
+}
+
+/* the pinned bar: the last thing in the card, so the footnote is never hidden behind it at the end of the scroll */
+.card-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding: var(--space-2);
+  border-top: 2px solid var(--ink);
+  background: var(--paper);
+}
+
+/* the two-step sheet over an ink scrim at 60 percent */
+.card-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+.card-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 11;
+  display: grid;
+  gap: var(--space-3);
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: var(--space-4);
+  border: 2px solid var(--ink);
+  background: var(--raised);
+}
+.card-sheet-title {
+  font-family: var(--font-system);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 28px;
+  overflow-wrap: anywhere;
+}
+.card-sheet-line {
+  font-size: 14px;
+  line-height: 20px;
+}
+.card-sheet-actions {
+  display: grid;
+  gap: var(--space-2);
+}
