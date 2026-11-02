@@ -266,6 +266,9 @@ impl Contract {
         if let Err(e) = approve_check(&stored, &args, &rec.to_verdict(), limits, &live) {
             reject(e);
         }
+        // the escalation leaves the agent's pending count and the consecutive reject streak ends (AIR-083); a revert after this point
+        // reverts the counters with the call
+        self.flood_after_approve(&rec.agent);
         // charge: the payee is read now (a payee that left the book has no limit, and its day ledger still records the payment)
         let payee = self.payee(&rec.payee);
         let caps = approval_caps(&asset_entry, payee.as_ref(), pending.task_bound);

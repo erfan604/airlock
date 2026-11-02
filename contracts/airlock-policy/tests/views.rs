@@ -501,3 +501,32 @@ fn preview_is_exported_and_its_helper_is_not() {
         );
     }
 }
+
+/// AIR-083: `preview` agrees with `submit_batch` once the flood gate is in front of `store_pending`. With three escalations pending
+/// for the task's agent, a fourth escalating request previews as `blocked` `PendingFull` (not `escalated`), the same as the
+/// `submit_batch` that follows; a request that does not escalate is unaffected. The agent of the flood counter is the task's `agent_id`, because a view has no caller.
+#[tokio::test]
+async fn preview_agrees_with_submit_batch_on_pending_full() {
+    let _slot = slot().await;
+    let fx = fixture().await;
+    let task = fx.task(&[(ALICE, 50_000), (BOB, 1_000)], 20);
+    let new_recipient = |i: u8| req(i, BOB, 10, [OWNER, OWNER, OWNER]);
+    for i in 0..3u8 {
+        let before = fx.preview(&task, new_recipient(i)).await;
+        assert_view(&before, "escalated", Some("NewRecipient"));
+        let out = fx.submit_ok(&task, vec![new_recipient(i)]).await;
+        assert_eq!(out[0]["outcome"], "escalated", "{}", out[0]);
+    }
+    let fourth = fx.preview(&task, new_recipient(3)).await;
+    assert_view(&fourth, "blocked", Some("PendingFull"));
+    assert!(fourth["would_charge"].is_null(), "{fourth}");
+    // a clean request does not escalate, so the flood gate does not touch it
+    let clean = fx
+        .preview(&task, req(4, ALICE, 10, [BOOK, OWNER, OWNER]))
+        .await;
+    assert_view(&clean, "allowed", None);
+    let out = fx.submit_ok(&task, vec![new_recipient(3)]).await;
+    assert_eq!(out[0]["outcome"], "blocked", "{}", out[0]);
+    assert_eq!(out[0]["reason"], "PendingFull", "{}", out[0]);
+    assert_eq!(fourth["reason"], out[0]["reason"]);
+}

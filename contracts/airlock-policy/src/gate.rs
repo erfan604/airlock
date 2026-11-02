@@ -209,7 +209,12 @@ impl Contract {
                 let charge = charge_for_allow(req.amount.0, is_untrusted_amount(&req.labels));
                 ("allowed", None, Some(ChargeRec::from(charge).into()))
             }
-            Verdict::Escalate(reason) => ("escalated", Some(reason), None),
+            // the flood gate sits in front of `store_pending` in `submit_batch` (AIR-083): the agent of the counter is the task's agent
+            // (a view has no caller), the one `submit_batch` requires of the task
+            Verdict::Escalate(reason) => match self.flood_check(&task.agent_id, now_ms) {
+                Ok(_) => ("escalated", Some(reason), None),
+                Err(refused) => ("blocked", Some(refused), None),
+            },
             Verdict::Block(reason) => ("blocked", Some(reason), None),
         };
         PreviewView {
@@ -249,8 +254,8 @@ impl Contract {
     }
 
     /// Stores an escalation: the record `Pending` with its `PendingInfo`, then the `escalated` event. The number is the next one of
-    /// `next_pending_no` and is never reused (`pending counter overflow` at the end of `u32`): it is what `approve` takes. AIR-083 puts the
-    /// flood gate in front of this call. The display strings and the digest come from `escalation::pending_info` (AIR-080), and the
+    /// `next_pending_no` and is never reused (`pending counter overflow` at the end of `u32`): it is what `approve` takes. The flood gate
+    /// of AIR-083 runs in front of this call. The display strings and the digest come from `escalation::pending_info` (AIR-080), and the
     /// number goes into both pending indexes (`index_pending`). Returns the number.
     pub fn store_pending(&mut self, mut rec: RequestRecord, ctx: &EvalCtx, reason: Reason) -> u32 {
         let no = self.next_pending_no;
@@ -383,10 +388,18 @@ impl Contract {
                 self.store_allowed(rec, &ctx);
                 (outcome_of(&id, "allowed", None, None), Some(id))
             }
-            Verdict::Escalate(reason) => {
-                let no = self.store_pending(rec, &ctx, reason);
-                (outcome_of(&id, "escalated", Some(reason), Some(no)), None)
-            }
+            // the flood gate (AIR-083) runs before `store_pending`: a refusal is a stored Block with the flood reason, consumes the id and
+            // one task action (step e) but no pending number
+            Verdict::Escalate(reason) => match self.flood_admit(&rec.agent, now_ms) {
+                Ok(()) => {
+                    let no = self.store_pending(rec, &ctx, reason);
+                    (outcome_of(&id, "escalated", Some(reason), Some(no)), None)
+                }
+                Err(refused) => {
+                    self.store_blocked(rec, refused);
+                    (outcome_of(&id, "blocked", Some(refused), None), None)
+                }
+            },
             Verdict::Block(reason) => {
                 self.store_blocked(rec, reason);
                 (outcome_of(&id, "blocked", Some(reason), None), None)

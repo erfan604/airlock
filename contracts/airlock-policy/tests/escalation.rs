@@ -952,6 +952,8 @@ fn ids(list: &Value) -> Vec<String> {
 async fn get_pending_is_ordered_and_omits_approved() {
     let _slot = slot().await;
     let fx = fixture().await;
+    // four pending at once: the flood cap of AIR-083 (3 by default) is not what this test is about, so raise it
+    owner_ok(&fx.s, "set_flags", flags(PENDING_TTL_MS, 100, 1_000)).await;
     let task = fx.task(&[(BOB, near(100))], 20);
     let (outs, _) = fx
         .submit_ok(

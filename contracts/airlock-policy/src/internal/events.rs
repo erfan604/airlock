@@ -127,6 +127,12 @@ pub enum Event<'a> {
         request_id: &'a str,
         reason: &'a str,
     },
+    /// AIR-083: a reject locked the agent's escalations. `consecutive` and `today` are the counters after the reject, plain JSON numbers.
+    EscalationsLocked {
+        agent: &'a AccountId,
+        consecutive: u32,
+        today: u32,
+    },
     // AIR-104: the owner set the next EVM nonce of a derivation path; `nonce` is a decimal string
     NonceSet {
         path: &'a str,

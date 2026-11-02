@@ -30,6 +30,7 @@ pub mod agents;
 pub mod callback;
 pub mod escalation;
 pub mod exec;
+pub mod flood;
 pub mod gate;
 pub mod internal;
 pub mod keys;
@@ -91,6 +92,10 @@ pub struct Contract {
     // only). In the layout table they come right after `next_pending_no` and before `flood` (AIR-083).
     pub pending_by_no: LookupMap<u32, String>,
     pub pending_nos: IterableSet<u32>,
+    // AIR-083: the escalation flood counters of each agent account (src/flood.rs), written by the flood gate in front of `store_pending`
+    // and by approve, reject, expire and reset. An agent with no entry has the default (all zero). In the layout table `flood` comes
+    // after `pending_nos` (AIR-080) and before the nonce fields (AIR-104).
+    pub flood: LookupMap<AccountId, flood::FloodRec>,
     // AIR-104: the next EVM nonce to hand out per registry `path`, and the one transaction each request id was signed as (entries of
     // `evm_attempts` are never removed, they are bounded by the EVM requests the owner's tasks admit). In the layout table they are
     // the last two fields, after `flood` (AIR-083): the tickets that add fields in between insert them above these two.
@@ -132,6 +137,8 @@ pub enum StorageKey {
     // AIR-080 (the table puts them right after `Records`, above `Flood` of AIR-083 and the nonce keys of AIR-104)
     PendingByNo,
     PendingNos,
+    // AIR-083 (the table puts it after `PendingNos` and before the nonce keys of AIR-104)
+    Flood,
     // AIR-104 (the table puts them last, after `Flood` of AIR-083: AIR-083 inserts its key above these two)
     Nonces,
     EvmAttempts,
@@ -175,6 +182,7 @@ impl Contract {
             next_pending_no: 1,
             pending_by_no: LookupMap::new(StorageKey::PendingByNo),
             pending_nos: IterableSet::new(StorageKey::PendingNos),
+            flood: LookupMap::new(StorageKey::Flood),
             nonces: LookupMap::new(StorageKey::Nonces),
             evm_attempts: LookupMap::new(StorageKey::EvmAttempts),
         }

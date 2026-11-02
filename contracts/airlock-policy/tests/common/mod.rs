@@ -18,8 +18,12 @@ use tokio::time::{Duration, sleep};
 pub const DEPOSIT_005_NEAR: NearToken = NearToken::from_yoctonear(5_000_000_000_000_000_000_000); // 0.005 NEAR
 
 /// Where `cargo near build` writes the contract wasm: `$CARGO_TARGET_DIR/near/airlock_policy.wasm` (scripts/env.sh exports
-/// `CARGO_TARGET_DIR`, so the crate has no `target/`).
+/// `CARGO_TARGET_DIR`, so the crate has no `target/`). `AIRLOCK_WASM`, when set, names the wasm instead (AIR-083: the mutant runner
+/// `scripts/contract-mutant.sh` points it at a private build, so the shared wasm is never overwritten).
 pub fn contract_wasm_path() -> String {
+    if let Ok(path) = std::env::var("AIRLOCK_WASM") {
+        return path;
+    }
     let dir = std::env::var("CARGO_TARGET_DIR")
         .unwrap_or_else(|_| format!("{}/target", env!("CARGO_MANIFEST_DIR")));
     format!("{dir}/near/airlock_policy.wasm")
@@ -1176,4 +1180,184 @@ pub fn events(r: &ExecutionFinalResult, name: &str) -> Vec<Value> {
         .filter(|event| event["event"] == name)
         .map(|event| event["data"][0].clone())
         .collect()
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// AIR-083: in-process contract, sandbox flood fixtures and clock guards (AIR-081, 084, 066, 067, 068 and 085 use them)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// The block time of `inproc_contract()`: a UTC midnight (day 20,833), so it is also the start of a UTC hour.
+pub const T0: u64 = 1_799_971_200_000;
+
+/// An in-process call context: current account `policy.test.near`, the given predecessor (also the signer), block time `now_ms`
+/// milliseconds (the VM wants nanoseconds), the attached deposit in yoctoNEAR and an account balance of 1,000,000 NEAR, so the NEAR
+/// lane's reserve check passes. An integration test cannot see `src/testutil.rs` (it is `#[cfg(test)]` in the library).
+pub fn inproc_ctx(
+    predecessor: &str,
+    now_ms: u64,
+    deposit_yocto: u128,
+) -> near_sdk::test_utils::VMContextBuilder {
+    let mut builder = near_sdk::test_utils::VMContextBuilder::new();
+    builder
+        .current_account_id("policy.test.near".parse().unwrap())
+        .signer_account_id(predecessor.parse().unwrap())
+        .predecessor_account_id(predecessor.parse().unwrap())
+        .block_timestamp(now_ms * 1_000_000)
+        .account_balance(NearToken::from_near(1_000_000))
+        .attached_deposit(NearToken::from_yoctonear(deposit_yocto));
+    builder
+}
+
+/// A contract in the VM of this thread: `new(false, 86_400_000, owner.test.near, mpc.test.near)` at `T0`, then as the owner with 1
+/// yocto the asset `near` (24 decimals, hard cap 10,000, daily cap 100,000, quick task cap 100,000 whole NEAR) and the payee
+/// `near:alice.test.near` (cap 100 NEAR, daily untrusted budget 1,000, daily limit 5,000, label Alice). Returns with the environment
+/// left at the owner's context (1 yocto, block time `T0`).
+pub fn inproc_contract() -> airlock_policy::Contract {
+    use near_sdk::json_types::{U64, U128};
+    near_sdk::testing_env!(inproc_ctx("owner.test.near", T0, 0).build());
+    let mut c = airlock_policy::Contract::new(
+        false,
+        U64(86_400_000),
+        "owner.test.near".parse().unwrap(),
+        "mpc.test.near".parse().unwrap(),
+    );
+    near_sdk::testing_env!(inproc_ctx("owner.test.near", T0, 1).build());
+    c.asset_set(
+        "near".to_string(),
+        airlock_policy::policy::AssetEntryJson {
+            symbol: "NEAR".to_string(),
+            decimals: 24,
+            hard_cap: U128(10_000 * ONE_NEAR),
+            daily_cap: U128(100_000 * ONE_NEAR),
+            max_fee_per_gas: U128(0),
+            max_gas: U128(0),
+            quick_task_cap: U128(100_000 * ONE_NEAR),
+            path: None,
+        },
+    );
+    near_sdk::testing_env!(inproc_ctx("owner.test.near", T0, 1).build());
+    c.book_add(
+        "near:alice.test.near".to_string(),
+        Some(U128(100 * ONE_NEAR)),
+        U128(1_000 * ONE_NEAR),
+        U128(5_000 * ONE_NEAR),
+        "Alice".to_string(),
+    );
+    near_sdk::testing_env!(inproc_ctx("owner.test.near", T0, 1).build());
+    c
+}
+
+/// 0.001 NEAR in yoctoNEAR: the unit of the sandbox flood fixtures, so an approval pays almost nothing.
+pub const U: u128 = 1_000_000_000_000_000_000_000;
+
+/// `world()` plus the payee `near:alice.sandbox` re-added with cap `1U`, untrusted budget `100U` and daily limit `1000U` (owner, 1 yocto).
+pub async fn flood_world() -> World {
+    let w = world().await;
+    owner_call_ok(
+        &w.policy,
+        &w.owner,
+        &w.owner_signer,
+        &w.net,
+        "book_add",
+        json!({
+            "key": "near:alice.sandbox",
+            "cap": U.to_string(),
+            "daily_untrusted_budget": (100 * U).to_string(),
+            "daily_limit": (1000 * U).to_string(),
+            "label": "Alice"
+        }),
+    )
+    .await;
+    w
+}
+
+/// A task for the agent bound to `near:alice.sandbox` at `100U`, 20 actions, signed with the test task key.
+pub fn flood_task(
+    w: &World,
+) -> (
+    airlock_policy::task::OwnerTask,
+    near_sdk::json_types::Base64VecU8,
+) {
+    w.signed_task(&[("near:alice.sandbox", 100 * U)], 20)
+}
+
+/// One request (asset `near`, payee `near:alice.sandbox`, amount `2U`; label masks Book 2, Untrusted:email 32, Owner 1, so the verdict
+/// is `Escalate(UntrustedAmount)`) at `action_index`, submitted by the agent. Returns `outcomes[0]` of the call, a `SubmitOutcome`.
+pub async fn escalate(
+    w: &World,
+    task: &(
+        airlock_policy::task::OwnerTask,
+        near_sdk::json_types::Base64VecU8,
+    ),
+    action_index: u8,
+) -> Value {
+    let req = w.request_json(
+        &task.0,
+        action_index,
+        "near",
+        "near:alice.sandbox",
+        2 * U,
+        (2, 32, 1),
+        None,
+    );
+    let result = w.submit(vec![req], task).await;
+    let text = failure_text(&result);
+    assert!(text.is_empty(), "submit_batch failed: {text}");
+    let outcomes: Value = result.json().expect("the outcomes parse");
+    outcomes[0].clone()
+}
+
+/// The pending number of an `escalated` outcome, as the decimal string `approve` takes.
+pub async fn pending_id_of(outcome: &Value) -> String {
+    outcome["pending_id"]
+        .as_str()
+        .unwrap_or_else(|| panic!("no pending_id in {outcome}"))
+        .to_string()
+}
+
+/// The `header.timestamp` of the `final` block over the sandbox RPC, in milliseconds.
+fn final_block_ms(w: &World) -> u64 {
+    let out = std::process::Command::new("curl")
+        .args([
+            "-s",
+            "-X",
+            "POST",
+            "-H",
+            "content-type: application/json",
+            "-d",
+            r#"{"jsonrpc":"2.0","id":1,"method":"block","params":{"finality":"final"}}"#,
+            &format!(
+                "http://{}",
+                w.sandbox.rpc_addr.trim_start_matches("http://")
+            ),
+        ])
+        .output()
+        .expect("curl runs");
+    let v: Value = serde_json::from_slice(&out.stdout).expect("the block answer parses");
+    let ns = v["result"]["header"]["timestamp"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("no header.timestamp in {v}"));
+    ns / 1_000_000
+}
+
+async fn ensure_window(w: &World, bucket_ms: u64, min_remaining_ms: u64) {
+    let remaining = bucket_ms - final_block_ms(w) % bucket_ms;
+    if remaining < min_remaining_ms {
+        // about 0.297 s per block (measured): move past the boundary so the test starts in the next bucket
+        w.sandbox
+            .fast_forward(remaining / 297 + 50)
+            .await
+            .expect("the sandbox fast-forwards");
+    }
+}
+
+/// When fewer than `min_remaining_ms` remain in the current UTC hour of the block clock, fast-forwards into the next hour, so a test
+/// that reads an hourly count never straddles a boundary.
+pub async fn ensure_hour_window(w: &World, min_remaining_ms: u64) {
+    ensure_window(w, 3_600_000, min_remaining_ms).await;
+}
+
+/// `ensure_hour_window` for the UTC day.
+pub async fn ensure_day_window(w: &World, min_remaining_ms: u64) {
+    ensure_window(w, 86_400_000, min_remaining_ms).await;
 }
