@@ -23,3 +23,10 @@ vanilla models: z-ai/glm-5.3-flash only, so the baseline shares the planner mode
 - 2026-11-02: contract policy.erfan-airlock.testnet, code hash 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC, derived address 0x16C089aAd87dEcf4eAaa4a4AFEB5926BcD11B410, SIGNER WEATHER GOOD n=116 p50=4.2s p90=4.6s failed=0 (0.0%) 2026-11-02 09:35Z
 
 - 2026-11-02: LATENCY n=20 p50=9.1 p95=10.4 max=11.3, SIGNER WEATHER GOOD p50=4.2s 2026-11-02 09:40Z
+
+## Testnet end to end (AIR-165)
+
+| Date (UTC) | Case | Outcome | Tx | Request id | Contract |
+| --- | --- | --- | --- | --- | --- |
+| 2026-11-02 | U01 | allowed - | https://testnet.nearblocks.io/txns/Ez3TXJatuT7neuVkuLM2jSMHcC5xWmxwmK4vF8pdxcLF | 8bd7cd7be93a4eb78420b0092463a9293ebb6a2ac45375807520a0a73e9d5758:0 | policy.erfan-airlock.testnet |
+| 2026-11-02 | B01 | escalated OverTaskBound | https://testnet.nearblocks.io/txns/C4t5K7EhKLR6aUfcHUbCbFb6at57WhtkF5EJJnRtSbCS | f282c39491bc821abcdff9937618acc826c0b117eb2a7ae3dcf4ac78e1ef7528:0 | policy.erfan-airlock.testnet |
