@@ -141,6 +141,12 @@ pub enum Event<'a> {
         s: &'a str,
         recovery_id: u8,
     },
+    /// AIR-100: the EVM lane built the transaction, before the signature exists. `unsigned_hex` is lowercase hex without `0x`, first byte
+    /// `02`; a retry emits it again with the same value.
+    EvmUnsigned {
+        request_id: &'a str,
+        unsigned_hex: &'a str,
+    },
     /// The failure path: `reason` is a `FailReason` name, `retryable` is true when the request may run once more. `fail_request` refunds
     /// the charges (`MpcFailed`, `TransferFailed`, `InsufficientBalance`); `fail_kept_charged` keeps them and always says `retryable`
     /// false (`MpcBadResponse`: the signer answered, so a signature may still exist).

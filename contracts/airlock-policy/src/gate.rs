@@ -219,20 +219,6 @@ impl Contract {
         }
     }
 
-    /// The seam to the execution lanes: AIR-100 (EVM) and AIR-101 (NEAR) turn an `Executing` record into signing or a transfer here and
-    /// return the promise, which `submit_batch` detaches after every charge of the call is made. Until they land it returns `None`
-    /// and an Allow stays `Executing` (`tests/gate.rs::allow_stays_executing_and_creates_no_promise` pins that, and those tickets
-    /// replace it). Plain `impl`: never exported.
-    pub fn start_execution(&mut self, id: &str) -> Option<Promise> {
-        require!(
-            self.records
-                .get(id)
-                .is_some_and(|rec| rec.state == RequestState::Executing),
-            "request is not executing"
-        );
-        None
-    }
-
     /// A record for a request that has no outcome yet. The caller sets `state`, `reason` and the parts of the outcome.
     fn new_record(
         task_hash: [u8; 32],

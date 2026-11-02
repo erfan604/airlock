@@ -963,6 +963,8 @@ mod tests {
         assert_eq!(c.records.get(&id).unwrap().state, RequestState::Pending);
         c.assets
             .insert("evm:84532:native".to_string(), evm_asset(100));
+        // the approve now reaches the EVM lane (AIR-100), which needs the owner's nonce for the path
+        c.nonces.insert("base-sepolia-1".to_string(), 0);
         approve_card(&mut c, &good);
         let rec = c.records.get(&id).cloned().unwrap();
         assert_eq!(rec.state, RequestState::Executing);

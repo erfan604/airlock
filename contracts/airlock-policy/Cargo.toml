@@ -42,6 +42,8 @@ near-sdk = { version = "=5.26.1", features = ["unit-testing"] }
 # verifies the shared vector signature in src/task.rs tests (the version already in Cargo.lock)
 ed25519-dalek = { version = "=2.2.0", default-features = false, features = ["std"] }
 serde_json = "=1.0.149"
+# Keccak256 for the mock-digest assertion of tests/exec_evm.rs (the version already in Cargo.lock)
+sha3 = "=0.10.9"
 shade-attestation = "=0.2.0"
 tokio = { version = "=1.52.1", features = ["full"] }
 # reads the function exports of the built wasm (tests/abi_snapshot.rs); the version is the one already in Cargo.lock

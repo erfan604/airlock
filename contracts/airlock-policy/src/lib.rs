@@ -27,6 +27,7 @@ pub use views::{AgentValidity, AgentView, ContractInfo};
 pub mod agents;
 pub mod callback;
 pub mod escalation;
+pub mod exec;
 pub mod gate;
 pub mod internal;
 pub mod keys;
