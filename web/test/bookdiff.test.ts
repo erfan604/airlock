@@ -86,3 +86,45 @@ test('bookLabelOf: a plain label is text, anything else is wrapped as outsider t
   assert.equal(bookLabelOf({}, 'k'), null);
   assert.equal(bookLabelOf({ ['__proto__']: 'x' }, 'toString'), null);
 });
+
+// AIR-190 follow-up: a label that says Book on a payee outside the book is never drawn as a Book seal
+import { AssetEntryViewJsonSchema, LedgersViewSchema, parseRequestView } from '@airlock/runtime/chain-types';
+import lookalikeFixture from '../fixtures/card-lookalike.json' with { type: 'json' };
+import { CardView } from '../src/approvals/Card.tsx';
+import { buildCardModel } from '../src/approvals/cardModel.ts';
+import { initialState } from '../src/approvals/cardReducer.ts';
+import { parseEvidence } from '../src/approvals/evidence.ts';
+
+function cardHtml(recipient: number, status: string, keys: string[] = ['near:acct-firm.near']): string {
+  const view = parseRequestView({ ...lookalikeFixture.view, labels: { ...lookalikeFixture.view.labels, recipient }, book_status: status });
+  assert.ok(view);
+  const model = buildCardModel(view, parseEvidence(null, view.labels), LedgersViewSchema.parse(lookalikeFixture.ledgers), AssetEntryViewJsonSchema.parse(lookalikeFixture.asset), null, BigInt(lookalikeFixture.now_ms), { bookKeys: keys });
+  return renderToStaticMarkup(createElement(CardView, { model, readOnly: 'Pending', state: initialState(0), onOpen: () => {}, onCancel: () => {}, onConfirm: () => {}, onReject: () => {} }));
+}
+
+const toRow = (html: string): string => html.slice(html.indexOf('data-name="TO"'), html.indexOf('data-name="AMOUNT"'));
+
+test('card: recipient label Book with book_status new shows no Book seal and the warning', () => {
+  const row = toRow(cardHtml(2, 'new'));
+  assert.ok(!row.includes('data-label="Book"'));
+  assert.ok(row.includes('data-testid="label-mismatch"'));
+  assert.ok(row.includes('label says book, payee is not in your book'));
+});
+
+test('card: the remaining bits are still drawn next to the warning', () => {
+  const row = toRow(cardHtml(2 | 32, 'new'));
+  assert.ok(row.includes('data-label="Untrusted:email"'));
+  assert.ok(!row.includes('data-label="Book"'));
+});
+
+test('card: an honest Book label on a book payee, and an untrusted label on a new payee, show no warning', () => {
+  assert.ok(toRow(cardHtml(2, 'in_book', [])).includes('data-label="Book"'));
+  assert.ok(!toRow(cardHtml(2, 'in_book', [])).includes('label-mismatch'));
+  assert.ok(!toRow(cardHtml(32, 'new')).includes('label-mismatch'));
+});
+
+test('card: a book key list that lacks the payee also removes the Book seal', () => {
+  const row = toRow(cardHtml(2, 'in_book', ['near:landlord.near']));
+  assert.ok(!row.includes('data-label="Book"'));
+  assert.ok(row.includes('label-mismatch'));
+});

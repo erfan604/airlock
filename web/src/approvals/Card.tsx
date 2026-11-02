@@ -108,6 +108,13 @@ function sourceLineOf(row: CardRow, model: CardModel): ReactNode {
   const parts: ReactNode[] = [];
   if (model.chip !== null && model.chip.row === row.name) parts.push(<Chip key="chip" chip={model.chip} />);
   if (row.name === 'AMOUNT' && model.cap !== null) parts.push(<CapLineView key="cap" cap={model.cap} />);
+  if (row.name === 'TO' && model.labelMismatch) {
+    parts.push(
+      <p key="mismatch" className="label-mismatch" data-testid="label-mismatch">
+        label says book, payee is not in your book
+      </p>,
+    );
+  }
   if (row.name === 'TO' && model.diff !== null) parts.push(<BookDiff key="diff" payee={row.value} result={model.diff.result} label={model.diff.label} />);
   return parts.length > 0 ? parts : undefined;
 }

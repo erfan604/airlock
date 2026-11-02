@@ -92,6 +92,8 @@ export type CardModel = {
   diff: DiffModel | null;
   magnitude: MagnitudeText;
   forcing: ForcingModel | null;
+  /** The recipient label says Book but the payee is not in the book: the Book seal is dropped and the card says so (AIR-190). */
+  labelMismatch: boolean;
 };
 
 // ---- reasons (the closed table of AIR-181) ----
@@ -274,8 +276,12 @@ export function buildCardModel(
     if (from !== null || e.sender !== null) chip = { row: offender, from, sender: e.sender, age };
   }
 
+  const outsideBook = isNew || (bookKeys.length > 0 && !bookKeys.includes(v.payee));
+  const claimsBook = bitsToLabels(v.labels.recipient & ~UNKNOWN_BIT).includes('Book');
+  const labelMismatch = outsideBook && claimsBook;
+  const toSeals = labelMismatch ? sealsOf(v.labels.recipient).filter((l) => l !== 'Book') : sealsOf(v.labels.recipient);
   const rows: CardRow[] = [
-    { name: 'TO', value: v.payee, seals: sealsOf(v.labels.recipient) },
+    { name: 'TO', value: v.payee, seals: toSeals },
     { name: 'AMOUNT', value: `${args.amount} ${args.asset}`, seals: sealsOf(v.labels.amount) },
     { name: 'BECAUSE', value: becauseValue(v.labels.pc, rowChannels('BECAUSE')), seals: sealsOf(v.labels.pc) },
   ];
@@ -299,6 +305,7 @@ export function buildCardModel(
     args,
     diff: isNew ? { result: found, label: found === null ? null : bookLabelOf(extras.bookLabels ?? {}, found.nearest) } : null,
     magnitude: magnitudeText(amount, l, book, args.asset, a.decimals),
+    labelMismatch,
     forcing: forcingRequired(v, amount, extras.forcingMinAmount ?? FORCING_MIN_AMOUNT, bookKeys)
       ? { required: true, target: forcingTarget(v.payee), label: forcingLabel(v.payee) }
       : null,
