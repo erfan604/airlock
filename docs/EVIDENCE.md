@@ -8,12 +8,6 @@
 | Policy contract deploy | NEAR testnet | account `policy.erfan-airlock.testnet`, code_hash=2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC (hex 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805), wasm_sha256=1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 (the on-chain code hash equals the sha256 of the committed res/airlock_policy.wasm), tx [5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG](https://testnet.nearblocks.io/txns/5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG), full_access_keys=1, commit dfbe646, wasm is over 900 KB (1044856 bytes) | 2026-11-02 |
 No TEE registration transaction is recorded here: the runtime runs in local mode (unattested). The contract deploy, the MPC sign transactions, the Base Sepolia transactions and the escalation and approval transactions are the rows below.
 
-## Model choice
-
-planner model: z-ai/glm-5.3-flash, chosen on the criteria in order: benign task success first (the highest of the affordable models, with the fewest error rows), then cost per 1,000 calls from PRICES (USD 0.08 per million input tokens and 0.50 per million output tokens, measured about USD 0.06 per 1,000 calls), then mean latency (3.4 s per call at low reasoning effort), then JSON-schema acceptance (accepted, with the JSON in the answer and not in the reasoning), then the TEE flag (providerType vllm with attestation supported). Reasoning effort is low; the same model runs on both sides of the comparison.
-quarantine model: z-ai/glm-5.3-flash, the same model as the planner, so one prompt cache and one budget line serve both roles; it passed the JSON-schema probe with finish reason stop, and it is a TEE model, which the quarantine role requires.
-vanilla models: z-ai/glm-5.3-flash only, so the baseline shares the planner model. The default reasoning effort cost about eight times as much per call and ran at 26.5 s per call for the same safety, which is why low is recorded. Kimi K3, Qwen3.8 and Qwen3.6 were measured or priced and not chosen. The tables are in the research repository, found by the sha256 hashes in runtime/config/models.json.
-
 ## Real MPC (AIR-102)
 
 | What | Network | Id / hash / link | Date |
@@ -75,3 +69,71 @@ Testnet, 2026-11-02 (weather GOOD): `GAS TESTNET batch3 ... need=115.617` (tx 9t
 | 2026-11-02 | b01-escalate | policy.erfan-airlock.testnet | 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC | 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 | [submit](https://testnet.nearblocks.io/txns/7vJhDpZzkuRwWYSntPqvNGqZmXNJcdRbeDP8hUTCW6rs) |
 | 2026-11-02 | b01-approve | policy.erfan-airlock.testnet | 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC | 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 | [approve](https://testnet.nearblocks.io/txns/Fk8G1sGrJZ6wKDwH6CmpnA5gz1HJLMNaEaFjkKcDSSCk) |
 | 2026-11-02 | tamper | policy.erfan-airlock.testnet | 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC | 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 | [tamper](https://testnet.nearblocks.io/txns/5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj) |
+
+## Deployed ids and hashes
+
+| What | Network | Id / hash / link | Date |
+| --- | --- | --- | --- |
+| Policy contract account | NEAR testnet | policy.erfan-airlock.testnet | 2026-11-02 |
+| Code hash (base58) | NEAR testnet | 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC | 2026-11-02 |
+| Wasm sha256 | local | 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 (`contracts/airlock-policy/res/airlock_policy.wasm`, the on-chain code hash converted from base58 equals it) | 2026-11-02 |
+| Deploy transaction | NEAR testnet | https://testnet.nearblocks.io/txns/5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG | 2026-11-02 |
+| Derived Base Sepolia address | Base Sepolia | 0x16C089aAd87dEcf4eAaa4a4AFEB5926BcD11B410 | 2026-11-02 |
+| MPC contract version | NEAR testnet | v1.signer-prod.testnet version 3.18.0 (`fixtures/mpc-expected.json`) | 2026-11-02 |
+| MPC contract code hash | NEAR testnet | CpGX8ywXJwvWPgZFDDCTCuPJBHF7BATT51gSfc3APERJ (`fixtures/mpc-expected.json`) | 2026-11-02 |
+
+The code hash row says the committed wasm is the deployed one; it does not say the build is reproducible. No TEE registration transaction exists, so the runtime runs in local mode (unattested).
+
+## Wallet matrix
+
+Read from the screenshots of the wallet bake-off (AIR-260, 2026-11-01, testnet). The primary wallet is Intear and the backup is Meteor.
+
+| | Meteor | Intear |
+| --- | --- | --- |
+| approve first screen | From, To, deposit "0.000000000000000 NEAR", fees; no arguments | "Call approve_demo with 30.0 Tgas and deposit 1 yoctoNEAR", Show args link |
+| after one tap | "View Transaction Details": method, gas 30 Tgas, deposit 0, all six args as JSON | "Show args": all six args as JSON, Copy JSON and Copy CLI |
+| exact 1 yocto deposit shown | no, it rounds to 0 | yes |
+| NEP-413 first screen | account, message truncated, View Full Message | full message and recipient |
+| NEP-413 signature | base64, verified | base64, verified |
+
+The screenshots stay in the research repository until each one has been looked at for personal data and re-encoded without metadata.
+
+## Toolchain
+
+Printed by `scripts/evidence-pins.sh` at commit de29b93 on 2026-11-02.
+
+| tool | pinned | actual | status |
+| --- | --- | --- | --- |
+| rustc | 1.86.0 | 1.86.0 | ok |
+| kani | 0.68 | 0.68.0 | ok |
+| lean | 4.35.0 | 4.35.0 | ok |
+| node | v24 | v24.22.1 | ok |
+| cargo-near | 0.22 | 0.22.0 | ok |
+| cargo-mutants | 26.0.0 | 26.0.0 | ok |
+| near-sdk | 5.26.1 | 5.26.1 | ok |
+| omni-transaction | 0.5.0 | 0.5.0 | ok |
+| near-sandbox | 0.3.9 | 0.3.9 | ok |
+
+## Differential
+
+`scripts/diff-verdict.sh --commit` on 2026-11-02 at commit de29b93 printed `identical on 40000 cases`. No larger run was made.
+
+## Video links
+
+https://testnet.nearblocks.io/txns/5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG
+https://testnet.nearblocks.io/txns/B14u88m5jtGz4weD367zsdgt2HwGbFczztdjAxXJ5xrY
+https://sepolia.basescan.org/tx/0x7e094201ddc1afb386d1944d7bf35f5aafd3a3f9afe8212cb4b70263dd3ca1d0
+https://testnet.nearblocks.io/txns/Ez3TXJatuT7neuVkuLM2jSMHcC5xWmxwmK4vF8pdxcLF
+https://testnet.nearblocks.io/txns/C4t5K7EhKLR6aUfcHUbCbFb6at57WhtkF5EJJnRtSbCS
+https://sepolia.basescan.org/tx/0x943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63
+https://testnet.nearblocks.io/txns/53GuKRQxh6w5yBf4ZCzgBYH3QpHwLUNXiq9yCdrDr7ug
+https://testnet.nearblocks.io/txns/7vJhDpZzkuRwWYSntPqvNGqZmXNJcdRbeDP8hUTCW6rs
+https://testnet.nearblocks.io/txns/4iwSRaSYC9qD8BjjVgvovRMNjdYZErUGczwA2y2cX8Tt
+https://testnet.nearblocks.io/txns/Fk8G1sGrJZ6wKDwH6CmpnA5gz1HJLMNaEaFjkKcDSSCk
+https://testnet.nearblocks.io/txns/5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj
+
+## Model choice
+
+planner model: z-ai/glm-5.3-flash, chosen on the criteria in order: benign task success first (the highest of the affordable models, with the fewest error rows), then cost per 1,000 calls from PRICES (USD 0.08 per million input tokens and 0.50 per million output tokens, measured about USD 0.06 per 1,000 calls), then mean latency (3.4 s per call at low reasoning effort), then JSON-schema acceptance (accepted, with the JSON in the answer and not in the reasoning), then the TEE flag (providerType vllm with attestation supported). Reasoning effort is low; the same model runs on both sides of the comparison.
+quarantine model: z-ai/glm-5.3-flash, the same model as the planner, so one prompt cache and one budget line serve both roles; it passed the JSON-schema probe with finish reason stop, and it is a TEE model, which the quarantine role requires.
+vanilla models: z-ai/glm-5.3-flash only, so the baseline shares the planner model. The default reasoning effort cost about eight times as much per call and ran at 26.5 s per call for the same safety, which is why low is recorded. Kimi K3, Qwen3.8 and Qwen3.6 were measured or priced and not chosen. The tables are in the research repository, found by the sha256 hashes in runtime/config/models.json.
