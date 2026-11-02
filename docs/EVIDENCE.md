@@ -30,3 +30,23 @@ vanilla models: z-ai/glm-5.3-flash only, so the baseline shares the planner mode
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-02 | U01 | allowed - | https://testnet.nearblocks.io/txns/Ez3TXJatuT7neuVkuLM2jSMHcC5xWmxwmK4vF8pdxcLF | 8bd7cd7be93a4eb78420b0092463a9293ebb6a2ac45375807520a0a73e9d5758:0 | policy.erfan-airlock.testnet |
 | 2026-11-02 | B01 | escalated OverTaskBound | https://testnet.nearblocks.io/txns/C4t5K7EhKLR6aUfcHUbCbFb6at57WhtkF5EJJnRtSbCS | f282c39491bc821abcdff9937618acc826c0b117eb2a7ae3dcf4ac78e1ef7528:0 | policy.erfan-airlock.testnet |
+
+## Gas (AIR-107)
+
+Sandbox pre-check, neard 2.11.0 (protocol 83), `cargo test --test gas -- --nocapture --test-threads=2` on 2026-11-02. Testnet is protocol 88 and is not measured yet, so these rows are indicative; the full text and the method are in `docs/gas.md`.
+
+| Row | burnt_total (Tgas) | burnt_first (Tgas) | reserved (Tgas) | need (Tgas) |
+| --- | --- | --- | --- | --- |
+| near_allow | 9.111 | 5.551 | 5.000 | 10.551 |
+| evm_allow | 11.335 | 6.310 | 35.000 | 41.310 |
+| evm_batch3 | 24.371 | 9.997 | 105.000 | 114.997 |
+| worst_case_batch3 | 24.889 | 10.441 | 105.000 | 115.441 |
+| escalate3 | 7.422 | 6.815 | 0.000 | 6.815 |
+| mixed | 12.938 | 7.864 | 35.000 | 42.864 |
+| approve_evm | 10.809 | 5.808 | 35.000 | 40.808 |
+| reject | 3.833 | 3.301 | 0.000 | 3.301 |
+| expire | 3.822 | 3.290 | 0.000 | 3.290 |
+
+- Approve sweep on the sandbox: the first success at 50 Tgas (`APPROVE_MIN_TGAS=50 sandbox`), 40 Tgas failed with `Exceeded the prepaid gas.`
+- Callback headroom: `CALLBACK GAS on_signed_ok=2.923 on_signed_fail=3.499 on_transfer_ok=2.768 on_transfer_fail=3.479 Tgas`.
+- Batch cap: 3, confirmed on the sandbox only. `APPROVE_PREPAID_TGAS` stays 150 until the testnet sweep runs.

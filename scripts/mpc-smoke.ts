@@ -6,6 +6,11 @@
 //   pnpm tsx scripts/mpc-smoke.ts --escalate                   submits a task the gate escalates (no payment)
 //   pnpm tsx scripts/mpc-smoke.ts --latency <n> [--max-p95 <s>] [--record]
 //                                                              n sequential signatures, never broadcast, then a nonce resync
+//   pnpm tsx scripts/mpc-smoke.ts --batch3                     SIGNS three requests of 0.00001 ETH in one batch (AIR-107), never broadcast,
+//                                                              then a nonce resync; prints `NEAR tx <hash>`
+//   pnpm tsx scripts/mpc-smoke.ts --escalate-evm               submits one EVM request the gate escalates UntrustedAmount (AIR-107); writes
+//                                                              the pending number to target/last-pending-id-evm
+//   pnpm tsx scripts/mpc-smoke.ts --resync-nonce               the nonce resync alone: set_nonce as the owner when the contract is ahead
 //   pnpm tsx scripts/mpc-smoke.ts --check-fixture              offline, no keys: assemble the recorded real response
 // NEAR transactions go through the near CLI with the keychain (sign-with-keychain); this file never reads an account key. The task
 // key is read only inside sign-task.ts. Run `python3 scripts/signer-weather.py` before --send and --latency (CLAUDE.md).
@@ -182,23 +187,36 @@ interface Scenario {
   evm: { gas_limit: string; max_fee_per_gas: string; max_priority_fee_per_gas: string } | null;
 }
 
-const SCENARIOS: Record<'send' | 'near' | 'escalate', () => Scenario> = {
+const SCENARIOS: Record<'send' | 'near' | 'escalate' | 'batch3' | 'escalateEvm', () => Scenario> = {
   send: () => ({
     payee: bookKey('contractor'), bound: '1000000000000000', asset: 'evm:84532:native', amount: '10000000000000',
     masks: { recipient: 2, amount: 1, pc: 1 }, evm: { gas_limit: '21000', max_fee_per_gas: '1000000000', max_priority_fee_per_gas: '1000000' },
   }),
   near: () => ({ payee: bookKey('sam'), bound: '1000000000000000000000000', asset: 'near', amount: '100000000000000000000000', masks: { recipient: 2, amount: 1, pc: 1 }, evm: null }),
   escalate: () => ({ payee: bookKey('accountant'), bound: '10000000000000000000000000', asset: 'near', amount: '9400000000000000000000000', masks: { recipient: 2, amount: 32, pc: 1 }, evm: null }),
+  // AIR-107: three requests of 0.00001 ETH under a 0.1 ETH bound
+  batch3: () => ({
+    payee: bookKey('contractor'), bound: '100000000000000000', asset: 'evm:84532:native', amount: '10000000000000',
+    masks: { recipient: 2, amount: 1, pc: 1 }, evm: { gas_limit: '21000', max_fee_per_gas: '1000000000', max_priority_fee_per_gas: '1000000' },
+  }),
+  // AIR-107: 0.06 ETH to contractor (cap 0.05 ETH) with an untrusted amount, under a 0.1 ETH bound: rule 6 (UntrustedAmount) comes before rule 11 (OverTaskBound)
+  escalateEvm: () => ({
+    payee: bookKey('contractor'), bound: '100000000000000000', asset: 'evm:84532:native', amount: '60000000000000000',
+    masks: { recipient: 2, amount: 32, pc: 1 }, evm: { gas_limit: '21000', max_fee_per_gas: '1000000000', max_priority_fee_per_gas: '1000000' },
+  }),
 };
 
 interface Submitted {
   hash: string;
   startedAt: number;
   requestId: string;
+  /** every request id of the batch, in index order (`requestId` is the first) */
+  requestIds: string[];
   scenario: Scenario;
 }
 
-function submit(sc: Scenario, suffix = ''): Submitted {
+/** One `submit_batch` of `count` identical requests (action indexes 0 to count - 1) under one task with `max_actions` = `count`. */
+function submit(sc: Scenario, suffix = '', count = 1): Submitted {
   const now = Date.now();
   const planSha = sha256Hex('airlock-mpc-smoke-plan');
   const task: OwnerTask = {
@@ -210,17 +228,18 @@ function submit(sc: Scenario, suffix = ''): Submitted {
     instruction_sha256_salted: sha256Hex(`airlock-mpc-smoke-instruction:${randomBytes(16).toString('hex')}`),
     issued_ms: now - 5_000,
     expires_ms: now + 1_800_000,
-    max_actions: 1,
+    max_actions: count,
     bounds: [{ payee_key: sc.payee, max_total: sc.bound }],
   };
   const signed = signTask(task, loadSeedHex());
-  const req = {
-    task_id: task.task_id, action_index: 0, asset: sc.asset, payee: sc.payee, amount: sc.amount, labels: sc.masks, evm: sc.evm,
+  const reqs = Array.from({ length: count }, (_v, i) => ({
+    task_id: task.task_id, action_index: i, asset: sc.asset, payee: sc.payee, amount: sc.amount, labels: sc.masks, evm: sc.evm,
     hints: { plan_hash: planSha, trace_digest: '0'.repeat(64) },
-  };
+  }));
   const startedAt = Date.now();
-  const hash = nearCall(POLICY, 'submit_batch', { reqs: [req], task: signed.task, task_sig: signed.task_sig }, '300 Tgas', '0 NEAR', AGENT);
-  return { hash, startedAt, requestId: `${taskHash(task)}:0`, scenario: sc };
+  const hash = nearCall(POLICY, 'submit_batch', { reqs, task: signed.task, task_sig: signed.task_sig }, '300 Tgas', '0 NEAR', AGENT);
+  const requestIds = reqs.map((r) => `${taskHash(task)}:${r.action_index}`);
+  return { hash, startedAt, requestId: requestIds[0] as string, requestIds, scenario: sc };
 }
 
 const TERMINAL = ['signed', 'failed', 'blocked', 'escalated', 'paid'];
@@ -391,6 +410,55 @@ async function modeEscalate(): Promise<number> {
   return 0;
 }
 
+/** AIR-107: one batch of three signed requests. Prints `NEAR tx <hash>`, waits for three `signed` events (or a terminal other event, which
+ *  it prints and exits 1 on), and ends with the nonce resync because the signatures are never broadcast. */
+async function modeBatch3(): Promise<number> {
+  const s = submit(SCENARIOS.batch3(), '-b3', 3);
+  console.log(`NEAR tx ${s.hash}`);
+  let code = 0;
+  try {
+    const { evs } = await pollTx(s.hash, AGENT, (e) => {
+      const mine = e.filter((x) => s.requestIds.includes(x.data.request_id as string));
+      return mine.filter((x) => x.event === 'signed').length === 3 || mine.some((x) => x.event !== 'signed' && TERMINAL.includes(x.event));
+    });
+    const mine = evs.filter((x) => s.requestIds.includes(x.data.request_id as string));
+    const bad = mine.find((x) => x.event !== 'signed' && TERMINAL.includes(x.event));
+    const signed = mine.filter((x) => x.event === 'signed').length;
+    if (bad || signed !== 3) {
+      console.log(`batch ended ${bad ? bad.event : 'without three signed events'} ${bad ? JSON.stringify(bad.data) : ''}`.trim());
+      code = 1;
+    } else {
+      console.log('three signed events ok');
+    }
+  } catch (e) {
+    console.log(e instanceof Error ? e.message : String(e));
+    code = 1;
+  }
+  try {
+    await resyncNonce();
+  } catch (e) {
+    console.log(`nonce resync failed: ${e instanceof Error ? e.message : String(e)}`);
+    code = 1;
+  }
+  return code;
+}
+
+/** AIR-107: one EVM request the gate escalates with `UntrustedAmount`; the pending number goes to target/last-pending-id-evm. */
+async function modeEscalateEvm(): Promise<number> {
+  const s = submit(SCENARIOS.escalateEvm(), '-ee');
+  console.log(`NEAR tx ${s.hash}`);
+  const { evs } = await pollTx(s.hash, AGENT, (e) => forRequest(e, s.requestId, TERMINAL) !== undefined);
+  const end = forRequest(evs, s.requestId, TERMINAL) as Ev;
+  if (end.event !== 'escalated' || end.data.reason !== 'UntrustedAmount') {
+    console.log(`request ended ${end.event} ${JSON.stringify(end.data)}`);
+    return 1;
+  }
+  mkdirSync(join(ROOT, 'target'), { recursive: true });
+  writeFileSync(join(ROOT, 'target', 'last-pending-id-evm'), `${end.data.id}\n`);
+  console.log(`escalated UntrustedAmount pending_id ${end.data.id}`);
+  return 0;
+}
+
 async function resyncNonce(): Promise<void> {
   const chain = BigInt(await baseRpc('eth_getTransactionCount', [deriveAddress(), 'pending']));
   const view = await nearRpc('query', { request_type: 'call_function', finality: 'final', account_id: POLICY, method_name: 'get_nonce', args_base64: Buffer.from(JSON.stringify({ path: EVM_PATH })).toString('base64') });
@@ -403,6 +471,17 @@ async function resyncNonce(): Promise<void> {
   const hash = nearCall(POLICY, 'set_nonce', { path: EVM_PATH, nonce: chain.toString() }, '30 Tgas', '1 yoctoNEAR', OWNER);
   await pollTx(hash, OWNER, (evs) => evs.some((e) => e.event === 'nonce_set'));
   console.log(`nonce resynced to ${chain}`);
+}
+
+/** `--resync-nonce`: the resync alone; prints `nonce resynced to <n>` or `nonce in sync <n>`. */
+async function resyncOnly(): Promise<number> {
+  try {
+    await resyncNonce();
+    return 0;
+  } catch (e) {
+    console.log(`nonce resync failed: ${e instanceof Error ? e.message : String(e)}`);
+    return 1;
+  }
 }
 
 async function modeLatency(n: number, maxP95: number, record: boolean, note: string): Promise<number> {
@@ -480,8 +559,11 @@ async function main(argv: string[]): Promise<number> {
   if (argv.includes('--send')) return modeSend(record, note);
   if (argv.includes('--near-lane')) return modeNearLane();
   if (argv.includes('--escalate')) return modeEscalate();
+  if (argv.includes('--batch3')) return modeBatch3();
+  if (argv.includes('--escalate-evm')) return modeEscalateEvm();
+  if (argv.includes('--resync-nonce')) return resyncOnly();
   if (argv.includes('--latency')) return modeLatency(Number(flag(argv, '--latency') ?? '20'), Number(flag(argv, '--max-p95') ?? '15'), record, note);
-  process.stderr.write('usage: mpc-smoke.ts --derive [--min-wei n] | --send [--record] | --near-lane | --escalate | --latency n [--max-p95 s] [--record] | --check-fixture\n');
+  process.stderr.write('usage: mpc-smoke.ts --derive [--min-wei n] | --send [--record] | --near-lane | --escalate | --escalate-evm | --batch3 | --resync-nonce | --latency n [--max-p95 s] [--record] | --check-fixture\n');
   return 2;
 }
 
