@@ -259,6 +259,9 @@ async function stepTwin(io: GoldenIo, model: string): Promise<number> {
   return 1;
 }
 
+/** Preflight lines about the EVM lane (AIR-166); only the contractor step stops on them. */
+export const EVM_ONLY_LINES: ReadonlySet<string> = new Set(['derived address', 'nonce']);
+
 /** The exit code of one invocation. */
 export async function main(argv: readonly string[], io: GoldenIo): Promise<number> {
   const parsed = parseArgs(argv);
@@ -269,7 +272,10 @@ export async function main(argv: readonly string[], io: GoldenIo): Promise<numbe
   try {
     const lines = await io.preflight();
     for (const l of lines) io.out(formatLine(l));
-    if (!preflightOk(lines)) {
+    // the Base Sepolia lines gate only the contractor step: a NEAR-lane step never signs through the MPC or touches the derived address
+    const gating = parsed.name === 'contractor' ? lines : lines.filter((l) => !EVM_ONLY_LINES.has(l.name));
+    for (const l of lines) if (l.level === 'FAIL' && !gating.includes(l)) io.out(`NOTE ${l.name} does not gate the ${parsed.name} step`);
+    if (!preflightOk(gating)) {
       io.out('PREFLIGHT FAILED');
       return 1;
     }

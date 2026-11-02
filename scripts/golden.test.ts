@@ -111,6 +111,18 @@ test('a preflight FAIL stops every step before anything runs', async () => {
   }
 });
 
+test('a derived address or nonce FAIL stops only the contractor step; a NEAR step notes it and runs', async () => {
+  const evm: Line[] = [...PASS, { level: 'FAIL', name: 'derived address', detail: 'holds 0.017 ETH' }];
+  const near = rig({ preflight: evm });
+  assert.equal(await main(['u01'], near.io), 0);
+  assert.ok(near.out.includes('NOTE derived address does not gate the u01 step'), near.out.join('\n'));
+  assert.equal(near.calls.runCase.length, 1);
+  const c = rig({ preflight: evm });
+  assert.equal(await main(['contractor'], c.io), 1);
+  assert.ok(c.out.includes('PREFLIGHT FAILED'));
+  assert.equal(c.calls.runCase.length, 0);
+});
+
 test('u01 writes a valid golden file and one EVIDENCE row with the code hash, the wasm hash and the link', async () => {
   const r = rig();
   assert.equal(await main(['u01'], r.io), 0);
