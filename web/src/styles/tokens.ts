@@ -1,17 +1,29 @@
-// Design tokens (DESIGN.md 2.2, 2.4 and 6.1): one typed object, emitted as CSS custom properties of the same names in kebab
-// case by scripts/emit-tokens.ts. Components read the properties; nothing else hard-codes a hex. Light theme only.
-
+// Design tokens (DESIGN.md 2.2 and 6.1, colours replaced by D24 in AIR-296): one typed object, emitted as CSS custom properties of the
+// same names in kebab case by scripts/emit-tokens.ts. Components read the properties; nothing else hard-codes a hex.
+// D24 supersedes the light paper theme: a dark NEAR theme. The names keep their roles, not their old colours: `paper` is the canvas,
+// `raised` a surface on it, `sunk` an inset well (the interior of outsider text), `ink` to `ink3` the text steps, `hair` the 1 px
+// dividers and `edge` the outline of a control (at least 3 to 1 on every surface). Palette source: near.org's own stylesheet
+// (checked 2026-11-02): green #00EC97, blue #17D9D4, purple #9797FF, red #FF7966, white #F2F1E9 on black.
+//   clear   NEAR green: allowed, approved and the primary action, used sparingly.
+//   onClear text drawn on a clear fill.
+//   signal  amber: the outside stripe and the held state. Never green.
+//   alarm   red, NEAR's #FF7966 pushed further from the amber so blocked never reads as held.
+//   info    NEAR purple: neutral system labels (trace kinds). focus: NEAR blue, the keyboard focus ring.
 export const manual = {
-  paper: '#EDE9DD',
-  raised: '#F7F4EB',
-  sunk: '#E1DCCB',
-  ink: '#15140F',
-  ink2: '#4B473C',
-  ink3: '#625D50',
-  hair: '#BDB7A3',
-  signal: '#FF5A14',
-  clear: '#0E5F4F',
-  alarm: '#A3182E',
+  paper: '#0B0C0E',
+  raised: '#15171B',
+  sunk: '#060708',
+  ink: '#F2F1E9',
+  ink2: '#B9B8B0',
+  ink3: '#8F8E88',
+  hair: '#2A2D33',
+  edge: '#666B75',
+  signal: '#FFB547',
+  clear: '#00EC97',
+  onClear: '#03140D',
+  alarm: '#FF5C6A',
+  info: '#9797FF',
+  focus: '#17D9D4',
 } as const;
 
 export type TokenName = keyof typeof manual;
@@ -19,9 +31,9 @@ export type TokenName = keyof typeof manual;
 /** The spacing scale in px, 4 px base. The first entry is custom property space-1. */
 export const space = [4, 8, 12, 16, 24, 32, 48, 64, 96] as const;
 
-/** `ink2` becomes `ink-2`: a digit starts a new word. */
+/** `ink2` becomes `ink-2` and `onClear` becomes `on-clear`: a digit or a capital starts a new word. */
 export function cssName(token: TokenName): string {
-  return token.replace(/([0-9]+)$/, '-$1');
+  return token.replace(/([0-9]+)$/, '-$1').replace(/([A-Z])/g, (c) => `-${c.toLowerCase()}`);
 }
 
 /** The `:root` block of custom properties. The committed `tokens.css` must equal this string byte for byte. */

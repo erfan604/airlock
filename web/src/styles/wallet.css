@@ -1,8 +1,8 @@
-/* The login gate, the /approvals page and the CLI panel (AIR-182). Tokens only, radius 0, no shadow. Plain neutral blocks: colour only on label text. */
+/* The login gate, the /approvals page and the CLI panel (AIR-182), restyled by D24 (AIR-296): hairline surfaces, colour only on label text. */
 .gate {
   display: grid;
   gap: var(--space-4);
-  max-width: 30rem;
+  max-width: 36rem;
   min-width: 0;
 }
 .gate-line,
@@ -13,12 +13,13 @@
   overflow-wrap: anywhere;
 }
 .gate-error {
-  padding: var(--space-3);
-  border: 2px solid var(--ink);
+  padding: var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-m);
   background: var(--raised);
 }
 .gate-account {
-  max-width: 30rem;
+  max-width: 36rem;
   margin: 0 auto;
   padding: var(--space-3) var(--space-4) 0;
   font-family: var(--font-data);
@@ -34,22 +35,22 @@
   min-width: 0;
 }
 .approvals-title {
-  max-width: 30rem;
+  max-width: 36rem;
   margin: 0 auto;
   width: 100%;
   font-family: var(--font-data);
-  font-weight: 700;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 11px;
   line-height: 16px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 .approvals-reveal,
 .approvals-more,
 .approvals-empty,
 .approvals-error {
-  max-width: 30rem;
+  max-width: 36rem;
   width: 100%;
   margin: 0 auto;
   font-size: 16px;
@@ -57,8 +58,9 @@
   overflow-wrap: anywhere;
 }
 .approvals-reveal {
-  padding: var(--space-3);
-  border: 2px solid var(--ink);
+  padding: var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-m);
   background: var(--raised);
 }
 .approvals-error {
@@ -73,12 +75,13 @@
 .cli-panel {
   display: grid;
   gap: var(--space-2);
-  max-width: 30rem;
+  max-width: 36rem;
   width: 100%;
   min-width: 0;
   margin: 0 auto;
-  padding: var(--space-3);
-  border: 2px solid var(--ink);
+  padding: var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-m);
   background: var(--raised);
 }
 .cli-text {

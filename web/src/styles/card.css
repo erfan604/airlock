@@ -1,35 +1,59 @@
-/* The approval card (AIR-181, DESIGN.md 4b). Tokens only, radius 0, no shadow. Plain neutral cards: colour only on label text. */
+/* The approval card (AIR-181, DESIGN.md 4b), restyled by D24 (AIR-296): one raised panel on the canvas, hairlines, colour only where the
+   state lives. The card reveals on mount; the confirm sheet slides up over a dimmed canvas. */
 
 /* a block, not a grid: the pinned bar sticks inside the card, and a grid item cannot leave its own row */
 .card {
+  --card-pad: var(--space-3);
   display: block;
-  max-width: 30rem;
+  max-width: 36rem;
   margin: 0 auto;
   min-width: 0;
+  padding: var(--card-pad) var(--card-pad) 0;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-l);
+  background: var(--raised);
+  box-shadow: var(--lift);
+  animation: reveal 380ms var(--ease-out) 60ms backwards;
+}
+@media (min-width: 720px) {
+  .card {
+    --card-pad: var(--space-6);
+  }
+  .card-body {
+    gap: var(--space-5);
+  }
+  .card-title {
+    font-size: 28px;
+    line-height: 34px;
+  }
 }
 .card-body {
   display: grid;
   gap: var(--space-4);
   min-width: 0;
+  padding-bottom: var(--card-pad);
 }
 .card-title {
   font-family: var(--font-system);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 22px;
   line-height: 28px;
+  letter-spacing: -0.015em;
   overflow-wrap: anywhere;
 }
 .card-ref {
   font-family: var(--font-data);
-  font-weight: 700;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 11px;
   line-height: 16px;
-  letter-spacing: 0.08em;
-  color: var(--ink-2);
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
 }
 .card-reason {
+  margin-top: calc(-1 * var(--space-2));
   font-size: 16px;
   line-height: 24px;
+  color: var(--ink-2);
   overflow-wrap: anywhere;
 }
 .card-status,
@@ -40,9 +64,14 @@
 }
 .card-notice,
 .card-alert {
-  padding: var(--space-3);
-  border: 2px solid var(--ink);
-  background: var(--raised);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-m);
+  background: var(--sunk);
+}
+.card-alert {
+  border: 2px solid var(--alarm);
+  background: color-mix(in srgb, var(--alarm) 8%, var(--sunk));
 }
 .card-alert {
   display: grid;
@@ -52,14 +81,14 @@
 .card-alert-label {
   font-family: var(--font-data);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 16px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--alarm);
 }
 .card-alert-line {
   font-family: var(--font-data);
-  font-weight: 700;
+  font-weight: 500;
   font-size: 15px;
   line-height: 22px;
   overflow-wrap: anywhere;
@@ -72,7 +101,7 @@
 /* the stamp sits above the fold of a 667 px phone, so inside the card it is one compact line: the word, then the contract term */
 .card .verdict-stamp {
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
 }
 .card .verdict-stamp .door {
   width: 32px;
@@ -98,9 +127,13 @@
   height: 20px;
 }
 .cap-line-rule,
-.cap-line-end,
+.cap-line-end {
+  stroke: var(--edge);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
 .cap-line-tick {
-  stroke: var(--ink);
+  stroke: var(--signal);
   stroke-width: 2px;
   vector-effect: non-scaling-stroke;
 }
@@ -110,11 +143,11 @@
   justify-content: space-between;
   gap: var(--space-1) var(--space-3);
   font-family: var(--font-data);
-  font-weight: 700;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 11px;
   line-height: 16px;
-  letter-spacing: 0.08em;
-  color: var(--ink);
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
 }
 .cap-line-labels > span {
   min-width: 0;
@@ -127,17 +160,21 @@
 /* what the wallet will show: the five readable values, in the argument order of approve() */
 .card-label {
   font-family: var(--font-data);
-  font-weight: 700;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 11px;
   line-height: 16px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 .card-args {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-3);
   min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-m);
+  background: var(--sunk);
 }
 .card-arg-list {
   display: grid;
@@ -151,11 +188,11 @@
 }
 .card-arg dt {
   font-family: var(--font-data);
-  font-weight: 700;
+  font-weight: 500;
   font-size: 12px;
   line-height: 22px;
   letter-spacing: 0.08em;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 .card-arg dd {
   margin: 0;
@@ -165,76 +202,106 @@
   overflow-wrap: anywhere;
 }
 .card-footnote {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 20px;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 
-/* buttons: Reject is solid ink, Approve is outlined, both full width and 56 px tall */
+/* buttons. The primary action is NEAR green with its glow. Inside the approval card the solid button is Reject, the safe default, so it
+   is an ink fill and never green: green there would read as approve. Approve is an outline. */
 .card-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 56px;
-  padding: 0 var(--space-4);
-  border: 2px solid var(--ink);
+  min-height: 52px;
+  padding: 0 var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-m);
   font-family: var(--font-system);
-  font-weight: 700;
-  font-size: 18px;
-  line-height: 24px;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 22px;
+  letter-spacing: 0.01em;
   text-align: center;
   overflow-wrap: anywhere;
   cursor: pointer;
   transition:
     transform var(--press),
-    background var(--press),
+    background-color var(--press),
+    border-color var(--press),
+    box-shadow var(--press),
     color var(--press);
 }
 .card-btn-primary {
+  background: var(--clear);
+  color: var(--on-clear);
+  box-shadow: var(--glow-clear);
+}
+.card-btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--clear) 88%, var(--ink));
+}
+.card .card-btn-primary {
   background: var(--ink);
   color: var(--paper);
+  box-shadow: none;
+}
+.card .card-btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 86%, var(--paper));
 }
 .card-btn-outline {
-  background: var(--raised);
-  color: var(--ink);
-}
-.card-btn-quiet {
-  min-height: 48px;
-  border-color: transparent;
+  border-color: var(--edge);
   background: transparent;
   color: var(--ink);
+}
+.card-btn-outline:hover:not(:disabled) {
+  border-color: var(--ink-3);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.card-btn-quiet {
+  min-height: 44px;
+  background: transparent;
+  color: var(--ink-2);
   text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
+  text-decoration-color: var(--edge);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
 }
-.card-btn:active:not(:disabled) {
-  background: var(--ink);
-  color: var(--paper);
-  transform: translateY(1px);
-}
-.card-btn-primary:active:not(:disabled) {
-  background: var(--paper);
+.card-btn-quiet:hover:not(:disabled) {
   color: var(--ink);
 }
-.card-btn:disabled {
-  background: var(--paper);
+.card-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.card-btn:disabled,
+.card .card-btn:disabled {
+  background: transparent;
   border-color: var(--hair);
+  box-shadow: none;
   color: var(--ink-3);
   cursor: default;
 }
 
-/* the pinned bar: the last thing in the card, so the footnote is never hidden behind it at the end of the scroll */
+/* the pinned bar: the last thing in the card, so the footnote is never hidden behind it at the end of the scroll. It runs edge to edge
+   of the panel and puts the two buttons side by side once there is room. */
 .card-bar {
   position: sticky;
   bottom: 0;
   z-index: 1;
   display: grid;
   gap: var(--space-2);
-  margin-top: var(--space-5);
-  padding: var(--space-2);
-  border-top: 2px solid var(--ink);
-  background: var(--paper);
+  margin: 0 calc(-1 * var(--card-pad, 0px));
+  padding: var(--space-2) var(--card-pad, var(--space-2));
+  border-top: 1px solid var(--hair);
+  border-radius: 0 0 var(--radius-l) var(--radius-l);
+  background: color-mix(in srgb, var(--raised) 92%, transparent);
+  backdrop-filter: blur(10px);
+}
+@media (min-width: 560px) {
+  .card-bar {
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    padding-block: var(--space-4);
+  }
 }
 
 /* the two-step sheet over an ink scrim at 60 percent */
@@ -242,7 +309,9 @@
   position: fixed;
   inset: 0;
   z-index: 10;
-  background: color-mix(in srgb, var(--ink) 60%, transparent);
+  background: color-mix(in srgb, var(--sunk) 78%, transparent);
+  backdrop-filter: blur(3px);
+  animation: fade 200ms var(--ease-out) backwards;
 }
 .card-sheet {
   position: fixed;
@@ -252,22 +321,32 @@
   z-index: 11;
   display: grid;
   gap: var(--space-3);
-  max-width: 30rem;
+  max-width: 36rem;
   margin: 0 auto;
-  padding: var(--space-4);
-  border: 2px solid var(--ink);
+  padding: var(--space-6) var(--space-5) var(--space-5);
+  border: 1px solid var(--hair);
+  border-bottom: 0;
+  border-radius: var(--radius-l) var(--radius-l) 0 0;
   background: var(--raised);
+  box-shadow: 0 -24px 64px -24px color-mix(in srgb, var(--sunk) 95%, transparent);
+  animation: fade 200ms var(--ease-out) backwards;
+}
+/* the sheet itself stays put (its box is measured against the screen); its contents rise into it */
+.card-sheet > * {
+  animation: rise 280ms var(--ease-out) 40ms backwards;
 }
 .card-sheet-title {
   font-family: var(--font-system);
-  font-weight: 700;
-  font-size: 22px;
-  line-height: 28px;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 30px;
+  letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 .card-sheet-line {
   font-size: 14px;
   line-height: 20px;
+  color: var(--ink-2);
 }
 .card-sheet-actions {
   display: grid;
@@ -280,6 +359,7 @@
   gap: var(--space-1);
   font-size: 14px;
   line-height: 20px;
+  color: var(--ink-2);
   overflow-wrap: anywhere;
 }
 
@@ -304,13 +384,13 @@
 .book-diff-tag {
   flex: none;
   width: 9ch;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 .book-diff-text {
   flex: none;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--ink);
 }
 .book-diff-sentence {
@@ -333,15 +413,19 @@
 .card-forcing-input {
   width: 100%;
   min-height: 48px;
-  padding: 0 var(--space-3);
-  border: 2px solid var(--ink);
-  background: var(--paper);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-m);
+  background: var(--sunk);
   color: var(--ink);
   font-family: var(--font-data);
-  font-weight: 700;
+  font-weight: 500;
   font-size: 16px;
   line-height: 24px;
-  border-radius: 0;
+  transition: border-color var(--press);
+}
+.card-forcing-input:focus {
+  border-color: var(--focus);
 }
 .card-forcing-input:disabled {
   border-color: var(--hair);

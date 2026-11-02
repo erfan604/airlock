@@ -1,6 +1,6 @@
-// Copies the five latin woff2 files the console uses out of @fontsource into public/fonts/ (the files are committed, so a build
-// never needs this script; run it after bumping the @fontsource pins). B612 and IBM Plex Mono 400 and 700, Courier Prime 400.
-// The stencil family is cut (DESIGN fallback: Plex Mono 700 capitals for labels).
+// Copies the latin woff2 files the console uses out of @fontsource into public/fonts/ (the files are committed, so a build never
+// needs this script; run it after bumping the @fontsource pins). D24 (AIR-296): Mona Sans 400 to 700 is the system voice (the free face
+// near.org itself ships next to its display grotesk), IBM Plex Mono 400, 500 and 700 the data, Courier Prime 400 only for outsider text.
 import { copyFileSync, mkdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -10,8 +10,8 @@ const require = createRequire(import.meta.url);
 const outDir = fileURLToPath(new URL('../public/fonts/', import.meta.url));
 
 const FILES: ReadonlyArray<{ name: string; weights: readonly number[] }> = [
-  { name: 'b612', weights: [400, 700] },
-  { name: 'ibm-plex-mono', weights: [400, 700] },
+  { name: 'mona-sans', weights: [400, 500, 600, 700] },
+  { name: 'ibm-plex-mono', weights: [400, 500, 700] },
   { name: 'courier-prime', weights: [400] },
 ];
 
