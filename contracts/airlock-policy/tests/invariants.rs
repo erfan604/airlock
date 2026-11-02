@@ -23,6 +23,7 @@ use near_api_types::transaction::result::ExecutionFinalResult;
 use near_sdk::json_types::{Base64VecU8, U128};
 use near_sdk::testing_env;
 use serde_json::{Value, json};
+use sha3::{Digest, Keccak256};
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
 use std::time::Duration;
@@ -1156,4 +1157,684 @@ async fn i09_empty_pc_blocks() {
     let outcomes = outcomes_of(&w.submit(vec![req], &task).await);
     assert_eq!(outcomes[0]["outcome"], "blocked", "{outcomes:?}");
     assert_eq!(outcomes[0]["reason"], "MissingProvenance", "{outcomes:?}");
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// I1 and I5 (AIR-108): what the signer is asked to sign, with the mock MPC of AIR-103
+// ---------------------------------------------------------------------------------------------------------------------
+//
+// The mock counts every `sign` call it receives (`call_count`) and keeps the last one (`last_request`: the derivation path and the
+// 32-byte hash). Only the EVM lane calls the signer (the NEAR lane pays from the contract), so these tests use the EVM asset of the
+// world. The random draws follow the pattern of AIR-023: each request's outcome class is drawn first, so what it must do is known by
+// construction instead of being classified afterwards.
+
+const EVM: (u128, u128, u128) = (21_000, 2_000_000_000, 1_000_000_000);
+const GWEI: u128 = 1_000_000_000;
+
+fn evm_key(w: &World) -> String {
+    format!("evm:84532:0x{}", w.payee_evm)
+}
+
+/// A task of the agent bound to the EVM payee at 1 ETH; `n` makes the task id, so every task has its own request ids.
+fn evm_task(w: &World, n: u64, max_actions: u8) -> Task {
+    let key = evm_key(w);
+    let policy: near_sdk::AccountId = w.policy.as_str().parse().unwrap();
+    let agent: near_sdk::AccountId = w.agent.as_str().parse().unwrap();
+    signed_task_with(&[(&key, ONE_ETH)], max_actions, |task| {
+        task.contract_id = policy;
+        task.agent_id = agent;
+        task.task_id = format!("task-i01-{n}");
+    })
+}
+
+fn evm_request(
+    w: &World,
+    task: &Task,
+    index: u8,
+    amount: u128,
+    labels: (u16, u16, u16),
+    evm: (u128, u128, u128),
+) -> Value {
+    w.request_json(
+        &task.0,
+        index,
+        WORLD_EVM_ASSET,
+        &evm_key(w),
+        amount,
+        labels,
+        Some(evm),
+    )
+}
+
+fn id_of(task: &Task, index: u8) -> String {
+    request_id(&task_hash(&task.0), index)
+}
+
+async fn mock_view(w: &World, method: &str) -> Value {
+    call_view::<Value>(&w.mpc, method, json!({}), &w.net)
+        .await
+        .unwrap_or_else(|e| panic!("the mock answers {method}: {e:?}"))
+        .data
+}
+
+async fn mock_calls(w: &World) -> u64 {
+    mock_view(w, "call_count").await.as_u64().expect("a count")
+}
+
+fn keccak_hex(unsigned_hex: &str) -> String {
+    hex::encode(Keccak256::digest(
+        hex::decode(unsigned_hex).expect("lowercase hex"),
+    ))
+}
+
+/// The `unsigned_hex` of every `evm_unsigned` event of `r`, with its request id, in the order they were logged.
+fn unsigned_events(r: &ExecutionFinalResult) -> Vec<(String, String)> {
+    events(r, "evm_unsigned")
+        .iter()
+        .map(|e| {
+            (
+                e["request_id"].as_str().expect("a request id").to_string(),
+                e["unsigned_hex"].as_str().expect("hex").to_string(),
+            )
+        })
+        .collect()
+}
+
+/// A submit that must succeed as a transaction.
+async fn submit_ok(w: &World, reqs: Vec<Value>, task: &Task) -> ExecutionFinalResult {
+    let result = w.submit(reqs, task).await;
+    assert_ok(&result, "submit_batch");
+    result
+}
+
+/// `approve` as the owner with the card of pending item `no` (1 yocto, the default 100 Tgas).
+async fn approve_no(w: &World, no: &str) -> ExecutionFinalResult {
+    let card = card_of(w, no).await;
+    call(w, &owner_of(w), "approve", card, 1).await
+}
+
+/// The sign calls the signer has received must be exactly `expected`, and the last one must hold `last_unsigned`.
+async fn assert_signer_saw(w: &World, expected: u64, last_unsigned: Option<&str>, what: &str) {
+    assert_eq!(mock_calls(w).await, expected, "{what}: call_count");
+    if let Some(unsigned) = last_unsigned {
+        let last = mock_view(w, "last_request").await;
+        assert_eq!(
+            last["payload_hex"],
+            keccak_hex(unsigned).as_str(),
+            "{what}: the last payload is not the hash of a certified request: {last}"
+        );
+        assert_eq!(last["path"], WORLD_EVM_PATH, "{what}: {last}");
+    }
+}
+
+/// I1: 60 seeded requests, each Allow, Escalate or Block by construction, through the contract with the mock MPC. The signer is called
+/// once per Allow and once per approved escalation and for nothing else: escalated, blocked and not yet approved requests produce no call,
+/// every hash the signer got is the keccak256 of a certified request, and approving one pending number signs that request only.
+#[tokio::test]
+async fn i01_nothing_signed_without_allow_or_approval() {
+    let _slot = slot().await;
+    let w = world().await;
+    owner_call_ok(
+        &w.policy,
+        &w.owner,
+        &w.owner_signer,
+        &w.net,
+        "set_flags",
+        json!({ "flags": {
+            "max_pending_per_agent": 100,
+            "pending_ttl_ms": "3600000",
+            "hourly_escalation_budget": 1000,
+            "lock_consecutive_rejects": 1000,
+            "lock_rejects_per_day": 1000,
+            "max_task_ttl_ms": "3600000",
+            "max_task_actions": 20
+        } }),
+    )
+    .await;
+    let mut rng = Rng(SEED ^ 0x01);
+    let amount = |rng: &mut Rng| (1 + u128::from(rng.below(9))) * 1_000_000_000_000_000;
+    assert_signer_saw(&w, 0, None, "before any request").await;
+
+    let mut expected_calls = 0u64;
+    let (mut allows, mut escalates, mut blocks, mut approved) = (0, 0, 0, 0);
+    let mut last_unsigned: Option<String> = None;
+    let mut still_pending: Vec<(String, String)> = Vec::new(); // (pending number, request id)
+    let mut signed_ids: BTreeSet<String> = BTreeSet::new();
+
+    for batch in 0..20u64 {
+        let task = evm_task(&w, batch, 3);
+        // draw the outcome class and the approval choice of each request first
+        let plan: Vec<(u64, bool)> = (0..3).map(|_| (rng.below(3), rng.below(2) == 0)).collect();
+        let reqs: Vec<Value> = plan
+            .iter()
+            .enumerate()
+            .map(|(i, (class, _))| {
+                let labels = match class {
+                    0 => (BOOK, OWNER, OWNER), // Allow
+                    1 => (BOOK, EMAIL, OWNER), // Escalate(UntrustedAmount)
+                    _ => (BOOK, OWNER, 0),     // Block(MissingProvenance)
+                };
+                let index = u8::try_from(i).expect("small index");
+                evm_request(&w, &task, index, amount(&mut rng), labels, EVM)
+            })
+            .collect();
+        let result = submit_ok(&w, reqs, &task).await;
+        let outcomes: Value = result.clone().json().expect("the outcomes parse");
+        let unsigned = unsigned_events(&result);
+        let mut batch_allows = Vec::new();
+        for (i, (class, _)) in plan.iter().enumerate() {
+            let index = u8::try_from(i).expect("small index");
+            let id = id_of(&task, index);
+            let want = ["allowed", "escalated", "blocked"][usize::try_from(*class).unwrap()];
+            assert_eq!(
+                outcomes[i]["outcome"], want,
+                "batch {batch} request {i}: {outcomes}"
+            );
+            assert_eq!(outcomes[i]["request_id"], id.as_str());
+            let state = w.request(&id).await.expect("stored")["state"].clone();
+            match class {
+                0 => {
+                    allows += 1;
+                    batch_allows.push(id);
+                }
+                1 => {
+                    escalates += 1;
+                    assert_eq!(state, "Pending", "{id}");
+                    let no = pending_id_of(&outcomes[i]).await;
+                    // an approval draw is acted on below, once the signer count of the batch is checked
+                    still_pending.push((no, id.clone()));
+                }
+                _ => {
+                    blocks += 1;
+                    assert_eq!(state, "Blocked", "{id}");
+                }
+            }
+        }
+        // the signer saw this batch's Allows and nothing else
+        let signed_now: Vec<&String> = unsigned.iter().map(|(id, _)| id).collect();
+        assert_eq!(
+            signed_now
+                .iter()
+                .map(|id| id.to_string())
+                .collect::<Vec<_>>(),
+            batch_allows,
+            "batch {batch}: the signed requests are exactly the Allows"
+        );
+        assert_eq!(events(&result, "signed").len(), batch_allows.len());
+        expected_calls += batch_allows.len() as u64;
+        if let Some((_, unsigned_hex)) = unsigned.last() {
+            last_unsigned = Some(unsigned_hex.clone());
+        }
+        for id in &batch_allows {
+            signed_ids.insert(id.clone());
+        }
+        assert_signer_saw(
+            &w,
+            expected_calls,
+            last_unsigned.as_deref(),
+            "after a batch",
+        )
+        .await;
+
+        // approve the escalations whose draw says so, one by one: one signer call each, for that request
+        for (i, (class, approve_it)) in plan.iter().enumerate() {
+            if *class != 1 || !*approve_it {
+                continue;
+            }
+            let index = u8::try_from(i).expect("small index");
+            let id = id_of(&task, index);
+            let pos = still_pending
+                .iter()
+                .position(|(_, rid)| *rid == id)
+                .expect("the escalation is pending");
+            let (no, _) = still_pending.remove(pos);
+            let approved_result = approve_no(&w, &no).await;
+            assert_ok(&approved_result, "approve");
+            let signed_by_approval = unsigned_events(&approved_result);
+            assert_eq!(
+                signed_by_approval.len(),
+                1,
+                "one approval signs one request"
+            );
+            assert_eq!(
+                signed_by_approval[0].0, id,
+                "the approval signed another request"
+            );
+            expected_calls += 1;
+            approved += 1;
+            signed_ids.insert(id.clone());
+            last_unsigned = Some(signed_by_approval[0].1.clone());
+            assert_signer_saw(
+                &w,
+                expected_calls,
+                last_unsigned.as_deref(),
+                "after an approval",
+            )
+            .await;
+            assert_eq!(w.request(&id).await.expect("stored")["state"], "Executed");
+        }
+    }
+    assert!(
+        allows > 0 && escalates > 0 && blocks > 0 && approved > 0,
+        "the seed must mix every class: {allows} {escalates} {blocks} {approved}"
+    );
+    assert_eq!(allows + escalates + blocks, 60);
+    assert_eq!(expected_calls, allows + approved);
+    assert_eq!(signed_ids.len() as u64, expected_calls);
+
+    // every escalation nobody approved is still pending and was never signed
+    for (_, id) in &still_pending {
+        assert_eq!(w.request(id).await.expect("stored")["state"], "Pending");
+        assert!(!signed_ids.contains(id));
+    }
+    assert_signer_saw(
+        &w,
+        expected_calls,
+        last_unsigned.as_deref(),
+        "end of the run",
+    )
+    .await;
+
+    // two pending requests A and B: approving B's number signs B only, A stays pending, an unknown number signs nothing
+    let task = evm_task(&w, 1000, 3);
+    let a = evm_request(&w, &task, 0, amount(&mut rng), (BOOK, EMAIL, OWNER), EVM);
+    let b = evm_request(&w, &task, 1, amount(&mut rng), (BOOK, EMAIL, OWNER), EVM);
+    let out: Value = submit_ok(&w, vec![a, b], &task)
+        .await
+        .json()
+        .expect("outcomes");
+    assert_eq!(out[0]["outcome"], "escalated", "{out}");
+    assert_eq!(out[1]["outcome"], "escalated", "{out}");
+    let no_b = pending_id_of(&out[1]).await;
+    let card_b = card_of(&w, &no_b).await;
+    assert_signer_saw(
+        &w,
+        expected_calls,
+        last_unsigned.as_deref(),
+        "two new escalations",
+    )
+    .await;
+    let unknown = call(
+        &w,
+        &owner_of(&w),
+        "approve",
+        json!({ "id": "999999", "to": evm_key(&w), "asset": "ETH.base", "amount": "0.01", "why": "UntrustedAmount", "book": "Book" }),
+        1,
+    )
+    .await;
+    assert_fails(&unknown, "unknown id");
+    assert_signer_saw(
+        &w,
+        expected_calls,
+        last_unsigned.as_deref(),
+        "an unknown number",
+    )
+    .await;
+    let approved_b = approve_no(&w, &no_b).await;
+    assert_ok(&approved_b, "approve B");
+    let signed_b = unsigned_events(&approved_b);
+    assert_eq!(signed_b.len(), 1);
+    assert_eq!(signed_b[0].0, id_of(&task, 1), "B's number signed B");
+    assert_signer_saw(
+        &w,
+        expected_calls + 1,
+        Some(&signed_b[0].1),
+        "after approving B",
+    )
+    .await;
+    assert_eq!(
+        w.request(&id_of(&task, 0)).await.expect("stored")["state"],
+        "Pending",
+        "A is untouched by the approval of B"
+    );
+    assert_eq!(
+        w.request(&id_of(&task, 1)).await.expect("stored")["state"],
+        "Executed"
+    );
+    // a second approval of B reverts and signs nothing
+    let again = call(&w, &owner_of(&w), "approve", card_b, 1).await;
+    assert_fails(&again, "approve rejected: NotPending");
+    assert_signer_saw(
+        &w,
+        expected_calls + 1,
+        Some(&signed_b[0].1),
+        "a second approval",
+    )
+    .await;
+}
+
+// ---- a small RLP reader, so the I5 test does not trust the builder it checks (the same reader as tests/exec_evm.rs) -----------------
+
+/// The (is_list, payload, bytes used) of the first RLP item of `b`.
+fn rlp_item(b: &[u8]) -> (bool, Vec<u8>, usize) {
+    let b0 = b[0];
+    let long = |base: u8| {
+        let ll = usize::from(b0 - base);
+        let len = b[1..=ll]
+            .iter()
+            .fold(0usize, |a, x| (a << 8) | usize::from(*x));
+        (1 + ll, len)
+    };
+    match b0 {
+        0x00..=0x7f => (false, vec![b0], 1),
+        0x80..=0xb7 => {
+            let len = usize::from(b0 - 0x80);
+            (false, b[1..=len].to_vec(), 1 + len)
+        }
+        0xb8..=0xbf => {
+            let (hdr, len) = long(0xb7);
+            (false, b[hdr..hdr + len].to_vec(), hdr + len)
+        }
+        0xc0..=0xf7 => {
+            let len = usize::from(b0 - 0xc0);
+            (true, b[1..=len].to_vec(), 1 + len)
+        }
+        0xf8..=0xff => {
+            let (hdr, len) = long(0xf7);
+            (true, b[hdr..hdr + len].to_vec(), hdr + len)
+        }
+    }
+}
+
+/// The nine fields of an unsigned EIP-1559 transaction: chain id, nonce, tip, max fee, gas, to, value, data, access list.
+fn decode_1559(hex_text: &str) -> Vec<(bool, Vec<u8>)> {
+    let bytes = hex::decode(hex_text).expect("lowercase hex");
+    assert_eq!(bytes[0], 0x02, "an EIP-1559 payload starts with 02");
+    let (is_list, mut rest, used) = rlp_item(&bytes[1..]);
+    assert!(is_list && used == bytes.len() - 1, "one RLP list");
+    let mut items = Vec::new();
+    while !rest.is_empty() {
+        let (l, payload, n) = rlp_item(&rest);
+        items.push((l, payload));
+        rest = rest[n..].to_vec();
+    }
+    items
+}
+
+fn num(payload: &[u8]) -> u128 {
+    payload.iter().fold(0u128, |a, x| (a << 8) | u128::from(*x))
+}
+
+/// I5: for 20 seeded EVM requests (random amount, gas limit and fees), the bytes the contract hands to the signer decode to exactly the
+/// stored request: recipient, value, chain id, nonce (one more per signed request on the path) and the three fee and gas fields, no
+/// calldata and no access list; and the `signed` event carries the same bytes.
+#[tokio::test]
+async fn i05_signed_bytes_encode_the_certified_values() {
+    let _slot = slot().await;
+    let w = world().await;
+    let mut rng = Rng(SEED ^ 0x05);
+    let mut nonce = 0u128;
+    // `submit_batch` takes at most 3 requests: six batches of 3 and one of 2
+    for (batch, size) in [3u8, 3, 3, 3, 3, 3, 2].into_iter().enumerate() {
+        let task = evm_task(&w, 500 + batch as u64, size);
+        let mut sent = Vec::new();
+        let reqs: Vec<Value> = (0..size)
+            .map(|i| {
+                let amount = 1 + u128::from(rng.below(50_000_000_000_000_000));
+                let gas = 21_000 + u128::from(rng.below(79_001));
+                let max_fee = 1 + u128::from(rng.below(50)) * GWEI;
+                let tip = u128::from(rng.below(1 + u64::try_from(max_fee / GWEI).unwrap())) * GWEI;
+                let evm = (gas, max_fee, tip.min(max_fee));
+                sent.push((amount, evm));
+                evm_request(&w, &task, i, amount, (BOOK, OWNER, OWNER), evm)
+            })
+            .collect();
+        let result = submit_ok(&w, reqs, &task).await;
+        let unsigned = unsigned_events(&result);
+        let signed = events(&result, "signed");
+        assert_eq!(
+            unsigned.len(),
+            usize::from(size),
+            "one transaction per Allow"
+        );
+        assert_eq!(signed.len(), usize::from(size));
+        for (i, (amount, evm)) in sent.iter().enumerate() {
+            let index = u8::try_from(i).expect("small index");
+            let id = id_of(&task, index);
+            assert_eq!(unsigned[i].0, id, "the events keep the request order");
+            let hex_text = &unsigned[i].1;
+            assert_eq!(signed[i]["unsigned_hex"], hex_text.as_str(), "signed event");
+            let stored = w.request(&id).await.expect("stored");
+            assert_eq!(stored["state"], "Executed");
+            assert_eq!(stored["payee"], evm_key(&w).as_str());
+            assert_eq!(stored["amount"], amount.to_string().as_str());
+            assert_eq!(stored["exec"]["unsigned_hex"], hex_text.as_str());
+            let f = decode_1559(hex_text);
+            assert_eq!(f.len(), 9, "nine fields");
+            assert_eq!(num(&f[0].1), 84_532, "chain id of evm:84532");
+            assert_eq!(num(&f[1].1), nonce, "nonce, request {id}");
+            assert_eq!(num(&f[2].1), evm.2, "max priority fee");
+            assert_eq!(num(&f[3].1), evm.1, "max fee per gas");
+            assert_eq!(num(&f[4].1), evm.0, "gas limit");
+            assert_eq!(hex::encode(&f[5].1), w.payee_evm, "recipient");
+            assert_eq!(num(&f[6].1), *amount, "value");
+            assert!(!f[7].0 && f[7].1.is_empty(), "no calldata");
+            assert!(f[8].0 && f[8].1.is_empty(), "no access list");
+            nonce += 1;
+        }
+    }
+    assert_eq!(nonce, 20);
+    assert_signer_saw(&w, 20, None, "20 requests").await;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Refunds (AIR-108, F05 section 5 row "Refund on MPC failure")
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// `get_ledgers` with the task ledger: the asset day, payee day, payee untrusted and task ledgers, as one value.
+async fn all_ledgers(w: &World, payee: &str, asset: &str, task: &OwnerTask) -> Value {
+    view(
+        w,
+        "get_ledgers",
+        json!({ "payee": payee, "asset": asset, "task": Hex32(task_hash(task)).to_hex() }),
+    )
+    .await
+}
+
+/// An EVM task and its two requests, an Allow at index 0 and an escalation at index 1.
+fn refund_requests(w: &World, task: &Task) -> (Value, Value) {
+    let amount = 10_000_000_000_000_000u128;
+    (
+        evm_request(w, task, 0, amount, (BOOK, OWNER, OWNER), EVM),
+        evm_request(w, task, 1, amount, (BOOK, EMAIL, OWNER), EVM),
+    )
+}
+
+/// When the signer fails, every ledger returns to its value before the request: for an Allow and for an approved escalation on the EVM
+/// lane, and for an approved escalation and an Allow on the NEAR lane when the payee account does not exist. The request stays
+/// `Retryable`, never `Executed`.
+#[tokio::test]
+async fn refund_on_mpc_failure_restores_ledgers() {
+    let _slot = slot().await;
+    let w = world().await;
+    ensure_hour_window(&w, 180_000).await;
+    ensure_day_window(&w, 180_000).await;
+    let key = evm_key(&w);
+    let task = evm_task(&w, 700, 3);
+    let (allow, escalate) = refund_requests(&w, &task);
+    let before = all_ledgers(&w, &key, WORLD_EVM_ASSET, &task.0).await;
+    assert_eq!(before["task_spent"], "0", "{before}");
+    w.set_mpc_mode("fail").await;
+
+    // an Allow: charged, the signer fails, refunded
+    let result = w.submit(vec![allow], &task).await;
+    for failure in result.failures() {
+        assert_eq!(
+            failure.executor_id, w.mpc,
+            "only the signer's receipt fails"
+        );
+    }
+    assert_eq!(events(&result, "failed").len(), 1, "the failed event");
+    assert_eq!(events(&result, "failed")[0]["reason"], "MpcFailed");
+    assert_eq!(
+        w.request(&id_of(&task, 0)).await.expect("stored")["state"],
+        "Retryable"
+    );
+    assert_eq!(
+        all_ledgers(&w, &key, WORLD_EVM_ASSET, &task.0).await,
+        before,
+        "Allow, fail mode"
+    );
+
+    // an approved escalation: charged on approval, the signer fails, refunded
+    let out: Value = submit_ok(&w, vec![escalate], &task)
+        .await
+        .json()
+        .expect("outcomes");
+    assert_eq!(out[0]["outcome"], "escalated", "{out}");
+    let escalated_ledgers = all_ledgers(&w, &key, WORLD_EVM_ASSET, &task.0).await;
+    assert_eq!(escalated_ledgers, before, "an escalation charges nothing");
+    let approved = approve_no(&w, &pending_id_of(&out[0]).await).await;
+    for failure in approved.failures() {
+        assert_eq!(
+            failure.executor_id, w.mpc,
+            "only the signer's receipt fails"
+        );
+    }
+    assert_eq!(
+        events(&approved, "failed").len(),
+        1,
+        "{:?}",
+        extract_event_logs(&approved)
+    );
+    assert_eq!(
+        w.request(&id_of(&task, 1)).await.expect("stored")["state"],
+        "Retryable"
+    );
+    assert_eq!(
+        all_ledgers(&w, &key, WORLD_EVM_ASSET, &task.0).await,
+        before,
+        "approval, fail mode"
+    );
+    // the mock's `fail` mode panics after counting, so its own receipt rolls the counter back: the failed receipts above are the proof
+    // that both attempts reached the signer
+    assert_signer_saw(&w, 0, None, "fail mode keeps no count").await;
+
+    // the NEAR lane: a payee account that does not exist, so the transfer receipt fails
+    let ghost = "near:ghost.sandbox";
+    owner_call_ok(
+        &w.policy,
+        &w.owner,
+        &w.owner_signer,
+        &w.net,
+        "book_add",
+        json!({
+            "key": ghost,
+            "cap": (100 * ONE_NEAR).to_string(),
+            "daily_untrusted_budget": "0",
+            "daily_limit": (5_000 * ONE_NEAR).to_string(),
+            "label": "Ghost"
+        }),
+    )
+    .await;
+    let ntask = w.signed_task(&[(ghost, 10 * ONE_NEAR)], 3);
+    let near_before = all_ledgers(&w, ghost, "near", &ntask.0).await;
+    let pay = w.request_json(
+        &ntask.0,
+        0,
+        "near",
+        ghost,
+        2 * ONE_NEAR,
+        (BOOK, OWNER, OWNER),
+        None,
+    );
+    let esc = w.request_json(&ntask.0, 1, "near", ghost, 2 * U, (2, 32, 1), None);
+    let result = w.submit(vec![pay, esc], &ntask).await;
+    for failure in result.failures() {
+        assert_eq!(failure.executor_id.as_str(), "ghost.sandbox", "{failure:?}");
+    }
+    let out: Value = result.json().expect("outcomes");
+    assert_eq!(out[0]["outcome"], "allowed", "{out}");
+    assert_eq!(out[1]["outcome"], "escalated", "{out}");
+    assert_eq!(
+        w.request(&id_of(&ntask, 0)).await.expect("stored")["state"],
+        "Retryable"
+    );
+    assert_eq!(
+        all_ledgers(&w, ghost, "near", &ntask.0).await,
+        near_before,
+        "NEAR Allow, no account"
+    );
+    let approved = approve_no(&w, &pending_id_of(&out[1]).await).await;
+    for failure in approved.failures() {
+        assert_eq!(failure.executor_id.as_str(), "ghost.sandbox", "{failure:?}");
+    }
+    assert_eq!(
+        w.request(&id_of(&ntask, 1)).await.expect("stored")["state"],
+        "Retryable"
+    );
+    assert_eq!(
+        all_ledgers(&w, ghost, "near", &ntask.0).await,
+        near_before,
+        "NEAR approval, no account"
+    );
+}
+
+/// D17 (DECISIONS.md): when the signer's receipt succeeds but its answer cannot be read (the mock's `garbage` mode), a signature may exist,
+/// so nothing is refunded: the charges stay, the request is `Failed` for good (never `Retryable`), for an Allow and an approved
+/// escalation alike. The ticket text asked for equal ledgers here; the security fix of D17 reversed that, and this test pins the rule.
+#[tokio::test]
+async fn refund_is_withheld_when_the_signer_answer_is_unreadable() {
+    let _slot = slot().await;
+    let w = world().await;
+    ensure_hour_window(&w, 180_000).await;
+    ensure_day_window(&w, 180_000).await;
+    let key = evm_key(&w);
+    let task = evm_task(&w, 800, 3);
+    let (allow, escalate) = refund_requests(&w, &task);
+    let amount = 10_000_000_000_000_000u128;
+    let before = all_ledgers(&w, &key, WORLD_EVM_ASSET, &task.0).await;
+    w.set_mpc_mode("garbage").await;
+
+    let result = submit_ok(&w, vec![allow], &task).await;
+    let failed = events(&result, "failed");
+    assert_eq!(failed.len(), 1, "{failed:?}");
+    assert_eq!(failed[0]["reason"], "MpcBadResponse");
+    assert_eq!(failed[0]["retryable"], false);
+    assert_eq!(
+        w.request(&id_of(&task, 0)).await.expect("stored")["state"],
+        "Failed"
+    );
+    let after_allow = all_ledgers(&w, &key, WORLD_EVM_ASSET, &task.0).await;
+    assert_eq!(
+        after_allow["asset_day"]["spent"],
+        amount.to_string(),
+        "{after_allow}"
+    );
+    assert_eq!(
+        after_allow["payee_day"]["spent"],
+        amount.to_string(),
+        "{after_allow}"
+    );
+    assert_eq!(
+        after_allow["task_spent"],
+        amount.to_string(),
+        "{after_allow}"
+    );
+    assert_ne!(after_allow, before);
+
+    let out: Value = submit_ok(&w, vec![escalate], &task)
+        .await
+        .json()
+        .expect("outcomes");
+    let approved = approve_no(&w, &pending_id_of(&out[0]).await).await;
+    assert_ok(&approved, "approve");
+    let failed = events(&approved, "failed");
+    assert_eq!(failed.len(), 1, "{failed:?}");
+    assert_eq!(failed[0]["reason"], "MpcBadResponse");
+    assert_eq!(
+        w.request(&id_of(&task, 1)).await.expect("stored")["state"],
+        "Failed"
+    );
+    let after_both = all_ledgers(&w, &key, WORLD_EVM_ASSET, &task.0).await;
+    assert_eq!(
+        after_both["asset_day"]["spent"],
+        (2 * amount).to_string(),
+        "{after_both}"
+    );
+    assert_eq!(
+        after_both["task_spent"],
+        (2 * amount).to_string(),
+        "{after_both}"
+    );
 }
