@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { Hono } from 'hono';
 import type { Context, MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
+import { getConnInfo } from '@hono/node-server/conninfo';
 import { PublicKey } from 'near-api-js';
 import { verifyMessage } from 'near-api-js/nep413';
 import type { Provider } from 'near-api-js';
@@ -32,11 +33,22 @@ const SESSION_TTL_MS = 8 * 3600 * 1000;
 const MAX_SESSIONS = 16;
 const RATE_WINDOW_MS = 60_000;
 const BODY_MAX = 8 * 1024;
+const MAX_CLIENTS = 10_000;
+
+// The peer address of the socket. Never a forwarded header: a client could set those. Behind the Vite proxy every console user shares the
+// proxy's address, which is a stated limit; the owner is one person.
+function clientKey(c: Context): string {
+  try {
+    return getConnInfo(c).remote.address ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
 
 export interface SessionLimits {
-  /** challenges handed out per 60 seconds, all callers together (default 20) */
+  /** challenges handed out per 60 seconds to one client address (default 20); there is no global cap, so one client cannot lock the owner out */
   challengesPerWindow?: number;
-  /** challenges alive at once (default 1000) */
+  /** challenges alive at once (default 1000); when full the oldest is evicted */
   maxOutstanding?: number;
 }
 
@@ -180,7 +192,7 @@ const UNAUTHORIZED = { error: 'unauthorized' };
 /** Mounts the session routes on `app` over `store`. */
 export function mountSessionRoutes(app: Hono, deps: SessionDeps, store: SessionStore): void {
   const challenges = new Map<string, number>();
-  let issuedAt: number[] = [];
+  const issuedBy = new Map<string, number[]>();
   const perWindow = deps.limits?.challengesPerWindow ?? 20;
   const maxOutstanding = deps.limits?.maxOutstanding ?? 1000;
   const message = challengeMessage(deps.ownerAccountId);
@@ -188,10 +200,23 @@ export function mountSessionRoutes(app: Hono, deps: SessionDeps, store: SessionS
   app.post('/session/challenge', (c) => {
     const now = deps.clock();
     for (const [nonce, expires] of challenges) if (now > expires) challenges.delete(nonce);
-    if (challenges.size >= maxOutstanding) return c.json({ error: 'too many challenges' }, 429);
-    issuedAt = issuedAt.filter((t) => now - t < RATE_WINDOW_MS);
-    if (issuedAt.length >= perWindow) return c.json({ error: 'rate limited' }, 429);
-    issuedAt.push(now);
+    const client = clientKey(c);
+    const recent = (issuedBy.get(client) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+    if (recent.length >= perWindow) return c.json({ error: 'rate limited' }, 429);
+    recent.push(now);
+    issuedBy.delete(client);
+    issuedBy.set(client, recent);
+    while (issuedBy.size > MAX_CLIENTS) {
+      const oldest = issuedBy.keys().next();
+      if (oldest.done === true) break;
+      issuedBy.delete(oldest.value);
+    }
+    // bounded by eviction, not by refusing: a flood can push out old challenges but never stop a new one
+    while (challenges.size >= maxOutstanding) {
+      const oldest = challenges.keys().next();
+      if (oldest.done === true) break;
+      challenges.delete(oldest.value);
+    }
     const nonce = randomHex(32);
     challenges.set(nonce, now + CHALLENGE_TTL_MS);
     return c.json({ nonce, message, recipient: deps.contractId });

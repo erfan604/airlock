@@ -279,7 +279,7 @@ test('an RpcUnavailable from the reader is 503 and the nonce stays consumed', as
   assert.equal((await post(h, body(await challenge(h)))).status, 200, 'a new challenge works');
 });
 
-test('20 challenges within 60 seconds are fine, the 21st is 429 rate limited, the window then slides', async () => {
+test('per client: 20 challenges within 60 seconds are fine, the 21st is 429 rate limited, the window then slides', async () => {
   const h = makeApp();
   for (let i = 0; i < 20; i++) assert.equal((await h.app.request('/session/challenge', { method: 'POST' })).status, 200, `challenge ${i + 1}`);
   const over = await h.app.request('/session/challenge', { method: 'POST' });
@@ -289,17 +289,41 @@ test('20 challenges within 60 seconds are fine, the 21st is 429 rate limited, th
   assert.equal((await h.app.request('/session/challenge', { method: 'POST' })).status, 200);
 });
 
-test('at most 1,000 outstanding challenges: the 1,001st is 429 too many challenges; expired ones are purged first', async () => {
+test('at most 1,000 outstanding challenges: the 1,001st evicts the oldest instead of failing, expired ones are purged first', async () => {
   const h = makeApp({ limits: { challengesPerWindow: 100_000 } });
-  for (let i = 0; i < 1000; i++) {
-    const res = await h.app.request('/session/challenge', { method: 'POST' });
-    assert.equal(res.status, 200, `challenge ${i + 1}`);
-  }
-  const over = await h.app.request('/session/challenge', { method: 'POST' });
-  assert.equal(over.status, 429);
-  assert.deepEqual(await over.json(), { error: 'too many challenges' });
+  const first = await challenge(h);
+  for (let i = 1; i < 1000; i++) assert.equal((await h.app.request('/session/challenge', { method: 'POST' })).status, 200, `challenge ${i + 1}`);
+  const last = await challenge(h);
+  assert.equal((await post(h, body(first))).status, 401, 'the oldest challenge was evicted to stay at the cap');
+  assert.equal((await post(h, body(last))).status, 200, 'the newest is alive');
   h.clock.now += 300_001;
   assert.equal((await h.app.request('/session/challenge', { method: 'POST' })).status, 200, 'expired challenges were purged');
+});
+
+const from = (address: string) => ({ incoming: { socket: { remoteAddress: address } } });
+
+test('a flood from client A does not stop client B from getting a challenge and logging in', async () => {
+  const h = makeApp();
+  let limited = 0;
+  for (let i = 0; i < 200; i++) {
+    const res = await h.app.request('/session/challenge', { method: 'POST' }, from('10.0.0.1'));
+    if (res.status === 429) limited++;
+  }
+  assert.ok(limited >= 180, `client A was limited (${limited} of 200)`);
+  const res = await h.app.request('/session/challenge', { method: 'POST' }, from('10.0.0.2'));
+  assert.equal(res.status, 200);
+  const c = (await res.json()) as { nonce: string; message: string; recipient: string };
+  const login = await h.app.request('/session', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body(c)) }, from('10.0.0.2'));
+  assert.equal(login.status, 200);
+});
+
+test('a flood from many clients keeps the outstanding challenges at the cap and the owner can still log in', async () => {
+  const h = makeApp();
+  for (let i = 0; i < 1500; i++) {
+    await h.app.request('/session/challenge', { method: 'POST' }, from(`10.1.${Math.floor(i / 250)}.${i % 250}`));
+  }
+  const res = await h.app.request('/session/challenge', { method: 'POST' }, from('10.9.9.9'));
+  assert.equal(res.status, 200);
 });
 
 test('Origin: a foreign origin on a non-GET route is 403, the same host is 204, no Origin is fine, GET is not checked', async () => {
