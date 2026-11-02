@@ -62,3 +62,15 @@ test('L thousands: 1 grounds on "1,000" and 1000 does not', () => {
   assert.equal(ground('1', 'amount', 'send bob 1,000', 24), true);
   assert.equal(ground('1000', 'amount', 'send bob 1,000', 24), false);
 });
+
+// closed gaps (security review): non-ASCII never separates a token, scheme and chain id are kept
+test('closed: Cyrillic a after an address does not ground it', () => assert.equal(ground('alice.testnet', 'address', 'pay alice.testnet\u0430 5'), false));
+test('closed: e-acute after a name does not ground it', () => assert.equal(ground('landlord', 'name', 'pay landlord\u00E9'), false));
+test('closed: near: plus 40 hex does not ground on the same 0x address', () => assert.equal(ground(`near:${EVM.slice(2).toLowerCase()}`, 'address', `Send to ${EVM}`), false));
+test('closed: evm:8453 does not ground on evm:1', () => assert.equal(ground(`evm:8453:${EVM}`, 'address', `Send to evm:1:${EVM}`), false));
+test('closed: evm:8453 grounds on the bare address in any case', () => {
+  assert.equal(ground(`evm:8453:${EVM}`, 'address', `Send to ${EVM}`), true);
+  assert.equal(ground(`evm:8453:${EVM}`, 'address', `Send to ${EVM.toLowerCase()}`), true);
+});
+test('closed: evm:8453 grounds on evm:8453', () => assert.equal(ground(`evm:8453:${EVM}`, 'address', `Send to evm:8453:${EVM}`), true));
+test('closed: near:alice.testnet grounds on alice.testnet', () => assert.equal(ground('near:alice.testnet', 'address', 'Send to alice.testnet.'), true));

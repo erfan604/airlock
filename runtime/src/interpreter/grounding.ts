@@ -9,28 +9,39 @@ const NON_ASCII = /[^\x00-\x7F]/;
 const NON_ASCII_ALL = /[^\x00-\x7F]/g;
 const EVM_SHAPE = /^(0x)?[0-9a-fA-F]{40}$/;
 const NEAR_PREFIX = 'near:';
-const EVM_PREFIX = /^evm:[0-9]+:/;
-const ADDRESS_TOKEN = /[A-Za-z0-9._-]+/g;
-const EDGE = /^[._-]+|[._-]+$/g;
+const EVM_PREFIX = /^evm:([0-9]+):/;
+// a token keeps non-ASCII characters and colons, so a foreign letter or a scheme prefix stays part of the token it touches
+const ADDRESS_TOKEN = /[A-Za-z0-9._:\-\u0080-\uffff]+/g;
+const EDGE = /^[._:-]+|[._:-]+$/g;
 
-// the canonical form of an address, or null when it is not one (an EVM address of 40 hex digits, else a lowercase near account)
-function canonicalAddress(raw: string): string | null {
-  let x = raw;
-  if (x.startsWith(NEAR_PREFIX)) x = x.slice(NEAR_PREFIX.length);
-  else x = x.replace(EVM_PREFIX, '');
+interface Addr {
+  kind: 'near' | 'evm';
+  addr: string;
+  chain: string | null;
+}
+
+// an address with its kind and chain id, or null when it is not one. `near:` is only ever a near account, `evm:<id>:` only an EVM address
+// with that chain id, a bare string by shape (40 hex digits are EVM, anything else a lowercase near account). Non-ASCII is never an address.
+function parseAddress(raw: string): Addr | null {
   try {
-    return EVM_SHAPE.test(x) ? canonicalEvm(x) : canonicalNear(x);
+    if (raw.startsWith(NEAR_PREFIX)) return { kind: 'near', addr: canonicalNear(raw.slice(NEAR_PREFIX.length)), chain: null };
+    const m = EVM_PREFIX.exec(raw);
+    if (m !== null) return { kind: 'evm', addr: canonicalEvm(raw.slice(m[0].length)), chain: m[1] ?? null };
+    return EVM_SHAPE.test(raw) ? { kind: 'evm', addr: canonicalEvm(raw), chain: null } : { kind: 'near', addr: canonicalNear(raw), chain: null };
   } catch (e) {
     if (e instanceof KeyError) return null;
     throw e;
   }
 }
 
-function addressInText(literal: string, text: string): boolean {
-  const want = canonicalAddress(literal);
+function addressInText(literal: string, ownerText: string): boolean {
+  const want = parseAddress(literal);
   if (want === null) return false;
-  for (const token of text.match(ADDRESS_TOKEN) ?? []) {
-    if (canonicalAddress(token.replace(EDGE, '')) === want) return true;
+  for (const token of ownerText.match(ADDRESS_TOKEN) ?? []) {
+    const got = parseAddress(token.replace(EDGE, ''));
+    if (got === null || got.kind !== want.kind || got.addr !== want.addr) continue;
+    if (got.chain !== null && want.chain !== null && got.chain !== want.chain) continue;
+    return true;
   }
   return false;
 }
@@ -39,10 +50,11 @@ function addressInText(literal: string, text: string): boolean {
 export function ground(literal: string | number, kind: 'amount' | 'name' | 'address', ownerText: string, decimals?: number): boolean {
   if (typeof ownerText !== 'string') return false;
   if (typeof literal === 'string' && NON_ASCII.test(literal)) return false;
-  const text = ownerText.replace(NON_ASCII_ALL, '\u0001');
+  // a non-ASCII character becomes U+0080, which joins the word it touches and matches no ASCII literal (never a separator)
+  const text = ownerText.replace(NON_ASCII_ALL, '\u0080');
   if (kind === 'amount') return typeof decimals === 'number' && inOwnerWords(literal, text, decimals);
   if (kind === 'name') return typeof literal === 'string' && literal.trim() !== '' && inOwnerWords(literal.trim(), text);
-  return typeof literal === 'string' && addressInText(literal, text);
+  return typeof literal === 'string' && addressInText(literal, ownerText);
 }
 
 /** The product hook: it fails closed, so a run that cannot say what the owner typed grounds nothing. */
