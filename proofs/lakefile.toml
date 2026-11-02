@@ -8,3 +8,10 @@ roots = ["VerdictModel", "Verdict"]
 [[lean_exe]]
 name = "verdict-run"
 root = "VerdictRun"
+
+# AIR-030: the frozen statements for `lake comparator` (comparator.json). Not a default target: Challenge.lean has `sorry` bodies
+# and `lake build` and `lake check` must never see them.
+[[lean_lib]]
+name = "AirlockClaims"
+srcDir = "claims"
+roots = ["Challenge", "Solution"]

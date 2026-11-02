@@ -65,5 +65,15 @@ Kani harnesses in total: 36
 ## Lean theorems
 
 <!-- theorem-list:start -->
-Lean theorems: list not generated yet (AIR-030 writes proofs/THEOREMS.txt).
+Kernel replay and axiom check: scripts/lean-axioms.sh (lake check and lake comparator).
+- allow_iff
+- p1_untrusted_pc_not_allowed
+- p2_p15_allowed_recipient_trusted
+- p3_allowed_in_book
+- p4_p14_p23_untrusted_amount_bounded
+- p6_lying_book_not_allowed
+- p7_taint_monotone
+- p9_p20_missing_not_allowed
+- p21_allowed_in_task_bound
+- p22_allowed_in_payee_limit
 <!-- theorem-list:end -->
