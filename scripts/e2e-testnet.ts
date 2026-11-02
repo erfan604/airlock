@@ -17,13 +17,15 @@ import type { Hex } from 'viem';
 // @ts-expect-error task-key.mjs is plain JavaScript without declarations
 import { loadSeedHex } from './task-key.mjs';
 import { signTask } from './sign-task.ts';
-import { CASES, isCaseId } from './e2e/cases.ts';
+import { CASES, EVM_FEE_RESERVE_WEI, isCaseId } from './e2e/cases.ts';
 import type { CaseId } from './e2e/cases.ts';
+import { BudgetExhaustedError, describeFailure, flakeLine } from './lib/flake.ts';
 import { baseRpc, checkAgentKey, checkDerivedBalance, checkPolicyBalance, checkUntrustedBudget, liveIo, nearViewAccount } from './lib/preflight.ts';
 import type { Accounts, Check } from './lib/preflight.ts';
 import { feePolicyFromRegistry, runTask } from '../runtime/src/agent.ts';
 import { analyzePlan, bookFromRows, limitsFromPolicy, registryFromRows, toOwnerBounds } from '../runtime/src/analyze/index.ts';
 import { BASE_SEPOLIA_RPCS, assembleEvm, deriveSender } from '../runtime/src/chain/evm.ts';
+import { broadcast as broadcastTx } from '../runtime/src/chain/evm.ts';
 import type { broadcast } from '../runtime/src/chain/evm.ts';
 import { verifySignedMatchesRequest } from '../runtime/src/chain/evm.check.ts';
 import { ChainClient } from '../runtime/src/chain/near.ts';
@@ -51,9 +53,6 @@ const EVIDENCE_HEADING = '## Testnet end to end (AIR-165)';
 const RUNG9 = 'EVM lane not live-proven at G2, rung 9';
 const ETH_ASSET = 'evm:84532:native';
 const TASK_TTL_MS = 900_000;
-// Worst-case Base Sepolia fee for one transfer: the registry caps max_gas 100,000 at max_fee_per_gas 50 gwei, so 0.005 ETH.
-// The derived address must hold the case amount plus this, not the payee's whole cap (AIR-165, 2026-11-02).
-const EVM_FEE_RESERVE_WEI = 100_000n * 50_000_000_000n;
 const POLL_MS = 2000;
 const BALANCE_WAIT_MS = 60_000;
 const SIGN_WAIT_MS = 150_000;
@@ -73,6 +72,22 @@ export class E2eExit extends Error {
   }
 }
 
+/**
+ * A run that failed after the case started: `runErrors` are the `error` events of `runTask`, `cause` the raw error when one was thrown, and
+ * `submitted` whether a batch was sent (a whole fresh case is safe only when it was not, or the signer refunded: see AIR-166 flake.ts).
+ */
+export class RunFailed extends E2eExit {
+  constructor(
+    line: string,
+    readonly runErrors: ReadonlyArray<{ code: string; retryable?: boolean | undefined }>,
+    readonly cause: unknown,
+    readonly submitted: boolean,
+  ) {
+    super(1, line);
+    this.name = 'RunFailed';
+  }
+}
+
 export interface CaseReport {
   caseId: CaseId;
   skipped: boolean;
@@ -82,9 +97,18 @@ export interface CaseReport {
   pendingNo: string | null;
   txHash: string | null;
   link: string | null;
+  /** AIR-166 golden capture: the transaction that sent the batch, the Base broadcast (EVM lane), the trace and the task identity */
+  submitTxHash?: string | null;
+  broadcastTxHash?: string | null;
+  trace?: TraceEvent[];
+  taskId?: string | null;
+  taskHash?: string | null;
+  planSha256?: string | null;
 }
 
 export interface CaseOpts {
+  /** 1 for the first run, 2 for the one fresh-task retry of golden.ts: part of the task id, so a retry never reuses a consumed id */
+  attempt?: number | undefined;
   recordChain?: string | undefined;
   evidence?: boolean | undefined;
   /** the pending number of `--finish` */
@@ -332,6 +356,17 @@ const sha256 = (...parts: Uint8Array[]): string => {
 
 /** Runs one case: preflight, one signed task through `runTask`, the comparison with the expected outcome and the proof lines. */
 export async function runCase(caseId: CaseId, opts: CaseOpts, io: CaseIo = liveCaseIo()): Promise<CaseReport> {
+  const track = { submitted: false };
+  try {
+    return await runCaseInner(caseId, opts, io, track);
+  } catch (e) {
+    if (e instanceof E2eExit) throw e;
+    // a raw error (a node that stopped answering, a thrown chain error): kept as the cause, with whether anything was already sent
+    throw new RunFailed(`RUN FAILED ${e instanceof Error ? e.name : 'error'}`, [], e, track.submitted);
+  }
+}
+
+async function runCaseInner(caseId: CaseId, opts: CaseOpts, io: CaseIo, track: { submitted: boolean }): Promise<CaseReport> {
   const def = CASES[caseId];
   const expect = def.expect;
   const amount = BigInt(expect.amountBase);
@@ -384,6 +419,7 @@ export async function runCase(caseId: CaseId, opts: CaseOpts, io: CaseIo = liveC
     evmSender: (asset) => evmSenders.get(asset) ?? null,
   };
   const rpcUrls = [...(io.env.BASE_SEPOLIA_RPC === undefined || io.env.BASE_SEPOLIA_RPC === '' ? [] : [io.env.BASE_SEPOLIA_RPC]), ...BASE_SEPOLIA_RPCS.filter((u) => u !== io.env.BASE_SEPOLIA_RPC)];
+  let broadcastError: unknown;
   const deps = buildAgentDeps(
     {
       world,
@@ -392,7 +428,15 @@ export async function runCase(caseId: CaseId, opts: CaseOpts, io: CaseIo = liveC
       hooks: { ground: grounder, toolArgPolicy: defaultToolArgPolicy },
       evidence: new MemoryEvidenceStore(),
       clock: () => io.nowMs(),
-      ...(io.broadcast === undefined ? {} : { broadcast: io.broadcast }),
+      // the node's text of a refused broadcast never reaches a trace event, so it is kept here for the flake table (AIR-166)
+      broadcast: async (raw, urls) => {
+        try {
+          return await (io.broadcast ?? broadcastTx)(raw, urls);
+        } catch (e) {
+          broadcastError = e;
+          throw e;
+        }
+      },
       rpcUrls,
     },
     () => snapshot,
@@ -406,7 +450,7 @@ export async function runCase(caseId: CaseId, opts: CaseOpts, io: CaseIo = liveC
   const issuedMs = await chain.latestBlockMs();
   const task = OwnerTask.parse({
     tag: TASK_TAG,
-    task_id: `e2e-${caseId}-${(BigInt(io.nowMs()) / 1000n).toString()}`,
+    task_id: `e2e-${caseId}-${(BigInt(io.nowMs()) / 1000n).toString()}${(opts.attempt ?? 1) > 1 ? `-r${opts.attempt}` : ''}`,
     contract_id: io.accounts.policy,
     agent_id: io.accounts.agent,
     plan_sha256: planSha256(plan),
@@ -419,19 +463,28 @@ export async function runCase(caseId: CaseId, opts: CaseOpts, io: CaseIo = liveC
   const taskSig = new Uint8Array(Buffer.from(signTask(task, io.seedHex()).task_sig, 'base64'));
 
   const events: TraceEvent[] = [];
-  for await (const e of runTask({ ownerRequest: { text: ownerText, ownerAccountId: io.accounts.owner, sessionId: 'e2e' }, paste: null, task, taskSig, plan, deps })) {
-    events.push(e);
-    io.out(eventLine(e));
+  try {
+    for await (const e of runTask({ ownerRequest: { text: ownerText, ownerAccountId: io.accounts.owner, sessionId: 'e2e' }, paste: null, task, taskSig, plan, deps })) {
+      events.push(e);
+      if (e.kind === 'submitted') track.submitted = true;
+      io.out(eventLine(e));
+    }
+  } catch (e) {
+    throw new RunFailed('RUN FAILED', [], e, events.some((x) => x.kind === 'submitted'));
   }
+  const taskHashText = typeof events.find((e) => e.kind === 'submitted')?.data.taskHash === 'string' ? (events.find((e) => e.kind === 'submitted')?.data.taskHash as string) : null;
   const submitted = events.find((e) => e.kind === 'submitted');
   const txHash = typeof submitted?.data.txHash === 'string' ? submitted.data.txHash : null;
   const errors = events.filter((e) => e.kind === 'error').map((e) => String(e.data.code));
+  const runErrors = events.filter((e) => e.kind === 'error').map((e) => ({ code: String(e.data.code), retryable: typeof e.data.retryable === 'boolean' ? e.data.retryable : undefined }));
+  const runFailed = (): RunFailed => new RunFailed(`RUN FAILED ${errors.join(' ')}`, runErrors, broadcastError, events.some((x) => x.kind === 'submitted'));
 
   // the verdict against the case's expectation
   const verdicts = events.filter((e) => e.kind === 'verdict');
   const verdict = verdicts[0];
   if (verdicts.length !== 1 || verdict === undefined) {
-    throw new E2eExit(1, errors.length > 0 ? `RUN FAILED ${errors.join(' ')}` : `MISMATCH outcome expected ${expect.outcome} got ${verdicts.length === 0 ? 'none' : 'several'}`);
+    if (errors.length > 0) throw runFailed();
+    throw new E2eExit(1, `MISMATCH outcome expected ${expect.outcome} got ${verdicts.length === 0 ? 'none' : 'several'}`);
   }
   const outcome = String(verdict.data.outcome);
   const reason = typeof verdict.data.reason === 'string' ? verdict.data.reason : null;
@@ -443,11 +496,31 @@ export async function runCase(caseId: CaseId, opts: CaseOpts, io: CaseIo = liveC
     { outcome: expect.outcome, reason: expect.reason, lane: expect.lane, amountBase: expect.amountBase },
     { outcome, reason, lane: lane(stored.asset), amountBase: stored.amount },
   );
-  if (miss !== null) throw new E2eExit(1, `MISMATCH ${miss.field} expected ${miss.expected} got ${miss.got}`);
-  if (errors.length > 0) throw new E2eExit(1, `RUN FAILED ${errors.join(' ')}`);
+  if (miss !== null) {
+    // an allowed case held for UntrustedAmount while the day's budget is below the amount is the budget, not a bug (AIR-166)
+    if (expect.outcome === 'allowed' && reason === 'UntrustedAmount') {
+      let remaining: bigint | null = null;
+      try {
+        remaining = BigInt((await chain.getLedgers(payeeKey, assetId)).payee_untrusted_day.remaining);
+      } catch {
+        remaining = null;
+      }
+      if (remaining !== null && remaining < amount) {
+        io.out(`MISMATCH ${miss.field} expected ${miss.expected} got ${miss.got}`);
+        throw new BudgetExhaustedError();
+      }
+    }
+    throw new E2eExit(1, `MISMATCH ${miss.field} expected ${miss.expected} got ${miss.got}`);
+  }
+  if (errors.length > 0) throw runFailed();
   report.outcome = expect.outcome;
   report.reason = reason;
   report.requestId = requestId;
+  report.trace = events;
+  report.taskId = task.task_id;
+  report.taskHash = taskHashText;
+  report.planSha256 = planSha256(plan);
+  report.submitTxHash = isTxHash(txHash) ? txHash : null;
 
   if (outcome === 'escalated') {
     if (pendingId === null) throw new E2eExit(1, 'FAIL an escalated request has no pending number');
@@ -509,6 +582,7 @@ export async function runCase(caseId: CaseId, opts: CaseOpts, io: CaseIo = liveC
     io.out(`BASE ${hash} status success sender ${receipt.from.toLowerCase()}`);
     io.out(`LINK ${BASESCAN}${hash}`);
     report.txHash = hash;
+    report.broadcastTxHash = hash;
     report.link = `${BASESCAN}${hash}`;
   }
   if (opts.evidence === true && report.link !== null) recordEvidence(io, evidenceRow(io, caseId, 'allowed -', report.link, requestId));
@@ -596,12 +670,13 @@ export async function main(argv: readonly string[], env: NodeJS.ProcessEnv, io?:
     else await runCase(parsed.caseId, { recordChain: parsed.recordChain, evidence: parsed.evidence }, caseIo);
     return 0;
   } catch (e) {
-    if (e instanceof E2eExit) {
-      out(e.line);
-      return e.code;
+    if (e instanceof RunFailed || e instanceof BudgetExhaustedError || !(e instanceof E2eExit)) {
+      if (e instanceof RunFailed) out(e.line);
+      out(flakeLine(describeFailure(e)));
+      return 1;
     }
-    out(`FAIL ${e instanceof Error ? `${e.name}: ${e.message}` : 'unexpected error'}`);
-    return 1;
+    out(e.line);
+    return e.code;
   }
 }
 
@@ -611,7 +686,7 @@ if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.
       process.exitCode = code;
     },
     (e: unknown) => {
-      console.log(`FAIL ${e instanceof Error ? e.message : 'unexpected error'}`);
+      console.log(flakeLine(describeFailure(e)));
       process.exitCode = 1;
     },
   );
