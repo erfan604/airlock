@@ -21,6 +21,10 @@ export function App({ pathname }: { pathname: string }) {
   return (
     <>
       <DoorSprite />
+      <header className="shell-bar" data-testid="shell-bar">
+        <span className="shell-mark">AIRLOCK</span>
+        <span className="shell-net">testnet</span>
+      </header>
       {fixture ? fixture.render() : m ? <Placeholder line="No such fixture." /> : route ? route() : <Placeholder line="Console shell. No task is open." />}
     </>
   );

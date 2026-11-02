@@ -5,27 +5,40 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { checkContrast, defaultPairs } from '../scripts/check-contrast.ts';
-import { manual, space, tokensCss } from '../src/styles/tokens.ts';
+import { cssName, manual, space, tokensCss } from '../src/styles/tokens.ts';
+import type { TokenName } from '../src/styles/tokens.ts';
 
 const webRoot = fileURLToPath(new URL('../', import.meta.url));
 
-const EXPECTED: Array<[fg: 'ink' | 'ink2' | 'ink3' | 'clear' | 'alarm' | 'signal', bg: 'paper' | 'raised' | 'sunk' | 'ink', ratio: number]> = [
-  ['ink', 'paper', 15.19],
-  ['ink', 'raised', 16.77],
-  ['ink', 'sunk', 13.44],
-  ['ink2', 'paper', 7.64],
-  ['ink2', 'raised', 8.43],
-  ['ink2', 'sunk', 6.75],
-  ['ink3', 'paper', 5.4],
-  ['ink3', 'raised', 5.97],
-  ['ink3', 'sunk', 4.78],
-  ['clear', 'paper', 6.25],
-  ['clear', 'raised', 6.9],
-  ['clear', 'sunk', 5.53],
-  ['alarm', 'paper', 6.34],
-  ['alarm', 'raised', 7.0],
-  ['alarm', 'sunk', 5.61],
-  ['signal', 'ink', 5.9],
+// D24 (AIR-296): the dark NEAR palette, recomputed with the same WCAG 2 formula.
+const EXPECTED: Array<[fg: TokenName, bg: TokenName, ratio: number]> = [
+  ['ink', 'paper', 17.27],
+  ['ink', 'raised', 15.84],
+  ['ink', 'sunk', 17.79],
+  ['ink2', 'paper', 9.83],
+  ['ink2', 'raised', 9.01],
+  ['ink2', 'sunk', 10.12],
+  ['ink3', 'paper', 5.96],
+  ['ink3', 'raised', 5.46],
+  ['ink3', 'sunk', 6.14],
+  ['clear', 'paper', 12.53],
+  ['clear', 'raised', 11.49],
+  ['clear', 'sunk', 12.91],
+  ['alarm', 'paper', 6.51],
+  ['alarm', 'raised', 5.97],
+  ['alarm', 'sunk', 6.71],
+  ['signal', 'paper', 11.14],
+  ['signal', 'raised', 10.21],
+  ['signal', 'sunk', 11.47],
+  ['info', 'paper', 7.63],
+  ['info', 'raised', 7.0],
+  ['info', 'sunk', 7.86],
+  ['onClear', 'clear', 12.12],
+  ['paper', 'ink', 17.27],
+  ['edge', 'paper', 3.66],
+  ['edge', 'raised', 3.35],
+  ['edge', 'sunk', 3.77],
+  ['focus', 'paper', 11.1],
 ];
 
 test('contrast: the ratios of the ticket match within 0.01 and are all ok', () => {
@@ -38,18 +51,18 @@ test('contrast: the ratios of the ticket match within 0.01 and are all ok', () =
   });
 });
 
-test('contrast: a failing pair is reported ok false (hair on paper is 1.65)', () => {
+test('contrast: a failing pair is reported ok false (hair on paper is 1.42)', () => {
   const [r] = checkContrast([{ fg: 'hair', bg: 'paper', min: 4.5 }]);
   assert.ok(r);
-  assert.ok(Math.abs(r.ratio - 1.65) <= 0.01, String(r.ratio));
+  assert.ok(Math.abs(r.ratio - 1.42) <= 0.01, String(r.ratio));
   assert.equal(r.ok, false);
 });
 
-test('contrast: the default pair list has 15 text pairs and 3 graphics pairs, all ok', () => {
+test('contrast: the default pair list has 23 text pairs and 6 graphics pairs, all ok', () => {
   const pairs = defaultPairs();
-  assert.equal(pairs.length, 18);
-  assert.equal(pairs.filter((p) => p.min === 4.5).length, 15);
-  assert.equal(pairs.filter((p) => p.min === 3).length, 3);
+  assert.equal(pairs.length, 29);
+  assert.equal(pairs.filter((p) => p.min === 4.5).length, 23);
+  assert.equal(pairs.filter((p) => p.min === 3).length, 6);
   assert.ok(checkContrast(pairs).every((r) => r.ok));
 });
 
@@ -66,10 +79,15 @@ test('contrast: the CLI exits 0 by default and 1 with CONTRAST_EXTRA=hair:paper:
   assert.equal(bad.status, 1, bad.stdout + bad.stderr);
 });
 
+test('tokens: cssName splits a trailing digit and a capital', () => {
+  assert.equal(cssName('ink2'), 'ink-2');
+  assert.equal(cssName('onClear'), 'on-clear');
+});
+
 test('tokens: tokensCss emits every colour and space property and the committed file matches', () => {
   const css = tokensCss();
   for (const [name, hex] of Object.entries(manual)) {
-    const prop = name.replace(/([0-9])/, '-$1');
+    const prop = cssName(name as TokenName);
     assert.ok(css.includes(`--${prop}: ${hex};`), prop);
   }
   space.forEach((px, i) => assert.ok(css.includes(`--space-${i + 1}: ${px}px;`), `space-${i + 1}`));

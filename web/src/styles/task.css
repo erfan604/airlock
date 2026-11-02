@@ -1,31 +1,49 @@
-/* The Task page and the live trace (AIR-184). Tokens only, radius 0, no shadow. Long values wrap: nothing here may push the page wider than
-   the viewport at 320 px. */
+/* The Task page and the live trace (AIR-184), restyled by D24 (AIR-296). Long values wrap: nothing here may push the page wider than the
+   viewport at 320 px. Each trace row rises in as the stream delivers it; from 720 px the rows read as a timeline, the kind on the left. */
 .task {
   display: grid;
-  gap: var(--space-4);
-  max-width: 40rem;
+  gap: var(--space-5);
+  max-width: 48rem;
   margin: 0 auto;
   min-width: 0;
 }
 .task-title {
   font-family: var(--font-system);
-  font-weight: 700;
-  font-size: 22px;
-  line-height: 28px;
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 38px;
+  letter-spacing: -0.02em;
 }
 .task-form {
   display: grid;
   gap: var(--space-3);
   min-width: 0;
+  padding: var(--space-5) var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-l);
+  background: var(--raised);
+  box-shadow: var(--lift);
+}
+@media (min-width: 720px) {
+  .task-form {
+    padding: var(--space-6);
+  }
 }
 .task-label {
   font-family: var(--font-data);
-  font-weight: 700;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 11px;
   line-height: 16px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--ink-3);
+}
+.task-label + .task-help {
+  margin-top: calc(-1 * var(--space-1));
+}
+.task-input + .task-count + .task-label,
+.task-count + .task-label {
+  margin-top: var(--space-3);
 }
 .task-help,
 .task-count,
@@ -35,26 +53,45 @@
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }
+.task-count {
+  font-family: var(--font-data);
+  font-size: 12px;
+  color: var(--ink-3);
+}
 .task-notice {
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 600;
 }
 .task-input {
   display: block;
   width: 100%;
   min-height: 112px;
-  padding: var(--space-3);
-  border: 2px solid var(--ink);
-  border-radius: 0;
-  background: var(--raised);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-m);
+  background: var(--sunk);
   color: var(--ink);
   font-family: var(--font-system);
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 17px;
+  line-height: 26px;
   resize: vertical;
+  transition:
+    border-color var(--press),
+    box-shadow var(--press);
+}
+.task-input:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 18%, transparent);
+}
+.task-input:focus-visible {
+  outline: none;
 }
 .task-input-paste {
   font-family: var(--font-evidence);
+  font-size: 15px;
+}
+.task-form .card-btn {
+  margin-top: var(--space-3);
 }
 .trace {
   display: grid;
@@ -71,25 +108,56 @@
 }
 .trace-row {
   display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 2px solid var(--ink);
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-l);
   background: var(--raised);
   min-width: 0;
+  animation: rise 300ms var(--ease-out) backwards;
+}
+@media (min-width: 720px) {
+  .trace-row {
+    position: relative;
+    min-height: 64px;
+    padding: var(--space-5) var(--space-5) var(--space-5) calc(8rem + var(--space-5));
+  }
+  .trace-row > .trace-head {
+    position: absolute;
+    top: calc(var(--space-5) + 3px);
+    left: var(--space-5);
+    width: 7.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
 }
 .trace-head {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: baseline;
+  min-width: 0;
 }
 .trace-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   font-family: var(--font-data);
-  font-weight: 700;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 11px;
   line-height: 16px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--info);
+}
+.trace-kind::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .trace-item {
   font-family: var(--font-data);
@@ -100,19 +168,19 @@
 }
 .trace-cells {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-3);
   min-width: 0;
 }
 .trace-cell {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-3);
   align-items: baseline;
   min-width: 0;
 }
 .trace-cell-block {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 .trace-cell-name {
   font-family: var(--font-data);
@@ -122,8 +190,9 @@
 }
 .trace-cell-text {
   font-family: var(--font-data);
-  font-size: 14px;
-  line-height: 20px;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 22px;
   overflow-wrap: anywhere;
   min-width: 0;
 }
@@ -140,12 +209,17 @@
 .trace-review {
   display: inline-flex;
   align-items: center;
-  min-height: 48px;
-  color: var(--ink);
-  font-weight: 700;
+  justify-self: start;
+  min-height: 44px;
+  color: var(--signal);
+  font-weight: 600;
   text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+  transition: opacity var(--press);
+}
+.trace-review:hover {
+  opacity: 0.8;
 }
 .trace-line {
   font-size: 14px;
@@ -153,7 +227,16 @@
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }
+.trace-end {
+  padding-top: var(--space-2);
+  font-family: var(--font-data);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  font-variant-caps: all-small-caps;
+  animation: fade 300ms var(--ease-out) backwards;
+}
 .trace-stale {
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 600;
 }

@@ -46,6 +46,10 @@ function CardFixture({ data }: { data: FixtureData }) {
 
 registerFixture('card-correction', () => <CardFixture data={correction} />);
 registerFixture('card-correction-live', () => <CardFixture data={live} />);
+// AIR-296: the same request read back after the owner approved it and after the contract blocked it, so the approved and blocked stamps
+// of the card can be reviewed (and filmed) without a wallet. Only `view.state` differs from `card-correction`.
+registerFixture('card-approved', () => <CardFixture data={{ ...correction, view: { ...correction.view, state: 'Executed' } }} />);
+registerFixture('card-blocked', () => <CardFixture data={{ ...correction, view: { ...correction.view, state: 'Blocked' } }} />);
 // AIR-190: a payee outside the book. `card-lookalike` is a named account one letter off a book entry, `card-new-hex` an EVM address that
 // shares the first and last four digits of a book key. Both ask for the forcing step in the confirm sheet.
 registerFixture('card-lookalike', () => <CardFixture data={lookalike as unknown as FixtureData} />);

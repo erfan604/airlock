@@ -30,13 +30,25 @@ export function checkContrast(pairs: readonly Pair[]): PairResult[] {
   });
 }
 
-/** The 15 text pairs (at least 4.5) and the 3 graphics pairs (at least 3) of the ticket. */
+/**
+ * D24 (AIR-296) pairs. Text, at least 4.5: ink, ink2, ink3, clear, alarm, signal and info on paper, raised and sunk (21), the label
+ * on a clear fill (onClear on clear) and the label on an ink fill (paper on ink): 23. Graphics, at least 3: the stripe (signal
+ * against paper), a control outline (edge) on paper, raised and sunk, the focus ring on paper and the clear accent on paper: 6.
+ */
 export function defaultPairs(): Pair[] {
   const pairs: Pair[] = [];
-  for (const fg of ['ink', 'ink2', 'ink3', 'clear', 'alarm'] as const) {
+  for (const fg of ['ink', 'ink2', 'ink3', 'clear', 'alarm', 'signal', 'info'] as const) {
     for (const bg of ['paper', 'raised', 'sunk'] as const) pairs.push({ fg, bg, min: 4.5 });
   }
-  pairs.push({ fg: 'signal', bg: 'ink', min: 3 }, { fg: 'ink', bg: 'signal', min: 3 }, { fg: 'ink', bg: 'paper', min: 3 });
+  pairs.push({ fg: 'onClear', bg: 'clear', min: 4.5 }, { fg: 'paper', bg: 'ink', min: 4.5 });
+  pairs.push(
+    { fg: 'signal', bg: 'paper', min: 3 },
+    { fg: 'edge', bg: 'paper', min: 3 },
+    { fg: 'edge', bg: 'raised', min: 3 },
+    { fg: 'edge', bg: 'sunk', min: 3 },
+    { fg: 'focus', bg: 'paper', min: 3 },
+    { fg: 'clear', bg: 'paper', min: 3 },
+  );
   return pairs;
 }
 

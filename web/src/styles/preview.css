@@ -1,21 +1,47 @@
-/* The plan preview screen (AIR-185). Tokens only, radius 0, no shadow. The pinned bar is the card bar of AIR-181, the same pattern. */
+/* The plan preview screen (AIR-185), restyled by D24 (AIR-296): the same raised panel as the approval card, revealed on mount. The pinned
+   bar is the card bar of AIR-181, the same pattern. */
 .preview {
+  --card-pad: var(--space-3);
   display: block;
-  max-width: 30rem;
+  max-width: 40rem;
   margin: 0 auto;
   min-width: 0;
+  padding: var(--card-pad) var(--card-pad) 0;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-l);
+  background: var(--raised);
+  box-shadow: var(--lift);
+  animation: reveal 380ms var(--ease-out) 60ms backwards;
+}
+@media (min-width: 720px) {
+  .preview {
+    --card-pad: var(--space-6);
+  }
+  .preview .card-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+.task .preview {
+  max-width: none;
+  margin: 0;
 }
 .preview-body {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
   min-width: 0;
+  padding-bottom: var(--card-pad);
 }
 .preview-title {
   font-family: var(--font-system);
-  font-weight: 700;
-  font-size: 22px;
-  line-height: 28px;
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: -0.015em;
   overflow-wrap: anywhere;
+}
+.preview-lede {
+  margin-top: calc(-1 * var(--space-3));
+  color: var(--ink-2);
 }
 .preview-lede,
 .preview-text,
@@ -27,12 +53,12 @@
 }
 .preview-label {
   font-family: var(--font-data);
-  font-weight: 700;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 11px;
   line-height: 16px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 .preview-payment {
   display: grid;
@@ -61,7 +87,7 @@
 .preview-small {
   font-family: var(--font-data);
   font-size: 12px;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 .preview-asks,
 .task-card,
@@ -73,9 +99,10 @@
 .preview-asks,
 .preview-key-register,
 .preview-notice {
-  padding: var(--space-3);
-  border: 2px solid var(--ink);
-  background: var(--raised);
+  padding: var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-m);
+  background: var(--sunk);
 }
 .preview-ask-list {
   display: grid;
@@ -88,8 +115,11 @@
 }
 .preview-command {
   margin: 0;
-  padding: var(--space-2);
-  background: var(--sunk);
+  padding: var(--space-3);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-s);
+  background: var(--paper);
+  color: var(--ink-2);
   white-space: pre-wrap;
 }
 .preview-notice {
@@ -100,7 +130,9 @@
 .preview-refusal {
   display: grid;
   gap: var(--space-4);
-  padding: var(--space-3);
+  padding: var(--space-5);
   border: 2px solid var(--alarm);
-  background: var(--raised);
+  border-radius: var(--radius-l);
+  background: color-mix(in srgb, var(--alarm) 6%, var(--raised));
+  animation: reveal 380ms var(--ease-out) backwards;
 }

@@ -1,11 +1,21 @@
-/* Base layer: the page, type roles, focus, buttons and the tape stripe. Colours and spacing come from tokens.css only.
-   Radius 0 everywhere, no shadow, no blur, no gradient except the stripe (DESIGN.md 2.1). */
+/* Base layer: the page, the shell bar, type roles, focus, the tape stripe and the motion vocabulary. Colours and spacing come from
+   tokens.css only. DESIGN: D24 (AIR-296) supersedes the DESIGN.md 2.1 paper theme and its "radius 0, no shadow, no gradient" rule for
+   the console: a dark NEAR theme on a near black canvas, 1 px hairlines, soft surface layering, NEAR green used sparingly for allowed,
+   approved and the primary action, with a restrained glow on that accent only. Kept from DESIGN: stripes mean outside, held and
+   blocked are never green. Motion is CSS only, transform and opacity, 150 to 400 ms, and all of it is off under reduced motion. */
 :root {
-  --font-system: 'B612', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: dark;
+  --font-system: 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-data: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --font-evidence: 'Courier Prime', 'Courier New', ui-monospace, monospace;
-  --stripe: repeating-linear-gradient(-45deg, var(--signal) 0 6px, var(--ink) 6px 12px);
-  --press: 90ms cubic-bezier(0.2, 0, 0, 1);
+  --stripe: repeating-linear-gradient(-45deg, var(--signal) 0 6px, var(--paper) 6px 12px);
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 16px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --press: 150ms var(--ease-out);
+  --lift: inset 0 1px 0 color-mix(in srgb, var(--ink) 5%, transparent), 0 24px 48px -28px color-mix(in srgb, var(--sunk) 90%, transparent);
+  --glow-clear: 0 0 0 1px color-mix(in srgb, var(--clear) 55%, transparent), 0 10px 32px -10px color-mix(in srgb, var(--clear) 55%, transparent);
 }
 
 *,
@@ -18,15 +28,21 @@ html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  background: var(--paper);
 }
 
 body {
   margin: 0;
-  background: var(--paper);
+  min-height: 100vh;
+  background:
+    radial-gradient(70rem 32rem at 50% -12rem, color-mix(in srgb, var(--clear) 7%, transparent), transparent 70%),
+    var(--paper);
   color: var(--ink);
   font-family: var(--font-system);
   font-size: 1rem;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1,
@@ -38,26 +54,86 @@ p {
 
 button {
   font: inherit;
-  border-radius: 0;
+  border-radius: var(--radius-m);
 }
 
 :focus-visible {
-  outline: 3px solid var(--ink);
-  outline-offset: 2px;
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--clear) 30%, transparent);
+  color: var(--ink);
 }
 
 .wordmark {
-  font-family: var(--font-data);
+  font-family: var(--font-system);
   font-weight: 700;
   font-size: 1.75rem;
   line-height: 2.125rem;
   letter-spacing: 0.08em;
 }
 
+/* the shell bar: a text wordmark and the network, nothing that imitates a logo */
+.shell-bar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--hair);
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  backdrop-filter: blur(12px);
+}
+.shell-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.18em;
+}
+.shell-mark::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--clear);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--clear) 70%, transparent);
+}
+.shell-net {
+  padding: 2px var(--space-3);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+}
+
 .page {
   max-width: 80rem;
   margin: 0 auto;
   padding: var(--space-4);
+  animation: rise 320ms var(--ease-out) backwards;
+}
+/* phones keep the AIR-181 geometry (the stamp, the offender row and the pinned bar on one 667 px screen); the roomier shell starts at 720 px */
+@media (min-width: 720px) {
+  .shell-bar {
+    position: sticky;
+    top: 0;
+    min-height: 56px;
+    padding: 0 var(--space-5);
+  }
+  .page {
+    padding: var(--space-7) var(--space-5) var(--space-8);
+  }
 }
 
 /* The one pattern: stripes mean outside. Only the seal swatch of an untrusted label and the tape frame use it. */
@@ -66,6 +142,59 @@ button {
   background: var(--stripe);
 }
 
+/* motion vocabulary (D24): entrances rise, the card reveals, the verdict lands, sheet contents rise */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes land {
+  0% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 @media (forced-colors: active) {
   .tape-frame {
     background: none;
@@ -78,7 +207,10 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
     transition-duration: 0ms !important;
   }
 }
