@@ -12,9 +12,11 @@
     "./chain-ids": "./src/chain/ids.ts",
     "./tools": "./src/tools/index.ts",
     "./quarantine": "./src/quarantine/index.ts",
-    "./agent": "./src/agent.ts"
+    "./agent": "./src/agent.ts",
+    "./agent-deps": "./src/server/deps.ts"
   },
   "scripts": {
+    "start": "tsx src/server/start.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "tsx --test \"test/**/*.test.ts\"",
     "test:prop": "FC_RUNS=10000 FC_SEED=random tsx --test test/interpreter.prop.test.ts",
