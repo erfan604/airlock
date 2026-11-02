@@ -105,13 +105,15 @@ impl Contract {
         else {
             env::panic_str("request is not executing")
         };
+        // the lane follows the asset; the payee must belong to that lane (security review 2026-11-01: a token request to a `near:`
+        // payee once fell through to the native NEAR transfer of its amount)
         if asset.starts_with("evm:") {
             return Some(self.start_evm(id));
         }
-        match payee.split_once(':').map(|(lane, _)| lane) {
-            Some("near") => self.start_near(id),
-            _ => None,
+        if asset == "near" && payee.starts_with("near:") {
+            return self.start_near(id);
         }
+        None
     }
 
     /// Builds (or, on a retry, rebuilds and checks) the transaction of an Executing EVM request, records and announces its bytes, and
@@ -232,6 +234,9 @@ impl Contract {
         let Some(rec) = rec.filter(|r| r.state == RequestState::Executing) else {
             env::panic_str("unexpected state");
         };
+        if rec.asset != "near" {
+            env::panic_str("unexpected asset");
+        }
         let account = rec
             .payee
             .strip_prefix("near:")
@@ -379,6 +384,45 @@ mod near_tests {
     const ONE: u128 = 1_000_000_000_000_000_000_000_000;
     const BYTE: u128 = 10_000_000_000_000_000_000;
     const PAYEE: &str = "near:alice.test.near";
+
+    /// Security review 2026-11-01 (asset confusion): the lane follows the ASSET, never the payee prefix. A request in a token asset
+    /// whose payee happens to be a `near:` account must never start a native NEAR transfer of its amount.
+    #[test]
+    fn exec_near_token_asset_never_pays_native_near() {
+        let mut c = fresh();
+        let mut rec = record(RequestState::Executing, false);
+        rec.asset = "tusd".to_string();
+        let id = stored(&mut c, rec);
+        testing_env!(
+            ctx(POLICY, 2_000, 0)
+                .account_balance(NearToken::from_near(1_000))
+                .build()
+        );
+        assert!(
+            c.start_execution(&id).is_none(),
+            "a tusd request to a near: payee started a native NEAR transfer"
+        );
+        assert_eq!(
+            c.records.get(&id).map(|r| r.state),
+            Some(RequestState::Executing)
+        );
+    }
+
+    /// Defence in depth: `start_near` itself refuses any record whose asset is not native NEAR.
+    #[test]
+    #[should_panic(expected = "unexpected asset")]
+    fn exec_near_start_near_refuses_a_non_native_asset() {
+        let mut c = fresh();
+        let mut rec = record(RequestState::Executing, false);
+        rec.asset = "tusd".to_string();
+        let id = stored(&mut c, rec);
+        testing_env!(
+            ctx(POLICY, 2_000, 0)
+                .account_balance(NearToken::from_near(1_000))
+                .build()
+        );
+        let _ = c.start_near(&id);
+    }
 
     #[test]
     fn exec_near_reserve_table() {
