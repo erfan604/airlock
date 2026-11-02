@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { APPROVE_PREPAID_TGAS } from '../web/src/wallet/approve.ts';
 
 const SCRIPT = fileURLToPath(new URL('./demo-tamper.ts', import.meta.url));
 const TSX = fileURLToPath(new URL('../node_modules/.bin/tsx', import.meta.url));
@@ -98,7 +99,7 @@ test('tamper: a refused approve prints TAMPER REVERTED and the link, and sends o
   assert.deepEqual(a.slice(0, 5), ['contract', 'call-function', 'as-transaction', 'policy.erfan-airlock.testnet', 'approve']);
   assert.equal(a[5], 'json-args');
   assert.deepEqual(JSON.parse(a[6] as string), { id: '7', to: 'near:accountant.erfan-airlock.testnet', asset: 'NEAR', amount: '4.2', why: 'UntrustedAmount', book: 'in_book' });
-  assert.deepEqual(a.slice(7), ['prepaid-gas', '150 Tgas', 'attached-deposit', '1 yoctoNEAR', 'sign-as', 'erfan-airlock.testnet', 'network-config', 'testnet', 'sign-with-keychain', 'send']);
+  assert.deepEqual(a.slice(7), ['prepaid-gas', `${APPROVE_PREPAID_TGAS} Tgas`, 'attached-deposit', '1 yoctoNEAR', 'sign-as', 'erfan-airlock.testnet', 'network-config', 'testnet', 'sign-with-keychain', 'send']);
   assert.deepEqual(rpc.methods, ['query:get_request', 'tx', 'query:get_request']);
 });
 
