@@ -16,4 +16,6 @@ export type { LlmCall } from './collect.ts';
 export { setLlmOverride } from './override.ts';
 export { chatBody, scriptedLlm } from './scripted.ts';
 export type { ChatBodyInput, ScriptedAnswer } from './scripted.ts';
+export { ModelsConfigError, loadModelsConfig } from './config.ts';
+export type { ModelsConfig } from './config.ts';
 export { BadMode, BadRecording, LlmBadResponse, LlmHttpError, MissingKey, ModelNotAllowed, NoRecording, UnknownPrice } from './errors.ts';
