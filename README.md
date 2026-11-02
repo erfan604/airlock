@@ -31,7 +31,7 @@ The console and the runtime server have a scripted security pass: `source script
 3. `pnpm tsx scripts/e2e-testnet.ts U01` runs a legitimate NEAR payment, and `pnpm tsx scripts/e2e-testnet.ts B01` runs the escalation case. Approve it with `scripts/approve-cli.sh <pending id> --run`, which the owner key signs; the agent key cannot approve.
 4. The transactions of the live runs are linked in `docs/EVIDENCE.md` (the section Testnet end to end and the section Owner approval, live): U01 paid 4.2 NEAR, B01 was escalated and then owner-approved and paid 9.4 NEAR, and the CONTRACTOR case paid 0.02 ETH on Base Sepolia through the MPC signer in transaction `0x943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63` [C10].
 
-TODO(AIR-166): the full golden run list, its recordings and the `scripts/verify-golden.ts` command are added when AIR-166 lands; this README cites only the rows already in `docs/EVIDENCE.md`.
+The golden runs are `bench/golden/u01.json` (U01, submit `53GuKRQxh6w5yBf4ZCzgBYH3QpHwLUNXiq9yCdrDr7ug`), `b01-escalate.json` (submit `7vJhDpZzkuRwWYSntPqvNGqZmXNJcdRbeDP8hUTCW6rs`), `b01-approve.json` (owner approve `Fk8G1sGrJZ6wKDwH6CmpnA5gz1HJLMNaEaFjkKcDSSCk`) and `tamper.json` (the tampered approve `5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj`, reverted with `approve rejected: WrongAmount`) [C8b]. Their chain reads are recorded under `runtime/recordings/chain/`. `pnpm tsx scripts/verify-golden.ts` re-checks every hash against the chain and prints `PASS` per entry. The CONTRACTOR run reuses the AIR-165 transaction above. There is no golden run of the vanilla or allowlist twin losing money: that case did not occur live, and none is claimed.
 
 The agent's key. The agent account `erfan-agent.testnet` runs under a function-call key limited to the policy account's `submit_batch` method, with an unlimited gas allowance, because every call buys its gas up front and a capped allowance would lock the agent out. That key cannot move NEAR, add keys or call owner methods. It does not limit what the agent submits: the agent can still send any request, and the contract's verdict is the control. The account also holds one full-access key that was used for setup, and `list-keys` shows both. Check with `near account list-keys erfan-agent.testnet network-config testnet now`.
 
@@ -83,9 +83,9 @@ Each line links to the row of `docs/CLAIMS.md` that has the command and the expe
 - [C7a] The payment gate is checked three ways, following AWS's Cedar method: a Lean 4 theorem, Kani on the contract's Rust, and 40,000 differential tests. These cover the gate and our interpreter model, not the LLM, TEE or chain [C7a].
 - [C7b] The Lean theorems of the verdict model pass the axiom audit. Pending: AIR-030 [C7b].
 - [C8a] An approval binds recipient, asset and amount [C8a].
-- [C8b] A tampered approve reverts on chain. Pending: AIR-166 [C8b].
+- [C8b] A tampered approve reverts on chain: `pnpm tsx scripts/verify-golden.ts --file bench/golden/tamper.json` [C8b].
 - [C9] The ledgers are cumulative, and a batch decides no more than the same requests one by one [C9].
-- [C10] Real testnet payments are linked in `docs/EVIDENCE.md` [C10].
+- [C10] Real testnet payments are linked in `docs/EVIDENCE.md` and re-checked by `pnpm tsx scripts/verify-golden.ts` [C10].
 - [C11] The replay demo runs with no keys. Pending: AIR-246 [C11].
 - [C12] Exact amounts, UTC time and the plumbing classes are pinned as tests [C12].
 

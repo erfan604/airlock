@@ -152,6 +152,8 @@ step_if fixtures/payloads.sha256 payloads payloads scripts/check-payloads.sh    
 # no board step: the tickets stay in the research repo (AIR-006), so run
 # python3 kit/scripts/board.py --dir plan/tickets --check from $AIRLOCK_RESEARCH
 step guard-selftest python3 .claude/hooks/guard_bash.py --self-test
+step_if scripts/claims-lint.ts claims-lint claims-lint pnpm tsx scripts/claims-lint.ts                # AIR-240, AIR-276
+step_if scripts/claims-lint.test.ts claims-lint claims-lint-test pnpm tsx --test scripts/claims-lint.test.ts
 step_if scripts/check-commits.sh commits commits scripts/check-commits.sh
 step gitleaks gitleaks_scan
 
