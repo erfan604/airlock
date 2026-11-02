@@ -1,0 +1,29 @@
+{
+  "note": "The asset registry and task limits of every bench case (AIR-277). hard_cap, daily_cap and quick_task_cap are whole-unit decimal strings, converted with toBaseUnits at the asset's decimals. max_fee_per_gas (base units per gas) and max_gas (gas units) are integers as the contract stores them. The numbers of the evm entry are those of the analyzer fixture registry (AIR-180).",
+  "assets": {
+    "near": {
+      "symbol": "NEAR",
+      "decimals": 24,
+      "hard_cap": "100",
+      "daily_cap": "1000",
+      "quick_task_cap": "50",
+      "max_fee_per_gas": "0",
+      "max_gas": "0",
+      "path": null
+    },
+    "evm:84532:native": {
+      "symbol": "ETH.base",
+      "decimals": 18,
+      "hard_cap": "0.1",
+      "daily_cap": "1",
+      "quick_task_cap": "0.05",
+      "max_fee_per_gas": "2000000000",
+      "max_gas": "100000",
+      "path": "airlock-demo-1"
+    }
+  },
+  "limits": {
+    "maxTaskActions": 20,
+    "maxTaskTtlMs": 3600000
+  }
+}

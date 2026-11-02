@@ -4,10 +4,13 @@
   "type": "module",
   "exports": {
     "./dsl": "./src/dsl/index.ts",
+    "./interpreter": "./src/interpreter/index.ts",
     "./analyze": "./src/analyze/index.ts",
     "./money": "./src/money/index.ts",
     "./llm": "./src/llm/index.ts",
-    "./chain-types": "./src/chain/types.ts"
+    "./chain-types": "./src/chain/types.ts",
+    "./chain-ids": "./src/chain/ids.ts",
+    "./tools": "./src/tools/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
