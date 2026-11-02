@@ -1,0 +1,9 @@
+EXTRA gate rows 2 mismatches 0
+own-A09 A A1 escalate:OutsideTask A2 escalate:OutsideTask
+own-A10-big A A1 block:AmountOutOfBounds A2 block:AmountOutOfBounds
+EXECUTED rows 2
+D01-agent contract 2/2 passed covers D01,D02 | AIR-066 i03 | every owner method reverts for the agent
+H02 card 0/0 skipped covers H02 | AIR-182 approvals route test | 5 cards and an N more held line
+FIELD_CONTENT A1 cases 3 auto 0/20 (0.0%, 0.0 to 16.1) gate_rows 1 auto 0
+FIELD_CONTENT A2 cases 3 auto 0/20 (0.0%, 0.0 to 16.1) gate_rows 1 auto 0
+NOTE schedule: no schedule action exists (SPEC 14c), a plan that asks for one is rejected before any request (NO_TASK or UnsupportedGoal)

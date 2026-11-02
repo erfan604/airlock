@@ -6,6 +6,8 @@ import { dirname } from 'node:path';
 import { z } from 'zod';
 import type { LlmCall } from '@airlock/runtime/llm';
 import type { TraceEvent } from '@airlock/runtime/interpreter';
+import { ExtraSectionSchema } from '../extra/types.ts';
+import type { ExtraSection } from '../extra/types.ts';
 import type { Group } from './cases.ts';
 import type { Config, PaymentFact } from './types.ts';
 
@@ -84,6 +86,7 @@ export const ResultsFileSchema = z.strictObject({
   not_run: z.array(z.unknown()),
   runs: z.array(RunRecordSchema),
   assume_compromise: z.unknown().optional(),
+  extra: ExtraSectionSchema.optional(),
 });
 
 export interface ResultsFile {
@@ -104,6 +107,8 @@ export interface ResultsFile {
   not_run: unknown[];
   runs: RunRecord[];
   assume_compromise?: unknown;
+  /** AIR-288: the gate rows, executed rows and field_content counts of the Should tier (no model, no runs) */
+  extra?: ExtraSection;
 }
 
 /** The transcript of one run (a run key is `(case, config, run)`). */

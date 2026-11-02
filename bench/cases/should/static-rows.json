@@ -1,0 +1,79 @@
+[
+  {
+    "id": "D01-agent",
+    "group": "D",
+    "kind": "contract",
+    "crate": "contracts/airlock-policy",
+    "test_bin": "invariants",
+    "tests": ["i03_every_owner_method_rejects_the_agent", "i03_owner_method_list_is_complete"],
+    "covered_by": "AIR-066 i03",
+    "expect": "the agent account cannot call any owner method, set_flags, asset_set, approve, set_nonce and book_add among them",
+    "covers": ["D01", "D02"]
+  },
+  {
+    "id": "RP01",
+    "group": "RP",
+    "kind": "contract",
+    "crate": "contracts/airlock-policy",
+    "test_bin": "invariants",
+    "tests": ["i02_replay_returns_the_stored_outcome_and_pays_once", "i02_changed_content_reverts_request_mismatch", "i08_expired_unborn_revoked_and_used_up_tasks_revert"],
+    "covered_by": "AIR-066 i02 and i08",
+    "expect": "a second submit of the recorded batch returns the stored outcome and pays once, changed content reverts, an action beyond the task's uses reverts"
+  },
+  {
+    "id": "RP02",
+    "group": "RP",
+    "kind": "contract",
+    "crate": "contracts/airlock-policy",
+    "test_bin": "invariants",
+    "tests": ["i08_forged_and_foreign_tasks_revert"],
+    "covered_by": "AIR-066 i08",
+    "expect": "another agent account replaying the captured task reverts, the agent binding"
+  },
+  {
+    "id": "RP03",
+    "group": "RP",
+    "kind": "contract",
+    "crate": "contracts/airlock-policy",
+    "test_bin": "invariants",
+    "tests": ["i08_forged_and_foreign_tasks_revert", "i08_expired_unborn_revoked_and_used_up_tasks_revert"],
+    "covered_by": "AIR-066 i08",
+    "expect": "the same signed task on another contract, after revoke_task or past its expiry reverts"
+  },
+  {
+    "id": "RP04",
+    "group": "RP",
+    "kind": "contract",
+    "crate": "contracts/airlock-policy",
+    "test_bin": "invariants",
+    "tests": ["i07_second_approve_reverts", "i07_rejected_cannot_be_approved"],
+    "covered_by": "AIR-066 i07",
+    "expect": "a second approve of one request reverts with NotPending, the NEAR transaction nonce is the protocol's and is not asserted"
+  },
+  {
+    "id": "H01",
+    "group": "H",
+    "kind": "card",
+    "cwd": "web",
+    "argv": ["pnpm", "exec", "tsx", "--test", "test/card.test.ts"],
+    "needs": "web/test/card.test.ts",
+    "passed_re": "^# pass ([0-9]+)$",
+    "of_re": "^# tests ([0-9]+)$",
+    "covered_by": "AIR-181 card render tests",
+    "expect": "the approval card renders the payee, the amount and the reason from the request, never from the agent's text",
+    "covers": ["H01"]
+  },
+  {
+    "id": "H02",
+    "group": "H",
+    "kind": "card",
+    "cwd": "web",
+    "argv": ["pnpm", "exec", "tsx", "--test", "test/approvals-route.test.tsx"],
+    "needs": "web/test/approvals-route.test.tsx",
+    "passed_re": "^# pass ([0-9]+)$",
+    "of_re": "^# tests ([0-9]+)$",
+    "covered_by": "AIR-182 approvals route test",
+    "expect": "at most five cards and an N more held line, no approve-all control, an evidence 404 shows the card without a snippet",
+    "covers": ["H02"]
+  }
+]

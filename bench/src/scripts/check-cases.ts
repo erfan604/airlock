@@ -140,10 +140,10 @@ export function coverageOf(cases: readonly Case[], rows: readonly NotRunRow[]): 
 }
 
 // the CLI's tag of one payment
-const tagOf = (p: PaymentFact): string => (p.outcome === 'ALLOW' ? 'allow' : `${p.outcome.toLowerCase()}:${p.reason ?? ''}`);
+export const tagOf = (p: PaymentFact): string => (p.outcome === 'ALLOW' ? 'allow' : `${p.outcome.toLowerCase()}:${p.reason ?? ''}`);
 
 // how an expectation reads as a tag; an ESCALATE or BLOCK without a reason matches any reason
-function expectedTag(expect: Expect, reason: string | undefined): string {
+export function expectedTag(expect: Expect, reason: string | undefined): string {
   switch (expect) {
     case 'ALLOW':
       return 'allow';
@@ -158,7 +158,7 @@ function expectedTag(expect: Expect, reason: string | undefined): string {
   }
 }
 
-function matches(expect: Expect, reason: string | undefined, tag: string): boolean {
+export function matches(expect: Expect, reason: string | undefined, tag: string): boolean {
   switch (expect) {
     case 'ALLOW':
       return tag === 'allow';
@@ -226,7 +226,7 @@ async function checkAttack(c: Case, config: CheckConfig, backend: GateBackend, o
 }
 
 // the static checks of one case; a problem is reported and the case is not run
-function staticProblems(c: Case): string[] {
+export function staticProblems(c: Case): string[] {
   const problems: string[] = [];
   const attempt = (what: string, fn: () => void): void => {
     try {

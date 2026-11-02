@@ -5,6 +5,7 @@ import type { Group } from '../runner/cases.ts';
 import type { ResultsFile, RunRecord } from '../runner/record.ts';
 import type { Config } from '../runner/types.ts';
 import { cell } from '../stats/format.ts';
+import { renderExtra, visibleNotRun } from './extra.ts';
 import { applyApprover, assistedUtility, attackSuccess, benignUtility, ep100, escalationPrecision, feasibility, utilityUnderAttack, v3FromV0 } from '../stats/metrics.ts';
 
 export const BEGIN_MARKER = '<!-- BEGIN GENERATED -->';
@@ -128,8 +129,10 @@ export function renderBlock(results: ResultsFile): string {
   else for (const id of infeasible) out.push(`${id} V0 attack runs ${v0.filter((r) => r.kind === 'attack' && r.case === id).length}`);
 
   out.push('', '### Not run');
-  if (results.not_run.length === 0) out.push('none');
-  else for (const r of results.not_run) out.push(`${field(r, 'id')} group ${field(r, 'group')} reason ${field(r, 'reason')} covered_by ${field(r, 'covered_by')}`);
+  // AIR-288: a row that a passed executed row covers is not "not run" any more; without `extra` nothing is dropped
+  const notRun = results.extra === undefined ? results.not_run : visibleNotRun(results.not_run, results.extra.rows);
+  if (notRun.length === 0) out.push('none');
+  else for (const r of notRun) out.push(`${field(r, 'id')} group ${field(r, 'group')} reason ${field(r, 'reason')} covered_by ${field(r, 'covered_by')}`);
 
   const ac = results.assume_compromise;
   if (ac !== undefined && ac !== null) {
@@ -137,6 +140,7 @@ export function renderBlock(results: ResultsFile): string {
     if (typeof ac === 'object' && !Array.isArray(ac)) for (const [k, v] of Object.entries(ac)) out.push(`${k} ${asText(v)}`);
     else out.push(asText(ac));
   }
+  if (results.extra !== undefined) out.push('', '### Extra rows', renderExtra(results.extra));
   out.push(END_MARKER);
   return out.join('\n');
 }

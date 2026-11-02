@@ -10,6 +10,7 @@ import type { BookRows, ToolName } from '@airlock/runtime/dsl';
 import { AmountError, toBaseUnits } from '@airlock/runtime/money';
 import { ToolArgError, UnknownToolError, fixtureTools } from '@airlock/runtime/tools';
 import type { World } from '@airlock/runtime/tools';
+import type { PolicyMocks } from './policy-mocks.ts';
 import { VANILLA_SYSTEM } from './prompt.ts';
 
 /** The closed set of reasons a payment did not execute (`null` means it executed with no approval). */
@@ -23,7 +24,11 @@ export interface Signer {
   transfer(p: { payee: string; asset: string; amount: bigint }): Promise<{ executed: boolean; reason: PaymentReason | null; txId?: string }>;
 }
 
-export type VanillaOpts = { seed?: number; temperature?: number };
+/**
+ * `extra` (AIR-288) gives the twin more tools than the Floor's: `system` replaces the system text and a call to a name of `tools` is answered by
+ * the mock. Absent, the prompt, the loop and every request hash are byte for byte what they were, which keeps the Floor recordings valid.
+ */
+export type VanillaOpts = { seed?: number; temperature?: number; extra?: { system: string; tools: PolicyMocks } | undefined };
 
 /** One run of V0: `request` is the owner's words, `signer` moves the money. */
 export async function runVanilla(request: string, world: World, model: string, signer: Signer, opts?: VanillaOpts): Promise<VanillaOutcome> {
@@ -37,13 +42,13 @@ export async function runVanilla(request: string, world: World, model: string, s
     const params: LlmParams = { temperature: opts?.temperature ?? config.temperature, max_tokens: MAX_TOKENS };
     if (opts?.seed !== undefined) params.seed = opts.seed;
     if (config.reasoning === 'low') params.reasoning = 'low';
-    const result = await complete({ role: 'vanilla', model, system: VANILLA_SYSTEM, user: transcript.join('\n'), params });
+    const result = await complete({ role: 'vanilla', model, system: opts?.extra?.system ?? VANILLA_SYSTEM, user: transcript.join('\n'), params });
     llm.push(result);
     const reply = parseReply(result.text);
     if (reply.kind === 'final') return { payments, answer: reply.answer, calls, llm };
     if (reply.kind === 'plain') return { payments, answer: result.text, calls, llm };
     calls += 1;
-    const observation = await observe(reply.tool, reply.args, { world, tools, signer, payments });
+    const observation = await observe(reply.tool, reply.args, { world, tools, signer, payments, extra: opts?.extra?.tools });
     transcript.push(`Step ${calls}: ${reply.tool} ${JSON.stringify(reply.args ?? {})}`, `Result: ${observation}`);
   }
   return { payments, answer: '', calls, llm };
@@ -103,7 +108,7 @@ function parseReply(text: string): Reply {
   return { kind: 'plain' };
 }
 
-type Env = { world: World; tools: ReturnType<typeof fixtureTools>; signer: Signer; payments: PaymentAttempt[] };
+type Env = { world: World; tools: ReturnType<typeof fixtureTools>; signer: Signer; payments: PaymentAttempt[]; extra: PolicyMocks | undefined };
 
 // the observation of one tool turn; only the model's own mistakes are caught, and only their class name goes back to the model
 async function observe(tool: string, args: unknown, env: Env): Promise<string> {
@@ -111,6 +116,7 @@ async function observe(tool: string, args: unknown, env: Env): Promise<string> {
     if (args !== undefined && (args === null || typeof args !== 'object' || Array.isArray(args))) throw new ToolArgError('args must be an object');
     const given = (args ?? {}) as Record<string, unknown>;
     if (tool === 'transfer') return await transfer(given, env);
+    if (env.extra !== undefined && env.extra.names.includes(tool)) return (JSON.stringify(await env.extra.call(tool, given)) ?? 'null').slice(0, MAX_OBSERVATION);
     const { raw } = await env.tools.call(tool as ToolName, given);
     return (JSON.stringify(raw) ?? 'null').slice(0, MAX_OBSERVATION);
   } catch (e) {
