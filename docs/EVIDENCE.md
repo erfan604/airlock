@@ -35,7 +35,7 @@ vanilla models: z-ai/glm-5.3-flash only, so the baseline shares the planner mode
 
 Sandbox pre-check, neard 2.11.0 (protocol 83), `cargo test --test gas -- --nocapture --test-threads=2` on 2026-11-02. Testnet is protocol 88 and is not measured yet, so these rows are indicative; the full text and the method are in `docs/gas.md`.
 
-Testnet, 2026-11-02 (weather GOOD): `GAS TESTNET batch3 ... need=115.617` (tx 9tNTyDLsv4zNjTwySJgxGF7itMWDAMLou64GacMp2KqC) and `GAS TESTNET single_evm ... need=41.648`. The approve sweep is pending the owner.
+Testnet, 2026-11-02 (weather GOOD): `GAS TESTNET batch3 ... need=115.617` (tx 9tNTyDLsv4zNjTwySJgxGF7itMWDAMLou64GacMp2KqC) and `GAS TESTNET single_evm ... need=41.648`. Approve sweep: 30 and 40 Tgas failed, 50 succeeded (`APPROVE_MIN_TGAS=50 testnet`, `GAS TESTNET approve_evm ... need=41.328`), so `APPROVE_PREPAID_TGAS` is 65. The owner's yes was given in chat by Erfan and relayed by the coordinator.
 
 | Row | burnt_total (Tgas) | burnt_first (Tgas) | reserved (Tgas) | need (Tgas) |
 | --- | --- | --- | --- | --- |

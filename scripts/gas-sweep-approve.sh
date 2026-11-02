@@ -71,10 +71,16 @@ tx_state() {
 # 3. the sweep
 MIN=""
 HASH=""
-N=30
+N="${SWEEP_START_TGAS:-30}"
 while [ "$N" -le 150 ]; do
   OUT="$("$NEAR" contract call-function as-transaction "$POLICY" approve json-args "$ARGS" prepaid-gas "$N Tgas" attached-deposit '1 yoctoNEAR' sign-as "$OWNER" network-config testnet sign-with-keychain send 2>&1)"
   H="$(printf '%s\n' "$OUT" | grep -oE 'Transaction ID: *[1-9A-HJ-NP-Za-km-z]+' | head -1 | sed -E 's/^Transaction ID: *//')"
+  if [ -z "$H" ] && printf '%s' "$OUT" | grep -q 'Exceeded the prepaid gas'; then
+    # the near CLI prints no transaction id for a call that ran out of gas; the chain still rejected it, so count it as failed
+    echo "SWEEP $N Tgas failed"
+    N=$((N + 10))
+    continue
+  fi
   if [ -z "$H" ]; then
     echo "the near CLI gave no transaction id at $N Tgas, so the result cannot be checked:" >&2
     printf '%s\n' "$OUT" | tail -5 >&2

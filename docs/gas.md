@@ -88,20 +88,20 @@ Sandbox neard 2.11.0 is protocol 83 and testnet runs protocol 88, so the sandbox
 authoritative. The testnet numbers come from `scripts/gas-testnet.ts` (read only) after `scripts/mpc-smoke.ts --batch3` and
 `scripts/gas-sweep-approve.sh` (the owner runs the sweep and types one `yes`).
 
-TESTNET NOT MEASURED: the live batch and the live approve sweep need signed testnet transactions, which this build step did not send.
-The coordinator runs them (commands in the ticket notes) and replaces this section with the `GAS TESTNET` rows `batch3`,
-`approve_evm` and `single_evm` and the line `APPROVE_MIN_TGAS=<n> testnet`.
-
-Measured so far on testnet (2026-11-02, signer weather GOOD p50 4.2 s, protocol 88):
+Measured on testnet (2026-11-02, signer weather GOOD p50 4.1 to 4.2 s, protocol 88):
 
 ```
 GAS TESTNET batch3 burnt_total=45.185 burnt_first=10.617 receipts=20 reserved=105.000 need=115.617
+GAS TESTNET approve_evm burnt_total=18.313 burnt_first=6.328 receipts=8 reserved=35.000 need=41.328
 GAS TESTNET single_evm burnt_total=18.643 burnt_first=6.648 receipts=8 reserved=35.000 need=41.648
 ```
 
-The batch of three needs 115.617 Tgas against 115.441 on the sandbox, under the 300 Tgas cap, so BATCH CAP 3 holds on testnet.
-NEAR tx of the batch: `9tNTyDLsv4zNjTwySJgxGF7itMWDAMLou64GacMp2KqC`. The approve sweep waits on the owner's `yes`
-(pending_id 3, escalated in `BXNFPqFbci2ctJWim4vumWP8ggmmJdBJmEqwS7LirwGs`), so `APPROVE_PREPAID_TGAS` stays 150.
+The batch of three needs 115.617 Tgas against 115.441 on the sandbox, so BATCH CAP 3 holds on testnet (batch NEAR tx
+`9tNTyDLsv4zNjTwySJgxGF7itMWDAMLou64GacMp2KqC`). The approve sweep on pending_id 3 (escalated in
+`BXNFPqFbci2ctJWim4vumWP8ggmmJdBJmEqwS7LirwGs`) failed at 30 and 40 Tgas and succeeded at 50 Tgas, the same as the sandbox.
+The owner's `yes` for this sweep was given by Erfan in chat and relayed to the script's prompt by the coordinator session.
+
+APPROVE_MIN_TGAS=50 testnet
 
 One real testnet row exists already, from the signed payment of AIR-102 (a single EVM request, saved as
 `scripts/fixtures/gas/tx_status_single_evm.json` and read by `scripts/gas-testnet.test.ts`):
@@ -114,17 +114,16 @@ The sandbox said 41.310 for the same request, so the skew between protocol 83 an
 
 ## Decisions
 
-The batch cap stays at three on the sandbox pre-check only. Three EVM requests need about 115 Tgas of the 225 Tgas ceiling, and the
-cap of three also matches the three request cumulative Kani harness. The testnet batch will confirm or change it.
+The batch cap stays at three. Three EVM requests need about 115 Tgas of the 225 Tgas ceiling, and the
+cap of three also matches the three request cumulative Kani harness. The testnet batch confirmed it.
 
 BATCH CAP 3 CONFIRMED
 
-The prepaid gas of `approve` stays at the value it had, 150 Tgas, until the testnet sweep measures a minimum. The sandbox minimum is
-50 Tgas, and the published value will be the testnet minimum times 1.3 rounded up (the larger of the two when they differ).
+The prepaid gas of `approve` is the testnet minimum times 1.3 rounded up. Testnet and sandbox both measured 50 Tgas, so it is 65.
 
 APPROVE_MIN_TGAS=50 sandbox
 
-APPROVE_PREPAID_TGAS=150
+APPROVE_PREPAID_TGAS=65
 
 The same number is set in `scripts/approve-cli.sh` (the `APPROVE_PREPAID_TGAS` line) and in `web/src/wallet/approve.ts`
 (`APPROVE_PREPAID_TGAS`); the wallet test reads the script's line and requires the same number.

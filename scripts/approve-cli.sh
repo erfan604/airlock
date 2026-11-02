@@ -7,7 +7,7 @@
 # The six values of `approve` come from the stored RequestView only, never from the command line.
 # Env: NEAR (default near), OWNER and POLICY (default: keys owner and policy of fixtures/accounts.testnet.json), APPROVE_TXID_DIR (default
 # target/: after --run the transaction id is saved there as approve-<id>.txid, AIR-165).
-APPROVE_PREPAID_TGAS="${APPROVE_PREPAID_TGAS:-150}"
+APPROVE_PREPAID_TGAS="${APPROVE_PREPAID_TGAS:-65}"
 REJECT_PREPAID_TGAS=30
 set -uo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -6,7 +6,7 @@ import type { NearWalletBase } from '@hot-labs/near-connect';
 import type { ApproveArgs, ApproveResult } from '../approvals/Card.tsx';
 import { waitForRequest } from './status.ts';
 
-export const APPROVE_PREPAID_TGAS = 150;
+export const APPROVE_PREPAID_TGAS = 65;
 export const REJECT_PREPAID_TGAS = 30;
 
 const TGAS = 1_000_000_000_000n;

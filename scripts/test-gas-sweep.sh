@@ -30,6 +30,8 @@ for a in "$@"; do
 done
 echo "$*" >> "$FAKE_DIR/near.log"
 if [ "${FAKE_NO_TXID:-0}" = 1 ]; then echo "error: no network"; exit 1; fi
+# the real near CLI prints no transaction id when a call runs out of gas (seen on testnet 2026-11-02)
+if [ -n "${FAKE_OOG_BELOW:-}" ] && [ "$gas" -lt "$FAKE_OOG_BELOW" ]; then echo 'Error: ExecutionError("Exceeded the prepaid gas.")'; exit 1; fi
 # base58 has no 0, so the digits of the gas are written as letters: 0 to 9 become a b c d e f g h j k
 echo "Transaction ID: Tx$(printf '%s' "$gas" | tr '0123456789' 'abcdefghjk')Z"
 EOF
@@ -112,6 +114,12 @@ run yes FAKE_MIN=30 FAKE_NO_TXID=1
 [ "$(cat "$work/rc")" = 1 ] && ! grep -q SWEEP "$work/out" && ok "no transaction id stops" || bad "no transaction id"
 run yes FAKE_MIN=30 FAKE_PENDING=1
 [ "$(cat "$work/rc")" = 1 ] && ! grep -q 'SWEEP 30 Tgas' "$work/out" && ok "a status that never finalizes stops" || bad "pending status"
+
+# 7. an out-of-gas call without a transaction id counts as failed and the sweep goes on; SWEEP_START_TGAS resumes higher
+run yes FAKE_MIN=50 FAKE_OOG_BELOW=50
+[ "$(cat "$work/rc")" = 0 ] && grep -qx 'SWEEP 30 Tgas failed' "$work/out" && grep -qx 'SWEEP 40 Tgas failed' "$work/out" && grep -qx 'APPROVE_MIN_TGAS=50 testnet' "$work/out" && ok "out of gas without an id goes on" || bad "out of gas without an id"
+run yes FAKE_MIN=50 SWEEP_START_TGAS=40
+[ "$(head -1 "$work/near.log" | grep -c 'prepaid-gas 40 Tgas')" = 1 ] && ok "SWEEP_START_TGAS starts at 40" || bad "SWEEP_START_TGAS"
 "$SWEEP" 0 < /dev/null > /dev/null 2>&1
 [ "$?" = 2 ] && ok "id 0 is a usage error" || bad "id 0"
 "$SWEEP" < /dev/null > /dev/null 2>&1
