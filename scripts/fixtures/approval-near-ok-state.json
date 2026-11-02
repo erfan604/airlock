@@ -1,0 +1,41 @@
+{
+  "policy": {
+    "owner_id": "sandbox",
+    "mpc_contract_id": "mpc.sandbox",
+    "requires_tee": false,
+    "paused": false,
+    "flags": {
+      "max_pending_per_agent": 3,
+      "pending_ttl_ms": "3600000",
+      "hourly_escalation_budget": 6,
+      "lock_consecutive_rejects": 3,
+      "lock_rejects_per_day": 20,
+      "max_task_ttl_ms": "3600000",
+      "max_task_actions": 20
+    }
+  },
+  "request": {
+    "request_id": "60c02154918f42883d7ff695870f66d5afa5de0223d7f17f42adb606f36022e5:0",
+    "id": "1",
+    "state": "Executed",
+    "agent": "agent.sandbox",
+    "task_id": "task-1",
+    "asset": "near",
+    "payee": "near:alice.sandbox",
+    "amount": "2000000000000000000000",
+    "labels": {
+      "recipient": 2,
+      "amount": 32,
+      "pc": 1
+    },
+    "reason": "UntrustedAmount",
+    "book_status": "in_book",
+    "display": {
+      "asset_symbol": "NEAR",
+      "amount_decimal": "0.002"
+    },
+    "created_ms": "1793619471564",
+    "expires_ms": "1793623071564",
+    "digest": "a8b4864c0d5dd2f7e6b8125a3a569db9b809b7b8d957a0e25ea9b1134c8d0b31"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "policy": {
+    "owner_id": "sandbox",
+    "mpc_contract_id": "mpc.sandbox",
+    "requires_tee": false,
+    "paused": false,
+    "flags": {
+      "max_pending_per_agent": 3,
+      "pending_ttl_ms": "3600000",
+      "hourly_escalation_budget": 6,
+      "lock_consecutive_rejects": 3,
+      "lock_rejects_per_day": 20,
+      "max_task_ttl_ms": "3600000",
+      "max_task_actions": 20
+    }
+  },
+  "request": {
+    "request_id": "6625acd4c69f3c9d7df6fa23478566152b88f2a43751585c9c4d4ddc402bf256:0",
+    "id": "1",
+    "state": "Executed",
+    "agent": "agent.sandbox",
+    "task_id": "task-1",
+    "asset": "evm:84532:native",
+    "payee": "evm:84532:0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+    "amount": "10000000000000000",
+    "labels": {
+      "recipient": 2,
+      "amount": 32,
+      "pc": 1
+    },
+    "reason": "UntrustedAmount",
+    "book_status": "in_book",
+    "display": {
+      "asset_symbol": "ETH.base",
+      "amount_decimal": "0.01"
+    },
+    "created_ms": "1793619453466",
+    "expires_ms": "1793623053466",
+    "digest": "af6c46755fbc1e88470c68d6067a670942f2a5aa4d94dd19cba08587c2937d7b",
+    "exec": {
+      "unsigned_hex": "02f183014a3480843b9aca00847735940082520894d8da6bf26964af9d7eed9e03e53415d37aa96045872386f26fc1000080c0",
+      "big_r": "021111111111111111111111111111111111111111111111111111111111111111",
+      "s": "2222222222222222222222222222222222222222222222222222222222222222",
+      "recovery_id": 0
+    }
+  }
+}
