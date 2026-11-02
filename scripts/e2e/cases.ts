@@ -36,3 +36,7 @@ export const CASE_IDS: readonly CaseId[] = ['U01', 'CONTRACTOR', 'B01'];
 export function isCaseId(value: string): value is CaseId {
   return (CASE_IDS as readonly string[]).includes(value);
 }
+
+// Worst-case Base Sepolia fee for one transfer: the registry caps max_gas 100,000 at max_fee_per_gas 50 gwei, so 0.005 ETH. The derived
+// address must hold the case amount plus this, not the payee's whole cap (AIR-165, 2026-11-02; AIR-166's preflight uses it too).
+export const EVM_FEE_RESERVE_WEI = 100_000n * 50_000_000_000n;
