@@ -1,0 +1,4 @@
+{
+  "rule": "V1 limits are origin-blind and equal AIRLOCK's: the per-payee limit is the book entry's daily_limit and the asset limits are hard_cap and daily_cap of assets.json; V1-tight uses the book entry's cap, falling back to daily_limit when the cap is null",
+  "payee_limit": { "V1": "daily_limit", "V1-tight": "cap" }
+}
