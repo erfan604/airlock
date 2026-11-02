@@ -7,6 +7,7 @@ import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertExtra } from '../extra/assert.ts';
+import { expandGen } from '../extra/unicode-gen.ts';
 import { BENCH_ROOT } from '../runner/assets.ts';
 import { VerdictCliBackend } from '../runner/backend.ts';
 import { CaseLoadError, caseOrigin, loadCases } from '../runner/cases.ts';
@@ -76,10 +77,19 @@ export async function main(argv: string[], io: CheckExtraIo = {}): Promise<numbe
     return wanted === undefined || (origin !== undefined && wanted.includes(origin.file));
   });
   problems.push(...extraProblems([...floor, ...should]), ...dataFiles(root).flatMap(byteProblems));
+  // a `{ gen }` value (AIR-289) is replaced by its generated string before anything runs; an unknown name is a problem of that case
+  const expanded: Case[] = [];
+  for (const c of selected) {
+    try {
+      expanded.push(expandGen(c));
+    } catch (e) {
+      problems.push(`INVALID ${c.id} gen: ${e instanceof Error ? e.message : 'failed'}`);
+    }
+  }
   let assertions = 0;
   const backend = new VerdictCliBackend();
   try {
-    for (const c of selected) {
+    for (const c of expanded) {
       const bad = staticProblems(c);
       problems.push(...bad);
       if (bad.length > 0) continue;

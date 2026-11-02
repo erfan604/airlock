@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertExtra } from '../extra/assert.ts';
 import { fieldContentOf } from '../extra/field-content.ts';
+import { expandGen } from '../extra/unicode-gen.ts';
 import { writeExtra } from '../extra/results.ts';
 import { runStaticRows, spawnExec, staticSummary } from '../extra/static.ts';
 import type { Exec } from '../extra/static.ts';
@@ -46,7 +47,7 @@ export async function main(argv: string[], io: ExtraRunIo = {}): Promise<number>
   }
   const dir = resolve(io.resultsDir ?? join(dirname(root), 'bench', 'results'));
   const floor = loadCases(join(root, 'cases'));
-  const should = loadCases(join(root, 'cases', 'should'));
+  const should = loadCases(join(root, 'cases', 'should')).map(expandGen);
   const rows: ExtraCaseRow[] = [];
   let mismatches = 0;
   const backend = new VerdictCliBackend();

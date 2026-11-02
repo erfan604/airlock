@@ -11,11 +11,22 @@ export interface StaticRowBase {
   covers?: string[];
 }
 
-/** A contract row runs sandbox tests by exact name; a card row runs a test script of the web package and reads its two TAP counts. */
+/**
+ * A contract row runs sandbox tests by exact name; a card row runs a test script of the web package and reads its two TAP counts; a unit row (AIR-289)
+ * calls one function of `@airlock/runtime/dsl` in process on each input and compares the outcome name with `expect`: `canonicalEvm` gives `reject`
+ * (a KeyError), `same` (the result is the address part of `book`, when the row names a book key) or `different`; `checkPlan` gives the PlanRejected
+ * code or `ok`.
+ */
+export type UnitFn = 'canonicalEvm' | 'checkPlan';
+export interface UnitInput {
+  input: unknown;
+  expect: string;
+}
 export type StaticRow = StaticRowBase &
   (
     | { kind: 'contract'; crate: string; test_bin: string; tests: string[] }
     | { kind: 'card'; cwd: string; argv: string[]; needs: string; passed_re: string; of_re: string }
+    | { kind: 'unit'; fn: UnitFn; book?: string; inputs: UnitInput[] }
   );
 
 export interface ExecutedRow {
@@ -99,6 +110,13 @@ export const StaticRowsSchema = z.array(
       needs: z.string().min(1),
       passed_re: Regex,
       of_re: Regex,
+    }),
+    z.strictObject({
+      ...Base,
+      kind: z.literal('unit'),
+      fn: z.enum(['canonicalEvm', 'checkPlan']),
+      book: z.string().min(1).optional(),
+      inputs: z.array(z.strictObject({ input: z.unknown(), expect: z.string().min(1) })).min(1),
     }),
   ]),
 );

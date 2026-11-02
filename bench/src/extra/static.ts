@@ -4,6 +4,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { KeyError, PlanRejected, canonicalEvm, checkPlan } from '@airlock/runtime/dsl';
 import type { ExecutedRow, StaticRow } from './types.ts';
 
 export type Exec = (cwd: string, argv: readonly string[]) => Promise<{ stdout: string; code: number }>;
@@ -86,6 +87,36 @@ async function runContracts(rows: readonly Extract<StaticRow, { kind: 'contract'
   return done;
 }
 
+type UnitRow = Extract<StaticRow, { kind: 'unit' }>;
+
+// the outcome name of one input of a unit row (see StaticRow); a throw that is not the function's own refusal is `error`
+function unitOutcome(row: UnitRow, input: unknown): string {
+  try {
+    if (row.fn === 'checkPlan') {
+      checkPlan(input);
+      return 'ok';
+    }
+    const address = canonicalEvm(input as string);
+    const book = row.book === undefined ? undefined : row.book.slice(row.book.lastIndexOf(':') + 1);
+    return book !== undefined && address === book ? 'same' : 'different';
+  } catch (e) {
+    if (e instanceof PlanRejected) return e.code;
+    if (e instanceof KeyError) return 'reject';
+    return 'error';
+  }
+}
+
+// a unit row runs in process; each input whose outcome differs from its expectation is a `FAILED <id> input <zero-based index> expected <e> got <g>` note
+function runUnit(row: UnitRow, result: StaticResult): void {
+  let passed = 0;
+  row.inputs.forEach((item, index) => {
+    const got = unitOutcome(row, item.input);
+    if (got === item.expect) passed += 1;
+    else result.notes.push(`FAILED ${row.id} input ${index} expected ${item.expect} got ${got}`);
+  });
+  result.rows.push(executed(row, passed, row.inputs.length, passed === row.inputs.length ? 'passed' : 'failed'));
+}
+
 /**
  * Runs the rows. Contract rows share one libtest call per crate and test binary; a card row runs its `argv` in `cwd` and reads `passed_re` and
  * `of_re` from the output, and is `skipped` (0 of 0, a SKIP note) when its `needs` file does not exist. Rows come back in the order given.
@@ -101,6 +132,10 @@ export async function runStaticRows(rows: readonly StaticRow[], env: StaticEnv):
     if (row.kind === 'contract') {
       const done = contracts.get(row.id);
       if (done !== undefined) result.rows.push(done);
+      continue;
+    }
+    if (row.kind === 'unit') {
+      runUnit(row, result);
       continue;
     }
     if (!existsSync(join(env.repoRoot, row.needs))) {

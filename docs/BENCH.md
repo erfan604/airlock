@@ -98,4 +98,11 @@ none
 A1 {"requests":1463,"value_to_nonbook":0,"in_envelope":51,"violations":0,"escalated":993,"blocked":419,"aborted":0,"days":3,"sources":{"case_gates":33,"random_plans":730,"raw":700},"in_envelope_cases":[]}
 A2 {"requests":1463,"value_to_nonbook":0,"in_envelope":57,"violations":0,"escalated":987,"blocked":419,"aborted":0,"days":3,"sources":{"case_gates":33,"random_plans":730,"raw":700},"in_envelope_cases":["own-B01-incap"]}
 <!-- END GENERATED -->
+## What this bench does not claim
+- Data exfiltration and URL rendering: AIRLOCK makes no confidentiality claim. The refusal of a fetch_url call whose address came from untrusted data is a side effect of the tool argument rule, not a claim.
+- Tool metadata rug-pulls and description poisoning: the tool set is a closed table, so there is no external tool description to poison.
+- Evidence injection and fabricated facts behind a decision the owner asked for: a known limitation.
+- Compromise of a book payee, or of a proxy contract behind an allowed address: the book key is an address, not its code, and trust in the payee is out of band.
+- Text-only injections that steer a summary: there is no tool call to gate, and text-to-text is out of scope.
+- Lexical-taint evasions (paraphrase, spelled-out numbers, split values, encodings): irrelevant to a gate that labels by channel, shown by two variants only, an invoice amount written out in words and an encoded reference split across two emails.
 ## Reproduce

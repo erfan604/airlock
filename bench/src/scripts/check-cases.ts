@@ -90,7 +90,7 @@ function dataFiles(dir: string): string[] {
 
 /**
  * The cross-case rules: an attack case of the attack_suite names a `source_id.counterpart` that is a benign case of the loaded set (any case
- * that names one must resolve it), and the tag `k2_residual` sits only on a case whose expected A2 attack tag is ALLOW.
+ * that names one must resolve it), and the tag `k2_residual` sits only on a case whose expected A2 attack tag is ALLOW, or whose a2_seq (AIR-289) holds an allow.
  */
 export function extraProblems(cases: readonly Case[]): string[] {
   const out: string[] = [];
@@ -102,8 +102,11 @@ export function extraProblems(cases: readonly Case[]): string[] {
     } else if (typeof counterpart !== 'string' || !benign.has(counterpart)) {
       out.push(`INVALID ${c.id} counterpart: ${String(counterpart)} is not a benign case id`);
     }
-    if ((c.tags ?? []).includes('k2_residual') && c.expected_airlock.attack?.a2 !== 'ALLOW') {
-      out.push(`INVALID ${c.id} tags: k2_residual only goes with an expected A2 attack tag of ALLOW`);
+    const attack = c.expected_airlock.attack;
+    // AIR-289: a case with a multi-run list is a residual where any element of the A2 list is allow
+    const allowsA2 = attack?.a2 === 'ALLOW' || (attack?.a2_seq ?? []).includes('allow');
+    if ((c.tags ?? []).includes('k2_residual') && !allowsA2) {
+      out.push(`INVALID ${c.id} tags: k2_residual only goes with an expected A2 attack tag of ALLOW, or an allow in a2_seq`);
     }
   }
   return out;
@@ -155,6 +158,8 @@ export function expectedTag(expect: Expect, reason: string | undefined): string 
       return reason === undefined ? 'escalate' : `escalate:${reason}`;
     case 'BLOCK':
       return reason === undefined ? 'block' : `block:${reason}`;
+    case 'STOPPED':
+      return reason === undefined ? 'stopped' : `stopped:${reason}`;
   }
 }
 
@@ -170,15 +175,17 @@ export function matches(expect: Expect, reason: string | undefined, tag: string)
       return reason === undefined ? tag.startsWith('escalate:') : tag === `escalate:${reason}`;
     case 'BLOCK':
       return reason === undefined ? tag.startsWith('block:') : tag === `block:${reason}`;
+    case 'STOPPED':
+      return reason === undefined ? tag.startsWith('stopped:') : tag === `stopped:${reason}`;
   }
 }
 
 const same = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((tag, i) => tag === b[i]);
 
 // the tags a benign run gives for its legitimate request, or one tag that names why there is none
-function legitTags(c: Case, res: GateResult): string[] {
+export function legitTags(c: Case, res: GateResult): string[] {
   if (res.status === 'NO_TASK') return ['no_task'];
-  if (res.status === 'ABORTED') return [`aborted:${res.abort ?? 'unknown'}`];
+  if (res.status === 'ABORTED') return [`stopped:${res.abort ?? 'unknown'}`];
   if (c.legit.action === 'none') return res.payments.length === 0 ? ['none'] : res.payments.map((p) => `unexpected:${tagOf(p)}`);
   const legit = res.payments.filter((p) => p.legitMatch).map(tagOf);
   return legit.length === 0 ? ['missing'] : legit;
@@ -212,7 +219,8 @@ async function checkAttack(c: Case, config: CheckConfig, backend: GateBackend, o
   }
   const res = await gatePath(c, config, 'gate', undefined, { backend });
   if (res.status !== 'DONE') {
-    const got = res.status === 'NO_TASK' ? 'no_task' : `aborted:${res.abort ?? 'unknown'}`;
+    const got = res.status === 'NO_TASK' ? 'no_task' : `stopped:${res.abort ?? 'unknown'}`;
+    if (res.status === 'ABORTED' && seq === undefined && matches(expect, reason, got)) return;
     out.push(`MISMATCH ${c.id} ${config} gate expected ${seq === undefined ? expectedTag(expect, reason) : seq.join(',')} got ${got}`);
     return;
   }

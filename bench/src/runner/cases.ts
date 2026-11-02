@@ -17,14 +17,18 @@ import { BENCH_ROOT, benchAssets } from './assets.ts';
 // ---- the vocabulary ----
 export type Group = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'U' | 'S' | 'X' | 'P'; // S, X, P are new (SPEC R5-18)
 export type Tag = 'drain' | 'k2_residual' | 'memory' | 'second_stage' | 'adapted_nospend' | 'tier3' | 'proposed' | 'should' | 'raw_gate' | 'field_content';
-/** NO_TASK: the analyzer refuses to build a task (its errors are not empty). NONE: nothing was proposed. */
-export type Expect = 'ALLOW' | 'ESCALATE' | 'BLOCK' | 'NONE' | 'NO_TASK';
+/**
+ * NO_TASK: the analyzer refuses to build a task (its errors are not empty). NONE: nothing was proposed. STOPPED (AIR-289, attack cases with a
+ * plan gate only): the gate path ended ABORTED with no payment, the interpreter refused before any request existed; the reason names the AbortCode.
+ */
+export type Expect = 'ALLOW' | 'ESCALATE' | 'BLOCK' | 'NONE' | 'NO_TASK' | 'STOPPED';
 /** The n-th extract step executed gets the n-th object; the interpreter drops keys outside the schema and reads a missing key as null. */
 export type Extraction = Record<string, unknown>[];
 
 const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'U', 'S', 'X', 'P'] as const;
 const TAGS = ['drain', 'k2_residual', 'memory', 'second_stage', 'adapted_nospend', 'tier3', 'proposed', 'should', 'raw_gate', 'field_content'] as const;
-const EXPECTS = ['ALLOW', 'ESCALATE', 'BLOCK', 'NONE', 'NO_TASK'] as const;
+const EXPECTS = ['ALLOW', 'ESCALATE', 'BLOCK', 'NONE', 'NO_TASK', 'STOPPED'] as const;
+const LEGIT_EXPECTS = ['ALLOW', 'ESCALATE', 'BLOCK', 'NONE', 'NO_TASK'] as const;
 
 // ---- errors ----
 export type CaseLoadCode =
@@ -167,8 +171,8 @@ const PlanJson = z.custom<unknown>((v) => v !== undefined, { message: 'a plan is
 
 const SeqTag = z.string().regex(/^(allow|escalate:[A-Za-z]+|block:[A-Za-z]+)$/);
 const LegitExpected = z.strictObject({
-  a1: z.enum(EXPECTS),
-  a2: z.enum(EXPECTS),
+  a1: z.enum(LEGIT_EXPECTS),
+  a2: z.enum(LEGIT_EXPECTS),
   a1_reason: z.string().optional(),
   a2_reason: z.string().optional(),
 });
@@ -205,7 +209,9 @@ const CaseShape = z.strictObject({
   attacker_goal: GoalLoose.nullable(),
   legit: LegitSchema,
   reference: z.strictObject({ plan: PlanJson, extract: ExtractionSchema.optional() }),
-  gate: z.union([z.strictObject({ plan: PlanJson, extract: ExtractionSchema }), z.strictObject({ raw: z.array(RawGateRequestSchema).min(1) })]).nullable(),
+  gate: z
+    .union([z.strictObject({ plan: PlanJson, extract: ExtractionSchema, runs: z.int().min(2).max(5).optional() }), z.strictObject({ raw: z.array(RawGateRequestSchema).min(1) })])
+    .nullable(),
   expected_airlock: z.strictObject({ legit: LegitExpected.nullable(), attack: AttackExpected.nullable() }),
   license_note: z.string(),
   tags: z.array(z.enum(TAGS)).optional(),
@@ -226,7 +232,7 @@ export interface Case {
   /** the plan an honest planner emits for `request`; its analyzer output is the owner's signed task. `extract` is required for benign cases */
   reference: { plan: unknown; extract?: Extraction };
   /** attack cases: the attacker's path to the gate; `raw` is for attacks the interpreter cannot express, tag `raw_gate` */
-  gate: { plan: unknown; extract: Extraction } | { raw: RawGateRequest[] } | null;
+  gate: { plan: unknown; extract: Extraction; runs?: number } | { raw: RawGateRequest[] } | null;
   expected_airlock: {
     legit: { a1: Expect; a2: Expect; a1_reason?: string; a2_reason?: string } | null;
     attack: { a1: Expect; a2: Expect; a1_reason?: string; a2_reason?: string; a1_seq?: string[]; a2_seq?: string[]; rule: string; note: string } | null;
@@ -259,6 +265,13 @@ export function rootForCasesDir(dir: string): string {
 export function caseOrigin(c: Case): { file: string; line: number } | undefined {
   const o = origins.get(c);
   return o === undefined ? undefined : { file: o.file, line: o.line };
+}
+
+/** Registers where `from` came from for `to`, a copy of it (`expandGen` returns copies); `to` is returned. */
+export function copyOrigin(from: Case, to: Case): Case {
+  const o = origins.get(from);
+  if (o !== undefined) origins.set(to, o);
+  return to;
 }
 
 /** The folder `worldOfCase` reads under by default: the one of the loaded file, or the real bench folder for a case built in code. */
@@ -341,12 +354,18 @@ function expectationProblem(c: Case): string | null {
     rows.push(['attack', attack]);
     if (legit !== null) rows.push(['legit', legit]);
   }
+  if (c.gate !== null && 'plan' in c.gate && c.gate.runs !== undefined) {
+    const a = c.expected_airlock.attack;
+    if (a === null) return 'gate.runs needs an attack case';
+    if (a.a1_seq?.length !== c.gate.runs || a.a2_seq?.length !== c.gate.runs) return 'gate.runs needs a1_seq and a2_seq with one tag per run';
+  }
   for (const [name, row] of rows) {
     for (const key of ['a1', 'a2'] as const) {
       const expect = row[key];
       const reason = key === 'a1' ? row.a1_reason : row.a2_reason;
       const seq = key === 'a1' ? row.a1_seq : row.a2_seq;
-      const verdict = expect === 'ESCALATE' || expect === 'BLOCK';
+      const verdict = expect === 'ESCALATE' || expect === 'BLOCK' || expect === 'STOPPED';
+      if (expect === 'STOPPED' && !(name === 'attack' && c.gate !== null && 'plan' in c.gate)) return `${name}.${key} STOPPED needs an attack case with a plan gate`;
       if (seq !== undefined) {
         const first = seq[0];
         if (first === undefined || classOf(first) !== expect) return `${name}.${key} differs from the class of the first element of ${key}_seq`;

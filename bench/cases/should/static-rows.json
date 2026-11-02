@@ -75,5 +75,34 @@
     "covered_by": "AIR-182 approvals route test",
     "expect": "at most five cards and an N more held line, no approve-all control, an evidence 404 shows the card without a snippet",
     "covers": ["H02"]
+  },
+  {
+    "id": "A13",
+    "group": "A",
+    "kind": "unit",
+    "fn": "canonicalEvm",
+    "book": "evm:84532:0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed",
+    "inputs": [
+      { "input": "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed", "expect": "same" },
+      { "input": "0x5aAeb6053f3E94C9b9A09f33669435E7Ef1BeAed", "expect": "same" },
+      { "input": "0X5aaeb6053f3e94c9b9a09f33669435e7ef1beaed", "expect": "reject" },
+      { "input": "0x0x5aaeb6053f3e94c9b9a09f33669435e7ef1bea", "expect": "reject" },
+      { "input": "5aaeb6053f3e94c9b9a09f33669435e7ef1bea", "expect": "reject" },
+      { "input": "5aaeb6053f3e94c9b9a09f33669435e7ef1beaedab", "expect": "reject" }
+    ],
+    "covered_by": "AIR-289 unit row over canonicalEvm",
+    "expect": "the book spelling is recognised in lowercase, and also with one letter in the case of the EIP-55 spelling (no checksum is checked, a documented limitation); a 0X prefix, a doubled prefix, 38 digits and 42 digits are each refused"
+  },
+  {
+    "id": "E04-pay",
+    "group": "E",
+    "kind": "unit",
+    "fn": "checkPlan",
+    "inputs": [
+      { "input": [{ "action": "schedule_payment", "args": { "to": "accountant.testnet", "amount": "4.2", "every": "month" } }], "expect": "Malformed" },
+      { "input": [{ "let": "x", "call": "schedule_payment", "args": {} }], "expect": "UnknownTool" }
+    ],
+    "covered_by": "AIR-289 unit row over checkPlan",
+    "expect": "a plan with a scheduling action or a scheduling tool is refused before it can run, so nothing can be scheduled"
   }
 ]
