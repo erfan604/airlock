@@ -63,7 +63,8 @@ describe('AIR-220 replay', () => {
     const first = readFileSync(doc, 'utf8');
     assert.equal(await main(args, io(root, lines)), 0);
     assert.equal(readFileSync(doc, 'utf8'), first);
-    assert.equal(first, `# Benchmark\n## Results\n${BEGIN_MARKER}\nno results yet\n${END_MARKER}\n## Reproduce\n`);
+    const stored = JSON.parse(readFileSync(join(RECORDED, 'results.json'), 'utf8')) as ResultsFile;
+    assert.equal(first, `# Benchmark\n## Results\n${renderBlock(stored)}\n## Reproduce\n`);
     assert.equal(lines.filter((l) => l === 'REPLAY OK 30 runs').length, 2);
   });
 
@@ -124,8 +125,7 @@ describe('AIR-220 replay', () => {
     const dir = tmp();
     mkdirSync(dir, { recursive: true });
     const file = join(dir, 'd.md');
-    const block = renderBlock({} as ResultsFile);
-    assert.equal(block, `${BEGIN_MARKER}\nno results yet\n${END_MARKER}`);
+    const block = `${BEGIN_MARKER}\nbody\n${END_MARKER}`;
     writeFileSync(file, '# t\n');
     assert.throws(() => replace(file, block), MarkerError);
     writeFileSync(file, `${BEGIN_MARKER}\n${END_MARKER}\n${BEGIN_MARKER}\n${END_MARKER}\n`);

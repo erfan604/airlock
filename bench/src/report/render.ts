@@ -1,13 +1,144 @@
 // The generated block of docs/BENCH.md (AIR-220). AIR-223 fills the body; the generator is the only writer of what lies between the markers.
 import { readFileSync, writeFileSync } from 'node:fs';
-import type { ResultsFile } from '../runner/record.ts';
+import { formatBaseUnits, toBaseUnits } from '@airlock/runtime/money';
+import type { Group } from '../runner/cases.ts';
+import type { ResultsFile, RunRecord } from '../runner/record.ts';
+import type { Config } from '../runner/types.ts';
+import { cell } from '../stats/format.ts';
+import { applyApprover, assistedUtility, attackSuccess, benignUtility, ep100, escalationPrecision, feasibility, utilityUnderAttack, v3FromV0 } from '../stats/metrics.ts';
 
 export const BEGIN_MARKER = '<!-- BEGIN GENERATED -->';
 export const END_MARKER = '<!-- END GENERATED -->';
 
-/** The two marker lines around the body; the body is `no results yet` until AIR-223. */
-export function renderBlock(_results: ResultsFile): string {
-  return [BEGIN_MARKER, 'no results yet', END_MARKER].join('\n');
+const ORDER: readonly Config[] = ['V0', 'V1', 'V1-tight', 'V2', 'V3', 'A1', 'A2'];
+const GROUPS: readonly string[] = ['A', 'B', 'C', 'S', 'X', 'P'];
+const NANO = 9;
+
+type Meta = ResultsFile['case_meta'];
+
+const asText = (v: unknown): string => (v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v));
+const field = (o: unknown, key: string): string => {
+  const v = typeof o === 'object' && o !== null ? (o as Record<string, unknown>)[key] : undefined;
+  if (v === undefined || v === null) return 'n/a';
+  return Array.isArray(v) ? v.map(asText).join(',') : asText(v);
+};
+const sumNano = (runs: readonly RunRecord[]): bigint => runs.reduce((s, r) => s + toBaseUnits(r.costUsd, NANO), 0n);
+const sum = (runs: readonly RunRecord[], f: (r: RunRecord) => number): number => runs.reduce((s, r) => s + f(r), 0);
+const table = (head: readonly string[], body: readonly (readonly string[])[]): string[] => [
+  `| ${head.join(' | ')} |`,
+  `| ${head.map(() => '---').join(' | ')} |`,
+  ...body.map((r) => `| ${r.join(' | ')} |`),
+];
+
+/** Mean cost of the runs in USD text: the sum in nano-USD as a bigint, integer division, exact. `n/a` for no runs. */
+function meanCost(runs: readonly RunRecord[]): string {
+  if (runs.length === 0) return 'n/a';
+  return formatBaseUnits(sumNano(runs) / BigInt(runs.length), NANO);
+}
+
+function meanLatency(runs: readonly RunRecord[]): string {
+  if (runs.length === 0) return 'n/a';
+  return String(Math.floor(sum(runs, (r) => r.latencyMs) / runs.length));
+}
+
+/** The groups of a configuration's attack runs, in the fixed order. */
+function groupsOf(runs: readonly RunRecord[], meta: Meta): string[] {
+  const present = new Set(runs.filter((r) => r.kind === 'attack').map((r) => meta[r.case]?.group));
+  return GROUPS.filter((g) => present.has(g as Group));
+}
+
+function attackRow(config: string, label: string, runs: readonly RunRecord[], feasible: readonly string[] | undefined): string[] {
+  const attack = runs.filter((r) => r.kind === 'attack');
+  const oracle = applyApprover(runs, 'oracle');
+  const benign = runs.length - attack.length;
+  return [
+    config,
+    label,
+    String(attack.length),
+    cell(utilityUnderAttack(runs)),
+    cell(attackSuccess(runs, 'none', feasible)),
+    cell(attackSuccess(oracle, 'oracle', feasible)),
+    cell(attackSuccess(runs, 'naive', feasible)),
+    `${cell(escalationPrecision(runs))} (attack runs ${attack.length}, benign runs ${benign})`,
+  ];
+}
+
+/** The body of docs/BENCH.md between the markers: a pure function of the results file (no date, no path, no commit). */
+export function renderBlock(results: ResultsFile): string {
+  const { meta, case_meta: caseMeta } = results;
+  const stored = results.runs;
+  const v0 = stored.filter((r) => r.config === 'V0');
+  const storedV3 = stored.filter((r) => r.config === 'V3');
+  const v3 = storedV3.length > 0 ? storedV3 : v3FromV0(v0);
+  const all: RunRecord[] = [...stored.filter((r) => r.config !== 'V3'), ...v3];
+  const configs = ORDER.filter((c) => all.some((r) => r.config === c));
+  const of = (c: Config): RunRecord[] => all.filter((r) => r.config === c);
+  const label = (c: Config): string => (c === 'V3' && v3.some((r) => r.derived === true) ? 'V3 (derived from V0)' : c);
+
+  // feasibility needs the V0 runs; without them nothing can be said, so no case is left out
+  const attackCases = [...new Set(all.filter((r) => r.kind === 'attack').map((r) => r.case))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const feasible = v0.length > 0 ? feasibility(v0).feasible : undefined;
+  const infeasible = feasible === undefined ? [] : attackCases.filter((c) => !feasible.includes(c));
+
+  const out: string[] = [BEGIN_MARKER];
+  if (meta.n < 10) out.push('DRAFT: n is below 10, do not quote outside drafts');
+  out.push(`model ${meta.model}, quarantine ${meta.quarantine_model}, n ${meta.n}, hooks ${meta.hooks}, runs ${stored.length}`);
+  for (const c of ORDER) {
+    const runs = stored.filter((r) => r.config === c && r.config !== 'V3');
+    if (runs.length === 0) continue;
+    const n = (s: RunRecord['status']): number => runs.filter((r) => r.status === s).length;
+    out.push(`${c} status DONE ${n('DONE')} NO_PLAN ${n('NO_PLAN')} NO_TASK ${n('NO_TASK')} ERROR ${n('ERROR')}`);
+  }
+  const real = stored.filter((r) => r.config !== 'V3' && r.derived !== true);
+  if (meta.budget_usd !== '') out.push(`total cost ${formatBaseUnits(sumNano(real), NANO)} budget ${meta.budget_usd}`);
+  out.push(`stand-in calls ${sum(real, (r) => r.standInCalls)} of ${sum(real, (r) => r.llmCalls)}`);
+  const withFields = real.filter((r) => r.fieldOutcomes !== null);
+  const chosen = sum(withFields, (r) => r.fieldOutcomes?.chosen ?? 0);
+  const total = sum(withFields, (r) => (r.fieldOutcomes === null ? 0 : r.fieldOutcomes.chosen + r.fieldOutcomes.null + r.fieldOutcomes.other));
+  out.push(`attacker-chosen fields ${chosen} of ${total}`);
+
+  const attackBody: string[][] = [];
+  for (const c of configs) {
+    const runs = of(c);
+    for (const g of groupsOf(runs, caseMeta)) attackBody.push(attackRow(label(c), g, runs.filter((r) => caseMeta[r.case]?.group === g), feasible));
+    attackBody.push(attackRow(label(c), 'ALL', runs, feasible));
+  }
+  out.push('', '### Attack groups', ...table(['Config', 'Group', 'Runs', 'Utility under attack', 'Attack success, auto', 'Attack success, oracle approver', 'Attack success, naive approver', 'Escalation precision'], attackBody));
+
+  const benignBody = configs.map((c) => {
+    const runs = of(c);
+    const benign = runs.filter((r) => r.kind === 'benign');
+    const e = ep100(runs, caseMeta);
+    return [
+      label(c),
+      String(benign.length),
+      cell(benignUtility(runs)),
+      cell(assistedUtility(runs)),
+      e.value === null ? 'n/a' : `${e.value} (${e.escalations} escalations, ${e.runs} payment-task runs)`,
+      cell(e.runsWithEscalation),
+      meanCost(benign),
+      meanLatency(benign),
+    ];
+  });
+  out.push('', '### Benign tasks', ...table(['Config', 'Runs', 'Benign utility', 'Assisted utility, oracle approver', 'EP100', 'Runs with an escalation', 'Mean cost per run USD', 'Mean latency ms'], benignBody));
+
+  out.push('', '### Infeasible attack cases');
+  if (feasible === undefined) out.push('n/a (no V0 runs)');
+  else if (infeasible.length === 0) out.push('none');
+  else for (const id of infeasible) out.push(`${id} V0 attack runs ${v0.filter((r) => r.kind === 'attack' && r.case === id).length}`);
+
+  out.push('', '### Not run');
+  if (results.not_run.length === 0) out.push('none');
+  else for (const r of results.not_run) out.push(`${field(r, 'id')} group ${field(r, 'group')} reason ${field(r, 'reason')} covered_by ${field(r, 'covered_by')}`);
+
+  const ac = results.assume_compromise;
+  if (ac !== undefined && ac !== null) {
+    out.push('', '### ASSUME_COMPROMISE');
+    if (typeof ac === 'object' && !Array.isArray(ac)) for (const [k, v] of Object.entries(ac)) out.push(`${k} ${asText(v)}`);
+    else out.push(asText(ac));
+  }
+  out.push(END_MARKER);
+  return out.join('\n');
 }
 
 export class MarkerError extends Error {
