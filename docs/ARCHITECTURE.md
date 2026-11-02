@@ -1,6 +1,6 @@
 # Architecture
 
-_To fill during the build: Fill from plan/SPEC.md sections 5 to 10 as each part lands. Keep diagrams ASCII so machine readers parse them._
+The diagrams are ASCII so machine readers can parse them. The README holds the overview diagram.
 
 ## Components and trust
 | Component | Path | Trusted for | Enforced by |
@@ -29,7 +29,7 @@ _To fill during the build: Fill from plan/SPEC.md sections 5 to 10 as each part 
 | R12 single assignment and branch scoping: checked before the run, and `run` takes only a checked plan | `runtime/src/dsl/rule12.ts` (`checkRule12`), `runtime/src/interpreter/interpreter.ts:253` (the `CheckedPlan` parameter) | `R6: the same let name binds again in every iteration without error` and the type test `runtime/test/interpreter.typetest.ts` |
 
 ## Data flow
-_To fill during the build: owner request to planner to plan to interpreter to ActionRequest to contract to MPC to broadcast to receipt_
+The owner request goes to the planner, which returns a plan in the DSL. The checked plan runs in the interpreter, which labels every value by origin and proposes ActionRequests. The runtime sends them to the policy contract with `submit_batch`. The contract applies the verdict and the ledgers, builds the transaction, asks the MPC signer for a signature, and the runtime broadcasts it and reads the receipt. A request the verdict escalates waits for the owner's `approve`.
 
 ## Decisions
 - The task quick cap is a field of each registered asset (`quick_task_cap` in `asset_set`, AIR-042), not a flag: SPEC R3-09 says per asset, so `set_flags` carries only the task TTL and action maxima. SPEC 8.2 lists it under `set_flags`; the spec update of AIR-066 follows this line.
