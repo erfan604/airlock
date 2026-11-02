@@ -7,6 +7,14 @@ import { Specimen } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
 import type { TraceCell, TraceRow, TraceState, TraceStore } from './traceStore.ts';
 
+export const ANSWERED_TEXT = 'Answered, nothing paid';
+const MONEY_KINDS = ['proposed', 'submitted', 'verdict', 'signed', 'broadcast'];
+
+/** A finished run that answered and has no payment row: a read-only run (D21). */
+export function isAnswered(state: TraceState): boolean {
+  return state.ended === 'done' && state.rows.some((r) => r.kind === 'say') && !state.rows.some((r) => MONEY_KINDS.includes(r.kind));
+}
+
 const END_TEXT = { done: 'Run finished', failed: 'Run failed', aborted: 'Run stopped' } as const;
 export const STALE_TEXT = 'Connection lost, trying again';
 
@@ -95,7 +103,7 @@ export function TraceListView({ state }: { state: TraceState }) {
       ) : null}
       {state.ended === null ? null : (
         <p className="trace-line trace-end" data-testid="trace-end" data-state={state.ended}>
-          {END_TEXT[state.ended]}
+          {isAnswered(state) ? ANSWERED_TEXT : END_TEXT[state.ended]}
         </p>
       )}
     </section>

@@ -68,7 +68,18 @@ const TAG = '<img src=x onerror=alert(1)>';
 // first, so the Specimen's 240 character cut keeps it on screen
 const hostileBody = (b: string): string => `${TAG} total 4.2${ZWSP} NEAR ${RLO}RTL\n${b}`;
 
+// a read-only run (AIR-293, D21): the plan reads the inbox and answers, with no payment step; the answer is a `say` event
+function readOnly(): WireEvent[] {
+  const row = inboxItem('inv-april');
+  return [
+    { t: 0, kind: 'plan', data: { planSha256: PLAN_HASH } },
+    { t: 40, kind: 'call', data: { id: 'call:1', step: [0], tool: 'read_inbox', label: 'Untrusted:email', raw: { id: row.id, from: row.from, subject: row.subject, body: row.body, attachments: row.attachments } } },
+    { t: 1500, kind: 'say', data: { text: row.body.split('\n').filter((l) => l.trim() !== '')[1] ?? '', labels: ['Untrusted:email', 'Untrusted:quarantine'] } },
+  ];
+}
+
 const files: Record<string, WireEvent[]> = {
+  'trace-readonly.json': readOnly(),
   'trace-u01.json': events({ item: 'inv-april', amount: '4.2', amountBase: '4200000000000000000000000', held: false, seed: 'trace-u01' }),
   'trace-b01.json': events({ item: 'inv-april-correction', amount: '9.4', amountBase: '9400000000000000000000000', held: true, seed: 'trace-b01' }),
   'trace-hostile.json': events({ item: 'inv-april', amount: '4.2', amountBase: '4200000000000000000000000', held: false, seed: 'trace-hostile', body: hostileBody, vendor: '<b onmouseover=alert(1)>accountant</b>' }),

@@ -25,6 +25,7 @@ export const TASK_RUNS = {
   hostile: '11111111111111111111111111111111',
   drop: '22222222222222222222222222222222',
   long: '33333333333333333333333333333333',
+  readonly: '44444444444444444444444444444444',
 } as const;
 
 const assets = (): ReturnType<typeof registryFromRows> => registryFromRows(preview.snapshot.assets as unknown as Parameters<typeof registryFromRows>[0]);
@@ -58,4 +59,5 @@ registerFixture('task-held', () => <TraceFixture runId={TASK_RUNS.held} />);
 registerFixture('task-hostile', () => <TraceFixture runId={TASK_RUNS.hostile} />);
 registerFixture('task-drop', () => <TraceFixture runId={TASK_RUNS.drop} />);
 registerFixture('task-long', () => <TraceFixture runId={TASK_RUNS.long} />);
+registerFixture('task-readonly', () => <TraceFixture runId={TASK_RUNS.readonly} />);
 registerFixture('task-page', () => <TaskView initialInstruction={preview.instruction} accountId="owner.testnet" deps={fakeDeps} />);

@@ -8,6 +8,7 @@ import { CALC_OPS } from '../../runtime/src/dsl/tools.ts';
 import b01 from '../fixtures/trace-b01.json' with { type: 'json' };
 import hostile from '../fixtures/trace-hostile.json' with { type: 'json' };
 import preview from '../fixtures/preview-u01.json' with { type: 'json' };
+import readonly from '../fixtures/trace-readonly.json' with { type: 'json' };
 import u01 from '../fixtures/trace-u01.json' with { type: 'json' };
 import { revealUntrusted } from '../src/components/untrusted.ts';
 import { CALC_OP_NAMES } from '../src/task/trace.ts';
@@ -269,7 +270,7 @@ test('String(cell) and JSON of an untrusted cell never contain the text', () => 
 });
 
 test('a row of an event with no data fields never throws', () => {
-  for (const kind of ['plan', 'call', 'extract', 'lookup', 'calc', 'branch', 'proposed', 'submitted', 'verdict', 'signed', 'broadcast', 'error'] as const) {
+  for (const kind of ['plan', 'call', 'extract', 'lookup', 'calc', 'branch', 'proposed', 'submitted', 'verdict', 'signed', 'broadcast', 'error', 'say'] as const) {
     const r = rowFor(kind, {});
     assert.equal(r.kind, kind);
   }
@@ -345,4 +346,31 @@ test('list: seals render as Seal plates', () => {
   const out = html(stateOf([ev('extract', { fields: { amount: '4.2' }, labels: ['Untrusted:email', 'Untrusted:quarantine'] })]));
   assert.ok(out.includes('data-label="Untrusted:email"'));
   assert.ok(out.includes('data-label="Untrusted:quarantine"'));
+});
+
+test('say: the answer is an untrusted cell, channel from its labels or other, never typed text', () => {
+  const r = rowFor('say', { text: 'You have <b>one</b> invoice.' });
+  assert.equal(r.kind, 'say');
+  assert.equal(reveal(cell(r, 'answer')), 'You have <b>one</b> invoice.');
+  assert.equal((cell(r, 'answer') as { channel: string }).channel, 'other');
+  const l = rowFor('say', { text: 'x', labels: ['Untrusted:email'] });
+  assert.equal((cell(l, 'answer') as { channel: string }).channel, 'email');
+  assert.deepEqual(l.seals, ['Untrusted:email']);
+  assert.equal(rowFor('say', { text: 5 }).cells.length, 0);
+  assert.equal(JSON.stringify(r).includes('invoice'), false);
+});
+
+test('list: a read-only run (plan, call, say, done) shows the answer in a Specimen and ends answered, nothing paid', () => {
+  const out = html(stateOf(readonly.events as TraceEventWire[], { ended: 'done' }));
+  assert.ok(out.includes('data-kind="say"'));
+  assert.ok(out.includes('data-testid="specimen"'));
+  assert.ok(out.includes('Answered, nothing paid'));
+  assert.equal(out.includes('Run finished'), false);
+  assert.equal(out.includes('data-testid="verdict-stamp"'), false);
+  assert.ok(html(stateOf(readonly.events as TraceEventWire[])).includes('data-kind="say"'));
+});
+
+test('list: a run that paid, or one that failed, does not say nothing paid', () => {
+  assert.ok(html(stateOf(u01.events as TraceEventWire[], { ended: 'done' })).includes('Run finished'));
+  assert.equal(html(stateOf(readonly.events as TraceEventWire[], { ended: 'failed' })).includes('nothing paid'), false);
 });

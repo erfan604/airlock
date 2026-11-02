@@ -277,6 +277,14 @@ function errorRow(d: Record<string, unknown>): Built {
   return built(cells, sealsOf(own(d, 'labels')));
 }
 
+/** The answer of a read-only run: text derived from outside data, so it is a Specimen like any other outside value. */
+function sayRow(d: Record<string, unknown>): Built {
+  const labels = labelNames(own(d, 'labels'));
+  const text = own(d, 'text');
+  const cell = typeof text === 'string' ? outside('answer', text, channelOf(labels)) : null;
+  return built(cell === null ? [] : [cell], labels);
+}
+
 /** Builds the row of one event. `id` is the position the server gave it; `registry` turns an amount into text with its symbol. */
 export function rowOf(id: number, e: TraceEventWire, registry: AssetRegistry | null): TraceRow {
   const d = e.data;
@@ -317,6 +325,9 @@ export function rowOf(id: number, e: TraceEventWire, registry: AssetRegistry | n
       break;
     case 'error':
       b = errorRow(d);
+      break;
+    case 'say':
+      b = sayRow(d);
       break;
   }
   const rawItem = own(d, 'item');

@@ -1,8 +1,9 @@
+// `say` is the answer of a read-only run (AIR-293, D21).
 // The wire form of a run's trace event as the console reads it (AIR-184). It repeats the runtime's `TraceEvent` because the console must not
 // import the interpreter package; the `data` shapes are AIR-121's and AIR-164's. `parseTraceEvent` is the only way a message becomes an event:
 // anything that is not exactly this shape is null and the store counts it as malformed, so nothing odd is ever thrown or rendered.
 
-export const TRACE_KINDS = ['plan', 'call', 'extract', 'lookup', 'calc', 'branch', 'proposed', 'submitted', 'verdict', 'signed', 'broadcast', 'error'] as const;
+export const TRACE_KINDS = ['plan', 'call', 'extract', 'lookup', 'calc', 'branch', 'proposed', 'submitted', 'verdict', 'signed', 'broadcast', 'error', 'say'] as const;
 export type TraceKind = (typeof TRACE_KINDS)[number];
 
 export interface TraceEventWire {

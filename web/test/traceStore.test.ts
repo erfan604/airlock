@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import b01 from '../fixtures/trace-b01.json' with { type: 'json' };
 import hostile from '../fixtures/trace-hostile.json' with { type: 'json' };
+import readonly from '../fixtures/trace-readonly.json' with { type: 'json' };
 import u01 from '../fixtures/trace-u01.json' with { type: 'json' };
 import { TRACE_KINDS, parseTraceEvent } from '../src/task/trace.ts';
 import type { TraceEventWire } from '../src/task/trace.ts';
@@ -28,7 +29,7 @@ test('parseTraceEvent: null for non-JSON, an array, a scalar and null', () => {
 });
 
 test('parseTraceEvent: null for an unknown kind, a missing or non-object data and a non-finite t', () => {
-  assert.equal(parseTraceEvent('{"t":1,"kind":"say","data":{}}'), null);
+  assert.equal(parseTraceEvent('{"t":1,"kind":"shout","data":{}}'), null);
   assert.equal(parseTraceEvent('{"t":1,"kind":"constructor","data":{}}'), null);
   assert.equal(parseTraceEvent('{"t":1,"kind":"call"}'), null);
   assert.equal(parseTraceEvent('{"t":1,"kind":"call","data":[]}'), null);
@@ -39,16 +40,34 @@ test('parseTraceEvent: null for an unknown kind, a missing or non-object data an
 });
 
 test('parseTraceEvent: every kind of the closed list parses', () => {
-  assert.equal(TRACE_KINDS.length, 12);
+  assert.equal(TRACE_KINDS.length, 13);
   for (const kind of TRACE_KINDS) {
     const e = parseTraceEvent(JSON.stringify({ t: 5, kind, data: { a: 1 } }));
     assert.deepEqual(e, { t: 5, kind, data: { a: 1 } });
   }
 });
 
-test('parseTraceEvent: the three fixtures parse event by event', () => {
-  for (const f of [u01, b01, hostile]) {
-    assert.ok(f.events.length >= 7);
+test('parseTraceEvent: say parses, an unknown kind does not', () => {
+  assert.deepEqual(parseTraceEvent('{"t":3,"kind":"say","data":{"text":"hi"}}'), { t: 3, kind: 'say', data: { text: 'hi' } });
+  assert.equal(parseTraceEvent('{"t":3,"kind":"sayy","data":{}}'), null);
+});
+
+test('connect: a say message adds a row and no malformed count, an unknown kind still counts as malformed', () => {
+  const h = harness();
+  h.store.connect(RUN);
+  const src = FakeSource.all[0] as FakeSource;
+  src.emit('trace', JSON.stringify({ t: 1, kind: 'say', data: { text: 'You have one invoice.' } }), '0');
+  src.emit('trace', JSON.stringify({ t: 2, kind: 'mystery', data: {} }), '1');
+  h.frame();
+  const s = h.store.getSnapshot();
+  assert.equal(s.rows.length, 1);
+  assert.equal(s.rows[0]?.kind, 'say');
+  assert.equal(s.malformed, 1);
+});
+
+test('parseTraceEvent: the fixtures parse event by event', () => {
+  for (const f of [u01, b01, hostile, readonly]) {
+    assert.ok(f.events.length >= 3);
     for (const e of f.events) assert.notEqual(parseTraceEvent(JSON.stringify(e)), null);
   }
 });

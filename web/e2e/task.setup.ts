@@ -8,6 +8,7 @@ import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import b01 from '../fixtures/trace-b01.json' with { type: 'json' };
 import hostile from '../fixtures/trace-hostile.json' with { type: 'json' };
+import readonly from '../fixtures/trace-readonly.json' with { type: 'json' };
 import u01 from '../fixtures/trace-u01.json' with { type: 'json' };
 import type { E2ESetup } from './types.ts';
 
@@ -22,6 +23,7 @@ const RUNS: Record<string, Wire[]> = {
   '11111111111111111111111111111111': hostile.events,
   '22222222222222222222222222222222': u01.events,
   '33333333333333333333333333333333': long,
+  '44444444444444444444444444444444': readonly.events,
 };
 const DROP_RUN = '22222222222222222222222222222222';
 const DROP_AFTER = 3;

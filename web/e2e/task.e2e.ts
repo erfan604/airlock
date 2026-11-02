@@ -95,6 +95,13 @@ const run: E2E = async ({ page, baseUrl }) => {
   assert.equal(await collapsed.getAttribute('data-count'), '1');
   assert.equal(await collapsed.innerText(), '1 earlier events collapsed');
 
+  // a read-only run: the answer sits in a Specimen and the run ends answered, nothing paid
+  await open(page, baseUrl, 'task-readonly');
+  assert.equal(await page.locator('[data-testid="trace-row"][data-kind="say"] [data-testid="specimen"]').count(), 1);
+  assert.equal(await page.locator('[data-testid="trace-end"]').innerText(), 'Answered, nothing paid');
+  assert.equal(await page.locator('[data-testid="verdict-stamp"]').count(), 0);
+  await audit(page, 'task-readonly');
+
   // the whole page on fake deps: type, preview, confirm, then the trace under the same page
   await page.goto(`${baseUrl}/fixtures/task-page`);
   await page.locator('[data-testid="submit-task"]').click();
