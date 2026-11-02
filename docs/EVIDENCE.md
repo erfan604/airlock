@@ -52,3 +52,12 @@ Testnet, 2026-11-02 (weather GOOD): `GAS TESTNET batch3 ... need=115.617` (tx 9t
 - Approve sweep on the sandbox: the first success at 50 Tgas (`APPROVE_MIN_TGAS=50 sandbox`), 40 Tgas failed with `Exceeded the prepaid gas.`
 - Callback headroom: `CALLBACK GAS on_signed_ok=2.923 on_signed_fail=3.499 on_transfer_ok=2.768 on_transfer_fail=3.479 Tgas`.
 - Batch cap: 3, confirmed on the sandbox only. `APPROVE_PREPAID_TGAS` stays 150 until the testnet sweep runs.
+
+## Owner approval, live (AIR-294, AIR-165 check 4, AIR-085 check 5)
+
+2026-11-02, signer weather GOOD p50 4.1 s. B01 replay run escalated `OUTCOME escalated OverTaskBound pending 4` (9.4 NEAR to the in-book accountant, over the task bound, nothing paid). The owner erfan-airlock.testnet approved with `scripts/approve-cli.sh 4 --run` at 65 Tgas; the `yes` was given by Erfan in chat under his standing permission (D23) and relayed to the prompt by the coordinator session. The agent key cannot approve; the approval is signed by the owner key.
+
+- approve_tx=4iwSRaSYC9qD8BjjVgvovRMNjdYZErUGczwA2y2cX8Tt verify=PASS (digest, approver, args, effect)
+- `get_request 4` state Executed; `scripts/approve-cli.sh 4` prints `NOT PENDING: state Executed`
+- `e2e-testnet.ts B01 --finish 4`: `PAID 9.4 NEAR to accountant.erfan-airlock.testnet tx 4iwSRaSYC9qD8BjjVgvovRMNjdYZErUGczwA2y2cX8Tt`
+- https://testnet.nearblocks.io/txns/4iwSRaSYC9qD8BjjVgvovRMNjdYZErUGczwA2y2cX8Tt
