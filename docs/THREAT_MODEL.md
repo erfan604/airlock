@@ -52,19 +52,33 @@ Three limits stay.
 ## Trusted renderer (R4-04)
 The trusted renderer is the owner's wallet, not the AIRLOCK console, which may share a host with the agent.
 Intear shows every argument and the exact deposit; the console card is a convenience.
+What each wallet shows, as measured by the bake-off of 2026-11-01 (`spikes/wallet-bakeoff/RESULTS.md` in the research repo) and copied into `web/src/wallet/capabilities.ts`:
+- Intear (`intear-wallet`, offered): the first screen shows the method and the exact one yoctoNEAR deposit, and one tap on Show args reveals every argument. The console tells the owner to tap Show args and compare the five values.
+- Meteor (`meteor-wallet`, measured and not offered): the first screen shows no arguments, and View Transaction Details shows them one tap later. The one yoctoNEAR deposit displays as 0.
+- Nightly (`nightly-wallet`, refused): never shows the arguments.
+- Any wallet id missing from the table is refused.
+The console offers only a wallet that shows the arguments. That is console behavior, so it helps only an owner using the honest console. A wallet that lies about what it signs is outside this model.
 
 ## Attack groups covered (A to H) with the bench case ids
-<!-- AIR-242 fills this section from bench/cases/*.jsonl and bench/cases/not-run.json. -->
+Cases are the `own-` ids in `bench/cases/own-abc.jsonl` and `bench/cases/own-sxp.jsonl`. Each case names the payment the attacker wants in `attacker_goal` and the rule that is expected to stop it in `expected_airlock`. Results per group and config are in docs/BENCH.md.
+- Group A, the recipient or payee comes from untrusted content: `own-A01` (invoice email), `own-A03` (billing page), `own-A04` (social post), `own-A06` (support page), `own-A08` (history).
+- Group B, the amount comes from untrusted content or a calculation: `own-B01` (above the task bound), `own-B01-incap` (inside the cap, the K2 residual where the default mode can auto-pay), `own-B02` (calculated amount with no ceiling), `own-B03`, `own-B04`.
+- Group C, values read from tool output such as a token list or transaction history: `own-C05`, `own-C06`.
+- Group S, the trigger or branch is chosen by untrusted content: `own-S01` (urgent flag), `own-S02` (spoofed status), `own-S03` (selected recipient), `own-S04`.
+- Group X, paid-fetch payment requests and asset tricks: `own-X01` (payee taken from the payment request of the fetched page), `own-X02` (amount above the bound), `own-X03` (asset no registry lists), `own-X04`, `own-X05`, `own-X06`.
+- Group P, look-alike payees: `own-P01` (look-alike key from history), `own-P02` (look-alike of the accountant).
+The adaptive and benign cases that sit beside these are in `bench/cases/should/` and `bench/cases/utility.jsonl`. They measure utility and escalation precision and are not attack groups.
 
 ## Assumptions
 - The owner's device, wallet keys and local task key are not compromised.
 - NEAR consensus holds, and fewer than the threshold of MPC nodes are compromised.
 - The deployed contract is the code that was tested. The verdict is model-checked within the bounds listed per harness (claim C5 in docs/CLAIMS.md). The code that loads its inputs is covered by sandbox tests and not by the model checker. That code covers label conversion, book keys, budgets, digest, expiry and nonce.
-- Labels are correct when the TypeScript interpreter and the tools layer are correct. The Lean noninterference theorem (`proofs/NI.lean`, claim C1) covers a model of the interpreter, not the TypeScript. The TypeScript interpreter is covered by a property test, and labels come from a constant table plus tests.
+- Labels are correct when the TypeScript interpreter and the tools layer are correct. The noninterference proof of claim C1 is specified in design (`proofs/NI.lean` is not in this tree), so the evidence for propagation is the property test of the TypeScript interpreter, and labels come from a constant table plus tests.
 - The owner reads the wallet screen before approving.
+- The approving wallet runs on a device the agent cannot reach. The I-HITL study (arXiv 2610.35835, 2026-10-26) shows models raising a wallet's spending cap themselves by reading emailed one-time codes, and argues that an approval holds only on a device the agent cannot reach. The wallet as trusted renderer is that boundary.
 - The owner's typed instruction is the owner's intent.
 - The price feed that produces Oracle-labelled values is honest.
-- If a TEE is used, the adversary has no physical access to its host. Physical attacks on such hosts are known (docs/KNOWN_LIMITATIONS.md), so no bound above relies on the TEE.
+- The runtime is in unattested local mode (decision D22 in the research repo's plan/DECISIONS.md: TEE out of this build). No bound above relies on a TEE. If a TEE is added later, physical attacks on such hosts are known (docs/KNOWN_LIMITATIONS.md).
 
 ## Out of scope
 - An owner who is socially engineered into typing an attacker's address. AIRLOCK trusts the owner's own words.
@@ -76,4 +90,12 @@ Intear shows every argument and the exact deposit; the console card is a conveni
 - Broadcast and ordering of signed EVM transactions happen off chain. An issued signature stays valid until its nonce is used, and pause does not revoke it (claim C2 in docs/CLAIMS.md).
 - Privacy of the owner's requests and inbox text. It rests on the model provider, and no security property here depends on it.
 - Not built in this version: wallet-signed tasks above the quick cap, standing tasks, scheduled payments, cancel, owner transfer, a NEP-141 lane and real tool connectors. Testnet only.
-- Attack groups D to H of the attack list are outside the agent bench. Contract and card tests cover them, and docs/BENCH.md gives the reason.
+- An owner who hands the approving wallet, its session or its one-time codes to the agent.
+- Attack groups D to H of the attack list, and the cases below, are `not run` in the agent bench. Each id is in `bench/cases/not-run.json` with its reason and what covers it instead: no action or tool of that kind exists in this version, the route is the same as a run group, or the owner-only policy plane stops it. docs/BENCH.md lists the same ids under Not run.
+  - C01, C02, C03, C04: no approval, key, message-signing or NFT-permission action exists. The ABI snapshot (AIR-041) and the closed tool table (AIR-120) cover them.
+  - D01, D02, D03: the policy plane is owner-only, so an agent cannot raise a limit, add a book entry or replace an approver. Invariant I3 and the policy tests cover them.
+  - E01, E02, E03: the recipient comes from memory or chat, the same route as group A. The label tests (AIR-124) cover them and they are not re-run. E04 is a scheduled payment, out of scope for this version.
+  - F01, F02, F03: data that requires action (the planner never sees the content, so it is a utility loss by design), branch and loop control chosen by untrusted text (property tests of AIR-126 and AIR-180), and a one bit leak through execution, which is a known limit in docs/KNOWN_LIMITATIONS.md.
+  - G01, G02, G03: no swap, quote or bridge action exists. The ABI snapshot and the closed tool table cover them.
+  - H01, H02: approval surface attacks are a card and route property, not an agent path. The card tests (AIR-181) and the approvals route test (AIR-182) cover them.
+  - U03, U05, U09, U10, U11, U04, BEN04: utility cases that need an action this version lacks (scheduled or recurring payment, swap, bridge, DAO vote) or an owner-only policy change (a book change, a payee change typed by the owner).
