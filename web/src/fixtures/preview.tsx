@@ -14,7 +14,7 @@ import { ensureKey, memoryKeyStore } from '../preview/taskKey.ts';
 import data from '../../fixtures/preview-u01.json' with { type: 'json' };
 import { registerFixture } from './registry.ts';
 
-type Mode = 'u01' | 'nokey' | 's30';
+export type Mode = 'u01' | 'nokey' | 's30';
 
 declare global {
   interface Window {
@@ -28,7 +28,7 @@ declare global {
 const hex = (b: Uint8Array): string => [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
 const b64 = (b: Uint8Array): string => btoa(String.fromCharCode(...b));
 
-function makeDeps(mode: Mode): PreviewDeps {
+export function makeDeps(mode: Mode): PreviewDeps {
   const keys = memoryKeyStore();
   const reads: ChainReads = {
     getBook: async () => data.snapshot.book as unknown as Awaited<ReturnType<ChainReads['getBook']>>,

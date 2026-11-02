@@ -13,6 +13,14 @@ const htmlSinks = [
   { selector: "CallExpression[callee.object.name='document'][callee.property.name='write']", message: sinkMessage },
 ];
 
+// AIR-184: outsider text sits in the `raw` field of a trace event; only the trace store and the Specimen may read a property of that name
+const rawMessage = 'Reading .raw is allowed only in src/task/traceStore.ts and src/components/Specimen.tsx (outsider text enters the Untrusted type there).';
+const rawBan = { selector: "MemberExpression[property.name='raw']", message: rawMessage };
+
+// AIR-184: amounts in the task code are BigInt and formatBaseUnits, never floats
+const moneyMessage = 'Amounts are BigInt or decimal strings: no Number(, parseInt or parseFloat in src/task.';
+const moneyBan = { selector: "CallExpression[callee.name=/^(Number|parseInt|parseFloat)$/]", message: moneyMessage };
+
 const wrapOnly = {
   group: ['**/untrusted', '**/untrusted.ts'],
   importNames: ['wrapUntrusted'],
@@ -33,14 +41,27 @@ export default defineConfig([
   {
     files: ['src/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-syntax': ['error', ...htmlSinks],
+      'no-restricted-syntax': ['error', ...htmlSinks, rawBan],
       'no-restricted-imports': ['error', { patterns: [wrapOnly, revealOnly] }],
     },
+  },
+  {
+    files: ['src/task/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-syntax': ['error', ...htmlSinks, rawBan, moneyBan] },
   },
   {
     // the parser of untrusted evidence, the trace store (its `raw` fields) and the fixture routes build Untrusted values
     files: ['src/approvals/evidence.ts', 'src/task/traceStore.ts', 'src/fixtures/**/*.{ts,tsx}'],
     rules: { 'no-restricted-imports': ['error', { patterns: [revealOnly] }] },
+  },
+  {
+    // the two files that may read `raw`; the HTML sinks stay banned in both, and the trace store keeps the money ban
+    files: ['src/task/traceStore.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...htmlSinks, moneyBan] },
+  },
+  {
+    files: ['src/components/Specimen.tsx'],
+    rules: { 'no-restricted-syntax': ['error', ...htmlSinks] },
   },
   {
     // the one place text leaves the type

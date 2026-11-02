@@ -3,7 +3,9 @@
 import { createElement } from 'react';
 import type { ReactElement } from 'react';
 import { ApprovalsRoute } from './approvals/ApprovalsRoute.tsx';
+import { TaskPage } from './task/TaskPage.tsx';
 
 export const ROUTES: Record<string, () => ReactElement> = {
+  '/': () => createElement(TaskPage),
   '/approvals': () => createElement(ApprovalsRoute),
 };

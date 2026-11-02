@@ -9,6 +9,7 @@ import './styles/components.css';
 import './styles/card.css';
 import './styles/preview.css';
 import './styles/wallet.css';
+import './styles/task.css';
 import './styles/fixtures.css';
 import { App } from './App.tsx';
 

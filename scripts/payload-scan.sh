@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # AIR-125: the repo's one payload leak scan. Searches every tracked and untracked (not ignored) file outside the data folders,
 # and every commit message on every ref, for the markers in fixtures/payload-markers.txt (written by scripts/payload-markers.mjs),
-# case-insensitively as fixed strings. Copies under bench/fixtures, fixtures, bench/runs, runtime/recordings and third_party are
+# case-insensitively as fixed strings. Copies under bench/fixtures, fixtures, web/fixtures, bench/runs, runtime/recordings and third_party are
 # allowed. Prints each hit, then PAYLOAD SCAN FOUND <n> (exit 1) or PAYLOAD SCAN OK (<m> markers) (exit 0). Exit 2 when the scan
 # cannot run: marker file missing, empty or holding a blank line (a blank fixed string matches every line), or git grep failing.
 # Usage: scripts/payload-scan.sh   (run from anywhere; it changes to the repo root)
@@ -13,7 +13,7 @@ M=fixtures/payload-markers.txt
 if grep -qn '^[[:space:]]*$' "$M"; then echo "payload-scan: $M has a blank line, so the scan cannot run"; exit 2; fi
 markers=$(grep -c . "$M")
 
-tree=$(git grep -n -i -F -f "$M" --untracked -- . ':!bench/fixtures' ':!fixtures' ':!bench/runs' ':!runtime/recordings' ':!third_party')
+tree=$(git grep -n -i -F -f "$M" --untracked -- . ':!bench/fixtures' ':!fixtures' ':!web/fixtures' ':!bench/runs' ':!runtime/recordings' ':!third_party')
 rc=$?
 if [ "$rc" -gt 1 ]; then echo "payload-scan: git grep failed (exit $rc), so the scan cannot run"; exit 2; fi
 

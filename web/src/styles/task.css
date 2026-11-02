@@ -1,0 +1,159 @@
+/* The Task page and the live trace (AIR-184). Tokens only, radius 0, no shadow. Long values wrap: nothing here may push the page wider than
+   the viewport at 320 px. */
+.task {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 40rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.task-title {
+  font-family: var(--font-system);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 28px;
+}
+.task-form {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.task-label {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.task-help,
+.task-count,
+.task-notice {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.task-notice {
+  color: var(--ink);
+  font-weight: 700;
+}
+.task-input {
+  display: block;
+  width: 100%;
+  min-height: 112px;
+  padding: var(--space-3);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--raised);
+  color: var(--ink);
+  font-family: var(--font-system);
+  font-size: 16px;
+  line-height: 24px;
+  resize: vertical;
+}
+.task-input-paste {
+  font-family: var(--font-evidence);
+}
+.trace {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.trace-rows {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.trace-row {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 2px solid var(--ink);
+  background: var(--raised);
+  min-width: 0;
+}
+.trace-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+.trace-kind {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.trace-item {
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.trace-cells {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.trace-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+  min-width: 0;
+}
+.trace-cell-block {
+  display: grid;
+  gap: var(--space-1);
+}
+.trace-cell-name {
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-3);
+}
+.trace-cell-text {
+  font-family: var(--font-data);
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.trace-seals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.trace-stamp {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.trace-review {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.trace-line {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.trace-stale {
+  color: var(--ink);
+  font-weight: 700;
+}

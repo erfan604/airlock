@@ -1,7 +1,8 @@
 // The e2e harness of AIR-183: `tsx e2e/run.ts <name>` (pnpm -C web e2e <name>).
 // It serves the built dist through Vite's preview API (so the CSP plugin and the proxy are the real ones), launches headless
 // Chromium, fails on any console message of type error (Chromium logs every CSP violation that way) and on any page error,
-// imports e2e/<name>.setup.ts first when it exists (it may set environment variables or start a stub runtime), then runs
+// imports e2e/<name>.setup.ts first when it exists (AIR-184: its default export is `() => Promise<{ env?, close() }>`; the env is merged into
+// process.env before the preview server loads the Vite config, so a stub runtime can name its own origin, and close runs at the end), then runs
 // e2e/<name>.e2e.ts, whose default export is `(ctx: { page, baseUrl }) => Promise<void>`. The built-in name `fixtures` visits
 // every registered /fixtures/* route. The last line printed is `E2E <name> OK` (`E2E fixtures OK (<n> routes)`) or nothing of
 // the kind and a nonzero exit.
@@ -15,7 +16,7 @@ import { preview } from 'vite';
 import { buildCsp, defaultCspInputs, normalizeNonce } from '../csp.ts';
 import { listFixtures } from '../src/fixtures/index.ts';
 import { AUDIT_HEIGHT, AUDIT_WIDTHS, clipAudit } from './audit.ts';
-import type { E2E, E2EContext } from './types.ts';
+import type { E2E, E2EContext, E2ESetup } from './types.ts';
 
 const webRoot = fileURLToPath(new URL('../', import.meta.url));
 const auditDir = join(webRoot, 'audit');
@@ -55,10 +56,16 @@ const problems: string[] = [];
 let okLine = '';
 let server: Awaited<ReturnType<typeof preview>> | undefined;
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+let setupHandle: Awaited<ReturnType<E2ESetup>> | undefined;
 try {
   if (!existsSync(join(webRoot, 'dist', 'index.html'))) throw new Error('web/dist/index.html is missing: run `pnpm -C web build` first');
   const setup = new URL(`./${name}.setup.ts`, import.meta.url);
-  if (existsSync(fileURLToPath(setup))) await import(setup.href);
+  if (existsSync(fileURLToPath(setup))) {
+    const mod = (await import(setup.href)) as { default?: E2ESetup };
+    if (typeof mod.default !== 'function') throw new Error(`e2e/${name}.setup.ts has no default export function`);
+    setupHandle = await mod.default();
+    Object.assign(process.env, setupHandle.env ?? {});
+  }
   const e2eFile = new URL(`./${name}.e2e.ts`, import.meta.url);
   if (name !== 'fixtures' && !existsSync(fileURLToPath(e2eFile))) throw new Error(`no e2e/${name}.e2e.ts`);
 
@@ -88,6 +95,7 @@ try {
 } finally {
   await browser?.close().catch(() => undefined);
   await server?.close().catch(() => undefined);
+  await setupHandle?.close().catch(() => undefined);
 }
 
 if (problems.length > 0) {

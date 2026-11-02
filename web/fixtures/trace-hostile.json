@@ -1,0 +1,111 @@
+{
+  "events": [
+    {
+      "t": 0,
+      "kind": "plan",
+      "data": {
+        "planSha256": "cf349cb2b6cbfa297a440dca92c52be6247058085239b8437e2297f17107a0e1"
+      }
+    },
+    {
+      "t": 40,
+      "kind": "call",
+      "data": {
+        "id": "call:1",
+        "step": [
+          0
+        ],
+        "tool": "read_inbox",
+        "label": "Untrusted:email",
+        "raw": {
+          "id": "inv-april",
+          "from": "billing@accountant-firm.co",
+          "subject": "April invoice",
+          "body": "<img src=x onerror=alert(1)> total 4.2\u200b NEAR \u202eRTL\nHello,\n\nOur invoice for April 2026 is attached as invoice-2026-04.pdf.\nThe total for April is 4.2 NEAR, covering bookkeeping, the quarterly filing and payroll.\n\nThank you for your business.\nAccountant Firm, Billing\n",
+          "attachments": [
+            "invoice-2026-04.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "t": 1800,
+      "kind": "extract",
+      "data": {
+        "step": [
+          1
+        ],
+        "fields": {
+          "amount": "4.2",
+          "vendor": "<b onmouseover=alert(1)>accountant</b>"
+        },
+        "labels": [
+          "Untrusted:email",
+          "Untrusted:quarantine"
+        ],
+        "item": "inv-april"
+      }
+    },
+    {
+      "t": 1850,
+      "kind": "lookup",
+      "data": {
+        "step": [
+          2
+        ],
+        "key": "accountant",
+        "found": true,
+        "result": "near:accountant.testnet",
+        "labels": [
+          "Book"
+        ],
+        "item": "inv-april"
+      }
+    },
+    {
+      "t": 1900,
+      "kind": "proposed",
+      "data": {
+        "step": [
+          3
+        ],
+        "action": "transfer",
+        "payee": "near:accountant.testnet",
+        "asset": "near",
+        "amount": "4200000000000000000000000",
+        "recipientLabels": [
+          "Book"
+        ],
+        "amountLabels": [
+          "Untrusted:email",
+          "Untrusted:quarantine"
+        ],
+        "pc": [
+          "Owner"
+        ],
+        "item": "inv-april"
+      }
+    },
+    {
+      "t": 2100,
+      "kind": "submitted",
+      "data": {
+        "count": 1,
+        "taskHash": "2e6e1a2e9c6879058cf8996d76344b21ee30e128af21aa47ae1f37dee2a6e7e8",
+        "txHash": "EZ8sdxDshpMBvbCCQH9zVSEj7LBb9npKTBxLuNWCmqFa",
+        "item": "inv-april"
+      }
+    },
+    {
+      "t": 2600,
+      "kind": "verdict",
+      "data": {
+        "request_id": "2e6e1a2e9c6879058cf8996d76344b21ee30e128af21aa47ae1f37dee2a6e7e8:0",
+        "outcome": "allowed",
+        "reason": null,
+        "pending_id": null,
+        "item": "inv-april"
+      }
+    }
+  ]
+}
