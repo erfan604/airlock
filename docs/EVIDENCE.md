@@ -6,7 +6,7 @@
 | Quarantine model | NEAR AI Cloud | `z-ai/glm-5.3-flash` (providerType vllm, NEAR private TEE); results.md sha256 aa0fdca3570f | 2026-11-01 |
 | Mutation testing of the verdict crate | local | cargo-mutants 26.0.0 (`scripts/mutation.sh`): killed 452 of 464 viable mutants, 12 survivors, all equivalent and listed in `docs/mutation.md` | 2026-11-01 |
 | Policy contract deploy | NEAR testnet | account `policy.erfan-airlock.testnet`, code_hash=2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC (hex 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805), wasm_sha256=1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 (the on-chain code hash equals the sha256 of the committed res/airlock_policy.wasm), tx [5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG](https://testnet.nearblocks.io/txns/5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG), full_access_keys=1, commit dfbe646, wasm is over 900 KB (1044856 bytes) | 2026-11-02 |
-_To fill during the build: contract account, code hash, wasm sha256, agent registration tx, measurements, MPC sign txs, Base Sepolia txs, escalation and approval txs_
+No TEE registration transaction is recorded here: the runtime runs in local mode (unattested). The contract deploy, the MPC sign transactions, the Base Sepolia transactions and the escalation and approval transactions are the rows below.
 
 ## Model choice
 
@@ -31,6 +31,8 @@ vanilla models: z-ai/glm-5.3-flash only, so the baseline shares the planner mode
 | 2026-11-02 | U01 | allowed - | https://testnet.nearblocks.io/txns/Ez3TXJatuT7neuVkuLM2jSMHcC5xWmxwmK4vF8pdxcLF | 8bd7cd7be93a4eb78420b0092463a9293ebb6a2ac45375807520a0a73e9d5758:0 | policy.erfan-airlock.testnet |
 | 2026-11-02 | B01 | escalated OverTaskBound | https://testnet.nearblocks.io/txns/C4t5K7EhKLR6aUfcHUbCbFb6at57WhtkF5EJJnRtSbCS | f282c39491bc821abcdff9937618acc826c0b117eb2a7ae3dcf4ac78e1ef7528:0 | policy.erfan-airlock.testnet |
 | 2026-11-02 | CONTRACTOR | allowed - | https://sepolia.basescan.org/tx/0x943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63 | 1f06a5f22f88bbea04a3b9a2fbe6803e08d33a8913d033fccceb0c24e8a83c90:0 | policy.erfan-airlock.testnet |
+
+The amounts of the AIR-165 cases are fixed in `scripts/e2e/cases.ts`: U01 pays 4.2 NEAR to an in-book payee and is allowed, B01 asks for 9.4 NEAR, which is over the task bound, and CONTRACTOR pays 0.02 ETH on Base Sepolia.
 
 ## Gas (AIR-107)
 
