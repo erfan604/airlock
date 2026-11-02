@@ -49,6 +49,10 @@ Three limits stay.
 - A wallet that hides arguments defeats the display half. The console refuses such wallets and tells the owner which tap shows the arguments. That is console behavior, so it helps only an owner using the honest console.
 - Which wallets show the arguments is measured per wallet, with screenshots, in docs/EVIDENCE.md.
 
+## Trusted renderer (R4-04)
+The trusted renderer is the owner's wallet, not the AIRLOCK console, which may share a host with the agent.
+Intear shows every argument and the exact deposit; the console card is a convenience.
+
 ## Attack groups covered (A to H) with the bench case ids
 <!-- AIR-242 fills this section from bench/cases/*.jsonl and bench/cases/not-run.json. -->
 
