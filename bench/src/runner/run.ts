@@ -279,7 +279,7 @@ export class BenchSession {
       fees: feePolicyFromRegistry(assets.registry),
       evmSender: () => null,
       rpcUrls: [],
-      evidence: { put: () => undefined, evidenceFor: () => null },
+      evidence: { put: () => 'stored', evidenceFor: () => null },
       clock: () => BENCH_T0_MS,
     };
 
