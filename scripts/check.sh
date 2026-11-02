@@ -173,6 +173,7 @@ if [ "$MODE" != quick ]; then
   step_if contracts/mock-mpc mock-mpc mock-mpc-test in_dir contracts/mock-mpc cargo test -q
   step_if contracts/airlock-policy policy policy-build in_dir contracts/airlock-policy quiet cargo near build non-reproducible-wasm --no-abi
   step_if contracts/airlock-policy policy policy-sandbox in_dir contracts/airlock-policy cargo test -q
+  step_if runtime/test/chain chain chain-sandbox pnpm -C runtime test:chain                       # AIR-160, needs the policy wasm
   # second contract pass on the protocol 88 sandbox (neard 2.14.0, stable since 2026-10-26; testnet runs protocol 88): env.sh
   # points NEAR_SANDBOX_BIN_PATH at 2.11.0 (protocol 83), and balances differ (notes/sandbox_p88_2026-10-24.md: no gas rebate,
   # dearer account creation). Never assert exact balances or rebates in contract tests. The binary is cached next to the
