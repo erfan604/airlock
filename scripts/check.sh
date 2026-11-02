@@ -185,7 +185,7 @@ if [ "$MODE" != quick ]; then
     step_if contracts/airlock-policy policy policy-sandbox-p88 true
   fi
   # AIR-066 allows exactly I01 and I05 to have no test until AIR-108 writes them; AIR-108 deletes the flag (a protected edit)
-  step_if scripts/invariant-map.sh invariants invariants scripts/invariant-map.sh --allow-missing "I01 I05"   # AIR-066
+  step_if scripts/invariant-map.sh invariants invariants scripts/invariant-map.sh   # AIR-066
   step_if scripts/bench-replay-check.sh bench-replay bench-replay scripts/bench-replay-check.sh   # AIR-228
   step_if web/package.json web web quiet pnpm -C web build
   step evidence-pins evidence_pins
