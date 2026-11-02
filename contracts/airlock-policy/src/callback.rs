@@ -199,6 +199,11 @@ impl Contract {
         if rec.state != RequestState::Executing {
             return;
         }
+        // AIR-109: an x402 record stores the authorization signature and emits `x402_signed`
+        if rec.exec.as_ref().is_some_and(|e| e.x402.is_some()) {
+            self.store_x402_signature(id, unsigned_hex, sig);
+            return;
+        }
         if rec.evm.is_some() && sig.recovery_id > MAX_EVM_RECOVERY_ID {
             self.fail_kept_charged(id, FailReason::MpcBadResponse);
             return;
@@ -216,6 +221,7 @@ impl Contract {
             big_r: Some(sig.big_r),
             s: Some(sig.s),
             recovery_id: Some(sig.recovery_id),
+            x402: None,
         });
         rec.state = RequestState::Executed;
         self.records.insert(id.to_string(), rec);
@@ -288,6 +294,7 @@ mod tests {
             max_gas: 0,
             quick_task_cap: 100_000,
             path: None,
+            eip712: None,
         }
     }
 
@@ -1057,6 +1064,94 @@ mod tests {
                 stored(&c, &id).exec.and_then(|e| e.recovery_id),
                 Some(recovery_id)
             );
+        }
+    }
+    const X402_TOKEN: &str = "0x036cbd53842c5426634e7929541ec2318f3dcf7e";
+    const X402_PAYEE: &str = "0xd8da6bf26964af9d7eed9e03e53415d37aa96045";
+    const X402_FROM: &str = "0x1111111111111111111111111111111111111111";
+    const X402_DIGEST: &str = "2178b44a8b4de3e9911b1ae6639674f3f844d1ea965bc358ece95239ab834f8d";
+
+    /// An `Executing` x402 record of 10,000 base units, with the `exec` that `start_x402` leaves behind (digest, payer, window, nonce).
+    fn executing_x402(c: &mut Contract) -> String {
+        // charged within the test caps, then the amount of the authorization is set on the record
+        let id = executing(c, 1, 0, 500);
+        let mut rec = stored(c, &id);
+        rec.amount = 10_000;
+        rec.asset = format!("evm:84532:erc20:{X402_TOKEN}");
+        rec.payee = format!("erc20:84532:{X402_TOKEN}:{X402_PAYEE}");
+        rec.exec = Some(ExecInfo {
+            unsigned_hex: Some(X402_DIGEST.to_string()),
+            x402: Some(crate::request::X402Exec {
+                from: X402_FROM.to_string(),
+                valid_before: 1_700_000_300,
+                nonce: Hex32([0xab; 32]),
+            }),
+            ..ExecInfo::default()
+        });
+        store(c, rec);
+        id
+    }
+
+    fn x402_callback(c: &mut Contract, id: &str, body: &str, now_ms: u64) -> Vec<Value> {
+        testing_env!(
+            ctx(POLICY, now_ms, 0).build(),
+            near_sdk::test_vm_config(),
+            near_sdk::RuntimeFeesConfig::test(),
+            Default::default(),
+            vec![ok(body)]
+        );
+        c.on_signed(id.to_string(), X402_DIGEST.to_string());
+        events()
+    }
+
+    /// The x402 callback in `ok` mode of the mock MPC (`recovery_id` 0, `big_r` `02` plus 32 bytes `11`, `s` 32 bytes `22`): one
+    /// `x402_signed` and no `signed`, state `Executed`, the digest kept as `unsigned_hex`, `x402` kept.
+    #[test]
+    fn x402_callback_ok_emits_x402_signed() {
+        let mut c = setup();
+        let id = executing_x402(&mut c);
+        let logs = x402_callback(&mut c, &id, &good(), T0 + 5_000);
+        assert_eq!(names(&logs), vec!["x402_signed"], "{logs:?}");
+        let data = &logs[0]["data"][0];
+        assert_eq!(data["id"], id.as_str(), "{data}");
+        assert_eq!(data["from"], X402_FROM, "{data}");
+        assert_eq!(data["to"], X402_PAYEE, "{data}");
+        assert_eq!(data["value"], "10000", "{data}");
+        assert_eq!(data["valid_after"], "0", "{data}");
+        assert_eq!(data["valid_before"], "1700000300", "{data}");
+        assert_eq!(
+            data["nonce"],
+            format!("0x{}", "ab".repeat(32)).as_str(),
+            "{data}"
+        );
+        assert_eq!(data["v"], 27, "{data}");
+        assert_eq!(data["r"], "1".repeat(64).as_str(), "{data}");
+        assert_eq!(data["s"], "2".repeat(64).as_str(), "{data}");
+        assert_eq!(data.as_object().unwrap().len(), 10, "{data}");
+        let rec = stored(&c, &id);
+        assert_eq!(rec.state, RequestState::Executed);
+        let exec = rec.exec.expect("exec");
+        assert_eq!(exec.unsigned_hex.as_deref(), Some(X402_DIGEST));
+        assert_eq!(exec.recovery_id, Some(0));
+        assert_eq!(exec.x402.map(|x| x.valid_before), Some(1_700_000_300));
+        // a duplicated callback changes nothing and emits nothing
+        assert!(x402_callback(&mut c, &id, &good(), T0 + 6_000).is_empty());
+    }
+
+    /// D17: a `recovery_id` of 2 or 3 keeps the charges and ends the request `Failed` (not retryable), with no `x402_signed`.
+    #[test]
+    fn x402_callback_recovery_id_2_keeps_charges() {
+        for recovery_id in [2u8, 3] {
+            let mut c = setup();
+            let id = executing_x402(&mut c);
+            let charged = c.spent_now(&key(1), T0 + 5_000);
+            let logs = x402_callback(&mut c, &id, &good_with_recovery_id(recovery_id), T0 + 5_000);
+            assert_failed_event(&logs, &id, "MpcBadResponse", false);
+            let rec = stored(&c, &id);
+            assert_eq!(rec.state, RequestState::Failed);
+            assert_eq!(rec.reason.as_deref(), Some("MpcBadResponse"));
+            assert!(rec.exec.is_some_and(|e| e.big_r.is_none() && e.s.is_none()));
+            assert_eq!(c.spent_now(&key(1), T0 + 5_000), charged, "charges kept");
         }
     }
 }

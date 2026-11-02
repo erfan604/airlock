@@ -677,6 +677,7 @@ mod tests {
             max_gas: U128(if evm { 100_000 } else { 0 }),
             quick_task_cap: U128(quick),
             path: evm.then(|| "base-sepolia-1".to_string()),
+            eip712: None,
         }
     }
 
@@ -1087,6 +1088,7 @@ mod tests {
                 max_gas: 0,
                 quick_task_cap: u128::MAX,
                 path: None,
+                eip712: None,
             },
         );
         let vt = verify(&c, &base_task(&[(NEAR_PAYEE, u128::MAX - 1)], 2), NOW);

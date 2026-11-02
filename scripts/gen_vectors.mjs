@@ -23,7 +23,9 @@
 // characters (BadLength), characters of [a-z0-9] and the separators - _ . (BadChar for others), no leading, trailing or doubled
 // separator (BadSeparator); an evm key is `evm:<chain id>:<address>` with a chain id of decimal digits, no leading zero, from 1 to
 // 2^64 - 1 (BadChainId, including an empty one), and an address of exactly `0x` plus 40 lowercase hex digits (BadLength for any
-// other length, BadChar for a wrong prefix letter, uppercase or a non-hex digit of a 42 character address).
+// other length, BadChar for a wrong prefix letter, uppercase or a non-hex digit of a 42 character address). AIR-109 adds the form
+// `erc20:<chain id>:<token>:<payee>`: the chain id as above, then the token address, then the payee address, in that order (a missing
+// token or payee is an empty address, BadLength).
 import { createHash, createPrivateKey, createPublicKey, sign as edSign } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -577,6 +579,7 @@ function lineOf(entry) {
 
 // ---- payee keys ----
 const A40 = 'd8da6bf26964af9d7eed9e03e53415d37aa96045';
+const USDC40 = '036cbd53842c5426634e7929541ec2318f3dcf7e';
 const PAYEE_KEYS = {
   accept: [
     'near:accountant.test.near',
@@ -588,6 +591,7 @@ const PAYEE_KEYS = {
     'evm:1:0x0000000000000000000000000000000000000000',
     'evm:8453:0xffffffffffffffffffffffffffffffffffffffff',
     `evm:18446744073709551615:0x${A40}`,
+    `erc20:84532:0x${USDC40}:0x${A40}`,
   ].map((key) => ({ key })),
   reject: [
     // NonAscii: before any case folding, so the Kelvin sign (which lowercases to k) never reaches a book key
@@ -596,15 +600,20 @@ const PAYEE_KEYS = {
     ['near:\u202eaccountant.test.near', 'NonAscii'],
     ['evm:\uff18\uff14\uff15\uff13\uff12:0x' + A40, 'NonAscii'],
     ['near:\u0430ccountant.test.near', 'NonAscii'],
+    [`erc20:84532:0x${USDC40}:0x${A40.slice(0, 39)}\u0430`, 'NonAscii'],
     ['near:accountant.t\u0435st.near', 'NonAscii'],
     [`evm:84532:0x${A40.slice(0, 39)}\u0431`, 'NonAscii'],
     // BadChar
+    [`erc20:84532:0x${USDC40.replace('c', 'C')}:0x${A40}`, 'BadChar'],
+    [`erc20:84532:0x${USDC40}:0X${A40}`, 'BadChar'],
     ['evm:84532:0x' + A40.toUpperCase(), 'BadChar'],
     [`evm:84532:0X${A40}`, 'BadChar'],
     ['near:Accountant.testnet', 'BadChar'],
     ['near:account ant.near', 'BadChar'],
     [`evm:84532:0xg${A40.slice(1)}`, 'BadChar'],
     // BadLength
+    [`erc20:84532:0x${USDC40}`, 'BadLength'],
+    [`erc20:84532:0x${USDC40}:0x${A40.slice(0, 39)}`, 'BadLength'],
     [`evm:84532:${A40}`, 'BadLength'],
     [`evm:84532:0x${A40.slice(0, 39)}`, 'BadLength'],
     [`evm:84532:0x${A40}5`, 'BadLength'],
@@ -617,6 +626,8 @@ const PAYEE_KEYS = {
     ['near:ac--count.near', 'BadSeparator'],
     ['near:ac._count.near', 'BadSeparator'],
     // BadChainId
+    [`erc20:0:0x${USDC40}:0x${A40}`, 'BadChainId'],
+    [`erc20:084532:0x${USDC40}:0x${A40}`, 'BadChainId'],
     [`evm:0:0x${A40}`, 'BadChainId'],
     [`evm:084532:0x${A40}`, 'BadChainId'],
     [`evm:abc:0x${A40}`, 'BadChainId'],

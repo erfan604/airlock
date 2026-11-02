@@ -1233,6 +1233,7 @@ pub fn inproc_contract() -> airlock_policy::Contract {
             max_gas: U128(0),
             quick_task_cap: U128(100_000 * ONE_NEAR),
             path: None,
+            eip712: None,
         },
     );
     near_sdk::testing_env!(inproc_ctx("owner.test.near", T0, 1).build());
@@ -1316,7 +1317,7 @@ pub async fn pending_id_of(outcome: &Value) -> String {
 }
 
 /// The `header.timestamp` of the `final` block over the sandbox RPC, in milliseconds.
-fn final_block_ms(w: &World) -> u64 {
+pub fn final_block_ms(w: &World) -> u64 {
     let out = std::process::Command::new("curl")
         .args([
             "-s",

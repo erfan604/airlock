@@ -2,7 +2,9 @@
 //! payee by one, so the match is a byte for byte comparison; anything that is not already canonical is refused at the door, never
 //! repaired (F03 3.1, F10 3.1, SPEC R3-12, P16).
 //!
-//! Forms: `near:<account>` and `evm:<chain id>:0x<40 lowercase hex>`. `ft:` keys are rejected on purpose (`UnknownScheme`): the NEP-141
+//! Forms: `near:<account>`, `evm:<chain id>:0x<40 lowercase hex>` and (AIR-109) `erc20:<chain id>:0x<40 lowercase hex token>:0x<40 lowercase hex payee>`;
+//! the token inside the key gives each token its own bounds, caps and ledgers. The P16 proofs cover the `near:` and `evm:` forms; the erc20 form is
+//! covered by the vectors and unit tests. `ft:` keys are rejected on purpose (`UnknownScheme`): the NEP-141
 //! lane is not shipped, so R5-04's `ft:<token>:<account>` form is documented, not accepted.
 //!
 //! The ASCII check runs on the raw bytes first, before any case folding: a validator that lowercased first would accept U+212A (the
@@ -219,7 +221,49 @@ pub fn validate_payee_key(key: &[u8]) -> Result<(), KeyError> {
             None => Ok(()),
         };
     }
+    if starts_with(key, b"erc20:") {
+        return match erc20_key_error(&key[6..]) {
+            Some(e) => Err(e),
+            None => Ok(()),
+        };
+    }
     Err(KeyError::UnknownScheme)
+}
+
+/// The index of the first `:` in `s`, or `s.len()` when there is none.
+fn colon_at(s: &[u8]) -> usize {
+    let mut i = 0;
+    while i < s.len() {
+        if s[i] == b':' {
+            return i;
+        }
+        i += 1;
+    }
+    s.len()
+}
+
+/// The first reason what follows `erc20:` is not `<chain id>:0x<40 lowercase hex token>:0x<40 lowercase hex payee>`, checked in that order
+/// (chain id, token, payee); `None` when it is. A missing token or payee is an empty address, `BadLength`. AIR-109.
+fn erc20_key_error(rest: &[u8]) -> Option<KeyError> {
+    let c1 = colon_at(rest);
+    if chain_id(&rest[..c1]).is_none() {
+        return Some(KeyError::BadChainId);
+    }
+    let after_chain = if c1 < rest.len() {
+        &rest[c1 + 1..]
+    } else {
+        &rest[rest.len()..]
+    };
+    let c2 = colon_at(after_chain);
+    if let Some(e) = evm_address_error(&after_chain[..c2]) {
+        return Some(e);
+    }
+    let payee = if c2 < after_chain.len() {
+        &after_chain[c2 + 1..]
+    } else {
+        &after_chain[after_chain.len()..]
+    };
+    evm_address_error(payee)
 }
 
 #[cfg(kani)]

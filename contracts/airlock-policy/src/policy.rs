@@ -1,5 +1,6 @@
 // The policy state the owner edits: the pause switch and the flood-control flags (AIR-040), the asset registry (AIR-042) and the
 // address book (AIR-043).
+use crate::request::Hex32;
 use crate::*;
 use airlock_verdict::approve;
 use airlock_verdict::decimal::MAX_DECIMALS;
@@ -154,6 +155,18 @@ pub struct AssetEntry {
     pub max_gas: u128,
     pub quick_task_cap: u128,
     pub path: Option<String>,
+    /// AIR-109: for an erc20 asset only, what the EIP-3009 authorization needs (`Some` exactly for `evm:<chain_id>:erc20:0x<token>`).
+    pub eip712: Option<Eip712Entry>,
+}
+
+/// AIR-109: the EIP-712 data of an erc20 asset. The 32-byte domain separator is stored, never rebuilt from the token's name and version
+/// (Base Sepolia's `name()` is `USDC`, mainnet's `USD Coin`); the token address is in the asset id. `from` is the MPC-derived address
+/// of the asset's path: `0x` plus 40 lowercase hex.
+#[near(serializers = [borsh, json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Eip712Entry {
+    pub domain_separator: Hex32,
+    pub from: String,
 }
 
 /// `AssetEntry` as the owner sends it: every u128 is a decimal string.
@@ -168,6 +181,9 @@ pub struct AssetEntryJson {
     pub max_gas: U128,
     pub quick_task_cap: U128,
     pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub eip712: Option<Eip712Entry>,
 }
 
 /// `AssetEntry` as the views answer: the same fields as `AssetEntryJson`.
@@ -182,6 +198,9 @@ pub struct AssetEntryView {
     pub max_gas: U128,
     pub quick_task_cap: U128,
     pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub eip712: Option<Eip712Entry>,
 }
 
 impl From<AssetEntryJson> for AssetEntry {
@@ -195,6 +214,7 @@ impl From<AssetEntryJson> for AssetEntry {
             max_gas: e.max_gas.0,
             quick_task_cap: e.quick_task_cap.0,
             path: e.path,
+            eip712: e.eip712,
         }
     }
 }
@@ -210,22 +230,30 @@ impl From<&AssetEntry> for AssetEntryView {
             max_gas: U128(e.max_gas),
             quick_task_cap: U128(e.quick_task_cap),
             path: e.path.clone(),
+            eip712: e.eip712.clone(),
         }
     }
 }
 
-/// The asset id grammar: `near`, `evm:<chain_id>:native` (a decimal u64 of at least 1 without a leading zero) or `ft:<account>`
-/// where the part after `ft:` parses as an `AccountId` (accepted so the bench can name tokens; there is no execution lane).
+/// A decimal u64 chain id of at least 1 without a leading zero.
+fn valid_chain_id(chain: &str) -> bool {
+    !chain.starts_with('0')
+        && chain.bytes().all(|b| b.is_ascii_digit())
+        && chain.parse::<u64>().is_ok_and(|n| n >= 1)
+}
+
+/// The asset id grammar: `near`, `evm:<chain_id>:native` (a decimal u64 of at least 1 without a leading zero), `evm:<chain_id>:erc20:0x<40
+/// lowercase hex token>` (AIR-109) or `ft:<account>` where the part after `ft:` parses as an `AccountId` (accepted so the bench can name
+/// tokens; there is no execution lane).
 pub fn valid_asset_id(id: &str) -> bool {
     if id == "near" {
         return true;
     }
     if let Some(rest) = id.strip_prefix("evm:") {
-        return rest.strip_suffix(":native").is_some_and(|chain| {
-            !chain.starts_with('0')
-                && chain.bytes().all(|b| b.is_ascii_digit())
-                && chain.parse::<u64>().is_ok_and(|n| n >= 1)
-        });
+        if let Some(chain) = rest.strip_suffix(":native") {
+            return valid_chain_id(chain);
+        }
+        return crate::x402::is_erc20_asset(id);
     }
     id.strip_prefix("ft:")
         .is_some_and(|account| AccountId::from_str(account).is_ok())
@@ -336,8 +364,9 @@ impl Contract {
     /// Owner: register or replace an asset. The checks run in this order and each reverts with the quoted text: `invalid asset id`,
     /// `invalid symbol`, `symbol already used` (case-insensitive across the registry, AB6; the entry being replaced does not count),
     /// `decimals above 38`, `caps must satisfy 0 < hard_cap <= daily_cap`, `quick_task_cap must be above 0 and at most daily_cap`,
-    /// `approve arguments could exceed 200 bytes` (AIR-086), then for an EVM asset `evm path required`, `evm path invalid`,
-    /// `evm path already used`, `evm fee and gas caps required`, for any other asset `path not allowed` and `fee and gas caps only for evm`, and last `registry full` (more than 16 distinct ids;
+    /// `approve arguments could exceed 200 bytes` (AIR-086, skipped for an erc20 asset), then for an EVM asset `evm path required`, `evm path invalid`,
+    /// `evm path already used`, then for an erc20 asset (AIR-109) `erc20 fee and gas caps must be 0`, `eip712 required for erc20`, `eip712 invalid`, for a native EVM asset
+    /// `evm fee and gas caps required`, for any other asset `path not allowed` and `fee and gas caps only for evm`, and last `registry full` (more than 16 distinct ids;
     /// a replace never trips it). A changed symbol frees the old one. Emits `asset_set`.
     #[payable]
     pub fn asset_set(&mut self, asset: String, entry: AssetEntryJson) {
@@ -360,18 +389,21 @@ impl Contract {
             quick > 0 && quick <= daily,
             "quick_task_cap must be above 0 and at most daily_cap"
         );
+        let erc20 = crate::x402::is_erc20_asset(&asset);
         // AIR-086 (R4-12): a Ledger device shows the arguments of `approve` only under 200 bytes, so refuse an asset whose worst-case
         // arguments could reach that: the longest payee key, reason and book status, a ten digit pending number, this symbol and the
         // longest amount text up to the hard cap. The effective decimals ceiling is 33, and NEAR's hard cap stays below 10,000,000 NEAR.
+        // AIR-109: skipped for an erc20 asset, whose payee key is up to 112 characters against MAX_TO 69 (docs/KNOWN_LIMITATIONS.md)
         require!(
-            approve::approve_args_len(
-                approve::MAX_ID_DIGITS,
-                approve::MAX_TO,
-                entry.symbol.len(),
-                approve::amount_text_len(hard, entry.decimals),
-                approve::MAX_WHY,
-                approve::MAX_BOOK,
-            ) < approve::LEDGER_LIMIT,
+            erc20
+                || approve::approve_args_len(
+                    approve::MAX_ID_DIGITS,
+                    approve::MAX_TO,
+                    entry.symbol.len(),
+                    approve::amount_text_len(hard, entry.decimals),
+                    approve::MAX_WHY,
+                    approve::MAX_BOOK,
+                ) < approve::LEDGER_LIMIT,
             "approve arguments could exceed 200 bytes"
         );
         if asset.starts_with("evm:") {
@@ -385,10 +417,25 @@ impl Contract {
                     .any(|(id, e)| *id != asset && e.path.as_deref() == Some(path)),
                 "evm path already used"
             );
-            require!(
-                entry.max_fee_per_gas.0 > 0 && entry.max_gas.0 >= MIN_EVM_GAS,
-                "evm fee and gas caps required"
-            );
+            if erc20 {
+                require!(
+                    entry.max_fee_per_gas.0 == 0 && entry.max_gas.0 == 0,
+                    "erc20 fee and gas caps must be 0"
+                );
+                let eip712 = entry
+                    .eip712
+                    .as_ref()
+                    .unwrap_or_else(|| env::panic_str("eip712 required for erc20"));
+                require!(
+                    crate::x402::valid_from(&eip712.from) && eip712.domain_separator.0 != [0u8; 32],
+                    "eip712 invalid"
+                );
+            } else {
+                require!(
+                    entry.max_fee_per_gas.0 > 0 && entry.max_gas.0 >= MIN_EVM_GAS,
+                    "evm fee and gas caps required"
+                );
+            }
         } else {
             require!(entry.path.is_none(), "path not allowed");
             require!(
@@ -396,6 +443,7 @@ impl Contract {
                 "fee and gas caps only for evm"
             );
         }
+        require!(erc20 || entry.eip712.is_none(), "eip712 only for erc20");
         require!(
             self.assets.contains_key(&asset) || self.assets.len() < MAX_ASSETS,
             "registry full"
@@ -726,6 +774,7 @@ mod tests {
             max_gas: U128(0),
             quick_task_cap: U128(100_000),
             path: None,
+            eip712: None,
         }
     }
 
@@ -739,6 +788,7 @@ mod tests {
             max_gas: U128(100_000),
             quick_task_cap: U128(5_000),
             path: Some("base-sepolia-1".to_string()),
+            eip712: None,
         }
     }
 

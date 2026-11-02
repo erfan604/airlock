@@ -161,6 +161,21 @@ pub enum Event<'a> {
         s: &'a str,
         recovery_id: u8,
     },
+    /// AIR-109: `on_signed` stored the signature of an EIP-3009 authorization (the x402 lane), instead of `signed`. `id` is the request id;
+    /// `from` and `to` are `0x` plus 40 lowercase hex, `value` and `valid_before` decimal strings (`valid_after` is "0"), `nonce` is `0x` plus
+    /// 64 lowercase hex, `v` 27 or 28, `r` and `s` 64 lowercase hex without `0x`. AIR-168 decodes exactly this shape.
+    X402Signed {
+        id: &'a str,
+        from: &'a str,
+        to: &'a str,
+        value: String,
+        valid_after: &'a str,
+        valid_before: String,
+        nonce: &'a str,
+        v: u8,
+        r: &'a str,
+        s: &'a str,
+    },
     /// AIR-100: the EVM lane built the transaction, before the signature exists. `unsigned_hex` is lowercase hex without `0x`, first byte
     /// `02`; a retry emits it again with the same value.
     EvmUnsigned {

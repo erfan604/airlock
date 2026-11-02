@@ -39,6 +39,23 @@ test('a valid near request and a valid evm request parse and round-trip through 
   }
 });
 
+// AIR-109: an erc20 request has `evm` null, an asset of the form evm:<chain>:erc20:0x<token> and a payee key that carries the token
+const USDC_ADDR = '0x036cbd53842c5426634e7929541ec2318f3dcf7e';
+const erc20 = (): Req => ({
+  ...near(),
+  asset: `evm:84532:erc20:${USDC_ADDR}`,
+  payee: `erc20:84532:${USDC_ADDR}:0xd8da6bf26964af9d7eed9e03e53415d37aa96045`,
+});
+
+test('an erc20 request parses with evm null, and is refused with evm present, a native asset key or an uppercase token', () => {
+  const parsed = parseActionRequest(text(erc20()));
+  assert.deepEqual(parsed, erc20());
+  refused(text({ ...erc20(), evm: evm().evm }));
+  refused(text({ ...erc20(), payee: EVM_PAYEE }));
+  refused(text({ ...erc20(), asset: `evm:84532:erc20:0x${USDC_ADDR.slice(2).toUpperCase()}` }));
+  refused(text({ ...evm(), evm: null }));
+});
+
 test('a request of the vector file round-trips', () => {
   const row = vectors.verdicts[0];
   assert.ok(row !== undefined);

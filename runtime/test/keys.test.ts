@@ -114,6 +114,29 @@ test('assetForPayeeKey: near for a near key, evm:<chain id>:native for an evm ke
   assert.equal(codeOf(() => assetForPayeeKey('ft:a:b')), 'UnknownScheme');
 });
 
+// AIR-109: the erc20 form
+const USDC_ADDR = '0x036cbd53842c5426634e7929541ec2318f3dcf7e';
+test('erc20 payee keys: accepted, and mapped to the asset of their token', () => {
+  const key = `erc20:84532:${USDC_ADDR}:${CANON}`;
+  validatePayeeKey(key);
+  assert.equal(assetForPayeeKey(key), `evm:84532:erc20:${USDC_ADDR}`);
+  assert.equal(assetForPayeeKey(`evm:84532:${CANON}`), 'evm:84532:native');
+});
+
+for (const [name, key, code] of [
+  ['no payee', `erc20:84532:${USDC_ADDR}`, 'BadLength'],
+  ['uppercase token', `erc20:84532:0x${USDC_ADDR.slice(2).toUpperCase()}:${CANON}`, 'BadChar'],
+  ['0X payee', `erc20:84532:${USDC_ADDR}:0X${ADDR}`, 'BadChar'],
+  ['short payee', `erc20:84532:${USDC_ADDR}:0x${ADDR.slice(1)}`, 'BadLength'],
+  ['chain id 0', `erc20:0:${USDC_ADDR}:${CANON}`, 'BadChainId'],
+  ['leading zero chain id', `erc20:084532:${USDC_ADDR}:${CANON}`, 'BadChainId'],
+  ['cyrillic digit', `erc20:84532:${USDC_ADDR}:0x${ADDR.slice(0, 39)}${String.fromCharCode(0x430)}`, 'NonAscii'],
+] as const) {
+  test(`erc20 payee key refused: ${name}`, () => {
+    assert.equal(codeOf(() => validatePayeeKey(key)), code);
+  });
+}
+
 // ---- Target, payeeKey, assetOfTarget ----
 test('payeeKey canonicalizes a bare near account and accepts the matching key', () => {
   assert.equal(payeeKey({ kind: 'near' }, 'accountant.testnet'), 'near:accountant.testnet');

@@ -24,7 +24,7 @@ use std::sync::Arc;
 use tokio::sync::OnceCell;
 
 /// The closed list of docs/events.md, in the order of the ticket.
-const CLOSED_LIST: [&str; 26] = [
+const CLOSED_LIST: [&str; 27] = [
     "submitted",
     "allowed",
     "escalated",
@@ -35,6 +35,7 @@ const CLOSED_LIST: [&str; 26] = [
     "escalations_locked",
     "escalations_reset",
     "signed",
+    "x402_signed",
     "evm_unsigned",
     "paid",
     "failed",

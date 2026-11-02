@@ -99,6 +99,7 @@ mod tests {
             max_gas: 100_000,
             quick_task_cap: 5_000_000_000_000_000_000,
             path: Some(path.to_string()),
+            eip712: None,
         }
     }
 
@@ -268,6 +269,7 @@ mod tests {
                 max_gas: 0,
                 quick_task_cap: 100,
                 path: None,
+                eip712: None,
             },
         );
         let text = reverts(|| c.set_nonce(String::new(), U64(1)));

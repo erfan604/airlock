@@ -472,6 +472,7 @@ mod tests {
             max_gas: 0,
             quick_task_cap: near(100_000),
             path: None,
+            eip712: None,
         }
     }
 
@@ -1040,6 +1041,7 @@ mod tests {
             max_gas: 100_000,
             quick_task_cap: 100_000_000_000_000_000_000,
             path: Some("base-sepolia-1".to_string()),
+            eip712: None,
         };
         c.assets
             .insert("evm:84532:native".to_string(), evm_asset(100));

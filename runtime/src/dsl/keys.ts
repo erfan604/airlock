@@ -64,7 +64,19 @@ function evmAddressError(addr: string): KeyErrorCode | null {
   return null;
 }
 
-/** A key must already be canonical: `near:<account>` or `evm:<chain id>:0x<40 lowercase hex>`. Nothing is folded or repaired. */
+// AIR-109: `erc20:<chain id>:0x<token>:0x<payee>`, checked in the order chain id, token, payee (a missing token or payee is an empty
+// address, BadLength). The token inside the key gives each token its own bounds, caps and ledgers.
+function erc20KeyError(rest: string): KeyErrorCode | null {
+  const c1 = rest.indexOf(':');
+  if (!chainIdOk(c1 < 0 ? rest : rest.slice(0, c1))) return 'BadChainId';
+  const afterChain = c1 < 0 ? '' : rest.slice(c1 + 1);
+  const c2 = afterChain.indexOf(':');
+  const tokenError = evmAddressError(c2 < 0 ? afterChain : afterChain.slice(0, c2));
+  if (tokenError !== null) return tokenError;
+  return evmAddressError(c2 < 0 ? '' : afterChain.slice(c2 + 1));
+}
+
+/** A key must already be canonical: `near:<account>`, `evm:<chain id>:0x<40 lowercase hex>` or `erc20:<chain id>:0x<token>:0x<payee>`. Nothing is folded or repaired. */
 export function validatePayeeKey(key: string): void {
   if (typeof key !== 'string') throw new KeyError('UnknownScheme');
   if (!isAscii(key)) throw new KeyError('NonAscii');
@@ -82,10 +94,15 @@ export function validatePayeeKey(key: string): void {
     if (error !== null) throw new KeyError(error);
     return;
   }
+  if (key.startsWith('erc20:')) {
+    const error = erc20KeyError(key.slice(6));
+    if (error !== null) throw new KeyError(error);
+    return;
+  }
   throw new KeyError('UnknownScheme');
 }
 
-/** The asset a payee key implies: `near` or `evm:<chain id>:native`. Call it after validatePayeeKey. */
+/** The asset a payee key implies: `near`, `evm:<chain id>:native` or `evm:<chain id>:erc20:0x<token>`. Call it after validatePayeeKey. */
 export function assetForPayeeKey(key: string): string {
   if (typeof key !== 'string') throw new KeyError('UnknownScheme');
   if (key.startsWith('near:')) return 'near';
@@ -95,6 +112,14 @@ export function assetForPayeeKey(key: string): string {
     const id = colon < 0 ? rest : rest.slice(0, colon);
     if (!chainIdOk(id)) throw new KeyError('BadChainId');
     return `evm:${id}:native`;
+  }
+  if (key.startsWith('erc20:')) {
+    const rest = key.slice(6);
+    const c1 = rest.indexOf(':');
+    const id = c1 < 0 ? rest : rest.slice(0, c1);
+    if (!chainIdOk(id)) throw new KeyError('BadChainId');
+    const token = c1 < 0 ? '' : rest.slice(c1 + 1).split(':')[0] ?? '';
+    return `evm:${id}:erc20:${token}`;
   }
   throw new KeyError('UnknownScheme');
 }

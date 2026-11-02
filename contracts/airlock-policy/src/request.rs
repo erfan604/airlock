@@ -163,6 +163,17 @@ pub struct ExecInfo {
     pub big_r: Option<String>,
     pub s: Option<String>,
     pub recovery_id: Option<u8>,
+    /// AIR-109: set by the x402 lane (an EIP-3009 authorization instead of a transaction).
+    pub x402: Option<X402Exec>,
+}
+
+/// AIR-109: what the x402 lane signed: the payer address, the end of the authorization window (Unix seconds) and the random nonce.
+#[near(serializers = [borsh, json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct X402Exec {
+    pub from: String,
+    pub valid_before: u64,
+    pub nonce: Hex32,
 }
 
 /// One stored request, keyed by its derived id in `Contract::records`. The record (or the tombstone `expire` leaves in its place,
@@ -767,6 +778,11 @@ mod tests {
             big_r: None,
             s: None,
             recovery_id: Some(1),
+            x402: Some(X402Exec {
+                from: "0x".to_string() + &"11".repeat(20),
+                valid_before: 1_700_000_300,
+                nonce: Hex32([5; 32]),
+            }),
         });
         let bytes = borsh::to_vec(&rec).unwrap();
         assert_eq!(borsh::from_slice::<RequestRecord>(&bytes).unwrap(), rec);

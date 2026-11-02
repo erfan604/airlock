@@ -139,7 +139,8 @@ fn check_request_shape(req: &SubmitRequest) {
         req.asset == asset_for_payee_key(&req.payee),
         "asset does not match payee"
     );
-    match (&req.evm, req.asset.starts_with("evm:")) {
+    // AIR-109: only a native EVM asset (`evm:<chain_id>:native`) carries `evm`; an erc20 asset, like `near`, must not
+    match (&req.evm, req.asset.ends_with(":native")) {
         (None, true) => env::panic_str("evm params required"),
         (Some(_), false) => env::panic_str("evm params not allowed"),
         (Some(evm), true) => require!(
@@ -514,6 +515,7 @@ mod tests {
             max_gas: 0,
             quick_task_cap: 100_000,
             path: None,
+            eip712: None,
         }
     }
 
@@ -1043,6 +1045,7 @@ mod tests {
                 max_gas: 100_000,
                 quick_task_cap: 5_000_000,
                 path: Some("base-sepolia-1".to_string()),
+                eip712: None,
             },
         );
         let payee = "evm:84532:0xd8da6bf26964af9d7eed9e03e53415d37aa96045";

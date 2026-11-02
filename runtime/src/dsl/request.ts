@@ -15,6 +15,8 @@ export class RequestError extends Error {
 
 const U64_MAX = (1n << 64n) - 1n;
 const EVM_ASSET = /^evm:([1-9][0-9]*):native$/;
+// AIR-109: a token on an EVM chain, `evm:<chain id>:erc20:0x<40 lowercase hex>`
+const ERC20_ASSET = /^evm:([1-9][0-9]*):erc20:0x[0-9a-f]{40}$/;
 const MAX_DEPTH = 64;
 
 // the decimal rule of a u128 on the wire: ^(0|[1-9][0-9]*)$ and at most 2^128 - 1 (the strict parse at 0 decimals is exactly it)
@@ -29,7 +31,7 @@ function isU128Text(s: string): boolean {
 
 function isAsset(asset: string): boolean {
   if (asset === 'near') return true;
-  const m = EVM_ASSET.exec(asset);
+  const m = EVM_ASSET.exec(asset) ?? ERC20_ASSET.exec(asset);
   return m !== null && (m[1] ?? '').length <= 20 && BigInt(m[1] ?? '0') <= U64_MAX;
 }
 
@@ -51,7 +53,7 @@ export const ActionRequest = z
   .strictObject({
     task_id: z.string(),
     action_index: z.int().min(0).max(255),
-    asset: z.string().refine(isAsset, { message: 'not near or evm:<chain id>:native' }),
+    asset: z.string().refine(isAsset, { message: 'not near, evm:<chain id>:native or evm:<chain id>:erc20:0x<token>' }),
     payee: z.string().refine(isPayee, { message: 'not a canonical payee key' }),
     amount: AmountText,
     labels: z.strictObject({ recipient: Mask, amount: Mask, pc: Mask }),
@@ -62,8 +64,8 @@ export const ActionRequest = z
     if (isAsset(r.asset) && isPayee(r.payee) && assetForPayeeKey(r.payee) !== r.asset) {
       ctx.addIssue({ code: 'custom', path: ['asset'], message: 'asset does not match payee' });
     }
-    if (r.asset.startsWith('evm:') !== (r.evm !== null)) {
-      ctx.addIssue({ code: 'custom', path: ['evm'], message: 'evm parameters are present exactly for an evm asset' });
+    if (r.asset.endsWith(':native') !== (r.evm !== null)) {
+      ctx.addIssue({ code: 'custom', path: ['evm'], message: 'evm parameters are present exactly for a native evm asset' });
     }
   });
 export type ActionRequest = z.infer<typeof ActionRequest>;

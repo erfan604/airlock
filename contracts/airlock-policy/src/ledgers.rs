@@ -365,6 +365,7 @@ mod tests {
             max_gas: 0,
             quick_task_cap: 0,
             path: None,
+            eip712: None,
         }
     }
 

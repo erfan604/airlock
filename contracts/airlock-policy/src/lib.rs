@@ -44,6 +44,7 @@ pub mod task;
 pub mod testutil;
 pub mod time;
 pub mod views;
+pub mod x402;
 
 pub type Ppid = HexBytes<16>;
 

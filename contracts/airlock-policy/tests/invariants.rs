@@ -754,6 +754,7 @@ fn i06_random_sequences_over_three_days_respect_every_limit() {
             max_gas: U128(0),
             quick_task_cap: U128(DAILY),
             path: None,
+            eip712: None,
         },
     );
     for (i, p) in payees.iter().enumerate().filter(|(_, p)| p.booked) {

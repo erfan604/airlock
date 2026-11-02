@@ -8,16 +8,22 @@ use airlock_verdict::keys as verdict_keys;
 pub use airlock_verdict::keys::KeyError;
 
 /// Reverts `bad payee key: <KeyError variant name>` (for example `bad payee key: NonAscii`) unless the key is already canonical:
-/// `near:<account>` or `evm:<chain id>:0x<40 lowercase hex>`.
+/// `near:<account>`, `evm:<chain id>:0x<40 lowercase hex>` or `erc20:<chain id>:0x<token>:0x<payee>` (AIR-109).
 pub fn validate_payee_key(key: &str) {
     if let Err(error) = verdict_keys::validate_payee_key(key.as_bytes()) {
         env::panic_str(&format!("bad payee key: {error:?}"));
     }
 }
 
-/// The asset a payee is paid in: `near` for a `near:` key, `evm:<chain_id>:native` for an `evm:` key. Call it after
-/// `validate_payee_key`.
+/// The asset a payee is paid in: `near` for a `near:` key, `evm:<chain_id>:native` for an `evm:` key and (AIR-109)
+/// `evm:<chain_id>:erc20:0x<token>` for an `erc20:<chain_id>:0x<token>:0x<payee>` key. Call it after `validate_payee_key`.
 pub fn asset_for_payee_key(key: &str) -> String {
+    if let Some(rest) = key.strip_prefix("erc20:") {
+        let mut parts = rest.split(':');
+        let chain_id = parts.next().unwrap_or("");
+        let token = parts.next().unwrap_or("");
+        return format!("evm:{chain_id}:erc20:{token}");
+    }
     match key.strip_prefix("evm:") {
         Some(rest) => {
             let chain_id = rest.split(':').next().unwrap_or("");
