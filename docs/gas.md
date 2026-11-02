@@ -92,6 +92,17 @@ TESTNET NOT MEASURED: the live batch and the live approve sweep need signed test
 The coordinator runs them (commands in the ticket notes) and replaces this section with the `GAS TESTNET` rows `batch3`,
 `approve_evm` and `single_evm` and the line `APPROVE_MIN_TGAS=<n> testnet`.
 
+Measured so far on testnet (2026-11-02, signer weather GOOD p50 4.2 s, protocol 88):
+
+```
+GAS TESTNET batch3 burnt_total=45.185 burnt_first=10.617 receipts=20 reserved=105.000 need=115.617
+GAS TESTNET single_evm burnt_total=18.643 burnt_first=6.648 receipts=8 reserved=35.000 need=41.648
+```
+
+The batch of three needs 115.617 Tgas against 115.441 on the sandbox, under the 300 Tgas cap, so BATCH CAP 3 holds on testnet.
+NEAR tx of the batch: `9tNTyDLsv4zNjTwySJgxGF7itMWDAMLou64GacMp2KqC`. The approve sweep waits on the owner's `yes`
+(pending_id 3, escalated in `BXNFPqFbci2ctJWim4vumWP8ggmmJdBJmEqwS7LirwGs`), so `APPROVE_PREPAID_TGAS` stays 150.
+
 One real testnet row exists already, from the signed payment of AIR-102 (a single EVM request, saved as
 `scripts/fixtures/gas/tx_status_single_evm.json` and read by `scripts/gas-testnet.test.ts`):
 
