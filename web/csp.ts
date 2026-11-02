@@ -3,6 +3,7 @@
 // injects styles at runtime and a policy without them breaks the wallet picker (a measured integration finding, see
 // KNOWN_LIMITATIONS). connect-src lists the runtime origin, the NEAR RPC hosts and the wallet origins and no Base RPC: the
 // console never talks to Base.
+import snapshot from './src/wallet/manifest-snapshot.json' with { type: 'json' };
 
 /** The NEAR Connect manifest and fallback host and Intear's executor (notes/wallet_display section 0). AIR-182 confirms and extends it. */
 export const WALLET_ORIGINS = ['https://raw.githubusercontent.com', 'https://cdn.jsdelivr.net', 'https://wallet.intear.tech'] as const;
@@ -21,22 +22,52 @@ export const NEAR_RPC = [
 /** Paths the console and the runtime share one origin for, so the session cookie is sent (AIR-161's routes). */
 export const PROXY_PATHS = ['/session', '/tasks', '/runs', '/api'] as const;
 
+/**
+ * What a wallet's executor iframe loads beyond the origins its manifest names, measured per executor (AIR-182, headless Chromium 153,
+ * 2026-10-21, each wallet clicked once in the selector). The executor inherits the page's policy, so each origin below widens it: only the
+ * entry of a wallet that is in the pinned snapshot is ever added, and the primary wallet (Intear) needs none. A primary that needs one
+ * adds it knowingly (docs/PLUMBING.md, reviewed by AIR-167). The Meteor and NEAR CLI rows are measured data, unused while those wallets are
+ * not in the snapshot. Keyed by the manifest id.
+ */
+export const WALLET_UI_ORIGINS: Record<string, { img?: string[]; style?: string[]; font?: string[]; connect?: string[] }> = {
+  'meteor-wallet': {
+    img: ['https://meteorwallet.app'],
+    style: ['https://rsms.me', 'https://fonts.cdnfonts.com'],
+    font: ['https://rsms.me', 'data:'],
+    connect: ['https://mc.meteorwallet.app'],
+  },
+  'near-cli': { font: ['https://rsms.me'] },
+};
+
 export type CspInput = {
   runtimeOrigin: string;
   nearRpc: readonly string[];
   walletOrigins: readonly string[];
   iconOrigins: readonly string[];
   nonce: string;
+  /** Manifest ids of the pinned snapshot: their `WALLET_UI_ORIGINS` rows are added. Absent means none. */
+  walletIds?: readonly string[];
 };
+
+const uiOrigins = (ids: readonly string[] | undefined, kind: 'img' | 'style' | 'font' | 'connect'): string[] => {
+  const out: string[] = [];
+  for (const id of ids ?? []) {
+    if (!Object.hasOwn(WALLET_UI_ORIGINS, id)) continue;
+    for (const origin of WALLET_UI_ORIGINS[id]?.[kind] ?? []) if (!out.includes(origin)) out.push(origin);
+  }
+  return out;
+};
+
+const join = (base: string, extra: readonly string[]): string => [base, ...extra].join(' ');
 
 export function buildCsp(o: CspInput): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${o.nonce}'`,
-    "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: ${o.iconOrigins.join(' ')}`,
-    "font-src 'self'",
-    `connect-src 'self' ${o.runtimeOrigin} ${o.nearRpc.join(' ')} ${o.walletOrigins.join(' ')}`,
+    join("style-src 'self' 'unsafe-inline'", uiOrigins(o.walletIds, 'style')),
+    join(`img-src 'self' data: ${o.iconOrigins.join(' ')}`, uiOrigins(o.walletIds, 'img')),
+    join("font-src 'self'", uiOrigins(o.walletIds, 'font')),
+    join(`connect-src 'self' ${o.runtimeOrigin} ${o.nearRpc.join(' ')} ${o.walletOrigins.join(' ')}`, uiOrigins(o.walletIds, 'connect')),
     `frame-src 'self' ${o.walletOrigins.join(' ')}`,
     "frame-ancestors 'none'",
     "base-uri 'none'",
@@ -55,6 +86,7 @@ export function defaultCspInputs(): CspInputs {
     nearRpc: NEAR_RPC,
     walletOrigins: WALLET_ORIGINS,
     iconOrigins: ICON_ORIGINS,
+    walletIds: snapshot.wallets.map((w) => w.id),
   };
 }
 

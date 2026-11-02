@@ -249,6 +249,9 @@ importers:
       '@airlock/runtime':
         specifier: workspace:*
         version: link:../runtime
+      '@hot-labs/near-connect':
+        specifier: 0.11.4
+        version: 0.11.4
       react:
         specifier: 19.3.1
         version: 19.3.1
@@ -601,6 +604,9 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       hono: ^4 || ^5.0.0-0
+
+  '@hot-labs/near-connect@0.11.4':
+    resolution: {integrity: sha512-exAL1gqysyCHewcMO334YJ3ddTPg3j9EyVM9novz5Jx4fLbG/YSYBlkYMjMNB8E9K/4I7BiemjOw9bQ+h80hEA==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -2562,6 +2568,8 @@ snapshots:
   '@hono/node-server@2.1.5(hono@4.13.13)':
     dependencies:
       hono: 4.13.13
+
+  '@hot-labs/near-connect@0.11.4': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

@@ -2,6 +2,7 @@
 // AIR-185). There is no client router yet: every route is a full page load, which is what the fixture screenshots want.
 import { DoorSprite } from './components/Door.tsx';
 import { getFixture } from './fixtures/index.ts';
+import { ROUTES } from './routes.ts';
 
 function Placeholder({ line }: { line: string }) {
   return (
@@ -15,10 +16,12 @@ function Placeholder({ line }: { line: string }) {
 export function App({ pathname }: { pathname: string }) {
   const m = /^\/fixtures\/([^/]+)\/?$/.exec(pathname);
   const fixture = m ? getFixture(m[1] as string) : undefined;
+  const path = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname;
+  const route = Object.hasOwn(ROUTES, path) ? ROUTES[path] : undefined;
   return (
     <>
       <DoorSprite />
-      {fixture ? fixture.render() : m ? <Placeholder line="No such fixture." /> : <Placeholder line="Console shell. No task is open." />}
+      {fixture ? fixture.render() : m ? <Placeholder line="No such fixture." /> : route ? route() : <Placeholder line="Console shell. No task is open." />}
     </>
   );
 }

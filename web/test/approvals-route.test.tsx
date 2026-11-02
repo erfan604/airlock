@@ -1,0 +1,117 @@
+// AIR-182: the /approvals route. The loader reads the chain and the runtime; the view renders at most 5 cards and no bulk control.
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { renderToStaticMarkup } from 'react-dom/server';
+import type { RequestView } from '@airlock/runtime/chain-types';
+import correction from '../fixtures/card-correction.json' with { type: 'json' };
+import { ApprovalsView, MAX_CARDS, evidenceBody, loadApprovals } from '../src/approvals/ApprovalsRoute.tsx';
+import type { ApprovalsData } from '../src/approvals/ApprovalsRoute.tsx';
+import { parseEvidence } from '../src/approvals/evidence.ts';
+import { ROUTES } from '../src/routes.ts';
+
+const base = correction.view as RequestView;
+const pending = (n: number): RequestView => ({ ...base, id: String(n), request_id: `${'ab'.repeat(32)}:${n}` });
+
+function chain(log: { method: string; args: unknown }[] = []) {
+  return async (method: string, args: unknown): Promise<unknown> => {
+    log.push({ method, args });
+    if (method === 'get_ledgers') return correction.ledgers;
+    if (method === 'list_assets') return [['near', correction.asset]];
+    if (method === 'get_book_entry') return correction.book;
+    throw new Error(`unexpected view ${method}`);
+  };
+}
+
+const evidenceOk = async (): Promise<unknown> => ({ sources: [{ field: 'amount', origin: 'tool:1', sender: 'billing@accountant-firm.co', snippet: 'the amount due is 9.4' }] });
+
+test('approvals: the loader takes the newest 5 first and counts the rest', async () => {
+  const views = [1, 2, 3, 4, 5, 6, 7].map(pending);
+  const data = await loadApprovals({ pending: async () => views, view: chain(), evidence: evidenceOk });
+  assert.equal(MAX_CARDS, 5);
+  assert.deepEqual(data.cards.map((c) => c.view.id), ['7', '6', '5', '4', '3']);
+  assert.equal(data.more, 2);
+});
+
+test('approvals: the loader reads ledgers for the payee, the asset from the registry and the book entry', async () => {
+  const log: { method: string; args: unknown }[] = [];
+  const data = await loadApprovals({ pending: async () => [pending(1)], view: chain(log), evidence: evidenceOk });
+  const ledgers = log.find((l) => l.method === 'get_ledgers');
+  assert.deepEqual(ledgers?.args, { payee: base.payee, asset: base.asset, task: base.task_id });
+  assert.equal(data.cards[0]?.asset.symbol, 'NEAR');
+  assert.ok(data.cards[0]?.book);
+});
+
+test('approvals: an evidence 404 gives a card with no sender and no snippet', async () => {
+  const data = await loadApprovals({ pending: async () => [pending(1)], view: chain(), evidence: async () => null });
+  const c = data.cards[0];
+  assert.ok(c);
+  assert.equal(c.evidence.sender, null);
+  assert.equal(c.evidence.snippet, null);
+  const html = renderToStaticMarkup(<ApprovalsView data={data} {...viewProps} />);
+  assert.ok(html.includes('data-testid="card"'));
+  assert.ok(!html.includes('data-testid="specimen"'));
+});
+
+test('approvals: an evidence read that throws is the same as a 404', async () => {
+  const data = await loadApprovals({
+    pending: async () => [pending(1)],
+    view: chain(),
+    evidence: async () => {
+      throw new Error('503');
+    },
+  });
+  assert.equal(data.cards[0]?.evidence.snippet, null);
+});
+
+test('approvals: evidenceBody picks the first single source with a snippet and ignores ambiguous ones', () => {
+  assert.deepEqual(evidenceBody({ sources: [{ field: 'recipient', origin: 'a', sender: null, snippet: null, ambiguous: true }, { field: 'amount', origin: 'b', sender: 's@x', snippet: 'hello' }] }), { sender: 's@x', snippet: 'hello' });
+  assert.equal(evidenceBody({ sources: [] }), null);
+  assert.equal(evidenceBody(null), null);
+  assert.equal(evidenceBody({ sources: 'no' }), null);
+  const body = evidenceBody({ sources: [{ field: 'amount', origin: 'b', sender: 's@x', snippet: 'hello' }] });
+  assert.equal(parseEvidence(body, base.labels).snippet !== null, true);
+});
+
+const viewProps = {
+  ownerId: 'erfan-airlock.testnet',
+  contractId: 'airlock-policy.testnet',
+  actions: { approve: async () => ({ ok: false as const, kind: 'wallet' as const }), reject: async () => ({ ok: false as const, kind: 'wallet' as const }) },
+  nowMs: correction.now_ms,
+};
+
+test('approvals: the view renders at most 5 cards and the N more held line', async () => {
+  const views = [1, 2, 3, 4, 5, 6, 7].map(pending);
+  const data = await loadApprovals({ pending: async () => views, view: chain(), evidence: evidenceOk });
+  const html = renderToStaticMarkup(<ApprovalsView data={data} {...viewProps} />);
+  assert.equal((html.match(/data-testid="card"/g) ?? []).length, 5);
+  assert.ok(html.includes('2 more held'));
+});
+
+test('approvals: no line when nothing is held back, and an empty state when nothing is pending', async () => {
+  const one = await loadApprovals({ pending: async () => [pending(1)], view: chain(), evidence: evidenceOk });
+  const html = renderToStaticMarkup(<ApprovalsView data={one} {...viewProps} />);
+  assert.ok(!html.includes('more held'));
+  const none: ApprovalsData = { cards: [], more: 0 };
+  const empty = renderToStaticMarkup(<ApprovalsView data={none} {...viewProps} />);
+  assert.ok(empty.includes('data-testid="approvals-empty"'));
+  assert.ok(!empty.includes('data-testid="card"'));
+});
+
+test('approvals: there is never an approve all or reject all control', async () => {
+  const data = await loadApprovals({ pending: async () => [1, 2, 3].map(pending), view: chain(), evidence: evidenceOk });
+  const html = renderToStaticMarkup(<ApprovalsView data={data} {...viewProps} />);
+  assert.ok(!/(approve|reject)[ -]all/i.test(html));
+  assert.ok(!/all[ -](approve|reject)/i.test(html));
+});
+
+test('approvals: the reveal instruction of the primary wallet is shown above the cards', async () => {
+  const data = await loadApprovals({ pending: async () => [pending(1)], view: chain(), evidence: evidenceOk });
+  const html = renderToStaticMarkup(<ApprovalsView data={data} {...viewProps} />);
+  assert.ok(html.includes('data-testid="reveal-instruction"'));
+  assert.ok(html.includes('Tap Show args in Intear and compare the five values'));
+  assert.ok(html.indexOf('reveal-instruction') < html.indexOf('data-testid="card"'));
+});
+
+test('approvals: the route /approvals is registered', () => {
+  assert.equal(typeof ROUTES['/approvals'], 'function');
+});

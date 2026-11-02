@@ -1,0 +1,97 @@
+/* The login gate, the /approvals page and the CLI panel (AIR-182). Tokens only, radius 0, no shadow. Plain neutral blocks: colour only on label text. */
+.gate {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 30rem;
+  min-width: 0;
+}
+.gate-line,
+.gate-error,
+.gate-account {
+  font-size: 16px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.gate-error {
+  padding: var(--space-3);
+  border: 2px solid var(--ink);
+  background: var(--raised);
+}
+.gate-account {
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4) 0;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+
+.approvals {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+.approvals-title {
+  max-width: 30rem;
+  margin: 0 auto;
+  width: 100%;
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.approvals-reveal,
+.approvals-more,
+.approvals-empty,
+.approvals-error {
+  max-width: 30rem;
+  width: 100%;
+  margin: 0 auto;
+  font-size: 16px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.approvals-reveal {
+  padding: var(--space-3);
+  border: 2px solid var(--ink);
+  background: var(--raised);
+}
+.approvals-error {
+  padding: var(--space-3) var(--space-4) 0;
+}
+.approval-item {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.cli-panel {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 30rem;
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto;
+  padding: var(--space-3);
+  border: 2px solid var(--ink);
+  background: var(--raised);
+}
+.cli-text {
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.cli-command {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
