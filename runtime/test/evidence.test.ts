@@ -1,8 +1,11 @@
 // AIR-164: the evidence store and pickEvidence. Raw text only: the console parses it into Untrusted (AIR-181).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MemoryEvidenceStore, pickEvidence } from '../src/evidence.ts';
+import { MemoryEvidenceStore, pickEvidence, requestContentHash } from '../src/evidence.ts';
 import type { StoredEvidence } from '../src/evidence.ts';
+import type { RequestView } from '../src/chain/types.ts';
+import { createTestSession } from '../src/server/app.ts';
+import { makeApp } from './helpers/server.ts';
 
 test('pickEvidence: a string is a snippet cut to 2000 characters with no sender', () => {
   assert.deepEqual(pickEvidence('hello'), { sender: null, snippet: 'hello' });
@@ -69,4 +72,96 @@ test('MemoryEvidenceStore: the same content again is accepted and changes nothin
   s.put('r:0', stored('a'.repeat(64), 'one'));
   assert.equal(s.put('r:0', stored('a'.repeat(64), 'other snippet')), 'same');
   assert.equal(s.evidenceFor('r:0')?.sources[0]?.snippet, 'one');
+});
+
+// ---- AIR-161: GET /api/evidence/:no ----
+
+const view = (over: Partial<RequestView> = {}): RequestView => ({
+  request_id: 'req-abc',
+  id: '12',
+  state: 'Pending',
+  agent: 'agent.test.near',
+  task_id: 't1',
+  asset: 'near',
+  payee: 'bob.test.near',
+  amount: '5',
+  labels: { recipient: 1, amount: 0, pc: 0 },
+  reason: null,
+  book_status: null,
+  display: null,
+  created_ms: '1',
+  expires_ms: null,
+  digest: null,
+  exec: null,
+  ...over,
+});
+
+const NASTY = 'pay now\u200b <script>alert(1)</script> & "quotes"';
+
+async function evidenceApp() {
+  const h = makeApp({ mode: 'replay' });
+  const cookie = await createTestSession(h.app);
+  return { h, cookie };
+}
+
+test('evidence route: 401 without a session, and the chain is not asked', async () => {
+  const { h } = await evidenceApp();
+  h.views.set('12', view());
+  assert.equal((await h.app.request('/api/evidence/12')).status, 401);
+  assert.equal(h.chainCalls.length, 0);
+});
+
+test('evidence route: a number that is not 1 to 10 digits with no leading zero is 404 with zero chain calls', async () => {
+  const { h, cookie } = await evidenceApp();
+  for (const no of ['abc', '007', '0', '12345678901', '1.5', '-1', '1e3', '%20', 'req-abc']) {
+    const res = await h.app.request(`/api/evidence/${no}`, { headers: { cookie } });
+    assert.equal(res.status, 404, no);
+  }
+  assert.equal(h.chainCalls.length, 0);
+});
+
+test('evidence route: a number the chain does not know is 404', async () => {
+  const { h, cookie } = await evidenceApp();
+  const res = await h.app.request('/api/evidence/99', { headers: { cookie } });
+  assert.equal(res.status, 404);
+  assert.deepEqual(h.chainCalls, ['99']);
+});
+
+test('evidence route: a known request returns every registered source byte for byte, with no-store', async () => {
+  const { h, cookie } = await evidenceApp();
+  const v = view();
+  h.views.set('12', v);
+  const sources: StoredEvidence['sources'] = [
+    { field: 'recipient', origin: 'call:1', sender: 'billing@accountant-firm.co', snippet: NASTY },
+    { field: 'amount', origin: 'call:2', sender: null, snippet: null, ambiguous: true, candidates: [{ sender: 'a@b.c', snippet: 'one' }, { sender: 'x@y.z', snippet: 'two' }] },
+  ];
+  h.evidence.put('req-abc', { requestHash: requestContentHash(v), sources });
+  const res = await h.app.request('/api/evidence/12', { headers: { cookie } });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('cache-control'), 'no-store');
+  assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+  const text = await res.text();
+  assert.deepEqual(JSON.parse(text), { sources });
+  assert.equal((JSON.parse(text) as { sources: { snippet: string }[] }).sources[0]?.snippet, NASTY, 'the zero-width character and the tag survive unchanged');
+});
+
+test('evidence route: evidence that has not landed yet is 404 (the card says evidence pending)', async () => {
+  const { h, cookie } = await evidenceApp();
+  h.views.set('12', view());
+  assert.equal((await h.app.request('/api/evidence/12', { headers: { cookie } })).status, 404);
+});
+
+test('evidence route: evidence stored for other request contents is never served', async () => {
+  const { h, cookie } = await evidenceApp();
+  const v = view();
+  h.views.set('12', v);
+  h.evidence.put('req-abc', { requestHash: requestContentHash(view({ payee: 'mallory.test.near' })), sources: [{ field: 'recipient', origin: 'call:1', sender: 's', snippet: 'x' }] });
+  assert.equal((await h.app.request('/api/evidence/12', { headers: { cookie } })).status, 404);
+});
+
+test('evidence route: a tombstone is 404 even when evidence exists under its id', async () => {
+  const { h, cookie } = await evidenceApp();
+  h.views.set('12', view({ tombstone: true, agent: '', task_id: '', asset: '', payee: '', amount: '0', labels: { recipient: 0, amount: 0, pc: 0 }, created_ms: '0' }));
+  h.evidence.put('req-abc', { requestHash: requestContentHash(view()), sources: [{ field: 'recipient', origin: 'call:1', sender: 's', snippet: 'x' }] });
+  assert.equal((await h.app.request('/api/evidence/12', { headers: { cookie } })).status, 404);
 });
