@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "tsx --test \"test/**/*.test.ts\""
+    "test": "tsx --test \"test/**/*.test.ts\"",
+    "bench": "tsx src/cli.ts run",
+    "bench:replay": "tsx src/cli.ts replay"
   },
   "dependencies": {
     "@airlock/runtime": "workspace:*",
