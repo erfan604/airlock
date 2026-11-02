@@ -118,7 +118,7 @@ export function harness(plan: CheckedPlan, opts: HarnessOpts = {}): Harness {
   const put = evidence.put.bind(evidence);
   evidence.put = (id, e) => {
     order.push('put');
-    put(id, e);
+    return put(id, e);
   };
   const script: ChainScript = opts.chain ?? ((reqs) => batchOf(task, reqs.map((r) => outcomeFor(task, r))));
   const makeTools = (scope: { itemId: string | null; paste: string | null }): Tools => {
@@ -231,4 +231,25 @@ export const signedFrom = (task: OwnerTask, unsignedHex: string, resp: { big_r: 
   big_r: resp.big_r.affine_point,
   s: resp.s.scalar,
   recovery_id: resp.recovery_id,
+});
+
+// the stored view of a request as the chain would answer it, built from the request we sent
+export const viewOfRequest = (task: OwnerTask, req: ActionRequest, over: Partial<RequestView> = {}): RequestView => ({
+  request_id: requestId(task, req.action_index),
+  id: null,
+  state: 'Pending',
+  agent: 'agent.testnet',
+  task_id: req.task_id,
+  asset: req.asset,
+  payee: req.payee,
+  amount: req.amount,
+  labels: req.labels,
+  reason: null,
+  book_status: null,
+  display: null,
+  created_ms: '0',
+  expires_ms: null,
+  digest: null,
+  exec: null,
+  ...over,
 });

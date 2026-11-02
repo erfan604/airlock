@@ -27,6 +27,7 @@ import {
   kinds,
   ofKind,
   outcomeFor,
+  viewOfRequest,
   paramsOf,
   payNPlan,
   signedFrom,
@@ -244,28 +245,97 @@ test('feePolicyFromRegistry: a native transfer for a funded EVM asset, null for 
 });
 
 // ---- evidence ----
-test('evidence: stored for the derived id before submitBatch, with the sender and the body of the item', async () => {
+test('evidence: written only after submitBatch confirms, under the derived id, with the sender and body of the item', async () => {
   const plan = checked(U01);
-  const h: Harness = harness(plan, { inbox: [inboxItem('m1')] });
+  const h: Harness = harness(plan, {
+    inbox: [inboxItem('m1')],
+    chain: (reqs) => {
+      assert.equal(h.evidence.evidenceFor(requestId(h.task, 0)), null, 'nothing is stored before the chain answers');
+      return batchOf(h.task, reqs.map((r) => outcomeFor(h.task, r)));
+    },
+  });
   await collect(runTask(paramsOf(h, plan)));
-  assert.deepEqual(h.order, ['put', 'submit']);
+  assert.deepEqual(h.order, ['submit', 'put']);
   const e = h.evidence.evidenceFor(requestId(h.task, 0));
-  assert.equal(e?.sender, 'billing@accountant-firm.co');
-  assert.equal(e?.snippet, inboxItem('m1').body);
+  assert.equal(e?.sources.length, 1);
+  assert.deepEqual(e?.sources[0], { field: 'amount', origin: 'call:1', sender: 'billing@accountant-firm.co', snippet: inboxItem('m1').body });
+  assert.match(e?.requestHash ?? '', /^[0-9a-f]{64}$/);
 });
 
-test('evidence: a proposal with no origin stores nulls', async () => {
+test('evidence: a recipient chosen from one source and an amount from another give two entries, each with its field', async () => {
+  const plan = checked([
+    { let: 'mail', call: 'read_inbox' },
+    { let: 'note', call: 'read_paste' },
+    { let: 'inv', extract: { from: { ref: 'mail' }, schema: { amount: 'amount' } } },
+    { let: 'who', extract: { from: { ref: 'note' }, schema: { payee: 'text' } } },
+    { let: 'payee', lookup: { key: { ref: 'who', path: ['payee'] } } },
+    { action: 'transfer', args: { to: { ref: 'payee' }, amount: { ref: 'inv', path: ['amount'] }, asset: 'near' } },
+  ]);
+  const h: Harness = harness(plan, { inbox: [inboxItem('m1')], extract: () => ({ amount: '4.2', payee: 'accountant' }) });
+  await collect(runTask(paramsOf(h, plan)));
+  const sources = h.evidence.evidenceFor(requestId(h.task, 0))?.sources ?? [];
+  assert.deepEqual(sources.map((s) => [s.field, s.origin]), [['amount', 'call:1'], ['recipient', 'call:2']]);
+  assert.equal(sources[0]?.sender, 'billing@accountant-firm.co');
+  assert.equal(sources[1]?.sender, null);
+  assert.equal(sources[1]?.snippet, 'pasted text');
+});
+
+test('evidence: a tool output that is a list of several elements is ambiguous, never element 0', async () => {
+  const plan = checked(U01);
+  const h: Harness = harness(plan, {
+    inbox: [inboxItem('m1')],
+    over: {
+      makeTools: () => ({
+        call: async () => ({ raw: [{ from: 'a@x.y', body: '4.2' }, { from: 'b@x.y', body: '9' }], label: 'Untrusted:email' as const }),
+      }),
+    },
+  });
+  await collect(runTask(paramsOf(h, plan)));
+  const s = h.evidence.evidenceFor(requestId(h.task, 0))?.sources[0];
+  assert.equal(s?.ambiguous, true);
+  assert.equal(s?.sender, null);
+  assert.equal(s?.snippet, null);
+});
+
+test('evidence: a proposal with no origin has no sources', async () => {
   const plan = checked(payNPlan(1));
-  const h: Harness = harness(plan);
+  const h = harness(plan);
   await collect(runTask(paramsOf(h, plan)));
-  assert.deepEqual(h.evidence.evidenceFor(requestId(h.task, 0)), { sender: null, snippet: null });
+  assert.deepEqual(h.evidence.evidenceFor(requestId(h.task, 0))?.sources, []);
 });
 
-test('evidence: every chunk stores its evidence just before its own submit', async () => {
+test('evidence: every chunk is stored after its own submit', async () => {
   const plan = checked(payNPlan(4));
-  const h: Harness = harness(plan, { maxActions: 4 });
+  const h = harness(plan, { maxActions: 4 });
   await collect(runTask(paramsOf(h, plan)));
-  assert.deepEqual(h.order, ['put', 'put', 'put', 'submit', 'put', 'submit']);
+  assert.deepEqual(h.order, ['submit', 'put', 'put', 'put', 'submit', 'put']);
+});
+
+test('evidence: an entry already stored with other content is refused, kept, and reported', async () => {
+  const plan = checked(payNPlan(1));
+  const h = harness(plan);
+  const original = { requestHash: '0'.repeat(64), sources: [] };
+  h.evidence.put(requestId(h.task, 0), original);
+  const events = await collect(runTask(paramsOf(h, plan)));
+  assert.deepEqual(h.evidence.evidenceFor(requestId(h.task, 0)), original);
+  assert.deepEqual(ofKind(events, 'error').map((e) => e.data.code), ['EvidenceConflict']);
+});
+
+test('evidence: a recovered batch keeps the evidence only when the stored request has the same content', async () => {
+  const plan = checked(payNPlan(1));
+  const same: Harness = harness(plan, {
+    chain: (reqs) => batchOf(same.task, reqs.map((r) => outcomeFor(same.task, r)), { recovered: true, txHash: null, views: reqs.map((r) => viewOfRequest(same.task, r)) }),
+  });
+  const ok = await collect(runTask(paramsOf(same, plan)));
+  assert.equal(ofKind(ok, 'error').length, 0);
+  assert.notEqual(same.evidence.evidenceFor(requestId(same.task, 0)), null);
+
+  const other: Harness = harness(plan, {
+    chain: (reqs) => batchOf(other.task, reqs.map((r) => outcomeFor(other.task, r)), { recovered: true, txHash: null, views: reqs.map((r) => viewOfRequest(other.task, r, { amount: '1' })) }),
+  });
+  const bad = await collect(runTask(paramsOf(other, plan)));
+  assert.deepEqual(ofKind(bad, 'error').map((e) => e.data.code), ['EvidenceMismatch']);
+  assert.equal(other.evidence.evidenceFor(requestId(other.task, 0)), null);
 });
 
 // ---- hash ----

@@ -14,8 +14,8 @@ import type { ChainClient } from './chain/near.ts';
 import type { BatchResult, SubmitOutcome } from './chain/types.ts';
 import { ActionRequest, labelsToBits, planSha256 } from './dsl/index.ts';
 import type { CheckedPlan, OwnerTask, PlanStep } from './dsl/index.ts';
-import { pickEvidence } from './evidence.ts';
-import type { Evidence, EvidenceStore } from './evidence.ts';
+import { pickEvidence, requestContentHash } from './evidence.ts';
+import type { EvidenceField, EvidenceSource, EvidenceStore } from './evidence.ts';
 import { run } from './interpreter/index.ts';
 import type { Book, Extractor, Grounder, Proposed, RunDeps, RunResult, ToolArgPolicy, Tools, TraceEvent } from './interpreter/index.ts';
 import { plan } from './planner/planner.ts';
@@ -143,15 +143,23 @@ const toHex = (bytes: Uint8Array): string => Array.from(bytes, (b) => b.toString
 interface Prepared {
   req: ActionRequest;
   item: string | null;
-  evidence: Evidence;
+  sources: EvidenceSource[];
 }
 
-// the evidence of a proposal: the raw output of the first tool call its amount, recipient or pc came from
-function evidenceOf(p: Proposed, trace: readonly TraceEvent[]): Evidence {
-  const origin = [...p.origins.amount, ...p.origins.recipient, ...p.origins.pc][0];
-  if (origin === undefined) return { sender: null, snippet: null };
-  const call = trace.find((e) => e.kind === 'call' && e.data.id === origin);
-  return call === undefined ? { sender: null, snippet: null } : pickEvidence(call.data.raw);
+// the evidence of a proposal: one entry per distinct origin (tool call) of the recipient, of the amount and of the pc, each with its field,
+// so the card can show where the recipient came from and where the amount came from separately
+function sourcesOf(p: Proposed, trace: readonly TraceEvent[]): EvidenceSource[] {
+  const fields: [EvidenceField, readonly string[]][] = [
+    ['amount', p.origins.amount],
+    ['recipient', p.origins.recipient],
+    ['pc', p.origins.pc],
+  ];
+  return fields.flatMap(([field, origins]) =>
+    [...new Set(origins)].map((origin) => {
+      const call = trace.find((e) => e.kind === 'call' && e.data.id === origin);
+      return { field, origin, ...(call === undefined ? { sender: null, snippet: null } : pickEvidence(call.data.raw)) };
+    }),
+  );
 }
 
 // what an error of the chain or EVM stages says; a message is never copied (it can hold text from outside)
@@ -243,7 +251,7 @@ export async function* runTask(p: RunTaskParams): AsyncGenerator<TraceEvent, voi
           evm,
           hints: { plan_hash: task.plan_sha256, trace_digest: digest },
         });
-        prepared.push({ req, item: itemId, evidence: evidenceOf(proposal, result.trace) });
+        prepared.push({ req, item: itemId, sources: sourcesOf(proposal, result.trace) });
       } catch {
         yield ev('error', { code: 'BadRequest', item: itemId, index });
       }
@@ -254,8 +262,6 @@ export async function* runTask(p: RunTaskParams): AsyncGenerator<TraceEvent, voi
   prepared.sort((a, b) => a.req.action_index - b.req.action_index);
   for (let at = 0; at < prepared.length; at += BATCH_MAX) {
     const chunk = prepared.slice(at, at + BATCH_MAX);
-    // the evidence goes in before the batch, under the derived id, so the console never races the escalation
-    for (const c of chunk) deps.evidence.put(requestId(task, c.req.action_index), c.evidence);
     let batch: BatchResult;
     try {
       batch = await deps.chain.submitBatch(
@@ -270,6 +276,20 @@ export async function* runTask(p: RunTaskParams): AsyncGenerator<TraceEvent, voi
     }
     yield ev('submitted', { count: chunk.length, taskHash: batch.taskHash, txHash: batch.recovered ? null : batch.txHash });
     const byId = new Map(chunk.map((c) => [requestId(task, c.req.action_index), c] as const));
+    // evidence is written only now that the chain confirmed the request, once per id, and only for a request whose stored content is ours
+    for (const [id, c] of byId) {
+      const hash = requestContentHash(c.req);
+      if (batch.recovered) {
+        const view = batch.views.find((v) => v.request_id === id);
+        if (view === undefined || view.tombstone === true || requestContentHash(view) !== hash) {
+          yield ev('error', { code: 'EvidenceMismatch', request_id: id, item: c.item });
+          continue;
+        }
+      }
+      if (deps.evidence.put(id, { requestHash: hash, sources: c.sources }) === 'refused') {
+        yield ev('error', { code: 'EvidenceConflict', request_id: id, item: c.item });
+      }
+    }
     let flood: string | null = null;
     for (const o of batch.outcomes) {
       yield ev('verdict', { request_id: o.request_id, outcome: o.outcome, reason: o.reason, pending_id: o.pending_id, item: byId.get(o.request_id)?.item ?? null });
