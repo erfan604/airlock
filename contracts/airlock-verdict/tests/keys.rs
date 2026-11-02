@@ -224,3 +224,22 @@ fn evm_canonicalization() {
     assert_eq!(canon(&format!("0x{}", &ADDR[4..])), Err(KeyError::BadChar));
     assert_eq!(canon(&format!("{}x", &ADDR[2..41])), Err(KeyError::BadChar));
 }
+
+/// AIR-033: byte 0x7f (DEL) is ASCII, so it is a bad character and not a non-ASCII input; a bound of `>= 0x7f` in the ASCII check
+/// survived every earlier test because only bytes from 0x80 on were tried.
+#[test]
+fn del_is_ascii_and_a_bad_character() {
+    let del = code_point(0x7f);
+    assert_eq!(check(&format!("near:a{del}b")), Err(KeyError::BadChar));
+    assert_eq!(
+        check(&format!("evm:1:{ADDR}{del}")),
+        Err(KeyError::BadLength)
+    );
+    let mut with_del = String::from(ADDR);
+    with_del.replace_range(10..11, &del.to_string());
+    assert_eq!(canon(&with_del), Err(KeyError::BadChar));
+    assert_eq!(
+        check(&format!("near:a{}b", code_point(0x80))),
+        Err(KeyError::NonAscii)
+    );
+}

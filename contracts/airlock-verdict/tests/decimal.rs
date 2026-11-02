@@ -2,7 +2,7 @@
 //! the Kani harnesses check the digit logic, these tests cover the u128 to digits step on the full range and every vector of the shared
 //! file (`fixtures/verdict-vectors.json`, section `decimals`).
 
-use airlock_verdict::decimal::{format, parse, MAX_DECIMALS, MAX_LEN};
+use airlock_verdict::decimal::{format, parse, parse_digits, MAX_DECIMALS, MAX_LEN};
 use serde_json::Value;
 
 const VECTORS: &str = include_str!(concat!(
@@ -208,4 +208,23 @@ fn parse_never_panics_on_every_byte_pair_and_decimals() {
         }
     }
     assert!(accepted > 0, "no two-byte text parsed at all");
+}
+
+/// AIR-033: two mutants of `parse_digits` survived every earlier test, the places limit (`decimals > MAX_DECIMALS` weakened by an
+/// `||` to `&&`) and the 40 digit edge (`int_len + d > 40` as `>=`).
+#[test]
+fn parse_digits_refuses_39_places_and_accepts_exactly_40_digits() {
+    let count = |s: &[u8], d: u8| parse_digits(s, d).map(|(_, n)| n);
+    // 39 places is refused even though "1" would fit 40 digits
+    assert_eq!(count(b"1", MAX_DECIMALS + 1), None);
+    assert_eq!(count(b"1", 255), None);
+    assert_eq!(
+        count(b"1", MAX_DECIMALS),
+        Some(1 + usize::from(MAX_DECIMALS))
+    );
+    // integer digits plus places: 40 are accepted, 41 are not
+    assert_eq!(count(&[b'1'; 40], 0), Some(40));
+    assert_eq!(count(&[b'1'; 41], 0), None);
+    assert_eq!(count(b"12", MAX_DECIMALS), Some(40));
+    assert_eq!(count(b"123", MAX_DECIMALS), None);
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prints the toolchain and dependency pins as a markdown table, pinned value next to the value this machine actually has (F08
 # item 7; scripts/check.sh full writes it to target/pins.md, docs/EVIDENCE.md quotes it with the commit). Exit 1 on any MISMATCH.
-# Rows: rustc 1.86.0, kani 0.68, lean 4.35.0 (also equal to proofs/lean-toolchain), node v24 (prefix), cargo-near 0.22, and
+# Rows: rustc 1.86.0, kani 0.68, lean 4.35.0 (also equal to proofs/lean-toolchain), node v24 (prefix), cargo-near 0.22, cargo-mutants 26.0.0, and
 # near-sdk 5.26.1, omni-transaction 0.5.0, near-sandbox 0.3.9 read from contracts/airlock-policy/Cargo.lock (n/a while it is absent).
 # The last line is `commit <short hash>` (`none` before the first commit).
 # Usage: scripts/evidence-pins.sh > target/pins.md
@@ -42,6 +42,8 @@ out=$(node --version 2>&1); node_v=$(first_line "$out")
 if [[ "$node_v" == v24.* ]]; then row node v24 "$node_v" ok; else row node v24 "${node_v:-missing}" MISMATCH; fi
 
 out=$(cargo near --version 2>&1); cmp_row cargo-near 0.22 "$(version_of "$(first_line "$out")")"
+
+out=$(cargo mutants --version 2>&1); cmp_row cargo-mutants 26.0.0 "$(version_of "$(first_line "$out")")"
 
 LOCK=contracts/airlock-policy/Cargo.lock
 lock_row() { # crate pinned
