@@ -197,8 +197,9 @@ pub async fn deploy_uninitialized(
     account_id: &AccountId,
 ) -> Result<Arc<Signer>, Box<dyn std::error::Error + Send + Sync>> {
     let secret_key = signer::generate_secret_key()?;
+    // 30 NEAR like `deploy_contract`: the wasm is now just over 1 MB and storing it locks about 10 NEAR (`LackBalanceForState` at 10)
     let _ = Account::create_account(account_id.clone())
-        .fund_myself(genesis_account_id.clone(), NearToken::from_near(10))
+        .fund_myself(genesis_account_id.clone(), NearToken::from_near(30))
         .with_public_key(secret_key.public_key())
         .with_signer(genesis_signer.clone())
         .send_to(network_config)
