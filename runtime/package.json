@@ -6,23 +6,27 @@
     "./dsl": "./src/dsl/index.ts",
     "./analyze": "./src/analyze/index.ts",
     "./money": "./src/money/index.ts",
-    "./llm": "./src/llm/index.ts"
+    "./llm": "./src/llm/index.ts",
+    "./chain-types": "./src/chain/types.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "tsx --test \"test/**/*.test.ts\"",
+    "test": "tsx --test \"test/*.test.ts\"",
     "test:prop": "FC_RUNS=10000 FC_SEED=random tsx --test test/interpreter.prop.test.ts",
     "test:prop:quick": "FC_RUNS=1000 tsx --test test/interpreter.prop.test.ts",
-    "test:prop:canary": "../scripts/prop-canary.sh"
+    "test:prop:canary": "../scripts/prop-canary.sh",
+    "test:chain": "tsx --test test/chain/*.sandbox.test.ts"
   },
   "dependencies": {
     "@noble/hashes": "1.8.0",
+    "near-api-js": "7.3.1",
     "openai": "7.39.0",
     "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "24.19.0",
     "fast-check": "4.10.2",
+    "near-sandbox": "0.3.4",
     "tsx": "4.21.0",
     "typescript": "6.0.3",
     "viem": "2.57.7"
