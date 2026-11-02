@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { loadModelsConfig } from '@airlock/runtime/llm';
 import { toBaseUnits } from '@airlock/runtime/money';
+import { compromiseCommand } from './assume-compromise/index.ts';
 import { BENCH_ROOT } from './runner/assets.ts';
 import { verdictCliPath } from './runner/backend.ts';
 import { CaseLoadError, caseOrigin, loadCases } from './runner/cases.ts';
@@ -50,7 +51,11 @@ function repoRoot(): string {
 
 /** The V1 numbers of AIR-224 and no not-run rows: AIR-226 passes the parsed `bench/cases/not-run.json` as `notRun`. */
 export function defaultDeps(): RunnerDeps {
-  return { policyFor: v1PolicyFor, notRun: [] };
+  return {
+    policyFor: v1PolicyFor,
+    notRun: [],
+    compromise: (run) => compromiseCommand({ ...run, meta: { bench_commit: commitOf(), verdict_cli_sha256: sha256Of(verdictCliPath()) } }),
+  };
 }
 
 export function defaultIo(): Io {
@@ -138,9 +143,16 @@ async function runCommand(flags: Flags, io: Io): Promise<number> {
   const mode = str(flags['mode']);
   if (mode !== undefined && mode !== 'assume-compromise') return usage(io);
   if (mode === 'assume-compromise') {
-    if (io.deps.compromise === undefined) io.out('assume-compromise: no handler is registered (AIR-222)');
-    else await io.deps.compromise((l) => io.out(l));
-    return 0;
+    const text = str(flags['configs']);
+    const wanted = text === undefined ? ['A1', 'A2'] : text.split(',');
+    if (wanted.length === 0 || new Set(wanted).size !== wanted.length || wanted.some((c) => c !== 'A1' && c !== 'A2')) return usage(io);
+    const acName = str(flags['name']) ?? io.now().toISOString().slice(0, 10);
+    if (!NAME.test(acName)) return usage(io);
+    if (io.deps.compromise === undefined) {
+      io.out('assume-compromise: no handler is registered (AIR-222)');
+      return 0;
+    }
+    return io.deps.compromise({ configs: wanted as Array<'A1' | 'A2'>, name: acName, resultsDir: io.paths.results, out: (l) => io.out(l) });
   }
   const hooksName = str(flags['hooks']) ?? 'none';
   if (hooksName !== 'none' && hooksName !== 'product') return usage(io);

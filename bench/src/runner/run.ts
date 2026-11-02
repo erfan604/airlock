@@ -34,6 +34,14 @@ import type { RunRecord, Transcript } from './record.ts';
 import { BENCH_T0_MS, analyzeCtxFor, benchTask, cliSetupFor } from './task.ts';
 import type { Config, PaymentFact } from './types.ts';
 
+/** What `--mode assume-compromise` hands its handler: the configurations (A1, A2), the results name and folder, and the line printer. */
+export interface CompromiseRun {
+  configs: Array<'A1' | 'A2'>;
+  name: string;
+  resultsDir: string;
+  out: (line: string) => void;
+}
+
 /** What a caller passes in: the V1 numbers, the not-run rows of the results file, and the seams of later tickets. */
 export interface RunnerDeps {
   policyFor(world: CaseWorld, variant: 'V1' | 'V1-tight'): V1Policy;
@@ -43,8 +51,8 @@ export interface RunnerDeps {
   backendFactory?: () => GateBackend;
   /** the V2 agent; V2 is not built, so a run that names V2 needs this */
   v2Agent?: VanillaAgent;
-  /** AIR-222: `--mode assume-compromise` */
-  compromise?: (out: (line: string) => void) => Promise<void>;
+  /** AIR-222: `--mode assume-compromise`; resolves to the exit code (1 when anything got through) */
+  compromise?: (run: CompromiseRun) => Promise<number>;
 }
 
 export interface SessionOptions {
