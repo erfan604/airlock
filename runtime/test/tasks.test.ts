@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { maxActionsFor } from '../src/analyze/index.ts';
 import { PlanRejected, checkPlan, planSha256, taskHash } from '../src/dsl/index.ts';
 import type { CheckedPlan, OwnerTask } from '../src/dsl/index.ts';
-import type { AgentDeps, RunTaskParams } from '../src/agent.ts';
+import type { AgentDeps, ReadOnlyParams, RunTaskParams } from '../src/agent.ts';
 import type { TraceEvent } from '../src/interpreter/trace.ts';
 import { createTestSession } from '../src/server/app.ts';
 import { RunStore } from '../src/server/runs.ts';
@@ -35,6 +35,7 @@ async function setup(over: Partial<TaskDeps> = {}, dir = mkdtempSync(join(tmpdir
   const plan = checked(U01);
   const planCalls: { req: { text: string; ownerAccountId: string; sessionId: string }; model: string }[] = [];
   const runCalls: RunTaskParams[] = [];
+  const readOnlyCalls: ReadOnlyParams[] = [];
   const script: Script = { events: [ev(1), ev(2)], gate: null, throws: null };
   const state = { plan: plan as CheckedPlan, rejectWith: null as PlanRejected | Error | null, ids: 0 };
   const deps: TaskDeps = {
@@ -54,6 +55,11 @@ async function setup(over: Partial<TaskDeps> = {}, dir = mkdtempSync(join(tmpdir
       if (script.gate !== null) await script.gate;
       if (script.throws !== null) throw script.throws;
       for (const e of script.events.slice(1)) yield e;
+    },
+    runReadOnly: async function* (p: ReadOnlyParams) {
+      readOnlyCalls.push(p);
+      yield ev(1);
+      return ['the answer'];
     },
     agentDeps: {} as AgentDeps,
     store,
@@ -91,7 +97,7 @@ async function setup(over: Partial<TaskDeps> = {}, dir = mkdtempSync(join(tmpdir
     }
     throw new Error('the run did not end');
   };
-  return { h, store, cookie, dir, plan, planCalls, runCalls, script, state, deps, post, get, draft, taskOf, confirm, settle };
+  return { h, store, cookie, dir, plan, planCalls, runCalls, readOnlyCalls, script, state, deps, post, get, draft, taskOf, confirm, settle };
 }
 
 type Env = Awaited<ReturnType<typeof setup>>;
@@ -525,4 +531,71 @@ test('RunStore: append and setState reach subscribers and stateOf, and an unknow
   s.setState('r1', 'failed', 'x');
   assert.equal(s.stateOf('r1'), 'failed');
   assert.equal(s.get('r1')?.error, 'x');
+});
+
+// ---- read-only drafts (AIR-293, D21) ----
+const SUMMARY_PLAN = [
+  { let: 'mail', call: 'read_inbox' },
+  { let: 'sum', extract: { from: { ref: 'mail' }, schema: { summary: 'text' } } },
+  { say: { ref: 'sum', path: ['summary'] } },
+];
+
+test('read-only: a plan with no action step is answered as readOnly true, a paying plan carries no readOnly field', async () => {
+  const e = await setup();
+  const paying = await body(await e.post('/tasks', { instruction: 'pay' }));
+  assert.equal('readOnly' in paying, false);
+  e.state.plan = checked(SUMMARY_PLAN);
+  const ro = await body(await e.post('/tasks', { instruction: 'summarize' }));
+  assert.equal(ro.readOnly, true);
+  assert.equal(ro.planSha256, planSha256(e.state.plan));
+  assert.deepEqual(Object.keys(ro).sort(), ['draftId', 'plan', 'planSha256', 'readOnly']);
+});
+
+test('read-only: run-read-only runs the stored plan once without a task, appends the answer and ends done', async () => {
+  const e = await setup();
+  e.state.plan = checked(SUMMARY_PLAN);
+  const d = await e.draft('summarize', 'pasted');
+  const res = await e.post(`/tasks/${d.draftId}/run-read-only`, {});
+  assert.equal(res.status, 202);
+  assert.deepEqual(await body(res), { runId: d.draftId });
+  assert.equal(await e.settle(d.draftId), 'done');
+  assert.equal(e.readOnlyCalls.length, 1);
+  assert.equal(planSha256(e.readOnlyCalls[0]?.plan ?? checked([])), d.planSha256);
+  assert.equal(e.runCalls.length, 0);
+  assert.equal(e.store.get(d.draftId)?.taskHash, null);
+  const say = e.store.get(d.draftId)?.events.filter((x) => x.kind === 'say');
+  assert.deepEqual(say?.map((x) => x.data.text), ['the answer']);
+  // a second call finds the draft used
+  assert.equal((await e.post(`/tasks/${d.draftId}/run-read-only`, {})).status, 409);
+  assert.equal(e.readOnlyCalls.length, 1);
+});
+
+test('read-only: a paying draft is refused by run-read-only', async () => {
+  const e = await setup();
+  const paying = await e.draft();
+  assert.equal((await e.post(`/tasks/${paying.draftId}/run-read-only`, {})).status, 409);
+  assert.equal(e.readOnlyCalls.length, 0);
+});
+
+test('read-only: run-read-only needs the session of the owner of the draft', async () => {
+  const e = await setup();
+  e.state.plan = checked(SUMMARY_PLAN);
+  const d = await e.draft('summarize');
+  assert.equal((await e.post(`/tasks/${d.draftId}/run-read-only`, {}, null)).status, 401);
+  assert.equal((await e.post('/tasks/ffffffffffffffffffffffffffffffff/run-read-only', {})).status, 404);
+  assert.equal(e.readOnlyCalls.length, 0);
+});
+
+test('read-only: a run that throws ends failed with the error name', async () => {
+  const e = await setup({
+    runReadOnly: async function* () {
+      yield ev(1);
+      throw new RangeError('secret text');
+    },
+  });
+  e.state.plan = checked(SUMMARY_PLAN);
+  const d = await e.draft('summarize');
+  assert.equal((await e.post(`/tasks/${d.draftId}/run-read-only`, {})).status, 202);
+  assert.equal(await e.settle(d.draftId), 'failed');
+  assert.equal(e.store.get(d.draftId)?.error, 'RangeError');
 });

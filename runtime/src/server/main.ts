@@ -6,7 +6,7 @@ import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import { serve } from '@hono/node-server';
 import type { ServerType } from '@hono/node-server';
-import { feePolicyFromRegistry, planTask as realPlanTask, runTask } from '../agent.ts';
+import { feePolicyFromRegistry, planTask as realPlanTask, runReadOnly, runTask } from '../agent.ts';
 import type { AgentDeps } from '../agent.ts';
 import { registryFromRows } from '../analyze/index.ts';
 import { BASE_SEPOLIA_RPCS, deriveSender } from '../chain/evm.ts';
@@ -182,6 +182,10 @@ export async function startRuntime(env: NodeJS.ProcessEnv = {}, parts: Partial<R
     model: plannerModel,
     planTask: parts.planTask ?? realPlanTask,
     runTask: refreshingRunTask,
+    runReadOnly: async function* (p) {
+      await refreshSnapshot();
+      return yield* runReadOnly(p);
+    },
     agentDeps,
     store,
     newId: () => randomBytes(16).toString('hex'),

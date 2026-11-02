@@ -5,7 +5,7 @@ import { toOwnerBounds } from '@airlock/runtime/analyze';
 import { checkPlan, planSha256 } from '@airlock/runtime/dsl';
 import type { CheckedPlan, OwnerTask } from '@airlock/runtime/dsl';
 import type { ChainSnapshot } from '../chain/reads.ts';
-import { buildTask, refusal } from './preview.ts';
+import { buildTask, isReadOnlyPlan, refusal } from './preview.ts';
 import type { BuildEnv, BuildOk, Refusal } from './preview.ts';
 
 /** Read leniently on purpose: a response with extra fields is read, not rejected. An honest runtime sends no `bounds` and no `preview`. */
@@ -43,6 +43,23 @@ export async function confirmTask(base: string, draftId: string, task: OwnerTask
   const out = await postJson(`${base}/tasks/${encodeURIComponent(draftId)}/confirm`, { task, taskSig: base64(sig) });
   if (!isRecord(out) || typeof out.runId !== 'string') throw new ApiError(502);
   return { runId: out.runId };
+}
+
+export async function runReadOnly(base: string, draftId: string): Promise<{ runId: string }> {
+  const out = await postJson(`${base}/tasks/${encodeURIComponent(draftId)}/run-read-only`, {});
+  if (!isRecord(out) || typeof out.runId !== 'string') throw new ApiError(502);
+  return { runId: out.runId };
+}
+
+/** AIR-293: the draft's plan passes the checker, hashes to the hash sent, and the console's own analysis says it cannot pay. */
+export function isReadOnlyDraft(draft: RuntimeDraft, snap: ChainSnapshot, instruction: string): boolean {
+  let plan: CheckedPlan;
+  try {
+    plan = checkPlan(draft.plan);
+  } catch {
+    return false;
+  }
+  return planSha256(plan) === draft.planSha256 && isReadOnlyPlan(plan, instruction, snap);
 }
 
 /** Deep equality of JSON values; key order does not matter. */

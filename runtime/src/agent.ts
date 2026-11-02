@@ -335,3 +335,103 @@ async function* evmTail(
     yield fail('broadcast', e);
   }
 }
+
+// ---- the read-only run (AIR-293, D21) ----
+
+/** The plan has an action step, so it can pay and has no place in a run without a task. Thrown before any tool call. */
+export class NotReadOnly extends Error {
+  constructor() {
+    super('the plan has an action step and cannot run read-only');
+    this.name = 'NotReadOnly';
+  }
+}
+
+/** Something in a read-only run reached for the chain. No task exists, so nothing can be submitted, read or signed. */
+export class ReadOnlyRun extends Error {
+  constructor() {
+    super('a read-only run cannot reach the chain');
+    this.name = 'ReadOnlyRun';
+  }
+}
+
+/** A chain client that throws ReadOnlyRun on every call, never a network call. */
+export function readOnlyChain(): AgentDeps['chain'] {
+  return {
+    submitBatch: () => Promise.reject(new ReadOnlyRun()),
+    getRequest: () => Promise.reject(new ReadOnlyRun()),
+    waitSigned: () => Promise.reject(new ReadOnlyRun()),
+  };
+}
+
+export interface ReadOnlyParams {
+  ownerRequest: OwnerRequest;
+  paste: string | null;
+  plan: CheckedPlan;
+  deps: AgentDeps;
+}
+
+// a static walk: is there an action step anywhere in the plan
+function hasAction(steps: readonly PlanStep[]): boolean {
+  return steps.some((step) => {
+    if ('action' in step) return true;
+    if ('if' in step) return hasAction(step.then) || hasAction(step.else);
+    if ('for' in step) return hasAction(step.do);
+    return false;
+  });
+}
+
+/** Whether `runReadOnly` accepts the plan: it has no action step anywhere, so it cannot pay. */
+export const isReadOnlyPlan = (plan: CheckedPlan): boolean => !hasAction(plan);
+
+const sayText = (raw: unknown): string => (typeof raw === 'string' ? raw : (JSON.stringify(raw) ?? ''));
+
+/**
+ * Runs a plan with no action step through the interpreter, once per inbox item like `runTask`, with the real tools and the quarantine and a
+ * chain client that refuses every call. Throws NotReadOnly on the first step of the iteration, before any tool call, when the plan has an
+ * action step. Yields the same events as `runTask` (`plan`, then the interpreter's events with `data.item`) and returns the `say` output of
+ * the runs that finished. A run that ends with a proposal anyway throws ReadOnlyRun.
+ */
+export async function* runReadOnly(p: ReadOnlyParams): AsyncGenerator<TraceEvent, string[]> {
+  if (hasAction(p.plan)) throw new NotReadOnly();
+  const deps: AgentDeps = { ...p.deps, chain: readOnlyChain() };
+  const ev = (kind: TraceEvent['kind'], data: Record<string, unknown>): TraceEvent => ({ t: deps.clock(), kind, data });
+  yield ev('plan', { planSha256: planSha256(p.plan), steps: p.plan });
+
+  const itemIds: (string | null)[] = readsInbox(p.plan) ? await deps.inboxItemIds() : [null];
+  const says: string[] = [];
+  for (const itemId of itemIds) {
+    const queue = new EventQueue();
+    const runDeps: RunDeps = {
+      tools: deps.makeTools({ itemId, paste: p.paste }),
+      extract: deps.extract,
+      book: deps.book,
+      decimalsOf: deps.decimalsOf,
+      ownerText: p.ownerRequest.text,
+      now: deps.clock,
+      onEvent: (e) => queue.push({ t: e.t, kind: e.kind, data: { ...e.data, item: itemId } }),
+      ...(deps.ground === undefined ? {} : { ground: deps.ground }),
+      ...(deps.toolArgPolicy === undefined ? {} : { toolArgPolicy: deps.toolArgPolicy }),
+    };
+    let result: RunResult | undefined;
+    let failed: { error: unknown } | undefined;
+    const done = deps
+      .run(p.plan, runDeps)
+      .then(
+        (r) => {
+          result = r;
+        },
+        (error: unknown) => {
+          failed = { error };
+        },
+      )
+      .finally(() => queue.close());
+    yield* queue;
+    await done;
+    if (failed !== undefined) throw failed.error;
+    if (result === undefined || !result.ok) continue;
+    // nothing here can pay: a proposal means the walk above and the interpreter disagree, and the run ends
+    if (result.proposed.length > 0) throw new ReadOnlyRun();
+    for (const s of result.says) says.push(sayText(s.raw));
+  }
+  return says;
+}

@@ -6,7 +6,7 @@ import { registryFromRows } from '@airlock/runtime/analyze';
 import type { OwnerTask } from '@airlock/runtime/dsl';
 import { readSnapshot } from '../chain/reads.ts';
 import type { ChainReads, ChainSnapshot } from '../chain/reads.ts';
-import { guardRuntime } from './api.ts';
+import { guardRuntime, isReadOnlyDraft } from './api.ts';
 import type { RuntimeDraft } from './api.ts';
 import { PreviewScreen } from './PreviewScreen.tsx';
 import type { BuildOk, BuildEnv, Refusal } from './preview.ts';
@@ -21,6 +21,7 @@ export type PreviewDeps = {
   api: {
     createDraft(base: string, instruction: string, paste: string | null): Promise<RuntimeDraft>;
     confirmTask(base: string, draftId: string, task: OwnerTask, sig: Uint8Array): Promise<{ runId: string }>;
+    runReadOnly(base: string, draftId: string): Promise<{ runId: string }>;
   };
   env: BuildEnv;
   ownerId: string;
@@ -32,9 +33,11 @@ type Phase =
   | { kind: 'loading' }
   | { kind: 'failed'; text: string }
   | { kind: 'refused'; refusal: Refusal }
+  | { kind: 'readonly'; draftId: string }
   | { kind: 'ready'; draftId: string; build: BuildOk; snap: ChainSnapshot; key: TaskKey };
 
 const FAILED_READ = 'The console could not read the plan or the chain. Nothing was signed.';
+const FAILED_READ_ONLY = 'The runtime did not run the plan. Nothing was spent. Check again or edit the request.';
 const FAILED_SEND = 'The runtime did not accept the task. Nothing was spent. Check again or edit the request.';
 
 export function PreviewFlow({ instruction, paste, deps, onConfirmed, onEdit }: PreviewFlowProps) {
@@ -51,6 +54,7 @@ export function PreviewFlow({ instruction, paste, deps, onConfirmed, onEdit }: P
       try {
         const draft = await deps.api.createDraft(deps.base, instruction, paste);
         const snap = await readSnapshot(deps.reads);
+        if (isReadOnlyDraft(draft, snap, instruction)) return setPhase({ kind: 'readonly', draftId: draft.draftId });
         const guarded = guardRuntime(draft, snap, deps.env, instruction);
         if (!('ok' in guarded)) return setPhase({ kind: 'refused', refusal: guarded });
         const key = await ensureKey(deps.keys);
@@ -69,6 +73,38 @@ export function PreviewFlow({ instruction, paste, deps, onConfirmed, onEdit }: P
       <p className="preview-status" role="status" data-testid="preview-loading">
         Reading the plan and the chain.
       </p>
+    );
+  }
+  if (phase.kind === 'readonly') {
+    const draftId = phase.draftId;
+    const run = async (): Promise<void> => {
+      if (busy) return;
+      setBusy(true);
+      setNotice(null);
+      try {
+        const { runId } = await deps.api.runReadOnly(deps.base, draftId);
+        onConfirmed(runId);
+      } catch {
+        setNotice(FAILED_READ_ONLY);
+        setBusy(false);
+      }
+    };
+    return (
+      <section className="preview" data-testid="readonly" aria-label="Read only plan">
+        <h2 className="preview-title">Read only</h2>
+        <p className="preview-text">This plan reads and answers. It has no payment step, so nothing can be paid and nothing is signed.</p>
+        {notice === null ? null : (
+          <p className="preview-text" role="alert">
+            {notice}
+          </p>
+        )}
+        <button type="button" className="card-btn card-btn-primary" data-testid="run-read-only" disabled={busy} onClick={() => void run()}>
+          Run (read only, nothing can be paid)
+        </button>
+        <button type="button" className="card-btn card-btn-outline" data-testid="edit" onClick={onEdit}>
+          Edit
+        </button>
+      </section>
     );
   }
   if (phase.kind === 'failed' || phase.kind === 'refused') {

@@ -6,10 +6,12 @@ import type { Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { z } from 'zod';
 import { maxActionsFor } from '../analyze/index.ts';
-import type { planTask, runTask } from '../agent.ts';
-import type { AgentDeps, RunTaskParams } from '../agent.ts';
+import { isReadOnlyPlan } from '../agent.ts';
+import type { planTask, runReadOnly, runTask } from '../agent.ts';
+import type { AgentDeps, ReadOnlyParams, RunTaskParams } from '../agent.ts';
 import { OwnerTask, PlanRejected, checkPlan, planSha256, taskHash } from '../dsl/index.ts';
 import type { CheckedPlan } from '../dsl/index.ts';
+import type { TraceEvent } from '../interpreter/trace.ts';
 import type { RunStore } from './runs.ts';
 import { decodeSignature, requireSession } from './session.ts';
 import type { SessionInfo } from './session.ts';
@@ -30,15 +32,21 @@ export interface TaskDeps {
   model: string;
   planTask: typeof planTask;
   runTask: typeof runTask;
+  /** AIR-293: the run of a plan with no action step, with no task */
+  runReadOnly: typeof runReadOnly;
   agentDeps: AgentDeps;
   store: RunStore;
   /** 32 lowercase hex characters from 16 random bytes; the draft id is the run id */
   newId(): string;
 }
 
-/** The answer of POST /tasks: nothing else, no bounds and no preview (the console derives both from the plan). */
+/**
+ * The answer of POST /tasks: nothing else, no bounds and no preview (the console derives both from the plan). `readOnly` is present (true)
+ * only for a plan with no action step (AIR-293); the console checks that itself and never trusts the flag.
+ */
 export interface DraftResponse {
   draftId: string;
+  readOnly?: true;
   plan: CheckedPlan;
   planSha256: string;
 }
@@ -69,6 +77,8 @@ interface Draft {
   /** kept in memory for the run only; never written, never given to the planner */
   paste: string | null;
   request: OwnerRequest;
+  /** the plan has no action step (isReadOnlyPlan), so run-read-only accepts it and nothing else */
+  readOnly: boolean;
 }
 
 function deepFreeze<T>(value: T): T {
@@ -127,9 +137,10 @@ export function registerTaskRoutes(app: Hono, deps: TaskDeps): void {
     }
     const hash = planSha256(plan);
     store.setPlanSha256(id, hash);
-    drafts.set(id, { plan, paste: paste ?? null, request });
+    const readOnly = isReadOnlyPlan(plan);
+    drafts.set(id, { plan, paste: paste ?? null, request, readOnly });
     step(id, 'PLANNED');
-    const answer: DraftResponse = { draftId: id, plan, planSha256: hash };
+    const answer: DraftResponse = readOnly ? { draftId: id, readOnly: true, plan, planSha256: hash } : { draftId: id, plan, planSha256: hash };
     return c.json(answer);
   });
 
@@ -160,14 +171,37 @@ export function registerTaskRoutes(app: Hono, deps: TaskDeps): void {
     step(id, 'CONFIRM');
     step(id, 'START');
     const params: RunTaskParams = { ownerRequest: draft.request, paste: draft.paste, task, taskSig: decodeSignature(taskSig), plan: draft.plan, deps: deps.agentDeps };
-    void drive(id, params);
+    void drive(id, deps.runTask(params));
     return c.json({ runId: id }, 202);
   });
 
-  // the background run: every event is appended to the record; the iterator ending is FINISH, a throw is FAIL
-  async function drive(id: string, params: RunTaskParams): Promise<void> {
+  // AIR-293: a plan with no action step runs without a task. The draft goes planned, confirmed, running through the same table, with no task
+  // id and no task hash, and the answer is appended as one `say` event per output. A draft is used once, like a task.
+  app.post('/tasks/:id/run-read-only', requireSession, limit, async (c) => {
+    const id = c.req.param('id');
+    const rec = ownRun(id, c.get('session'));
+    if (rec === undefined) return c.json({ error: 'not found' }, 404);
+    const draft = drafts.get(id);
+    if (draft === undefined || !draft.readOnly || reduce(rec.state, 'CONFIRM') === undefined) return c.json({ error: draft?.readOnly === false ? 'plan can pay' : notAllowed(rec.state) }, 409);
+    step(id, 'CONFIRM');
+    step(id, 'START');
+    const params: ReadOnlyParams = { ownerRequest: draft.request, paste: draft.paste, plan: draft.plan, deps: deps.agentDeps };
+    void drive(id, deps.runReadOnly(params));
+    return c.json({ runId: id }, 202);
+  });
+
+  // the background run: every event is appended to the record; the iterator ending is FINISH, a throw is FAIL. A read-only run returns its
+  // say output, which becomes `say` events at the end.
+  async function drive(id: string, run: AsyncGenerator<TraceEvent, string[] | void>): Promise<void> {
     try {
-      for await (const e of deps.runTask(params)) store.append(id, e);
+      for (;;) {
+        const n = await run.next();
+        if (n.done === true) {
+          for (const text of n.value ?? []) store.append(id, { t: deps.clock(), kind: 'say', data: { text } });
+          break;
+        }
+        store.append(id, n.value);
+      }
       step(id, 'FINISH');
     } catch (e) {
       // the error's name only: a message can carry text from outside

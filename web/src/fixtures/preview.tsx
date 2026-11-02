@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { checkPlan, planSha256 } from '@airlock/runtime/dsl';
 import type { OwnerTask } from '@airlock/runtime/dsl';
 import type { ChainReads } from '../chain/reads.ts';
-import { confirmTask, createDraft } from '../preview/api.ts';
+import { confirmTask, createDraft, runReadOnly } from '../preview/api.ts';
 import type { RuntimeDraft } from '../preview/api.ts';
 import { PreviewFlow } from '../preview/PreviewFlow.tsx';
 import type { PreviewDeps } from '../preview/PreviewFlow.tsx';
@@ -50,12 +50,13 @@ function makeDeps(mode: Mode): PreviewDeps {
       (window.__previewConfirms ??= []).push({ draftId, task, sig: b64(sig) });
       return { runId: 'fixture-run' };
     },
+    runReadOnly: async () => ({ runId: 'fixture-run' }),
   };
   return {
     base: '',
     reads,
     keys,
-    api: mode === 's30' ? { createDraft, confirmTask } : fakeApi,
+    api: mode === 's30' ? { createDraft, confirmTask, runReadOnly } : fakeApi,
     env: { agentId: 'agent.testnet', contractId: 'policy.testnet', rand: (n) => crypto.getRandomValues(new Uint8Array(n)) },
     ownerId: 'owner.testnet',
   };

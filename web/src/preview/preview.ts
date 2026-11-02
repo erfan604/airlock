@@ -62,6 +62,16 @@ function ttlMs(policyTtl: string): number {
   return Math.min(MAX_TTL_MS, JSON.parse(policyTtl) as number);
 }
 
+/**
+ * AIR-293 (D21): the console's own answer to "can this plan pay at all". True only when its analysis finds no action instance and nothing
+ * but NoBounds in the way. A `readOnly` flag from the runtime is never read.
+ */
+export function isReadOnlyPlan(plan: CheckedPlan, instruction: string, snap: ChainSnapshot): boolean {
+  const registry = registryFromRows(snap.assets);
+  const analysis = analyzePlan(plan, { ownerText: instruction, book: bookFromRows(snap.book), registry, limits: limitsFromPolicy(snap.policy) });
+  return analysis.instances.length === 0 && analysis.errors.length === 1 && analysis.errors[0] === 'NoBounds';
+}
+
 export function buildTask(plan: CheckedPlan, instruction: string, snap: ChainSnapshot, env: BuildEnv): BuildResult {
   const registry = registryFromRows(snap.assets);
   const analysis = analyzePlan(plan, { ownerText: instruction, book: bookFromRows(snap.book), registry, limits: limitsFromPolicy(snap.policy) });

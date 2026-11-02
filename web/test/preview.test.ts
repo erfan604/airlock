@@ -6,7 +6,7 @@ import { toOwnerBounds } from '@airlock/runtime/analyze';
 import { checkPlan, decodeOwnerTask, planSha256 } from '@airlock/runtime/dsl';
 import fixture from '../fixtures/preview-u01.json' with { type: 'json' };
 import type { ChainSnapshot } from '../src/chain/reads.ts';
-import { guardRuntime } from '../src/preview/api.ts';
+import { guardRuntime, isReadOnlyDraft } from '../src/preview/api.ts';
 import type { RuntimeDraft } from '../src/preview/api.ts';
 import { buildTask, uuidv7 } from '../src/preview/preview.ts';
 import type { BuildResult } from '../src/preview/preview.ts';
@@ -154,4 +154,19 @@ test('S30 guard: a refusal of the analyzer passes through with its own closed te
   const r = guardRuntime(draft({ plan: [LOOKUP_LANDLORD, transfer(ref('who'), '60')], planSha256: planSha256(checkPlan([LOOKUP_LANDLORD, transfer(ref('who'), '60')])) }), snap(), env, 'Pay landlord 60 NEAR');
   assert.ok(!('ok' in r));
   if (!('ok' in r)) assert.equal(r.code, 'ExceedsQuickCap');
+});
+
+// == AIR-293: the console decides for itself that a draft is read only ==
+test('read only: a plan with no action step is read only by the console own analysis, a paying plan and a bad hash are not', () => {
+  const summary = [READ_MAIL, { let: 'sum', extract: { from: ref('mail'), schema: { summary: 'text' } } }, { say: ref('sum', ['summary']) }];
+  const hash = planSha256(checkPlan(summary));
+  const ro = (d: RuntimeDraft) => isReadOnlyDraft(d, snap(), INSTRUCTION);
+  assert.equal(ro(draft({ plan: summary, planSha256: hash })), true);
+  assert.equal(ro(draft({ plan: summary, planSha256: 'f'.repeat(64) })), false);
+  assert.equal(ro(draft({ plan: [{ bogus: 1 }] })), false);
+  assert.equal(ro(draft()), false, 'the U01 plan pays');
+  const unbounded = [READ_MAIL, EXTRACT_INV, LOOKUP_LANDLORD, transfer(ref('who'), ref('inv', ['amount']))];
+  assert.equal(ro(draft({ plan: unbounded, planSha256: planSha256(checkPlan(unbounded)) })), false, 'NoBounds with an action is a refusal, not a read only run');
+  // a runtime that sends readOnly on a paying plan changes nothing: the flag is not an input
+  assert.equal(ro({ ...draft(), extras: { ...draft().extras }, readOnly: true } as RuntimeDraft), false);
 });
