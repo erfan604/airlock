@@ -314,7 +314,6 @@ async fn reject(w: &World, no: &str) {
 }
 
 #[tokio::test]
-#[ignore = "needs AIR-081"]
 async fn expire_frees_a_slot() {
     let _slot = slot().await;
     let w = flood_world().await;
@@ -344,7 +343,6 @@ async fn expire_frees_a_slot() {
 }
 
 #[tokio::test]
-#[ignore = "needs AIR-081"]
 async fn three_consecutive_rejects_lock() {
     let _slot = slot().await;
     let w = flood_world().await;
@@ -360,7 +358,6 @@ async fn three_consecutive_rejects_lock() {
 }
 
 #[tokio::test]
-#[ignore = "needs AIR-081"]
 async fn day_rule_locks_without_a_streak() {
     let _slot = slot().await;
     let w = flood_world().await;
@@ -403,7 +400,6 @@ async fn day_rule_locks_without_a_streak() {
 }
 
 #[tokio::test]
-#[ignore = "needs AIR-081"]
 async fn approve_between_rejects_resets_the_streak() {
     let _slot = slot().await;
     let w = flood_world().await;
@@ -424,7 +420,6 @@ async fn approve_between_rejects_resets_the_streak() {
 }
 
 #[tokio::test]
-#[ignore = "needs AIR-081"]
 async fn reset_unlocks_and_a_new_escalation_is_accepted() {
     let _slot = slot().await;
     let w = flood_world().await;
@@ -449,7 +444,6 @@ async fn reset_unlocks_and_a_new_escalation_is_accepted() {
 }
 
 #[tokio::test]
-#[ignore = "needs AIR-081"]
 async fn locked_agent_pending_items_stay_approvable() {
     let _slot = slot().await;
     let w = flood_world().await;

@@ -1295,7 +1295,9 @@ fn escalation_helpers_not_exported() {
     }
     for helper in [
         "escalate_reason_from_name",
-        "parse_pending_no",
+        "canonical_no",
+        "expire_tombstone",
+        "resolve_escalation",
         "digest_of",
         "preimage_of",
         "pending_info",

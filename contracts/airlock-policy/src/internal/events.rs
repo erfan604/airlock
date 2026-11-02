@@ -122,6 +122,20 @@ pub enum Event<'a> {
         approver: &'a AccountId,
         block_height: U64,
     },
+    /// AIR-081: the owner rejected an escalation, emitted before `escalations_locked`. `id` is the decimal pending number.
+    Rejected {
+        request_id: &'a str,
+        id: String,
+    },
+    /// AIR-081: anyone expired an escalation after its time to live. `id` is the decimal pending number.
+    Expired {
+        request_id: &'a str,
+        id: String,
+    },
+    /// AIR-081: the owner cleared an agent's flood lockout.
+    EscalationsReset {
+        agent: &'a AccountId,
+    },
     /// One per new Block, with the `Reason::as_str()` name.
     Blocked {
         request_id: &'a str,

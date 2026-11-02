@@ -269,7 +269,7 @@ pub struct RequestDisplay {
 /// pending number, present only for escalations (the value `approve` and `reject` take). `state` is the variant name, `digest` is
 /// 64 lowercase hex.
 ///
-/// A tombstone (an `Expired` record with no `pending`, AIR-081) answers `request_id`, `id` and `state` only: the other keys are
+/// A tombstone (an `Expired` record, AIR-081) answers `request_id`, `id` and `state` only: the other keys are
 /// absent from its JSON, which is why the fields below that a record always has are `Option` here.
 #[near(serializers = [json])]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -306,9 +306,10 @@ pub struct RequestView {
 }
 
 impl RequestView {
-    /// Whether this record is the tombstone `expire` leaves: expired, with its escalation data freed.
+    /// Whether this record is the tombstone `expire` leaves: an `Expired` record (`expire` is the only writer of that state; it keeps the
+    /// number in `pending` and frees the display strings and the digest).
     pub fn is_tombstone(rec: &RequestRecord) -> bool {
-        rec.state == RequestState::Expired && rec.pending.is_none()
+        rec.state == RequestState::Expired
     }
 
     /// The view of a stored record. `book_status`, `display`, `expires_ms` and `digest` are filled for every record that has `pending`
@@ -376,7 +377,7 @@ impl Contract {
         if id.contains(':') {
             return self.records.get(&id).map(RequestView::from_record);
         }
-        let no = crate::escalation::parse_pending_no(&id)?;
+        let no = crate::escalation::canonical_no(&id)?;
         let (_, rec) = self.pending_record(no)?;
         Some(RequestView::from_record(&rec))
     }

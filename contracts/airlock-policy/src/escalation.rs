@@ -135,7 +135,7 @@ pub fn pending_info(rec: &RequestRecord, ctx: &EvalCtx, no: u32, expires_ms: u64
 
 /// The pending number in `id`, only when `id` is the canonical decimal of a `u32`: ASCII digits only, at most 10, no leading zero. `+7`
 /// and `007` both parse to 7 as a `u32`, so the text is formatted back and compared.
-pub fn parse_pending_no(id: &str) -> Option<u32> {
+pub fn canonical_no(id: &str) -> Option<u32> {
     if id.is_empty() || id.len() > 10 || !id.bytes().all(|b| b.is_ascii_digit()) {
         return None;
     }
@@ -160,11 +160,59 @@ pub fn escalate_reason_from_name(s: &str) -> Option<Reason> {
 }
 
 /// The revert of a refused approve: `approve rejected: <as_str>`.
-fn reject(e: ApproveError) -> ! {
+fn revert_approve(e: ApproveError) -> ! {
     env::panic_str(&format!("approve rejected: {}", e.as_str()))
 }
 
+/// The tombstone `expire` stores in place of a pending record: the fields `same_content` compares and the views need stay (so a
+/// resubmission of the expired id still reverts `UsedRequestId` for the same content and `request mismatch` for different content), the
+/// state is `Expired`, the reason, charge and execution data are gone, and the escalation data keeps the number and the expiry but
+/// loses the display strings and the digest (what `expire` frees). `pending` stays `Some` so the number keeps resolving.
+pub fn expire_tombstone(rec: &RequestRecord) -> RequestRecord {
+    let pending = rec
+        .pending
+        .as_ref()
+        .unwrap_or_else(|| env::panic_str("expire of a record that was never escalated"));
+    RequestRecord {
+        agent: rec.agent.clone(),
+        task_hash: rec.task_hash,
+        task_id: rec.task_id.clone(),
+        index: rec.index,
+        asset: rec.asset.clone(),
+        payee: rec.payee.clone(),
+        amount: rec.amount,
+        labels: rec.labels,
+        evm: rec.evm,
+        reason: None,
+        state: RequestState::Expired,
+        retried: rec.retried,
+        applied_charge: None,
+        charge_day: rec.charge_day,
+        created_ms: rec.created_ms,
+        pending: Some(PendingInfo {
+            no: pending.no,
+            expires_ms: pending.expires_ms,
+            book_in: false,
+            task_bound: 0,
+            display_symbol: String::new(),
+            display_amount: String::new(),
+            digest: Hex32([0; 32]),
+        }),
+        exec: None,
+    }
+}
+
 impl Contract {
+    /// The record `reject` and `expire` act on: `id` must be the canonical decimal of a `u32` and name an escalation, otherwise
+    /// `unknown id` (the same resolution as `approve`). Returns the pending number, the request id and the record, whatever its state.
+    fn resolve_escalation(&self, id: &str) -> (u32, String, RequestRecord) {
+        let no = canonical_no(id).unwrap_or_else(|| env::panic_str("unknown id"));
+        let (key, rec) = self
+            .pending_record(no)
+            .unwrap_or_else(|| env::panic_str("unknown id"));
+        (no, key, rec)
+    }
+
     /// Records the number of a new escalation in both indexes (`store_pending` calls it). `pending_by_no` is never removed from.
     pub fn index_pending(&mut self, no: u32, id: &str) {
         self.pending_by_no.insert(no, id.to_string());
@@ -203,7 +251,7 @@ impl Contract {
         book: String,
     ) {
         self.owner_call();
-        let no = parse_pending_no(&id).unwrap_or_else(|| env::panic_str("unknown id"));
+        let no = canonical_no(&id).unwrap_or_else(|| env::panic_str("unknown id"));
         let (request_key, mut rec) = self
             .pending_record(no)
             .unwrap_or_else(|| env::panic_str("unknown id"));
@@ -212,14 +260,16 @@ impl Contract {
         let pending = rec
             .pending
             .clone()
-            .unwrap_or_else(|| reject(ApproveError::NotPending));
-        let is_pending = rec.state == RequestState::Pending;
+            .unwrap_or_else(|| revert_approve(ApproveError::NotPending));
+        // `approve_check` answers NotPending first too; saying it here keeps a tombstone (no reason, no asset text) from reaching the
+        // reason parse below
+        if rec.state != RequestState::Pending {
+            revert_approve(ApproveError::NotPending);
+        }
         let Some(asset_entry) = self.asset(&rec.asset) else {
             // the amount text needs the registry decimals, which a removed asset no longer has: answer the checks that need none in
             // the order of `approve_check`, and otherwise the recheck's verdict, `Limit:UnknownAsset`
-            reject(if !is_pending {
-                ApproveError::NotPending
-            } else if now_ms >= pending.expires_ms {
+            revert_approve(if now_ms >= pending.expires_ms {
                 ApproveError::Expired
             } else {
                 ApproveError::Limit(Reason::UnknownAsset)
@@ -240,7 +290,7 @@ impl Contract {
             reason,
             in_book: pending.book_in,
             expires_ms: pending.expires_ms,
-            pending: is_pending,
+            pending: true,
         };
         let args = ApproveArgs {
             to: to.as_bytes(),
@@ -264,7 +314,7 @@ impl Contract {
             paused: self.paused,
         };
         if let Err(e) = approve_check(&stored, &args, &rec.to_verdict(), limits, &live) {
-            reject(e);
+            revert_approve(e);
         }
         // the escalation leaves the agent's pending count and the consecutive reject streak ends (AIR-083); a revert after this point
         // reverts the counters with the call
@@ -289,6 +339,62 @@ impl Contract {
         if let Some(promise) = self.start_execution(&request_key) {
             promise.detach();
         }
+    }
+
+    /// Owner: reject the escalation with short number `id` (AIR-081). `#[payable]`, exactly 1 yoctoNEAR from the owner (`owner_call`, the
+    /// first statement). `id` resolves like `approve`'s (`unknown id`). The record must be `Pending`, otherwise `NotPending`. There is no
+    /// expiry check: the owner may reject a request whose TTL has passed and that nobody expired yet, and it counts as a reject. The
+    /// record becomes `Rejected` and keeps every other field (its id stays used); the number leaves `pending_nos`. Then `rejected` is
+    /// emitted, and the flood counters of the record's agent take the reject (`escalations_locked` follows when it newly locks).
+    #[payable]
+    pub fn reject(&mut self, id: String) {
+        self.owner_call();
+        let (no, key, mut rec) = self.resolve_escalation(&id);
+        require!(rec.state == RequestState::Pending, "NotPending");
+        let agent = rec.agent.clone();
+        rec.state = RequestState::Rejected;
+        self.records.insert(key.clone(), rec);
+        self.pending_nos.remove(&no);
+        Event::Rejected {
+            request_id: &key,
+            id: no.to_string(),
+        }
+        .emit();
+        self.flood_after_reject(&agent, block_timestamp_ms());
+    }
+
+    /// Anyone: expire the escalation with short number `id` once its time to live has passed (AIR-081). Not payable. `id` resolves like
+    /// `approve`'s (`unknown id`). The record must be `Pending` (`NotPending`) and `now_ms >= expires_ms` (`not expired yet`, the same
+    /// boundary as `approve`'s `Expired`). The record is replaced by its tombstone (`expire_tombstone`), the number leaves `pending_nos`,
+    /// the agent's pending slot is freed (the streak is kept) and `expired` is emitted.
+    pub fn expire(&mut self, id: String) {
+        let (no, key, rec) = self.resolve_escalation(&id);
+        require!(rec.state == RequestState::Pending, "NotPending");
+        let expires_ms = rec
+            .pending
+            .as_ref()
+            .unwrap_or_else(|| env::panic_str("pending record without escalation data"))
+            .expires_ms;
+        require!(block_timestamp_ms() >= expires_ms, "not expired yet");
+        let agent = rec.agent.clone();
+        self.records.insert(key.clone(), expire_tombstone(&rec));
+        self.pending_nos.remove(&no);
+        self.flood_after_expire(&agent);
+        Event::Expired {
+            request_id: &key,
+            id: no.to_string(),
+        }
+        .emit();
+    }
+
+    /// Owner: clear the flood lockout of `agent` (AIR-081): not locked, no streak, no rejects today; the pending count and the hour
+    /// count stay, so a reset cannot get around the hourly budget. Succeeds for an agent with no flood state and creates none.
+    /// `#[payable]`, exactly 1 yoctoNEAR from the owner (`owner_call`, the first statement).
+    #[payable]
+    pub fn reset_escalations(&mut self, agent: AccountId) {
+        self.owner_call();
+        self.flood_reset(&agent);
+        Event::EscalationsReset { agent: &agent }.emit();
     }
 
     /// The escalations still Pending, by ascending number: `from_index` of them are skipped and at most `limit` returned, `limit`
@@ -508,10 +614,10 @@ mod tests {
     }
 
     #[test]
-    fn parse_pending_no_accepts_only_the_canonical_decimal() {
-        assert_eq!(parse_pending_no("1"), Some(1));
-        assert_eq!(parse_pending_no("0"), Some(0));
-        assert_eq!(parse_pending_no("4294967295"), Some(u32::MAX));
+    fn canonical_no_accepts_only_the_canonical_decimal() {
+        assert_eq!(canonical_no("1"), Some(1));
+        assert_eq!(canonical_no("0"), Some(0));
+        assert_eq!(canonical_no("4294967295"), Some(u32::MAX));
         for bad in [
             "",
             "+7",
@@ -528,7 +634,7 @@ mod tests {
             "\u{0661}",
             "1e3",
         ] {
-            assert_eq!(parse_pending_no(bad), None, "{bad:?}");
+            assert_eq!(canonical_no(bad), None, "{bad:?}");
         }
     }
 
@@ -974,6 +1080,89 @@ mod tests {
         assert_eq!(rec.evm.unwrap().max_fee_per_gas, U128(50));
         let charge = rec.applied_charge.unwrap();
         assert_eq!(charge.asset_day, 1_500_000_000_000_000_000);
+    }
+
+    // ---- reject and expire (AIR-081) -----------------------------------------------------------------------------------------
+
+    /// The tombstone keeps what `same_content` and the views read, drops the display strings, the digest, the reason and the charge,
+    /// and keeps the number; `approve` on it says NotPending (it has no reason to parse).
+    #[test]
+    fn expire_tombstone_keeps_content_and_frees_display_and_digest() {
+        let mut c = setup();
+        let id = put_pending(&mut c, 1, 9, BOB, near(3), Reason::NewRecipient, near(50));
+        let good = card(&c, 1);
+        let rec = c.records.get(&id).cloned().unwrap();
+        let tomb = expire_tombstone(&rec);
+        assert_eq!(tomb.state, RequestState::Expired);
+        for (a, b) in [
+            (&tomb.asset, &rec.asset),
+            (&tomb.payee, &rec.payee),
+            (&tomb.task_id, &rec.task_id),
+        ] {
+            assert_eq!(a, b);
+        }
+        assert_eq!(tomb.agent, rec.agent);
+        assert_eq!(tomb.task_hash, rec.task_hash);
+        assert_eq!(tomb.amount, rec.amount);
+        assert_eq!(tomb.labels, rec.labels);
+        assert_eq!(tomb.evm, rec.evm);
+        assert_eq!(tomb.created_ms, rec.created_ms);
+        assert_eq!(
+            (tomb.reason.clone(), tomb.applied_charge.clone()),
+            (None, None)
+        );
+        assert_eq!(tomb.exec, None);
+        let p = tomb.pending.clone().expect("the number is kept");
+        let was = rec.pending.clone().unwrap();
+        assert_eq!((p.no, p.expires_ms), (was.no, was.expires_ms));
+        assert_eq!(
+            (p.display_symbol.as_str(), p.display_amount.as_str()),
+            ("", "")
+        );
+        assert_eq!(p.digest, Hex32([0; 32]));
+        c.records.insert(id, tomb);
+        let text = panics(|| approve_card(&mut c, &good));
+        assert!(text.contains("approve rejected: NotPending"), "{text}");
+    }
+
+    /// In process: `reject` as the owner marks the record and emits `rejected`; `expire` by a stranger at the expiry millisecond and not
+    /// one millisecond earlier replaces the record with the tombstone and emits `expired`.
+    #[test]
+    fn reject_and_expire_in_process() {
+        let mut c = setup();
+        let id1 = put_pending(&mut c, 1, 1, BOB, near(3), Reason::NewRecipient, near(50));
+        let id2 = put_pending(&mut c, 2, 2, BOB, near(3), Reason::NewRecipient, near(50));
+        c.reject("1".to_string());
+        assert_eq!(c.records.get(&id1).unwrap().state, RequestState::Rejected);
+        assert!(!c.pending_nos.contains(&1));
+        assert_eq!(c.pending_by_no.get(&1), Some(&id1));
+        let text = panics(|| c.reject("1".to_string()));
+        assert!(text.contains("NotPending"), "{text}");
+        let logs: Vec<String> = get_logs();
+        assert!(logs[0].contains("\"event\":\"rejected\""), "{logs:?}");
+        testing_env!(ctx("stranger.test.near", NOW + TTL_MS - 1, 0).build());
+        let text = panics(|| c.expire("2".to_string()));
+        assert!(text.contains("not expired yet"), "{text}");
+        testing_env!(ctx("stranger.test.near", NOW + TTL_MS, 0).build());
+        c.expire("2".to_string());
+        let tomb = c.records.get(&id2).cloned().unwrap();
+        assert_eq!(tomb.state, RequestState::Expired);
+        assert!(!c.pending_nos.contains(&2));
+        assert!(
+            get_logs()
+                .iter()
+                .any(|l| l.contains("\"event\":\"expired\""))
+        );
+        // `reset_escalations` for an agent with no state emits and creates no entry
+        testing_env!(ctx(OWNER, NOW, 1).build());
+        let nobody: AccountId = "nobody.test.near".parse().unwrap();
+        c.reset_escalations(nobody.clone());
+        assert!(c.flood.get(&nobody).is_none());
+        assert!(
+            get_logs()
+                .iter()
+                .any(|l| l.contains("\"event\":\"escalations_reset\""))
+        );
     }
 
     // ---- views ---------------------------------------------------------------------------------------------------------------
