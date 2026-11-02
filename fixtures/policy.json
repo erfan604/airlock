@@ -1,0 +1,43 @@
+{
+  "network": "testnet",
+  "attestation_expiration_time_ms": "1209600000",
+  "assets": {
+    "near": {
+      "symbol": "NEAR",
+      "decimals": 24,
+      "hard_cap": "20000000000000000000000000",
+      "daily_cap": "100000000000000000000000000",
+      "max_fee_per_gas": "0",
+      "max_gas": "0",
+      "quick_task_cap": "50000000000000000000000000",
+      "path": null
+    },
+    "evm:84532:native": {
+      "symbol": "ETH.base",
+      "decimals": 18,
+      "hard_cap": "100000000000000000",
+      "daily_cap": "500000000000000000",
+      "max_fee_per_gas": "50000000000",
+      "max_gas": "100000",
+      "quick_task_cap": "200000000000000000",
+      "path": "airlock-demo-1"
+    }
+  },
+  "book": [
+    { "name": "accountant", "key": "near:{accountant}", "cap": "5000000000000000000000000", "daily_untrusted_budget": "20000000000000000000000000", "daily_limit": "30000000000000000000000000", "label": "Accountant" },
+    { "name": "landlord", "key": "near:{landlord}", "cap": null, "daily_untrusted_budget": "0", "daily_limit": "30000000000000000000000000", "label": "Landlord" },
+    { "name": "sam", "key": "near:{sam}", "cap": null, "daily_untrusted_budget": "0", "daily_limit": "5000000000000000000000000", "label": "Sam" },
+    { "name": "contractor", "key": "evm:84532:{contractor_evm}", "cap": "50000000000000000", "daily_untrusted_budget": "100000000000000000", "daily_limit": "200000000000000000", "label": "Contractor" }
+  ],
+  "flags": {
+    "max_pending_per_agent": 3,
+    "pending_ttl_ms": "3600000",
+    "hourly_escalation_budget": 6,
+    "lock_consecutive_rejects": 3,
+    "lock_rejects_per_day": 20,
+    "max_task_ttl_ms": "3600000",
+    "max_task_actions": 20
+  },
+  "task_public_key": null,
+  "nonce": { "path": "airlock-demo-1" }
+}
