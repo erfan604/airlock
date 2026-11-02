@@ -235,10 +235,10 @@ export function mountSessionRoutes(app: Hono, deps: SessionDeps, store: SessionS
       const parsed = LoginBody.safeParse(raw);
       if (!parsed.success) return c.json(BAD_REQUEST, 400);
       const { accountId, publicKey, signature, nonce } = parsed.data;
-      if (accountId !== deps.ownerAccountId) return c.json(UNAUTHORIZED, 401);
-      // the nonce is spent by this attempt whatever happens next
+      // the nonce is spent by this attempt whatever happens next, a wrong account id included (AIR-167 F1)
       const expires = challenges.get(nonce);
       challenges.delete(nonce);
+      if (accountId !== deps.ownerAccountId) return c.json(UNAUTHORIZED, 401);
       if (expires === undefined || deps.clock() > expires) return c.json(UNAUTHORIZED, 401);
       let unavailable = false;
       const reader: AccessKeyReader = async (account, key) => {

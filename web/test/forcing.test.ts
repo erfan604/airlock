@@ -14,7 +14,7 @@ import { buildCardModel } from '../src/approvals/cardModel.ts';
 import { initialState } from '../src/approvals/cardReducer.ts';
 import type { CardState } from '../src/approvals/cardReducer.ts';
 import { parseEvidence } from '../src/approvals/evidence.ts';
-import { FORCING_MIN_AMOUNT, forcingRequired, forcingSatisfied, forcingTarget } from '../src/approvals/forcing.ts';
+import { FORCING_MIN_AMOUNT, forcingRequired, forcingSatisfied, forcingTarget, lookalikeOf } from '../src/approvals/forcing.ts';
 
 const HEX64 = 'ab'.repeat(30) + 'c0ffee';
 const EVM = 'evm:84532:0x25ab56b2e3176a8ac6ce984eca8571d8db9e7858';
@@ -128,4 +128,15 @@ test('sheet: with a minimum above the amount an unflagged new payee has no input
   assert.ok(sheetHtml(lookalike, '', huge).includes('forcing-input'), 'flagged by the detector keeps the step');
   const view = { ...lookalike, bookKeys: ['near:landlord.near'] };
   assert.ok(!sheetHtml(view, '', huge).includes('forcing-input'));
+});
+
+// AIR-167 F2: the detector used to catch every throw and answer "flags nothing", so one malformed book key (or a malformed payee) silently
+// switched the lookalike warning off.
+test('lookalikeOf: one non-canonical book key does not switch the detector off for the others', () => {
+  const hit = lookalikeOf('near:landlorc.near', ['near:NOT CANON', 'near:landlord.near']);
+  assert.equal(hit?.nearest, 'near:landlord.near');
+});
+
+test('lookalikeOf: a non-canonical payee throws instead of reading as unflagged', () => {
+  assert.throws(() => lookalikeOf('near:Landlord.near', ['near:landlord.near']));
 });

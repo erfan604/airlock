@@ -1,7 +1,7 @@
 // The forcing step of the approval card (AIR-190, F04 R4-09). A payee that is not in the book makes the owner type the distinctive end of
 // the recipient before Approve enables, so a glance at the first and last characters is not enough. Pure functions, no clock, no float.
 // The target never includes the network suffix: every account on testnet ends in `.testnet`, so typing it would prove nothing.
-import { checkLookalike, hexBody } from '@airlock/runtime/dsl';
+import { checkLookalike, hexBody, validatePayeeKey } from '@airlock/runtime/dsl';
 import type { LookalikeResult } from '@airlock/runtime/dsl';
 import type { RequestView } from '@airlock/runtime/chain-types';
 
@@ -30,13 +30,22 @@ export function forcingSatisfied(input: string, payee: string): boolean {
   return typed === target || typed === payee || typed === withoutScheme;
 }
 
-/** The detector's answer, or null when it flags nothing or a key is not canonical (a bad key never throws into the card). */
+/**
+ * The detector's answer, or null when it flags nothing. A book key that is not canonical is skipped on its own (one bad row must not switch
+ * the detector off for every other row), and a payee that is not canonical throws: the card then refuses to build, instead of showing a
+ * new payee as unflagged (AIR-167 F2).
+ */
 export function lookalikeOf(payee: string, bookKeys: readonly string[]): LookalikeResult | null {
-  try {
-    return checkLookalike(payee, bookKeys);
-  } catch {
-    return null;
-  }
+  validatePayeeKey(payee);
+  const usable = bookKeys.filter((key) => {
+    try {
+      validatePayeeKey(key);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  return checkLookalike(payee, usable);
 }
 
 /** A new payee needs it when the amount reaches the minimum or the detector flags the payee; a payee in the book never does. */

@@ -396,3 +396,11 @@ test('a login for another account id is also refused when the reader would accep
   assert.equal(res.status, 401);
   assert.equal(h.readerCalls.length, 0, 'the chain is not asked about an account that is not the owner');
 });
+
+// AIR-167 F1: a login for the wrong account id was refused before the nonce was spent, so the challenge stayed usable.
+test('a nonce is also spent by a login for another account id', async () => {
+  const h = makeApp();
+  const c = await challenge(h);
+  assert.equal((await post(h, body(c, { accountId: 'mallory.test.near' }))).status, 401);
+  assert.equal((await post(h, body(c))).status, 401, 'the owner login with the same nonce is refused: the nonce is gone');
+});

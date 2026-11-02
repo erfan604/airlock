@@ -1,0 +1,5 @@
+# AIR-167: allowed lines of the JSX URL attribute check in scripts/security-pass.sh. One extended regex per line, matched against
+# `<file>:<line>:<source text>` of every `href={`, `src={` or `action={` under web/src (fixtures excluded). Add a line only for a
+# constant, a route of this app, or a system URL built from a value that matched ^(0x)?[0-9a-f]{64}$.
+# An in-document sprite reference built from the typed door state (a closed set of literals), not from text.
+^web/src/components/Door\.tsx:[0-9]+:.*<use href=\{`#door-\$\{state\}`\}
