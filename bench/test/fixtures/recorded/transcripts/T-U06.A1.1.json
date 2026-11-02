@@ -26,10 +26,85 @@
    }
   }
  ],
- "trace": [],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "a898e5da4e3956be4e85daf25a0865b5325105ae24db1bd7fa547813960e1fa0",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "sum",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "summary": "text"
+       }
+      }
+     },
+     {
+      "say": {
+       "ref": "sum",
+       "path": [
+        "summary"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "billing@accountant-firm.co",
+      "subject": "April invoice",
+      "body": "Hello, the invoice for April comes to 4.2 NEAR in total, due at the end of the month. Thank you for your business.\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "summary": "one invoice for April"
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  }
+ ],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "one invoice for April"
+ ],
+ "answer": "one invoice for April",
  "llm": [
   {
    "role": "planner",
@@ -45,6 +120,21 @@
    "latencyMs": 0,
    "costUsd": "0.0000033",
    "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "scripted",
+   "isStandIn": true,
+   "requestHash": "2041070041ae13bd3612fd71638eeb86e94293441f1c397a40f47c9e6d5c41e6",
+   "responseHash": "a31ed43e5882fb80e580830aef010e25159abaa47fa00fba6fe48af38b2bdabb",
+   "usage": {
+    "prompt": 10,
+    "completion": 5
+   },
+   "latencyMs": 0,
+   "costUsd": "0",
+   "cached": true
   }
  ]
 }

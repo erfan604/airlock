@@ -189,7 +189,7 @@ test('9. extractionSchema: required is every key, additionalProperties is false,
 
 const SHAPES: Array<[string, unknown]> = [
   ['address', { type: ['string', 'null'], maxLength: 200 }],
-  ['amount', { type: ['string', 'null'], maxLength: 80 }],
+  ['amount', { type: ['string', 'null'], maxLength: 80, pattern: '^[0-9]+(\\.[0-9]+)?$' }],
   ['number', { type: ['string', 'null'], maxLength: 80 }],
   ['text', { type: ['string', 'null'], maxLength: 200 }],
   ['bool', { type: ['boolean', 'null'] }],
@@ -324,6 +324,28 @@ test('14. an amount that is a sentence of words aborts BadAmount with the email 
   const aborted = abortOf(await run(plan(U01), makeDeps({ extract: makeExtractor({ model: MODEL }), decimalsOf })));
   assert.equal(aborted.cause.code, 'BadAmount');
   assert.ok(aborted.cause.labels.includes('Untrusted:email'));
+});
+
+test('14. AIR-297: a recorded answer of "0.02 ETH" with a unit still aborts BadAmount, the parser is not loosened', async () => {
+  script(() => '{"amount":"0.02 ETH","vendor":"x"}');
+  const evm = [
+    { let: 'mail', call: 'read_inbox' },
+    { let: 'inv', extract: { from: { ref: 'mail' }, schema: { amount: 'amount', vendor: 'text' } } },
+    { let: 'payee', lookup: { key: 'accountant' } },
+    { action: 'transfer', args: { to: { ref: 'payee' }, amount: { ref: 'inv', path: ['amount'] }, asset: 'near' } },
+  ];
+  const aborted = abortOf(await run(plan(evm), makeDeps({ extract: makeExtractor({ model: MODEL }), decimalsOf })));
+  assert.equal(aborted.cause.code, 'BadAmount');
+  assert.ok(!('proposed' in aborted));
+});
+
+test('AIR-297: the amount property carries a bare-decimal pattern and the prompt forbids units', () => {
+  const p = (extractionSchema({ a: 'amount' }) as { properties: { a: { pattern?: string } } }).properties.a;
+  assert.ok(p.pattern !== undefined);
+  const re = new RegExp(p.pattern);
+  for (const ok of ['4.2', '0.02', '10', '0.000001']) assert.ok(re.test(ok), ok);
+  for (const bad of ['0.02 ETH', 'ETH 0.02', '$4.2', '4.2 NEAR', '1e3', '-1', '.5', '4.', '1,000', '']) assert.ok(!re.test(bad), bad);
+  assert.match(QUARANTINE_SYSTEM, /no currency, symbol or unit/);
 });
 
 test('a stubbed extractor still works through the same helper (sanity for the boundary tests)', async () => {
