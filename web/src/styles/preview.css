@@ -1,0 +1,106 @@
+/* The plan preview screen (AIR-185). Tokens only, radius 0, no shadow. The pinned bar is the card bar of AIR-181, the same pattern. */
+.preview {
+  display: block;
+  max-width: 30rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.preview-body {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.preview-title {
+  font-family: var(--font-system);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 28px;
+  overflow-wrap: anywhere;
+}
+.preview-lede,
+.preview-text,
+.preview-status,
+.preview-small-text {
+  font-size: 16px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.preview-label {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.preview-payment {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.preview-fact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.preview-key,
+.preview-mono,
+.preview-command {
+  font-family: var(--font-data);
+  font-size: 13px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.preview-small {
+  font-family: var(--font-data);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.preview-asks,
+.task-card,
+.preview-key-register {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.preview-asks,
+.preview-key-register,
+.preview-notice {
+  padding: var(--space-3);
+  border: 2px solid var(--ink);
+  background: var(--raised);
+}
+.preview-ask-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.preview-command {
+  margin: 0;
+  padding: var(--space-2);
+  background: var(--sunk);
+  white-space: pre-wrap;
+}
+.preview-notice {
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.preview-refusal {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  border: 2px solid var(--alarm);
+  background: var(--raised);
+}

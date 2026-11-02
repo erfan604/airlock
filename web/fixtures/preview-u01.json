@@ -1,0 +1,22 @@
+{
+  "instruction": "Pay the accountant's April invoice",
+  "plan": [
+    { "let": "mail", "call": "read_inbox" },
+    { "let": "inv", "extract": { "from": { "ref": "mail" }, "schema": { "amount": "amount", "vendor": "text" } } },
+    { "let": "payee", "lookup": { "key": "accountant" } },
+    { "action": "transfer", "args": { "to": { "ref": "payee" }, "amount": { "ref": "inv", "path": ["amount"] }, "asset": "near" } }
+  ],
+  "snapshot": {
+    "book": [
+      ["near:accountant.testnet", { "cap": "5000000000000000000000000", "daily_untrusted_budget": "5000000000000000000000000", "daily_limit": "20000000000000000000000000", "label": "accountant" }],
+      ["near:landlord.testnet", { "cap": null, "daily_untrusted_budget": "0", "daily_limit": "20000000000000000000000000", "label": "landlord" }],
+      ["evm:84532:0xabababababababababababababababababababab", { "cap": "20000000000000000", "daily_untrusted_budget": "20000000000000000", "daily_limit": "100000000000000000", "label": "contractor" }]
+    ],
+    "assets": [
+      ["near", { "symbol": "NEAR", "decimals": 24, "hard_cap": "100000000000000000000000000", "daily_cap": "1000000000000000000000000000", "max_fee_per_gas": "0", "max_gas": "0", "quick_task_cap": "50000000000000000000000000", "path": null }],
+      ["evm:84532:native", { "symbol": "ETH.base", "decimals": 18, "hard_cap": "100000000000000000", "daily_cap": "1000000000000000000", "max_fee_per_gas": "2000000000", "max_gas": "100000", "quick_task_cap": "50000000000000000", "path": "airlock-demo-1" }]
+    ],
+    "policy": { "flags": { "max_task_actions": 20, "max_task_ttl_ms": "3600000" } }
+  },
+  "blockMs": 1800000000000
+}

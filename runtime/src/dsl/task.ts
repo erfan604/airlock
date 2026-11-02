@@ -221,6 +221,11 @@ export function decodeOwnerTask(bytes: Uint8Array): OwnerTask {
   return decoded.data;
 }
 
+/** The sha256 of the bytes as lowercase hex. The console hashes the salted instruction with it (AIR-185); the web package has no hash library of its own. */
+export function sha256Hex(bytes: Uint8Array): string {
+  return toHex(sha256(bytes));
+}
+
 /** The task identity and the prefix of every request id under it: the sha256 of the borsh bytes, lowercase hex. */
 export function taskHash(t: OwnerTask): string {
   return toHex(sha256(ownerTaskBorsh(t)));

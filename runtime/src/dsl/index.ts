@@ -33,7 +33,7 @@ export type { KeyErrorCode, Target } from './keys.ts';
 export { resolveAlias } from './book.ts';
 export type { BookEntryJson, BookRows } from './book.ts';
 export { ActionRequest, RequestError, parseActionRequest } from './request.ts';
-export { OwnerTask, TASK_TAG, TaskBound, TaskError, decodeOwnerTask, jcs, ownerTaskBorsh, planSha256, taskHash } from './task.ts';
+export { OwnerTask, TASK_TAG, TaskBound, TaskError, decodeOwnerTask, jcs, ownerTaskBorsh, planSha256, sha256Hex, taskHash } from './task.ts';
 // AIR-189: look-alike detector for recipient keys
 export { checkBookAdd, checkLookalike, hexBody } from './lookalike.ts';
 export type { LookalikeKind, LookalikeResult } from './lookalike.ts';
