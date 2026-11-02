@@ -57,6 +57,14 @@ test('a QUARANTINE_MODEL outside TEE_MODELS rejects before any socket is opened'
   assert.deepEqual(lines, [], 'the fingerprint line comes right before listening, so it was never printed');
 });
 
+test('8. a QUARANTINE_MODEL with no chat-token list rejects with NoChatTokens before any socket is opened', async () => {
+  const lines: string[] = [];
+  const parts = stubParts(stubChain(), { plan: U01, log: (l) => lines.push(l) });
+  delete parts.extract;
+  await assert.rejects(startRuntime(stubEnv({ QUARANTINE_MODEL: 'moonshotai/kimi-k3' }), parts), /NoChatTokens: moonshotai\/kimi-k3/);
+  assert.deepEqual(lines, [], 'the fingerprint line comes right before listening, so it was never printed');
+});
+
 test('a valid QUARANTINE_MODEL override reaches makeExtractor', async () => {
   const s = scriptedLlm(() => JSON.stringify({ amount: '4.2' }));
   setLlmOverride(s.complete);
