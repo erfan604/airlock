@@ -1361,3 +1361,93 @@ pub async fn ensure_hour_window(w: &World, min_remaining_ms: u64) {
 pub async fn ensure_day_window(w: &World, min_remaining_ms: u64) {
     ensure_window(w, 86_400_000, min_remaining_ms).await;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// AIR-067: the splitting attack (AIR-084's `ab12_` uses it too)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// One request of `split_attack`: its outcome text (`allowed`, or `escalated <reason>`) and `payee_untrusted_day.spent` read right
+/// after the batch that held it.
+#[derive(Clone, Debug)]
+pub struct SplitStep {
+    pub outcome: String,
+    pub untrusted_spent: u128,
+}
+
+/// 11 requests of `U` to the Book payee `near:alice.sandbox` (amount `Untrusted:email`, pc Owner) under one signed task bound at `100U`
+/// with 11 actions, grouped into batches of `batch_sizes` in order. The payee is upserted with cap `10U`, untrusted budget `10U` and
+/// daily limit `1000U`. Starts with `ensure_day_window(w, 300_000)`: a UTC midnight inside the run would reset the budget. Printing is
+/// the caller's.
+pub async fn split_attack(w: &World, batch_sizes: &[usize]) -> Vec<SplitStep> {
+    assert_eq!(
+        batch_sizes.iter().sum::<usize>(),
+        11,
+        "the batch sizes must cover the 11 requests"
+    );
+    ensure_day_window(w, 300_000).await;
+    owner_call_ok(
+        &w.policy,
+        &w.owner,
+        &w.owner_signer,
+        &w.net,
+        "book_add",
+        json!({
+            "key": "near:alice.sandbox",
+            "cap": (10 * U).to_string(),
+            "daily_untrusted_budget": (10 * U).to_string(),
+            "daily_limit": (1000 * U).to_string(),
+            "label": "Alice"
+        }),
+    )
+    .await;
+    let task = w.signed_task(&[("near:alice.sandbox", 100 * U)], 11);
+    let hash = hex::encode(airlock_policy::task::task_hash(&task.0));
+    let mut steps = Vec::new();
+    let mut next = 0u8;
+    for size in batch_sizes {
+        let reqs: Vec<Value> = (0..*size)
+            .map(|k| {
+                w.request_json(
+                    &task.0,
+                    next + k as u8,
+                    "near",
+                    "near:alice.sandbox",
+                    U,
+                    (2, 32, 1),
+                    None,
+                )
+            })
+            .collect();
+        next += *size as u8;
+        let result = w.submit(reqs, &task).await;
+        let text = failure_text(&result);
+        assert!(text.is_empty(), "submit_batch failed: {text}");
+        let outcomes: Value = result.json().expect("the outcomes parse");
+        let ledgers = call_view::<Value>(
+            &w.policy,
+            "get_ledgers",
+            json!({ "payee": "near:alice.sandbox", "asset": "near", "task": hash }),
+            &w.net,
+        )
+        .await
+        .unwrap_or_else(|e| panic!("get_ledgers must answer: {e:?}"))
+        .data;
+        let spent: u128 = ledgers["payee_untrusted_day"]["spent"]
+            .as_str()
+            .unwrap_or_else(|| panic!("no untrusted spent in {ledgers}"))
+            .parse()
+            .unwrap();
+        for o in outcomes.as_array().expect("outcomes is an array") {
+            let kind = o["outcome"].as_str().expect("an outcome text");
+            let outcome = match o["reason"].as_str() {
+                Some(r) if kind != "allowed" => format!("{kind} {r}"),
+                _ => kind.to_string(),
+            };
+            steps.push(SplitStep {
+                outcome,
+                untrusted_spent: spent,
+            });
+        }
+    }
+    steps
+}
