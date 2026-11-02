@@ -18,6 +18,7 @@ import { LiveTransport, ReplayTransport } from '../chain/transport.ts';
 import { loadConfig } from '../config.ts';
 import { resolveAlias } from '../dsl/index.ts';
 import { MemoryEvidenceStore } from '../evidence.ts';
+import { defaultToolArgPolicy, grounder } from '../interpreter/index.ts';
 import type { Grounder, ToolArgPolicy } from '../interpreter/index.ts';
 import type { Extractor } from '../interpreter/index.ts';
 import { assertModelAllowed, loadModelsConfig } from '../llm/index.ts';
@@ -147,7 +148,8 @@ export async function startRuntime(env: NodeJS.ProcessEnv = {}, parts: Partial<R
       world,
       extract,
       chain,
-      ...(parts.hooks === undefined ? {} : { hooks: parts.hooks }),
+      // the product hooks: the real grounder and the default tool-argument policy; a test's `parts.hooks` replaces both
+      hooks: parts.hooks ?? { ground: grounder, toolArgPolicy: defaultToolArgPolicy },
       evidence,
       clock,
       ...(parts.broadcast === undefined ? {} : { broadcast: parts.broadcast }),
