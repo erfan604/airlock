@@ -1,0 +1,8 @@
+# AIR-241: the TypeScript rows of docs/PLUMBING.md, same format as scripts/plumbing-index.sh: <class> | <test or harness> | <file>.
+# Each test name must occur (grep -F) in its file; scripts/plumbing-doc.sh --check fails otherwise.
+unit and currency | toBaseUnits rejects | runtime/test/money.test.ts
+rounding | viem parseUnits rounds 1.23456789 at 6 to 1234568n, the strict parse throws Places | runtime/test/money.test.ts
+amounts across JSON | survives the contract JSON shape | runtime/test/money.test.ts
+decimals | formatBaseUnits output of the extreme cases round-trips through the strict parse | runtime/test/money.test.ts
+decimals | MONEY_PROP runs= | runtime/test/money.prop.test.ts
+decimals | DECIMAL_VECTORS | runtime/test/decimals.vectors.test.ts

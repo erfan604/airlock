@@ -7,7 +7,7 @@
 - Approval fatigue: escalations are rate-limited and batched, but a determined attacker can still generate approval requests. The only auto-executions an attacker can influence are amounts read from data to an address-book payee inside that payee's cap, its daily untrusted budget and the task bound (the K2 envelope; strict mode removes it).
 - A local task key authorizes unattended spending up to the quick cap.
 - The console is in the trusted computing base.
-- Tools are fixtures (no real connectors); testnet only.
+- Tools are fixtures (no real connectors); testnet only. Because the fetchers are fixtures, no network call or file read happens in a tool, so the SSRF and path-traversal checks a real connector would need do not exist yet; names are map keys, never paths.
 - No cancel (an issued but unbroadcast signature blocks later nonces for that path; use set_nonce or a new path); no owner transfer.
 - A signing or transfer callback that runs out of gas leaves its request `Executing` and charged: no owner method clears it in this version, and the task ledger never resets, so that request's amount stays counted against its task. The lane reserves the callback's gas and AIR-107 measures the real burn on both the success and the refund path.
 - An answer the contract cannot read after the signer's receipt succeeded (it does not parse, it is too long, or an EVM recovery id is above 1) keeps the request charged and `Failed`, because the signature may still be usable; the owner sees it in the `failed` event (`MpcBadResponse`, `retryable` false). Only a failed signer receipt, a failed transfer and an uncovered payment release the charges.
@@ -21,7 +21,19 @@
   - Single assignment is checked at run time in the model (a re-binding aborts). The interpreter relies on rule 12 (`checkPlan`) before the run and binds names in per-branch and per-iteration scopes. The model has no assets: rule 12 forbids a data-derived asset argument and the interpreter takes the asset from the action name or the static chain id.
   - A read-only run (D21) proposes no action, so the theorem holds for it trivially. The model does not contain it.
   - The model's actions are proposals. The contract's verdict (`proofs/Verdict.lean`) decides whether a proposal pays.
-- Future work, not attempted: extracting the Lean model from the Rust verdict crate with Aeneas (AeneasVerif/aeneas) so that the code-to-model link is itself a proof. Today the link is the differential test and Kani on the shipped Rust. The Aeneas Lean backend pins Lean v4.35.0 like we do, but it needs Mathlib, OCaml 5.3 and a pinned Charon, which this build does not carry.
+- Future work, not attempted: extracting the Lean model from the Rust verdict crate with Aeneas (AeneasVerif/aeneas) so that the code-to-model link is itself a proof. Today the link is the differential test and Kani on the shipped Rust. The Aeneas Lean backend pins Lean v4.35.0 like we do, but it needs Mathlib, a recent OCaml and a pinned Charon, which this build does not carry.
+- Payment before delivery: an x402 or MPP server that takes the payment and never delivers is out of scope, because AIRLOCK checks where a value came from and how much moves, not whether the seller keeps its side.
+- The availability channel is open: an attacker can cause escalations, so approval requests can pile up. The pending cap, the hourly escalation budget and the lock on an agent bound how many reach the owner; they do not stop the owner from being asked. AIRLOCK does not claim there is no side channel.
+- Literal grounding checks that a value occurs in the owner's words, not its pairing: a literal grounded in the owner's text can still be put against the wrong payee. The contract's book, payee caps and task bound still apply to that payment.
+- Live x402 settlement is not shipped (AIR-168 was not admitted), so no x402 payment settled through AIRLOCK and no x402 claim is made.
+- No console page adds payees, so the look-alike check at `book_add` exists only as a pure function (`checkBookAdd` in `runtime/src/dsl/lookalike.ts`); the approvals card still warns on a look-alike of a book payee when the owner is asked.
+- The task key needs WebCrypto Ed25519 in the browser. A browser without it gets `KeyUnsupported` and the console refuses to sign.
+- There is no reject-all by design: three consecutive rejects lock an agent's escalations (`lock_consecutive_rejects`), which stops a flood but does not clear the pending requests.
+- A careless owner can approve a truthfully displayed bad payment: the console shows the real payee and amount, and the contract rechecks the approve arguments, but it cannot stop an owner who does not read the card.
+- The bench volume numbers come from a simulated world fed by the verdict CLI, and benign utility is in-sample. The contract-level evidence is the sandbox suite; see docs/BENCH.md.
+- The look-alike twin payee in the bench was never actually fallen for in six live runs, so there is no live twin-loss claim: no golden run shows the vanilla or the allowlist twin losing money, and none is claimed.
+- Runs are on testnet only; no mainnet transaction was made and no mainnet claim is made.
+- The replay demo needs no keys and no network; it replays recorded model answers and chain reads, so it shows the recorded runs and is not a live run.
 - Local mode is unattested; host powers (a host can stop, delay or read the runtime) are not removed by any check here; oracle dust moves; plan_hash and evidence are unauthenticated hints; UTC-boundary burst.
 - Wallet manifest pinning fixes which wallets the console offers, not the wallets' code: a wallet executor such as Intear's is a
   remote script that can change; the contract's recheck of the six approve arguments is the control.
@@ -29,8 +41,6 @@
 - The runtime's evidence store is in memory and is lost when the runtime restarts.
 - The session cookie is `Secure`, so a demo over plain `http://<LAN address>` cannot log in; use localhost or HTTPS.
 - near-api-js `FailoverRpcProvider` is not used; the runtime has a sequential `RpcPool` instead, so its failover behaviour is our own code.
-- If the TEE lane ships, shade-attestation 0.2.0 pins dcap-qvl 0.4.0, which is inside advisory GHSA-6q6c-vvf9-fj3w (low: TCB
-  component list truncation, patched in 0.4.1); AIR-201 asserts 16 SGX and 16 TDX components when parsing TCB info.
 - Sandbox gas numbers come from neard 2.11.0 (protocol 83); testnet runs protocol 88, so published gas figures are the testnet
   measurements of AIR-107.
 - Evidence injection: fabricated facts that steer a decision inside the owner's limits (for example a fake price or
@@ -39,20 +49,10 @@
 - Untrusted text never enters planner memory; carryover memory attacks (arXiv 2610.28425) are blocked only because
   memory is always labelled untrusted.
 
-## TEE mode is defense in depth, not a root of trust
-Intel TDX and AMD SEV-SNP do not protect against an attacker with physical access. Since 2025, researchers have shown
-that a memory bus interposer costing under 1000 dollars (TEE.fail) or under 200 dollars (DDRop) can extract the
-key that signs TDX quotes or forge a launch measurement on a fully patched TDX machine, yielding a quote that verifies as
-UpToDate. Intel and AMD call this out of scope and offer no fix. A host operator or insider could therefore run a
-modified agent that passes our quote checks and reads its secrets. We pin the one approved CPU by PPID, which
-narrows this to the machine the owner approved. What still holds is the contract: caps, budgets, the address book and
-the owner-signed task bound what any registered agent can get signed. Signing also assumes fewer than the threshold of
-NEAR MPC nodes are compromised; NEAR's own MPC threat model lists a physically probed TDX node as an open item.
-
 ## Upstream code we own
 The contract's agent registration and verification code derives from NEAR's Shade Agent template (commit 816b75b) and the
 `shade-attestation` 0.2.0 crate. NEAR stopped maintaining the Shade Agent Framework as standalone developer tooling
-after April 19, 2026, and its repositories state it has not had a formal audit. We pin both, own the fork, and track
+in April 2026, and its repositories state it has not had a formal audit. We pin both, own the fork, and track
 upstream security fixes ourselves.
 
 - Literal grounding (defense in depth, never the wall) compares ASCII only: a non-ASCII character joins the word it touches, so a look-alike name or address never grounds, but digits are matched as ASCII runs, so owner text mixing scripts inside a number (`1٠25`) can ground the ASCII part (`25`). Such a literal is still checked against the book, the payee caps and the task bound.
