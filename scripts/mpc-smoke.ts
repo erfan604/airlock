@@ -19,14 +19,37 @@ import type { Hex } from 'viem';
 import { baseSepolia } from 'viem/chains';
 // @ts-expect-error task-key.mjs is plain JavaScript without declarations
 import { loadSeedHex } from './task-key.mjs';
-import { assembleSigned } from './lib/evm-assemble.ts';
-import type { MpcResponse } from './lib/evm-assemble.ts';
+import { assembleEvm, senderOf, sigFromMpc } from '../runtime/src/chain/evm.ts';
 import { signTask } from './sign-task.ts';
 import { taskHash } from '../runtime/src/dsl/task.ts';
 import type { OwnerTask } from '../runtime/src/dsl/task.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
+
+/** The MPC signer's response for a secp256k1 request, as `on_signed` receives it. */
+export interface MpcResponse {
+  scheme: string;
+  big_r: { affine_point: string };
+  s: { scalar: string };
+  recovery_id: number;
+}
+
+export interface AssembledTx {
+  raw: Hex;
+  signer: string;
+}
+
+/**
+ * The one assembler of the repo is `assembleEvm` (runtime/src/chain/evm.ts, AIR-162); this wraps it for the smoke tests: the scheme is
+ * checked here, the hex is lowercased (assembleEvm takes lowercase), and the signer is recovered with `senderOf`.
+ */
+export async function assembleSigned(unsignedHex: string, response: MpcResponse): Promise<AssembledTx> {
+  if (response.scheme !== 'Secp256k1') throw new Error('response scheme is not Secp256k1');
+  const flat = sigFromMpc(response);
+  const raw = assembleEvm(unsignedHex, { big_r: flat.big_r.toLowerCase(), s: flat.s.toLowerCase(), recovery_id: flat.recovery_id });
+  return { raw, signer: await senderOf(raw) };
+}
 const SIGNER = 'v1.signer-prod.testnet';
 const NEAR_RPCS = ['https://test.rpc.fastnear.com', 'https://near-testnet.drpc.org', 'https://testnet-rpc.intea.rs', 'https://rpc.testnet.near.org'];
 const BASE_RPCS = ['https://sepolia.base.org', 'https://base-sepolia-rpc.publicnode.com'];

@@ -16,6 +16,7 @@ fail() { echo "FAIL $1: $2"; exit 1; }
 ROOT="$(mktemp -d)"
 trap 'rm -rf "$ROOT"' EXIT
 mkdir -p "$ROOT/bin"
+export APPROVE_TXID_DIR="$ROOT/txid"
 cat > "$ROOT/bin/near" <<'EOF'
 #!/usr/bin/env bash
 { printf 'near'; for a in "$@"; do printf '|%s' "$a"; done; printf '\n'; } >> "$FAKE_LOG"
@@ -98,6 +99,7 @@ out="$(printf 'yes\n' | "$APPROVE" 7 --run 2> /dev/null)"; rc=$?
 [ "$(ntx)" = 1 ] || fail nothing_runs "yes sent $(ntx) transactions, want 1"
 grep 'as-transaction' "$FAKE_LOG" | grep -q '|approve|' || fail nothing_runs "logged call is not approve"
 printf '%s\n' "$out" | grep -qx 'Transaction ID: FAKE1' || fail nothing_runs "no Transaction ID line"
+[ "$(cat "$APPROVE_TXID_DIR/approve-7.txid" 2> /dev/null)" = "FAKE1" ] || fail nothing_runs "the transaction id was not saved for AIR-165"
 echo "ok nothing_runs_without_run_and_yes"
 
 # 4 refuses_non_pending_and_expired

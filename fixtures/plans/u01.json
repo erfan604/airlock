@@ -1,0 +1,6 @@
+[
+  { "let": "mail", "call": "read_inbox" },
+  { "let": "inv", "extract": { "from": { "ref": "mail" }, "schema": { "amount": "amount" } } },
+  { "let": "payee", "lookup": { "key": "accountant" } },
+  { "action": "transfer", "args": { "to": { "ref": "payee" }, "amount": { "ref": "inv", "path": ["amount"] }, "asset": "near" } }
+]

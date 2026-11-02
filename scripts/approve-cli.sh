@@ -5,7 +5,8 @@
 #   --reject: same card, the `reject` command
 #   --run: print, then read one line from standard input and execute only if it is exactly `yes`
 # The six values of `approve` come from the stored RequestView only, never from the command line.
-# Env: NEAR (default near), OWNER and POLICY (default: keys owner and policy of fixtures/accounts.testnet.json).
+# Env: NEAR (default near), OWNER and POLICY (default: keys owner and policy of fixtures/accounts.testnet.json), APPROVE_TXID_DIR (default
+# target/: after --run the transaction id is saved there as approve-<id>.txid, AIR-165).
 APPROVE_PREPAID_TGAS="${APPROVE_PREPAID_TGAS:-150}"
 REJECT_PREPAID_TGAS=30
 set -uo pipefail
@@ -118,6 +119,12 @@ fi
 OUT="$("$NEAR" contract call-function as-transaction "$POLICY" "$METHOD" json-args "$ARGS" prepaid-gas "$GAS" attached-deposit '1 yoctoNEAR' sign-as "$OWNER" network-config testnet sign-with-keychain send 2>&1)"
 rc=$?
 printf '%s\n' "$OUT" | grep -E 'Transaction ID' || true
+# AIR-165: keep the id for `scripts/e2e-testnet.ts <case> --finish <no>`, which prints it in its PAID proof line
+TXID="$(printf '%s\n' "$OUT" | grep -oE 'Transaction ID: *[A-Za-z0-9]+' | head -1 | sed 's/.*: *//')"
+if [ -n "$TXID" ]; then
+  TXID_DIR="${APPROVE_TXID_DIR:-$here/../target}"
+  mkdir -p "$TXID_DIR" 2> /dev/null && printf '%s\n' "$TXID" > "$TXID_DIR/approve-$ID.txid" 2> /dev/null || true
+fi
 if [ "$rc" -ne 0 ]; then
   echo "near exited $rc" >&2
   exit 1

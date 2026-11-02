@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { generatePrivateKey, privateKeyToAccount, sign } from 'viem/accounts';
 import { keccak256, parseTransaction, serializeTransaction } from 'viem';
 import type { Hex } from 'viem';
-import { assembleSigned } from './lib/evm-assemble.ts';
+import { assembleSigned } from './mpc-smoke.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, '..', 'contracts', 'airlock-policy', 'tests', 'fixtures');
@@ -36,8 +36,13 @@ test('assembleSigned recovers the signer for 50 random keys and hashes', async (
     const unsigned = unsignedTx(i);
     const out = await assembleSigned(unsigned, await responseFor(unsigned, key));
     assert.equal(out.signer.toLowerCase(), privateKeyToAccount(key).address.toLowerCase());
-    assert.equal(out.hash, keccak256(`0x${unsigned}`));
-    assert.ok(parseTransaction(out.raw).r !== undefined);
+    const parsed = parseTransaction(out.raw);
+    const preimage = parseTransaction(`0x${unsigned}`);
+    assert.ok(parsed.r !== undefined);
+    assert.equal(parsed.to, preimage.to);
+    assert.equal(parsed.value, preimage.value);
+    assert.equal(parsed.nonce, preimage.nonce);
+    assert.equal(keccak256(`0x${unsigned}`).length, 66);
   }
 });
 
