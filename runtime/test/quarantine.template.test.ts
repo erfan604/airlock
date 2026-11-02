@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ModelNotAllowed, scriptedLlm, setLlmOverride } from '../src/llm/index.ts';
 import type { LlmOpts } from '../src/llm/index.ts';
-import { MAX_TEXT_UNITS, NoChatTokens, loadChatTokens, makeExtractor, neutralize } from '../src/quarantine/index.ts';
+import { ChatTokensUnstable, MAX_TEXT_UNITS, NoChatTokens, loadChatTokens, makeExtractor, neutralize } from '../src/quarantine/index.ts';
 
 const CONFIG = fileURLToPath(new URL('../config/chat-tokens.json', import.meta.url));
 const MODEL = 'Qwen/Qwen3.8-27B';
@@ -148,4 +148,63 @@ test('7. an allowed model without an entry throws NoChatTokens from the default 
 
 test('7. an off-allowlist model still throws ModelNotAllowed, not NoChatTokens', () => {
   assert.throws(() => makeExtractor({ model: 'x-ai/grok-4.7' }), ModelNotAllowed);
+});
+
+// ---- follow-up: bounded work and compatibility forms ----
+const nest = (token: string, depth: number): string => {
+  const mid = Math.floor(token.length / 2);
+  let out = token;
+  for (let i = 0; i < depth; i++) out = token.slice(0, mid) + out + token.slice(mid);
+  return out;
+};
+
+// compatibility form: every printable ASCII unit moved to its fullwidth form (NFKC maps it back)
+const fullwidth = (s: string): string =>
+  [...s].map((c) => (c === ' ' ? '\u3000' : String.fromCodePoint(c.codePointAt(0)! + 0xfee0))).join('');
+
+test('9. a 2 MB input of nested tokens finishes under 1 s and reaches the model without a token', async () => {
+  const calls = script();
+  const tokens = loadChatTokens(MODEL);
+  const token = tokens[0]!;
+  const big = nest(token, 1).repeat(Math.ceil(2_000_000 / (token.length * 2)));
+  assert.ok(big.length >= 2_000_000);
+  const started = Date.now();
+  await makeExtractor({ model: MODEL })(ASK(big));
+  assert.ok(Date.now() - started < 1000, 'under one second');
+  const user = userOf(calls);
+  for (const t of tokens) assert.ok(!user.includes(t));
+  assert.ok(user.length <= MAX_TEXT_UNITS);
+  const direct = Date.now();
+  neutralize(big.slice(0, 20_000), MODEL);
+  assert.ok(Date.now() - direct < 1000);
+});
+
+test('9. nesting deeper than the pass cap fails closed with no model call; a shallow nesting is stripped', async () => {
+  const calls = script();
+  const token = loadChatTokens(MODEL)[0]!;
+  const extractor = makeExtractor({ model: MODEL });
+  await assert.rejects(extractor(ASK(nest(token, 40))), ChatTokensUnstable);
+  assert.throws(() => neutralize(nest(token, 40), MODEL), ChatTokensUnstable);
+  assert.equal(calls.length, 0);
+  await extractor(ASK(nest(token, 8)));
+  assert.equal(userOf(calls), '');
+});
+
+for (const id of NEAR_MODELS) {
+  test(`10. the fullwidth form of every ASCII token of ${id} is removed`, async () => {
+    const calls = script();
+    const tokens = (config[id]?.tokens ?? []).filter((t) => /^[\x21-\x7e]+$/.test(t));
+    assert.ok(tokens.length > 0);
+    const extractor = makeExtractor({ model: id });
+    for (const token of tokens) {
+      await extractor(ASK(`a${fullwidth(token)}b`));
+      assert.equal(userOf(calls, calls.length - 1), 'ab');
+      assert.ok(neutralize(`a${fullwidth(token)}b`, id).removed >= 1);
+    }
+  });
+}
+
+test('10. ordinary ASCII text is unchanged byte for byte', () => {
+  const all = Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)).join('') + '\n\t';
+  assert.deepEqual(neutralize(all, MODEL), { text: all, removed: 0 });
 });

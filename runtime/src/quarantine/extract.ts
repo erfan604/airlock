@@ -5,7 +5,7 @@
 import { canonicalJson, assertModelAllowed, complete, loadModelsConfig } from '../llm/index.ts';
 import type { LlmParams } from '../llm/index.ts';
 import type { Extractor } from '../interpreter/types.ts';
-import { loadChatTokens, neutralize } from './neutralize.ts';
+import { loadChatTokens, marginOf, neutralizeWith } from './neutralize.ts';
 import { extractionSchema } from './schema.ts';
 import { validateField } from './validators.ts';
 
@@ -41,13 +41,15 @@ function parseObject(text: string): Record<string, unknown> | null {
 export function makeExtractor(cfg: { model: string; maxTokens?: number; chatTokensFile?: string }): Extractor {
   const { model } = cfg;
   assertModelAllowed('quarantine', model);
-  loadChatTokens(model, cfg.chatTokensFile);
+  const chatTokens = loadChatTokens(model, cfg.chatTokensFile);
+  const margin = marginOf(chatTokens);
   return async (req) => {
     const fields = Object.keys(req.schema);
     if (fields.length === 0) return {};
     const converted = typeof req.data === 'string' ? req.data : (JSON.stringify(req.data) ?? '');
     // after the conversion, so it sees what the model would see, and before the cut: a prefix of text that holds no token holds none
-    const text = cut(neutralize(converted, model, cfg.chatTokensFile).text, MAX_TEXT_UNITS);
+    // the first cut bounds the work on untrusted input; the second restores the exact limit after removal and normalization
+    const text = cut(neutralizeWith(chatTokens, cut(converted, MAX_TEXT_UNITS + margin), model).text, MAX_TEXT_UNITS);
     const instruction = cut(String(req.instruction), MAX_INSTRUCTION_UNITS);
     const params: LlmParams = { temperature: 0, max_tokens: cfg.maxTokens ?? DEFAULT_MAX_TOKENS };
     if (loadModelsConfig().reasoning === 'low') params.reasoning = 'low';

@@ -31,14 +31,30 @@ export function loadChatTokens(model: string, file: string = DEFAULT_FILE): read
   return Object.freeze([...(tokens as string[])]);
 }
 
-/** Removes every occurrence of every token of the model's list, to a fixed point. `removed` counts every removal. */
-export function neutralize(text: string, model: string, file?: string): { text: string; removed: number } {
-  const tokens = [...loadChatTokens(model, file)].sort((a, b) => b.length - a.length);
+/** The removal did not settle within the pass cap: the text is dropped, never passed on unstripped. */
+export class ChatTokensUnstable extends Error {
+  constructor(readonly model: string) {
+    super(`ChatTokensUnstable: ${model.slice(0, 80)}`);
+    this.name = 'ChatTokensUnstable';
+  }
+}
+
+export const MAX_PASSES = 16;
+
+/** Text length that is safe to hand to neutralize: the longest token times a few beyond the cut the caller applies afterwards. */
+export const marginOf = (tokens: readonly string[]): number => 4 * tokens.reduce((n, t) => Math.max(n, t.length), 0);
+
+/** neutralize with a list already loaded. NFKC first, so compatibility forms (fullwidth and the like) that normalize into a token
+ *  downstream are removed too; then removal to a fixed point, at most MAX_PASSES passes that remove something. */
+export function neutralizeWith(tokens: readonly string[], text: string, model: string): { text: string; removed: number } {
+  const ordered = [...tokens].sort((a, b) => b.length - a.length);
   let out = text;
   let removed = 0;
-  for (;;) {
+  for (let pass = 0; ; pass++) {
+    const normalized = out.normalize('NFKC');
     const before = removed;
-    for (const token of tokens) {
+    out = normalized;
+    for (const token of ordered) {
       const parts = out.split(token);
       if (parts.length > 1) {
         removed += parts.length - 1;
@@ -46,5 +62,11 @@ export function neutralize(text: string, model: string, file?: string): { text: 
       }
     }
     if (removed === before) return { text: out, removed };
+    if (pass + 1 >= MAX_PASSES) throw new ChatTokensUnstable(model);
   }
+}
+
+/** Removes every occurrence of every token of the model's list, to a fixed point. `removed` counts every removal. */
+export function neutralize(text: string, model: string, file?: string): { text: string; removed: number } {
+  return neutralizeWith(loadChatTokens(model, file), text, model);
 }
