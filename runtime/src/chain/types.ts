@@ -230,7 +230,7 @@ export const EVENT_PAYLOAD_SCHEMAS = {
   paid: z.strictObject({ request_id: Text, payee: Text, amount: Text }),
   failed: z.strictObject({
     request_id: Text,
-    reason: z.enum(['MpcFailed', 'MpcBadResponse', 'TransferFailed', 'InsufficientBalance']),
+    reason: z.enum(['MpcFailed', 'MpcBadResponse', 'TransferFailed', 'InsufficientBalance', 'AuthorizationExpired']),
     retryable: z.boolean(),
   }),
   nonce_set: z.strictObject({ path: Text, nonce: Text }),

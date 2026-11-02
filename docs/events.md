@@ -31,7 +31,7 @@ EVENT_JSON:{"standard":"airlock","version":"1.0.0","event":"<snake_case name>","
 4. `reason` is a closed name. In `escalated` and `blocked` it is a verdict reason: `UnknownAsset`, `Paused`, `AmountOutOfBounds`,
    `DailyLimit`, `FeeTooHigh`, `MissingProvenance`, `BookLabelNotInBook`, `OutsideTask`, `OverTaskBound`, `UntrustedTrigger`,
    `UntrustedRecipient`, `NewRecipient`, `OverPayeeLimit`, `UntrustedAmount`, `PendingFull`, `EscalationsLocked` or
-   `EscalationBudget`. In `failed` it is `MpcFailed`, `MpcBadResponse`, `TransferFailed` or `InsufficientBalance`.
+   `EscalationBudget`. In `failed` it is `MpcFailed`, `MpcBadResponse`, `TransferFailed`, `InsufficientBalance` or `AuthorizationExpired`.
 5. The list grows only by a ticket that adds the emitting code and its row here in the same change (AIR-080, AIR-081, AIR-083, AIR-100,
    AIR-101, AIR-104 and AIR-105 add the rows that no code emits yet).
 
@@ -66,7 +66,7 @@ Types: `string`, `number`, `boolean`, `object`, `array of strings`; `string or n
 | `signed` | `request_id: string`, `unsigned_hex: string`, `big_r: string`, `s: string`, `recovery_id: number` | `on_signed` (AIR-105). `big_r` is 66 characters, `s` is 64 characters, `recovery_id` is 0 to 3. |
 | `x402_signed` | `id: string`, `from: string`, `to: string`, `value: string`, `valid_after: string`, `valid_before: string`, `nonce: string`, `v: number`, `r: string`, `s: string` | `on_signed` (AIR-109) for an erc20 request, instead of `signed`. `id` is the request id, `from` and `to` are `0x` plus 40 lowercase hex, `value` and `valid_before` decimal strings (Unix seconds), `valid_after` is `"0"`, `nonce` is `0x` plus 64 hex, `v` is 27 or 28, `r` and `s` are 64 hex without `0x`. |
 | `paid` | `request_id: string`, `payee: string`, `amount: string` | `on_transfer` (AIR-101), the NEAR lane. `payee` is the stored canonical key, `amount` decimal base units. |
-| `failed` | `request_id: string`, `reason: string`, `retryable: boolean` | The failure path (AIR-105, AIR-101). `reason` is one of the failed reasons of rule 4. `MpcFailed`, `TransferFailed` and `InsufficientBalance` refund the request's charges; `MpcBadResponse` (the signer answered, but the answer is unusable) keeps them, and `retryable` is then always false. |
+| `failed` | `request_id: string`, `reason: string`, `retryable: boolean` | The failure path (AIR-105, AIR-101). `reason` is one of the failed reasons of rule 4. `MpcFailed`, `TransferFailed`, `InsufficientBalance` and `AuthorizationExpired` (AIR-109: the retry of an x402 request whose stored authorization has expired signs nothing) refund the request's charges; `MpcBadResponse` (the signer answered, but the answer is unusable) keeps them, and `retryable` is then always false. |
 | `nonce_set` | `path: string`, `nonce: string` | `set_nonce` (AIR-104), owner only. `nonce` is a decimal string. |
 
 ### Owner and agent plane (AIR-040, AIR-042, AIR-043, AIR-045, AIR-046, template)

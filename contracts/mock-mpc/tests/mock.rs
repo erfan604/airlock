@@ -316,11 +316,11 @@ async fn fail_mode_panics_and_rolls_back() -> R<()> {
     assert!(mode.is_success(), "{}", failure_text(&mode));
     let r = sign_ok(&w, "p2", B64).await?;
     assert_failed_with(&r, "mock mpc failure");
-    // the panic rolled the receipt back: no count, no new last request
-    assert_eq!(view::<u64>(&w, "call_count").await?, 1);
+    // the failure is a child receipt: the request was seen, so it is counted and is the last request
+    assert_eq!(view::<u64>(&w, "call_count").await?, 2);
     assert_eq!(
         view::<Value>(&w, "last_request").await?,
-        json!({"path": "p1", "payload_hex": A64})
+        json!({"path": "p2", "payload_hex": B64})
     );
     Ok(())
 }

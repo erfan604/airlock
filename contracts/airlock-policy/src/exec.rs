@@ -109,7 +109,7 @@ impl Contract {
         // payee once fell through to the native NEAR transfer of its amount)
         // AIR-109: an erc20 id also starts with `evm:`, so its arm comes first
         if crate::x402::is_erc20_asset(&asset) {
-            return Some(self.start_x402(id));
+            return self.start_x402(id);
         }
         if asset.starts_with("evm:") {
             return Some(self.start_evm(id));

@@ -148,13 +148,30 @@ pub fn x402_payee_address(payee_key: &str) -> [u8; 20] {
     address_bytes(payee_key)
 }
 
+/// The one authorization a request id was signed as (AIR-109, the x402 counterpart of `EvmAttempt`). Recorded before the first signing
+/// call and never replaced: a retry signs `digest` again and takes no new nonce or window, so the signer can never hold two valid
+/// authorizations for one request id.
+#[near(serializers = [borsh])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct X402Attempt {
+    pub nonce: [u8; 32],
+    pub valid_after: u64,
+    pub valid_before: u64,
+    pub digest: [u8; 32],
+}
+
 impl Contract {
-    /// The x402 lane of `start_execution` (AIR-109): builds the EIP-3009 authorization of an `Executing` erc20 record, stores its digest
-    /// with the payer, the window and the nonce, and asks the signer to sign the digest with `on_signed` as the callback. Everything comes
-    /// from the stored record and the registry. The window and the nonce are computed here, at signing time (the Allow in `submit_batch`
-    /// or the `approve` of an escalation), never earlier. A panic reverts the whole `submit_batch` (charges included) or leaves the
-    /// escalation Pending (`approve`). A retry signs a fresh authorization with a new nonce and window. Plain `impl`: never exported.
-    pub fn start_x402(&mut self, id: &str) -> Promise {
+    /// The x402 lane of `start_execution` (AIR-109): builds the EIP-3009 authorization of an `Executing` erc20 record, records it as the
+    /// request's `X402Attempt`, stores its digest with the payer, the window and the nonce, and asks the signer to sign the digest with
+    /// `on_signed` as the callback. Everything comes from the stored record and the registry. The window and the nonce are computed at
+    /// the first signing (the Allow in `submit_batch` or the `approve` of an escalation), never earlier, and exactly once per request id.
+    /// A retry (AIR-105, Retryable once) rebuilds the digest from the stored attempt, checks it equals the stored one and signs it again:
+    /// the first signing may have completed in the signer even though the callback saw a failure, so a fresh nonce could leave the payee
+    /// two valid authorizations. When block time is at or past the stored `valid_before` the old authorization is expired, so the retry
+    /// signs nothing: the request fails with `AuthorizationExpired` through `fail_request` (the refunding path, as `InsufficientBalance`
+    /// of the NEAR lane; a second failure is final) and `None` comes back. A panic reverts the whole `submit_batch` (charges included) or
+    /// leaves the escalation Pending (`approve`). Plain `impl`: never exported.
+    pub fn start_x402(&mut self, id: &str) -> Option<Promise> {
         let mut rec = match self.records.get(id) {
             Some(rec) if rec.state == RequestState::Executing => rec.clone(),
             _ => env::panic_str("unexpected state"),
@@ -168,40 +185,68 @@ impl Contract {
         let path = asset
             .path
             .unwrap_or_else(|| env::panic_str("evm path missing"));
-        let valid_before = valid_before_at(env::block_timestamp_ms());
-        let nonce = x402_nonce(&env::random_seed_array(), id);
         let from = address_bytes(&eip712.from);
         let to = x402_payee_address(&rec.payee);
-        let digest = eip3009_digest(
-            &eip712.domain_separator.0,
-            &struct_hash(&from, &to, rec.amount, 0, valid_before, &nonce),
-        );
-        let digest_hex = hex::encode(digest);
+        let digest_of = |nonce: &[u8; 32], valid_before: u64| {
+            eip3009_digest(
+                &eip712.domain_separator.0,
+                &struct_hash(&from, &to, rec.amount, 0, valid_before, nonce),
+            )
+        };
+        let attempt = match self.x402_attempts.get(id).cloned() {
+            Some(stored) => {
+                if env::block_timestamp_ms() / 1000 >= stored.valid_before {
+                    self.fail_request(id, FailReason::AuthorizationExpired);
+                    return None;
+                }
+                require!(
+                    stored.valid_after == 0
+                        && digest_of(&stored.nonce, stored.valid_before) == stored.digest,
+                    "stored attempt does not match request"
+                );
+                stored
+            }
+            None => {
+                let valid_before = valid_before_at(env::block_timestamp_ms());
+                let nonce = x402_nonce(&env::random_seed_array(), id);
+                let attempt = X402Attempt {
+                    nonce,
+                    valid_after: 0,
+                    valid_before,
+                    digest: digest_of(&nonce, valid_before),
+                };
+                self.x402_attempts.insert(id.to_string(), attempt.clone());
+                attempt
+            }
+        };
+        let digest_hex = hex::encode(attempt.digest);
         rec.exec = Some(ExecInfo {
             unsigned_hex: Some(digest_hex.clone()),
             x402: Some(X402Exec {
                 from: eip712.from,
-                valid_before,
-                nonce: Hex32(nonce),
+                valid_before: attempt.valid_before,
+                nonce: Hex32(attempt.nonce),
             }),
             ..ExecInfo::default()
         });
         self.records.insert(id.to_string(), rec);
         // `with_unused_gas_weight(0)`: the signer receives exactly GAS_MPC_SIGN, as in the EVM lane
-        mpc::ext(self.mpc_contract_id.clone())
-            .with_static_gas(GAS_MPC_SIGN)
-            .with_attached_deposit(SIGN_DEPOSIT)
-            .with_unused_gas_weight(0)
-            .sign(SignRequest {
-                path,
-                payload_v2: Payload::Ecdsa(digest_hex.clone()),
-                domain_id: 0,
-            })
-            .then(
-                Self::ext(env::current_account_id())
-                    .with_static_gas(GAS_ON_SIGNED)
-                    .on_signed(id.to_string(), digest_hex),
-            )
+        Some(
+            mpc::ext(self.mpc_contract_id.clone())
+                .with_static_gas(GAS_MPC_SIGN)
+                .with_attached_deposit(SIGN_DEPOSIT)
+                .with_unused_gas_weight(0)
+                .sign(SignRequest {
+                    path,
+                    payload_v2: Payload::Ecdsa(digest_hex.clone()),
+                    domain_id: 0,
+                })
+                .then(
+                    Self::ext(env::current_account_id())
+                        .with_static_gas(GAS_ON_SIGNED)
+                        .on_signed(id.to_string(), digest_hex),
+                ),
+        )
     }
 
     /// Stores the signature of an x402 record (called by `store_signature` when `exec.x402` is set): `recovery_id` 2 or 3 is a bad

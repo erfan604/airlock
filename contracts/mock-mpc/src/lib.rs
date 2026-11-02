@@ -89,7 +89,16 @@ impl MockMpc {
         self.last = Some((request.path.clone(), payload_hex));
         self.calls += 1;
         match self.mode.as_str() {
-            "fail" => env::panic_str("mock mpc failure"),
+            // the failure is a child receipt, not a panic of `sign`: a panic would roll back the count and the last request, and a
+            // real signer that fails after receiving a request has still seen it (AIR-109: a retry must be shown to re-sign the same digest)
+            "fail" => {
+                PromiseOrValue::Promise(Promise::new(env::current_account_id()).function_call(
+                    "fail_now",
+                    Vec::new(),
+                    NearToken::from_yoctonear(0),
+                    Gas::from_tgas(2),
+                ))
+            }
             "garbage" => PromiseOrValue::Value(serde_json::json!({ "unexpected": true })),
             "yield" => {
                 let (promise, id) = Promise::new_yield(
@@ -103,6 +112,12 @@ impl MockMpc {
             }
             _ => PromiseOrValue::Value(ok_response()),
         }
+    }
+
+    /// Test only: the failing child receipt of `fail` mode.
+    #[private]
+    pub fn fail_now(&mut self) {
+        env::panic_str("mock mpc failure")
     }
 
     /// Test only: answers the oldest parked `sign` that is still waiting (yield mode) with the `ok` response. A request that

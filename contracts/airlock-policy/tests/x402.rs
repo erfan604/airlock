@@ -563,8 +563,11 @@ async fn x402_approved_escalation_signs_with_approve_time_window() {
 
 // ---- 11: a retry --------------------------------------------------------------------------------------------------------------
 
+/// The retry re-signs the stored authorization: the first signing may have completed in the signer although the callback saw a failure,
+/// so a new nonce could leave the payee two valid authorizations. Same nonce, same window, same digest; the attempt survived the failure
+/// callback (the ledgers were refunded, the attempt was not).
 #[tokio::test]
-async fn x402_retry_signs_a_fresh_authorization() {
+async fn x402_retry_resigns_the_identical_authorization() {
     let _slot = slot().await;
     let w = x402_world().await;
     let key = erc20_key(&w);
@@ -578,12 +581,23 @@ async fn x402_retry_signs_a_fresh_authorization() {
     assert_eq!(failed["retryable"], true, "{failed}");
     assert_eq!(state_of(&w, &id).await, "Retryable");
     assert_eq!(usdc_ledgers(&w).await, before);
-    let n1 = w.request(&id).await.expect("stored")["exec"]["x402"]["nonce"].clone();
-    assert!(n1.is_string(), "the first nonce is readable: {n1}");
+    let x1 = w.request(&id).await.expect("stored")["exec"]["x402"].clone();
+    assert!(x1["nonce"].is_string(), "the first nonce is readable: {x1}");
+    // the mock counts failed calls too
+    assert_eq!(mock_calls(&w).await, 1);
+    let sent1 = view(&w, &w.mpc, "last_request", json!({})).await;
     w.set_mpc_mode("ok").await;
     let second = submit_ok(&w, vec![clean(&w, &task, 0)], &task).await;
     let e = one_event(&second, "x402_signed");
-    assert_ne!(e["nonce"], n1, "a retry signs a new nonce");
+    assert_eq!(
+        e["nonce"].as_str().unwrap().trim_start_matches("0x"),
+        x1["nonce"].as_str().unwrap(),
+        "a retry keeps the nonce"
+    );
+    assert_eq!(
+        e["valid_before"].as_str().unwrap().parse::<u64>().ok(),
+        x1["valid_before"].as_u64()
+    );
     assert_eq!(state_of(&w, &id).await, "Executed");
     let after = usdc_ledgers(&w).await;
     assert_eq!(
@@ -591,8 +605,46 @@ async fn x402_retry_signs_a_fresh_authorization() {
         AMOUNT.to_string(),
         "charged once: {after}"
     );
-    // the mock counts only the calls it answers: the failed first attempt is not counted, the retry is
-    assert_eq!(mock_calls(&w).await, 1);
+    assert_eq!(mock_calls(&w).await, 2);
+    let sent2 = view(&w, &w.mpc, "last_request", json!({})).await;
+    assert_eq!(sent1, sent2, "the same payload went to the signer twice");
+    assert_eq!(sent2["payload_hex"], digest_of(&e).as_str());
+}
+
+/// A retry after the stored `valid_before` signs nothing: the request fails `AuthorizationExpired`, the charges are released and the
+/// signer is not called again.
+#[tokio::test]
+async fn x402_retry_after_expiry_refuses_and_signs_nothing() {
+    let _slot = slot().await;
+    let w = x402_world().await;
+    let key = erc20_key(&w);
+    let task = task_of(&w, &[(&key, BOUND)], 3);
+    let id = id_of(&task, 0);
+    let before = usdc_ledgers(&w).await;
+    w.set_mpc_mode("fail").await;
+    let first = submit_mpc_failure(&w, vec![clean(&w, &task, 0)], &task).await;
+    assert_eq!(one_event(&first, "failed")["retryable"], true);
+    let valid_before = w.request(&id).await.expect("stored")["exec"]["x402"]["valid_before"]
+        .as_u64()
+        .expect("a window");
+    // about 356 s of block time per 1200 blocks: past the 300 s window
+    w.sandbox
+        .fast_forward(1200)
+        .await
+        .expect("the sandbox fast-forwards");
+    assert!(
+        final_block_ms(&w) / 1000 >= valid_before,
+        "the window has passed"
+    );
+    w.set_mpc_mode("ok").await;
+    let second = submit_ok(&w, vec![clean(&w, &task, 0)], &task).await;
+    assert!(events(&second, "x402_signed").is_empty());
+    let failed = one_event(&second, "failed");
+    assert_eq!(failed["reason"], "AuthorizationExpired", "{failed}");
+    assert_eq!(failed["retryable"], false, "{failed}");
+    assert_eq!(state_of(&w, &id).await, "Failed");
+    assert_eq!(usdc_ledgers(&w).await, before, "charges released");
+    assert_eq!(mock_calls(&w).await, 1, "nothing new was signed");
 }
 
 // ---- 12: exports --------------------------------------------------------------------------------------------------------------

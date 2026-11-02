@@ -41,6 +41,9 @@ pub enum FailReason {
     TransferFailed,
     /// The contract could not cover the payment (AIR-101).
     InsufficientBalance,
+    /// AIR-109: a retry of an x402 request found its stored authorization expired (block time at or past `valid_before`). The old
+    /// authorization can no longer be used on chain, so nothing was signed and the charges are released.
+    AuthorizationExpired,
 }
 
 impl FailReason {
@@ -51,6 +54,7 @@ impl FailReason {
             FailReason::MpcBadResponse => "MpcBadResponse",
             FailReason::TransferFailed => "TransferFailed",
             FailReason::InsufficientBalance => "InsufficientBalance",
+            FailReason::AuthorizationExpired => "AuthorizationExpired",
         }
     }
 
@@ -61,7 +65,8 @@ impl FailReason {
         match self {
             FailReason::MpcFailed
             | FailReason::TransferFailed
-            | FailReason::InsufficientBalance => true,
+            | FailReason::InsufficientBalance
+            | FailReason::AuthorizationExpired => true,
             FailReason::MpcBadResponse => false,
         }
     }

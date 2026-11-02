@@ -102,6 +102,10 @@ pub struct Contract {
     // the last two fields, after `flood` (AIR-083): the tickets that add fields in between insert them above these two.
     pub nonces: LookupMap<String, u64>,
     pub evm_attempts: LookupMap<String, nonces::EvmAttempt>,
+    // AIR-109: the one authorization (nonce, window, digest) each x402 request id was signed as, written at the first signing and never
+    // replaced or removed, so a retry re-signs the identical digest and one id can never yield two valid authorizations. Last field,
+    // after `evm_attempts`.
+    pub x402_attempts: LookupMap<String, x402::X402Attempt>,
 }
 
 #[near(serializers = [borsh])]
@@ -143,6 +147,8 @@ pub enum StorageKey {
     // AIR-104 (the table puts them last, after `Flood` of AIR-083: AIR-083 inserts its key above these two)
     Nonces,
     EvmAttempts,
+    // AIR-109 (appended last)
+    X402Attempts,
 }
 
 const STORAGE_BYTES_TO_REGISTER: u128 = 486;
@@ -186,6 +192,7 @@ impl Contract {
             flood: LookupMap::new(StorageKey::Flood),
             nonces: LookupMap::new(StorageKey::Nonces),
             evm_attempts: LookupMap::new(StorageKey::EvmAttempts),
+            x402_attempts: LookupMap::new(StorageKey::X402Attempts),
         }
     }
 
