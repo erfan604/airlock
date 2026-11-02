@@ -9,6 +9,8 @@ import type { ApproveResult } from '../approvals/Card.tsx';
 import { parseEvidence } from '../approvals/evidence.ts';
 import correction from '../../fixtures/card-correction.json' with { type: 'json' };
 import live from '../../fixtures/card-correction-live.json' with { type: 'json' };
+import lookalike from '../../fixtures/card-lookalike.json' with { type: 'json' };
+import newHex from '../../fixtures/card-new-hex.json' with { type: 'json' };
 import { registerFixture } from './registry.ts';
 
 const SCOPE = { network: 'testnet', contractId: 'airlock-policy.testnet' };
@@ -19,7 +21,9 @@ async function fixtureWallet(): Promise<ApproveResult> {
   return attempts % 2 === 1 ? { ok: false, kind: 'wallet', name: 'FixtureWalletDeclined' } : { ok: false, kind: 'contract', name: 'FixtureContractRefused' };
 }
 
-function CardFixture({ data }: { data: typeof correction }) {
+type FixtureData = Omit<typeof correction, 'book'> & { book: BookEntryJson | null; bookKeys?: string[]; bookLabels?: Record<string, string> };
+
+function CardFixture({ data }: { data: FixtureData }) {
   const view = data.view as RequestView;
   return (
     <main className="page fixture" data-testid="fixture-card">
@@ -28,7 +32,9 @@ function CardFixture({ data }: { data: typeof correction }) {
         evidence={parseEvidence(data.evidence, view.labels)}
         ledgers={data.ledgers as LedgersView}
         asset={data.asset as AssetEntryViewJson}
-        book={data.book as BookEntryJson}
+        book={data.book}
+        bookKeys={data.bookKeys ?? []}
+        bookLabels={data.bookLabels}
         onApprove={fixtureWallet}
         onReject={fixtureWallet}
         scope={SCOPE}
@@ -40,3 +46,7 @@ function CardFixture({ data }: { data: typeof correction }) {
 
 registerFixture('card-correction', () => <CardFixture data={correction} />);
 registerFixture('card-correction-live', () => <CardFixture data={live} />);
+// AIR-190: a payee outside the book. `card-lookalike` is a named account one letter off a book entry, `card-new-hex` an EVM address that
+// shares the first and last four digits of a book key. Both ask for the forcing step in the confirm sheet.
+registerFixture('card-lookalike', () => <CardFixture data={lookalike as unknown as FixtureData} />);
+registerFixture('card-new-hex', () => <CardFixture data={newHex as unknown as FixtureData} />);

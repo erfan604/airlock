@@ -37,3 +37,17 @@ export function parseEvidence(raw: unknown, labels?: MaskTriple): CardEvidence {
     snippet: body ? wrapUntrusted(own(body, 'snippet')) : null,
   };
 }
+
+/** A book label as the diff sentence shows it: a plain `[a-z0-9 ._-]` string is typed text, anything else is outsider-shaped text for `Specimen`. */
+export type BookLabel = { kind: 'plain'; text: string } | { kind: 'untrusted'; text: Untrusted };
+
+const PLAIN_LABEL = /^[a-z0-9 ._-]+$/;
+
+/** The label of the book row `key`, or null when the book gave none (own properties only). */
+export function bookLabelOf(labels: Readonly<Record<string, string>>, key: string): BookLabel | null {
+  const raw = own(labels, key);
+  if (typeof raw !== 'string') return null;
+  if (PLAIN_LABEL.test(raw)) return { kind: 'plain', text: raw };
+  const wrapped = wrapUntrusted(raw);
+  return wrapped === null ? null : { kind: 'untrusted', text: wrapped };
+}

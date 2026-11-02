@@ -3,6 +3,7 @@
 // Card per request. At most 5 cards, newest first, and a line for the rest. There is no approve all and no reject all: every approval is its
 // own card and its own wallet confirmation.
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { BookPageSchema } from '@airlock/runtime/chain-types';
 import type { AssetEntryViewJson, LedgersView, RequestView } from '@airlock/runtime/chain-types';
 import type { BookEntryJson } from '@airlock/runtime/dsl';
 import { rpcView } from '../chain/rpc.ts';
@@ -25,7 +26,16 @@ import type { CounterScope } from './failures.ts';
 
 export const MAX_CARDS = 5;
 
-export type CardData = { view: RequestView; evidence: CardEvidence; ledgers: LedgersView; asset: AssetEntryViewJson; book: BookEntryJson | null };
+export type CardData = {
+  view: RequestView;
+  evidence: CardEvidence;
+  ledgers: LedgersView;
+  asset: AssetEntryViewJson;
+  book: BookEntryJson | null;
+  /** The keys and labels of the `get_book` rows (AIR-190); empty when no shown card has a payee outside the book. */
+  bookKeys: readonly string[];
+  bookLabels: Readonly<Record<string, string>>;
+};
 export type ApprovalsData = { cards: CardData[]; more: number };
 
 export type LoadDeps = {
@@ -63,20 +73,39 @@ function newestFirst(views: RequestView[]): RequestView[] {
     .sort((a, b) => (BigInt(a.id) < BigInt(b.id) ? 1 : BigInt(a.id) > BigInt(b.id) ? -1 : 0));
 }
 
+const BOOK_PAGE = 50;
+const MAX_BOOK_PAGES = 20;
+
+/** Every row of `get_book`, page by page, as keys and labels. A failed or malformed page fails the whole load: a missing book must not read as "no close match". */
+async function readBook(view: LoadDeps['view']): Promise<{ keys: string[]; labels: Record<string, string> }> {
+  const keys: string[] = [];
+  const labels: Record<string, string> = {};
+  for (let page = 0; page < MAX_BOOK_PAGES; page++) {
+    const rows = BookPageSchema.parse(await view('get_book', { from_index: page * BOOK_PAGE, limit: BOOK_PAGE }));
+    for (const [key, entry] of rows) {
+      keys.push(key);
+      labels[key] = entry.label;
+    }
+    if (rows.length < BOOK_PAGE) return { keys, labels };
+  }
+  throw new Error('get_book kept answering full pages');
+}
+
 export async function loadApprovals(deps: LoadDeps): Promise<ApprovalsData> {
   const all = newestFirst(await deps.pending());
   const shown = all.slice(0, MAX_CARDS);
   const assets = shown.length > 0 ? ((await deps.view('list_assets', {})) as ReadonlyArray<readonly [string, AssetEntryViewJson]>) : [];
+  const bookRows = shown.some((v) => v.book_status === 'new') ? await readBook(deps.view) : { keys: [], labels: {} };
   const cards = await Promise.all(
     shown.map(async (view): Promise<CardData> => {
       const entry = assets.find(([id]) => id === view.asset)?.[1];
       if (entry === undefined) throw new Error(`asset ${view.asset} is not in the registry`);
-      const [ledgers, book, raw] = await Promise.all([
+      const [ledgers, ownEntry, raw] = await Promise.all([
         deps.view('get_ledgers', { payee: view.payee, asset: view.asset, task: view.task_id }),
         deps.view('get_book_entry', { key: view.payee }),
         view.id === null ? Promise.resolve(null) : deps.evidence(view.id).catch(() => null),
       ]);
-      return { view, evidence: parseEvidence(evidenceBody(raw), view.labels), ledgers: ledgers as LedgersView, asset: entry, book: (book ?? null) as BookEntryJson | null };
+      return { view, evidence: parseEvidence(evidenceBody(raw), view.labels), ledgers: ledgers as LedgersView, asset: entry, book: (ownEntry ?? null) as BookEntryJson | null, bookKeys: bookRows.keys, bookLabels: bookRows.labels };
     }),
   );
   return { cards, more: all.length - shown.length };
@@ -124,7 +153,7 @@ function ApprovalCard({ card, ownerId, contractId, actions, scope, nowMs, onDone
   const showCli = cliArgs !== null && (!walletOffered || failures >= MAX_FAILURES);
   return (
     <div className="approval-item" data-testid="approval-item">
-      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} onApprove={wrapped.approve} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} />
+      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} />
       {showCli && cliArgs !== null ? <CliPanel args={cliArgs} contractId={contractId} ownerId={ownerId} /> : null}
     </div>
   );

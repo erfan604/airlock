@@ -3,12 +3,15 @@
 // the cap line never contain text an outsider wrote; the sender and the snippet travel through the model as opaque `Untrusted`
 // values and are drawn by `Specimen` only. Amounts are BigInt base units end to end and are shown through `formatBaseUnits`.
 import { bitsToLabels, untrustedChannels } from '@airlock/runtime/dsl';
-import type { BookEntryJson, ChannelName, LabelName } from '@airlock/runtime/dsl';
+import type { BookEntryJson, ChannelName, LabelName, LookalikeResult } from '@airlock/runtime/dsl';
 import { formatBaseUnits } from '@airlock/runtime/money';
 import type { AssetEntryViewJson, LedgersView, RequestView } from '@airlock/runtime/chain-types';
 import type { Untrusted } from '../components/untrusted.ts';
-import type { CardEvidence } from './evidence.ts';
-import { channelsOfMasks } from './evidence.ts';
+import type { BookLabel, CardEvidence } from './evidence.ts';
+import { bookLabelOf, channelsOfMasks } from './evidence.ts';
+import { FORCING_MIN_AMOUNT, forcingLabel, forcingRequired, forcingTarget, lookalikeOf } from './forcing.ts';
+import { magnitudeText } from './magnitude.ts';
+import type { MagnitudeText } from './magnitude.ts';
 
 /** `approve(id, to, asset, amount, why, book)`: `id` the decimal pending number, the other five the readable values. */
 export type ApproveArgs = { id: string; to: string; asset: string; amount: string; why: string; book: string };
@@ -52,6 +55,15 @@ export type CapLine = {
   description: string;
 };
 
+/** The diff against the nearest book key, for a payee that is not in the book (AIR-190). */
+export type DiffModel = { result: LookalikeResult | null; label: BookLabel | null };
+
+/** The forcing step of the confirm sheet (AIR-190): shown when `required`, satisfied by typing `target` or the full key. */
+export type ForcingModel = { required: boolean; target: string; label: string };
+
+/** What the card needs besides the request: the keys and labels of the book rows, and the forcing minimum. */
+export type CardExtras = { bookKeys?: readonly string[]; bookLabels?: Readonly<Record<string, string>>; forcingMinAmount?: bigint };
+
 export type SourceChip = { row: RowName; from: string | null; sender: Untrusted | null; age: string | null };
 
 export type CardModel = {
@@ -76,6 +88,10 @@ export type CardModel = {
   specimenChannel: ChannelName;
   ageText: string | null;
   args: ApproveArgs;
+  /** Set when `book_status` is `new`. */
+  diff: DiffModel | null;
+  magnitude: MagnitudeText;
+  forcing: ForcingModel | null;
 };
 
 // ---- reasons (the closed table of AIR-181) ----
@@ -225,8 +241,20 @@ function sentenceFor(
  * `nowMs` is the clock for "2 min ago"; it is a parameter so a render is repeatable. Throws `CardError` for a view that cannot be
  * approved, and a `SyntaxError` from `BigInt` for an amount that is not decimal digits: the card then shows nothing to approve.
  */
-export function buildCardModel(v: RequestView, e: CardEvidence, l: LedgersView, a: AssetEntryViewJson, book: BookEntryJson | null, nowMs: bigint): CardModel {
+export function buildCardModel(
+  v: RequestView,
+  e: CardEvidence,
+  l: LedgersView,
+  a: AssetEntryViewJson,
+  book: BookEntryJson | null,
+  nowMs: bigint,
+  extras: CardExtras = {},
+): CardModel {
   const args = approveArgs(v);
+  const bookKeys = extras.bookKeys ?? [];
+  const amount = BigInt(v.amount);
+  const isNew = v.book_status === 'new';
+  const found = isNew ? lookalikeOf(v.payee, bookKeys) : null;
   const masks = { TO: v.labels.recipient, AMOUNT: v.labels.amount, BECAUSE: v.labels.pc } as const;
   const rowChannels = (row: RowName): ChannelName[] => untrustedChannels(masks[row]);
   const channel = (row: RowName): string => channelPhrase(rowChannels(row));
@@ -269,5 +297,10 @@ export function buildCardModel(v: RequestView, e: CardEvidence, l: LedgersView, 
     specimenChannel,
     ageText: age,
     args,
+    diff: isNew ? { result: found, label: found === null ? null : bookLabelOf(extras.bookLabels ?? {}, found.nearest) } : null,
+    magnitude: magnitudeText(amount, l, book, args.asset, a.decimals),
+    forcing: forcingRequired(v, amount, extras.forcingMinAmount ?? FORCING_MIN_AMOUNT, bookKeys)
+      ? { required: true, target: forcingTarget(v.payee), label: forcingLabel(v.payee) }
+      : null,
   });
 }

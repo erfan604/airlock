@@ -173,7 +173,7 @@ test('args: a view that is not a complete escalation never yields arguments', ()
 test('card: a view that cannot be approved renders no buttons and no values', () => {
   const view = { ...(parseRequestView(fixture.view) as RequestView), id: null };
   const markup = renderToStaticMarkup(
-    createElement(Card, { view, evidence: parseEvidence(null), ledgers: inputs().ledgers, asset: inputs().asset, book: null, onApprove: declined, onReject: declined }),
+    createElement(Card, { view, evidence: parseEvidence(null), ledgers: inputs().ledgers, asset: inputs().asset, book: null, bookKeys: [], onApprove: declined, onReject: declined }),
   );
   assert.ok(has(markup, 'card-unavailable'));
   for (const id of ['reject', 'open-approve', 'confirm-approve', 'arg-to']) assert.equal(has(markup, id), false, id);
@@ -593,6 +593,7 @@ test('card: the idle card renders from the fixtures with every test id the e2e n
       ledgers: LedgersViewSchema.parse(f.ledgers),
       asset: AssetEntryViewJsonSchema.parse(f.asset),
       book: f.book as BookEntryJson,
+      bookKeys: [],
       onApprove: declined,
       onReject: declined,
       scope: SCOPE,

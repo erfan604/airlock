@@ -10,6 +10,7 @@ import { Manifest, ManifestRow } from '../components/Manifest.tsx';
 import { Specimen, UntrustedInline } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
 import type { VerdictState } from '../components/verdict.ts';
+import { BookDiff } from './BookDiff.tsx';
 import { buildCardModel, CardError } from './cardModel.ts';
 import type { ApproveArgs, CapLine, CardModel, CardRow, SourceChip } from './cardModel.ts';
 import { MAX_FAILURES, canApprove, cardReducer, initialState } from './cardReducer.ts';
@@ -17,6 +18,7 @@ import type { CardEvent, CardState } from './cardReducer.ts';
 import type { CardEvidence } from './evidence.ts';
 import { defaultScope, readFailures, writeFailures } from './failures.ts';
 import type { CounterScope } from './failures.ts';
+import { forcingSatisfied } from './forcing.ts';
 
 export type { ApproveArgs } from './cardModel.ts';
 
@@ -29,6 +31,10 @@ export type CardProps = {
   ledgers: LedgersView;
   asset: AssetEntryViewJson;
   book: BookEntryJson | null;
+  /** The canonical keys of the `get_book` rows (AIR-190): the look-alike check and the diff read them. */
+  bookKeys: readonly string[];
+  /** Label per book key, for the diff sentence. A missing label leaves the sentence without one. */
+  bookLabels?: Readonly<Record<string, string>>;
   onApprove(a: ApproveArgs): Promise<ApproveResult>;
   onReject(id: string): Promise<ApproveResult>;
   /** Network and contract id of the R4-08 counter key. AIR-182 passes the real ones. */
@@ -102,6 +108,7 @@ function sourceLineOf(row: CardRow, model: CardModel): ReactNode {
   const parts: ReactNode[] = [];
   if (model.chip !== null && model.chip.row === row.name) parts.push(<Chip key="chip" chip={model.chip} />);
   if (row.name === 'AMOUNT' && model.cap !== null) parts.push(<CapLineView key="cap" cap={model.cap} />);
+  if (row.name === 'TO' && model.diff !== null) parts.push(<BookDiff key="diff" payee={row.value} result={model.diff.result} label={model.diff.label} />);
   return parts.length > 0 ? parts : undefined;
 }
 
@@ -120,10 +127,14 @@ export type CardViewProps = {
   onReject(): void;
   rejectRef?: Ref<HTMLButtonElement>;
   sheetRejectRef?: Ref<HTMLButtonElement>;
+  /** What the owner has typed in the forcing step (AIR-190); empty when absent. */
+  forcingInput?: string;
+  onForcingInput?(value: string): void;
 };
 
-export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, onReject, rejectRef, sheetRejectRef }: CardViewProps) {
+export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, onReject, rejectRef, sheetRejectRef, forcingInput = '', onForcingInput }: CardViewProps) {
   const sheetTitleId = useId();
+  const forcingId = useId();
   const stamp = stampFor(readOnly, state);
   const live = readOnly === 'Pending' && state.kind !== 'approved' && state.kind !== 'rejected';
   const approveOn = live && canApprove(state);
@@ -132,6 +143,8 @@ export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, 
   const waiting = state.kind === 'wallet_pending';
   const busy = waiting || state.kind === 'rejecting';
   const offender = model.offender ?? undefined;
+  const forcingOpen = model.forcing !== null && model.forcing.required;
+  const forcingMet = !forcingOpen || forcingSatisfied(forcingInput, model.args.to);
 
   return (
     <section className="card" data-testid="card" data-state={state.kind} data-request-state={readOnly}>
@@ -171,6 +184,11 @@ export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, 
           ))}
         </Manifest>
         {model.snippet !== null ? <Specimen text={model.snippet} channel={model.specimenChannel} source={model.ageText ?? undefined} testId="specimen" /> : null}
+        {/* after the evidence, not inside the AMOUNT row: the pinned bar of AIR-181 must still clear the specimen after one scroll */}
+        <p className="magnitude" data-testid="magnitude">
+          <span>{model.magnitude.cap}</span>
+          <span>{model.magnitude.day}</span>
+        </p>
         <section className="card-args" aria-label="The values your wallet will show">
           <h3 className="card-label">Your wallet will show</h3>
           <dl className="card-arg-list">
@@ -209,11 +227,31 @@ export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, 
             <p className="card-sheet-line" role="status">
               {waiting ? 'Waiting for your wallet.' : 'Your wallet will ask you to confirm the five values above.'}
             </p>
+            {forcingOpen && model.forcing !== null ? (
+              <div className="card-forcing">
+                <label className="card-forcing-label" htmlFor={forcingId} data-testid="forcing-label">
+                  {model.forcing.label}
+                </label>
+                <input
+                  id={forcingId}
+                  className="card-forcing-input"
+                  data-testid="forcing-input"
+                  type="text"
+                  value={forcingInput}
+                  onChange={(e) => onForcingInput?.(e.target.value)}
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  disabled={waiting}
+                />
+              </div>
+            ) : null}
             <div className="card-sheet-actions">
               <button ref={sheetRejectRef} type="button" className="card-btn card-btn-primary" data-testid="sheet-reject" disabled={waiting} onClick={onReject}>
                 Reject
               </button>
-              <button type="button" className="card-btn card-btn-outline" data-testid="confirm-approve" disabled={waiting} onClick={onConfirm}>
+              <button type="button" className="card-btn card-btn-outline" data-testid="confirm-approve" disabled={waiting || !forcingMet} onClick={onConfirm}>
                 Approve
               </button>
               <button type="button" className="card-btn card-btn-quiet" data-testid="sheet-cancel" disabled={waiting} onClick={onCancel}>
@@ -238,7 +276,7 @@ function snapshot(p: CardProps): Snapshot {
   try {
     const now = p.nowMs !== undefined ? (DECIMAL.test(p.nowMs) ? BigInt(p.nowMs) : null) : BigInt(Date.now());
     if (now === null) return { ok: false, code: 'BadClock' };
-    return { ok: true, model: buildCardModel(p.view, p.evidence, p.ledgers, p.asset, p.book, now) };
+    return { ok: true, model: buildCardModel(p.view, p.evidence, p.ledgers, p.asset, p.book, now, { bookKeys: p.bookKeys, bookLabels: p.bookLabels }) };
   } catch (e) {
     return { ok: false, code: e instanceof CardError ? e.code : 'BadView' };
   }
@@ -250,6 +288,7 @@ type LiveProps = Pick<CardProps, 'onApprove' | 'onReject'> & { model: CardModel;
 
 function LiveCard({ model, readOnly, scope, onApprove, onReject }: LiveProps) {
   const [state, dispatch] = useReducer(cardReducer, undefined, () => initialState(readFailures(scope, model.no)));
+  const [forcingInput, setForcingInput] = useState('');
   const rejectRef = useRef<HTMLButtonElement>(null);
   const sheetRejectRef = useRef<HTMLButtonElement>(null);
   // one wallet call at a time: a second click while one is out does nothing
@@ -288,8 +327,18 @@ function LiveCard({ model, readOnly, scope, onApprove, onReject }: LiveProps) {
       rejectRef={rejectRef}
       sheetRejectRef={sheetRejectRef}
       onOpen={() => dispatch({ type: 'OPEN_SHEET' })}
-      onCancel={() => dispatch({ type: 'CANCEL_SHEET' })}
-      onConfirm={() => void call({ type: 'WALLET_SENT' }, () => onApprove(model.args), (r) => ({ type: 'WALLET_OK', tx: r.tx }))}
+      forcingInput={forcingInput}
+      onForcingInput={setForcingInput}
+      onCancel={() => {
+        setForcingInput('');
+        dispatch({ type: 'CANCEL_SHEET' });
+      }}
+      onConfirm={() => {
+        // the button is disabled until the step is met, and the handler holds the same line for a click that races the render
+        if (model.forcing !== null && model.forcing.required && !forcingSatisfied(forcingInput, model.args.to)) return;
+        setForcingInput('');
+        void call({ type: 'WALLET_SENT' }, () => onApprove(model.args), (r) => ({ type: 'WALLET_OK', tx: r.tx }));
+      }}
       onReject={() => void call({ type: 'REJECT_SENT' }, () => onReject(model.args.id), () => ({ type: 'REJECT_OK' }))}
     />
   );

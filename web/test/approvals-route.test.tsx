@@ -115,3 +115,29 @@ test('approvals: the reveal instruction of the primary wallet is shown above the
 test('approvals: the route /approvals is registered', () => {
   assert.equal(typeof ROUTES['/approvals'], 'function');
 });
+
+// AIR-190: the card needs the book keys and labels for the look-alike diff; they are read only when a shown card has a payee outside the book
+test('approvals: a new payee makes the loader read get_book, and the cards carry its keys and labels', async () => {
+  const log: { method: string; args: unknown }[] = [];
+  const row = (key: string, label: string) => [key, { cap: null, daily_untrusted_budget: '0', daily_limit: '0', label }];
+  const read = async (method: string, args: unknown): Promise<unknown> => {
+    if (method === 'get_book') {
+      log.push({ method, args });
+      return [row('near:acct-firm.near', 'accountant'), row('near:landlord.near', 'landlord')];
+    }
+    return chain(log)(method, args);
+  };
+  const fresh = { ...pending(1), payee: 'near:acct-firrn.near', book_status: 'new' };
+  const data = await loadApprovals({ pending: async () => [fresh], view: read, evidence: evidenceOk });
+  assert.deepEqual(log.filter((l) => l.method === 'get_book').map((l) => l.args), [{ from_index: 0, limit: 50 }]);
+  assert.deepEqual(data.cards[0]?.bookKeys, ['near:acct-firm.near', 'near:landlord.near']);
+  assert.equal(data.cards[0]?.bookLabels['near:landlord.near'], 'landlord');
+});
+
+test('approvals: no get_book read when every shown payee is in the book, and a failed read fails the load', async () => {
+  const log: { method: string; args: unknown }[] = [];
+  await loadApprovals({ pending: async () => [pending(1)], view: chain(log), evidence: evidenceOk });
+  assert.equal(log.some((l) => l.method === 'get_book'), false);
+  const fresh = { ...pending(1), book_status: 'new' };
+  await assert.rejects(loadApprovals({ pending: async () => [fresh], view: chain(), evidence: evidenceOk }), /unexpected view get_book/);
+});

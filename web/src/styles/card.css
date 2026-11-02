@@ -273,3 +273,77 @@
   display: grid;
   gap: var(--space-2);
 }
+
+/* the magnitude cue (AIR-190): two plain sentences after the evidence */
+.magnitude {
+  display: grid;
+  gap: var(--space-1);
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+/* the book diff (AIR-190): three monospaced lines on one column, the label column a fixed 9 characters wide so every chunk aligns */
+.book-diff {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  min-width: 0;
+}
+.book-diff-chunk {
+  display: grid;
+  min-width: 0;
+}
+.book-diff-line {
+  display: flex;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: pre;
+}
+.book-diff-tag {
+  flex: none;
+  width: 9ch;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+.book-diff-text {
+  flex: none;
+  font-weight: 700;
+  color: var(--ink);
+}
+.book-diff-sentence {
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+/* the forcing step in the confirm sheet (AIR-190) */
+.card-forcing {
+  display: grid;
+  gap: var(--space-2);
+}
+.card-forcing-label {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.card-forcing-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 24px;
+  border-radius: 0;
+}
+.card-forcing-input:disabled {
+  border-color: var(--hair);
+  color: var(--ink-3);
+}
