@@ -1,0 +1,329 @@
+{
+ "version": 1,
+ "contractId": "policy.erfan-airlock.testnet",
+ "entries": [
+  {
+   "kind": "view",
+   "method": "get_book",
+   "args": {
+    "from_index": 0,
+    "limit": 50
+   },
+   "result": [
+    [
+     "near:accountant.erfan-airlock.testnet",
+     {
+      "cap": "5000000000000000000000000",
+      "daily_untrusted_budget": "20000000000000000000000000",
+      "daily_limit": "30000000000000000000000000",
+      "label": "Accountant"
+     }
+    ],
+    [
+     "near:landlord.erfan-airlock.testnet",
+     {
+      "cap": null,
+      "daily_untrusted_budget": "0",
+      "daily_limit": "30000000000000000000000000",
+      "label": "Landlord"
+     }
+    ],
+    [
+     "near:sam.erfan-airlock.testnet",
+     {
+      "cap": null,
+      "daily_untrusted_budget": "0",
+      "daily_limit": "5000000000000000000000000",
+      "label": "Sam"
+     }
+    ],
+    [
+     "evm:84532:0x7eafcb38a7de2a6805db7c93ccec6365a5c7528f",
+     {
+      "cap": "50000000000000000",
+      "daily_untrusted_budget": "100000000000000000",
+      "daily_limit": "200000000000000000",
+      "label": "Contractor"
+     }
+    ]
+   ]
+  },
+  {
+   "kind": "view",
+   "method": "list_assets",
+   "args": {},
+   "result": [
+    [
+     "near",
+     {
+      "symbol": "NEAR",
+      "decimals": 24,
+      "hard_cap": "20000000000000000000000000",
+      "daily_cap": "100000000000000000000000000",
+      "max_fee_per_gas": "0",
+      "max_gas": "0",
+      "quick_task_cap": "50000000000000000000000000",
+      "path": null
+     }
+    ],
+    [
+     "evm:84532:native",
+     {
+      "symbol": "ETH.base",
+      "decimals": 18,
+      "hard_cap": "100000000000000000",
+      "daily_cap": "500000000000000000",
+      "max_fee_per_gas": "50000000000",
+      "max_gas": "100000",
+      "quick_task_cap": "200000000000000000",
+      "path": "airlock-demo-1"
+     }
+    ]
+   ]
+  },
+  {
+   "kind": "view",
+   "method": "get_policy",
+   "args": {},
+   "result": {
+    "owner_id": "erfan-airlock.testnet",
+    "mpc_contract_id": "v1.signer-prod.testnet",
+    "requires_tee": false,
+    "paused": false,
+    "flags": {
+     "max_pending_per_agent": 3,
+     "pending_ttl_ms": "3600000",
+     "hourly_escalation_budget": 6,
+     "lock_consecutive_rejects": 3,
+     "lock_rejects_per_day": 20,
+     "max_task_ttl_ms": "3600000",
+     "max_task_actions": 20
+    }
+   }
+  },
+  {
+   "kind": "block",
+   "method": "block",
+   "args": {},
+   "result": "1793646564178184537"
+  },
+  {
+   "kind": "view",
+   "method": "get_request",
+   "args": {
+    "id": "042475a53bd9fb692fef09a30701890fd18eafec2d503ff74643195a702268ac:0"
+   },
+   "result": null
+  },
+  {
+   "kind": "submit",
+   "method": "submit_batch",
+   "args": {
+    "reqs": [
+     {
+      "task_id": "e2e-B01-1793646566",
+      "action_index": 0,
+      "asset": "near",
+      "payee": "near:accountant.erfan-airlock.testnet",
+      "amount": "9400000000000000000000000",
+      "labels": {
+       "recipient": 2,
+       "amount": 4128,
+       "pc": 1
+      },
+      "evm": null,
+      "hints": {
+       "plan_hash": "7c4dbab7914c3b73f2fc9789b8b5ef3fc5596815b4e42fb8037837b0e12457d5",
+       "trace_digest": "b0a451c00511e3cfc55786efabb688fef1a2e884072273604cbf1168ab0c3f13"
+      }
+     }
+    ],
+    "task": {
+     "tag": "airlock-task-v1",
+     "task_id": "e2e-B01-1793646566",
+     "contract_id": "policy.erfan-airlock.testnet",
+     "agent_id": "erfan-agent.testnet",
+     "plan_sha256": "7c4dbab7914c3b73f2fc9789b8b5ef3fc5596815b4e42fb8037837b0e12457d5",
+     "instruction_sha256_salted": "f11b2ac513e8e00d374c15d0ecfe4dd2ff0a734edfd3291a1afffa408392655c",
+     "issued_ms": 1793646564178,
+     "expires_ms": 1793647464178,
+     "max_actions": 1,
+     "bounds": [
+      {
+       "payee_key": "near:accountant.erfan-airlock.testnet",
+       "max_total": "5000000000000000000000000"
+      }
+     ]
+    },
+    "task_sig": "Kfy45uR+yFuiaZomjjvsGyoK7YRBVy90HnSE3ovb2STvQbj2l+U5sxYC9HWXC5z7yBrygFhJZyvej18WCTFhCA=="
+   },
+   "result": {
+    "hash": "BGycSVSuu6wtuSC8GYfRFv87AWc67siEpXzQG7MW8GSL",
+    "returnValue": [
+     {
+      "request_id": "042475a53bd9fb692fef09a30701890fd18eafec2d503ff74643195a702268ac:0",
+      "outcome": "escalated",
+      "reason": "OverTaskBound",
+      "pending_id": "6"
+     }
+    ],
+    "logs": [
+     {
+      "event": "submitted",
+      "data": {
+       "task_hash": "042475a53bd9fb692fef09a30701890fd18eafec2d503ff74643195a702268ac",
+       "count": 1,
+       "agent": "erfan-agent.testnet"
+      }
+     },
+     {
+      "event": "escalated",
+      "data": {
+       "request_id": "042475a53bd9fb692fef09a30701890fd18eafec2d503ff74643195a702268ac:0",
+       "id": "6",
+       "reason": "OverTaskBound"
+      }
+     }
+    ],
+    "failure": null
+   }
+  },
+  {
+   "kind": "view",
+   "method": "get_request",
+   "args": {
+    "id": "6"
+   },
+   "result": {
+    "request_id": "042475a53bd9fb692fef09a30701890fd18eafec2d503ff74643195a702268ac:0",
+    "id": "6",
+    "state": "Pending",
+    "agent": "erfan-agent.testnet",
+    "task_id": "e2e-B01-1793646566",
+    "asset": "near",
+    "payee": "near:accountant.erfan-airlock.testnet",
+    "amount": "9400000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 4128,
+     "pc": 1
+    },
+    "reason": "OverTaskBound",
+    "book_status": "in_book",
+    "display": {
+     "asset_symbol": "NEAR",
+     "amount_decimal": "9.4"
+    },
+    "created_ms": "1793646567821",
+    "expires_ms": "1793650167821",
+    "digest": "a504b4b840e58938b764b34e89beaa361c17f1531a1fa099cca2100361e90e18"
+   }
+  },
+  {
+   "kind": "view",
+   "method": "get_ledgers",
+   "args": {
+    "payee": "near:accountant.erfan-airlock.testnet",
+    "asset": "near",
+    "task": null
+   },
+   "result": {
+    "asset_day": {
+     "spent": "27300000000000000000000000",
+     "cap": "100000000000000000000000000",
+     "remaining": "72700000000000000000000000"
+    },
+    "payee_day": {
+     "spent": "27200000000000000000000000",
+     "cap": "30000000000000000000000000",
+     "remaining": "2800000000000000000000000"
+    },
+    "payee_untrusted_day": {
+     "spent": "8400000000000000000000000",
+     "cap": "20000000000000000000000000",
+     "remaining": "11600000000000000000000000"
+    },
+    "task_spent": null
+   }
+  },
+  {
+   "kind": "view",
+   "method": "get_book",
+   "args": {
+    "from_index": 0,
+    "limit": 50
+   },
+   "result": [
+    [
+     "near:accountant.erfan-airlock.testnet",
+     {
+      "cap": "5000000000000000000000000",
+      "daily_untrusted_budget": "20000000000000000000000000",
+      "daily_limit": "30000000000000000000000000",
+      "label": "Accountant"
+     }
+    ],
+    [
+     "near:landlord.erfan-airlock.testnet",
+     {
+      "cap": null,
+      "daily_untrusted_budget": "0",
+      "daily_limit": "30000000000000000000000000",
+      "label": "Landlord"
+     }
+    ],
+    [
+     "near:sam.erfan-airlock.testnet",
+     {
+      "cap": null,
+      "daily_untrusted_budget": "0",
+      "daily_limit": "5000000000000000000000000",
+      "label": "Sam"
+     }
+    ],
+    [
+     "evm:84532:0x7eafcb38a7de2a6805db7c93ccec6365a5c7528f",
+     {
+      "cap": "50000000000000000",
+      "daily_untrusted_budget": "100000000000000000",
+      "daily_limit": "200000000000000000",
+      "label": "Contractor"
+     }
+    ]
+   ]
+  },
+  {
+   "kind": "view",
+   "method": "list_assets",
+   "args": {},
+   "result": [
+    [
+     "near",
+     {
+      "symbol": "NEAR",
+      "decimals": 24,
+      "hard_cap": "20000000000000000000000000",
+      "daily_cap": "100000000000000000000000000",
+      "max_fee_per_gas": "0",
+      "max_gas": "0",
+      "quick_task_cap": "50000000000000000000000000",
+      "path": null
+     }
+    ],
+    [
+     "evm:84532:native",
+     {
+      "symbol": "ETH.base",
+      "decimals": 18,
+      "hard_cap": "100000000000000000",
+      "daily_cap": "500000000000000000",
+      "max_fee_per_gas": "50000000000",
+      "max_gas": "100000",
+      "quick_task_cap": "200000000000000000",
+      "path": "airlock-demo-1"
+     }
+    ]
+   ]
+  }
+ ]
+}

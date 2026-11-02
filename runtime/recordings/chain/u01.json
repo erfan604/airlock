@@ -1,0 +1,227 @@
+{
+ "version": 1,
+ "contractId": "policy.erfan-airlock.testnet",
+ "entries": [
+  {
+   "kind": "view",
+   "method": "get_book",
+   "args": {
+    "from_index": 0,
+    "limit": 50
+   },
+   "result": [
+    [
+     "near:accountant.erfan-airlock.testnet",
+     {
+      "cap": "5000000000000000000000000",
+      "daily_untrusted_budget": "20000000000000000000000000",
+      "daily_limit": "30000000000000000000000000",
+      "label": "Accountant"
+     }
+    ],
+    [
+     "near:landlord.erfan-airlock.testnet",
+     {
+      "cap": null,
+      "daily_untrusted_budget": "0",
+      "daily_limit": "30000000000000000000000000",
+      "label": "Landlord"
+     }
+    ],
+    [
+     "near:sam.erfan-airlock.testnet",
+     {
+      "cap": null,
+      "daily_untrusted_budget": "0",
+      "daily_limit": "5000000000000000000000000",
+      "label": "Sam"
+     }
+    ],
+    [
+     "evm:84532:0x7eafcb38a7de2a6805db7c93ccec6365a5c7528f",
+     {
+      "cap": "50000000000000000",
+      "daily_untrusted_budget": "100000000000000000",
+      "daily_limit": "200000000000000000",
+      "label": "Contractor"
+     }
+    ]
+   ]
+  },
+  {
+   "kind": "view",
+   "method": "list_assets",
+   "args": {},
+   "result": [
+    [
+     "near",
+     {
+      "symbol": "NEAR",
+      "decimals": 24,
+      "hard_cap": "20000000000000000000000000",
+      "daily_cap": "100000000000000000000000000",
+      "max_fee_per_gas": "0",
+      "max_gas": "0",
+      "quick_task_cap": "50000000000000000000000000",
+      "path": null
+     }
+    ],
+    [
+     "evm:84532:native",
+     {
+      "symbol": "ETH.base",
+      "decimals": 18,
+      "hard_cap": "100000000000000000",
+      "daily_cap": "500000000000000000",
+      "max_fee_per_gas": "50000000000",
+      "max_gas": "100000",
+      "quick_task_cap": "200000000000000000",
+      "path": "airlock-demo-1"
+     }
+    ]
+   ]
+  },
+  {
+   "kind": "view",
+   "method": "get_policy",
+   "args": {},
+   "result": {
+    "owner_id": "erfan-airlock.testnet",
+    "mpc_contract_id": "v1.signer-prod.testnet",
+    "requires_tee": false,
+    "paused": false,
+    "flags": {
+     "max_pending_per_agent": 3,
+     "pending_ttl_ms": "3600000",
+     "hourly_escalation_budget": 6,
+     "lock_consecutive_rejects": 3,
+     "lock_rejects_per_day": 20,
+     "max_task_ttl_ms": "3600000",
+     "max_task_actions": 20
+    }
+   }
+  },
+  {
+   "kind": "block",
+   "method": "block",
+   "args": {},
+   "result": "1793646343618861118"
+  },
+  {
+   "kind": "view",
+   "method": "get_request",
+   "args": {
+    "id": "b9794e1f7e2e6e6eb1fcb38e2725c367a776dfd590d77707355f3fb673b1f904:0"
+   },
+   "result": null
+  },
+  {
+   "kind": "submit",
+   "method": "submit_batch",
+   "args": {
+    "reqs": [
+     {
+      "task_id": "e2e-U01-1793646346",
+      "action_index": 0,
+      "asset": "near",
+      "payee": "near:accountant.erfan-airlock.testnet",
+      "amount": "4200000000000000000000000",
+      "labels": {
+       "recipient": 2,
+       "amount": 4128,
+       "pc": 1
+      },
+      "evm": null,
+      "hints": {
+       "plan_hash": "7c4dbab7914c3b73f2fc9789b8b5ef3fc5596815b4e42fb8037837b0e12457d5",
+       "trace_digest": "989df535e476f87a3b0f18d52420618c46152466d6c4579857a55bb23bfdac9e"
+      }
+     }
+    ],
+    "task": {
+     "tag": "airlock-task-v1",
+     "task_id": "e2e-U01-1793646346",
+     "contract_id": "policy.erfan-airlock.testnet",
+     "agent_id": "erfan-agent.testnet",
+     "plan_sha256": "7c4dbab7914c3b73f2fc9789b8b5ef3fc5596815b4e42fb8037837b0e12457d5",
+     "instruction_sha256_salted": "c9b53b50f728fe4ed71a4d2a7c37349c84473c7e82b7ae8a07f72dbd00d70da6",
+     "issued_ms": 1793646343618,
+     "expires_ms": 1793647243618,
+     "max_actions": 1,
+     "bounds": [
+      {
+       "payee_key": "near:accountant.erfan-airlock.testnet",
+       "max_total": "5000000000000000000000000"
+      }
+     ]
+    },
+    "task_sig": "bXSGfY1AYC9PWW4Uw1zccfed/IME79xWXaKzPTNb6zQ5vrfTSVvBM3hYej6XxVaht9W8kDIb9NigP3YQ9+8wAQ=="
+   },
+   "result": {
+    "hash": "53GuKRQxh6w5yBf4ZCzgBYH3QpHwLUNXiq9yCdrDr7ug",
+    "returnValue": [
+     {
+      "request_id": "b9794e1f7e2e6e6eb1fcb38e2725c367a776dfd590d77707355f3fb673b1f904:0",
+      "outcome": "allowed",
+      "reason": null,
+      "pending_id": null
+     }
+    ],
+    "logs": [
+     {
+      "event": "submitted",
+      "data": {
+       "task_hash": "b9794e1f7e2e6e6eb1fcb38e2725c367a776dfd590d77707355f3fb673b1f904",
+       "count": 1,
+       "agent": "erfan-agent.testnet"
+      }
+     },
+     {
+      "event": "allowed",
+      "data": {
+       "request_id": "b9794e1f7e2e6e6eb1fcb38e2725c367a776dfd590d77707355f3fb673b1f904:0",
+       "asset": "near",
+       "payee": "near:accountant.erfan-airlock.testnet",
+       "amount": "4200000000000000000000000",
+       "asset_day_remaining": "82100000000000000000000000",
+       "payee_day_remaining": "12200000000000000000000000",
+       "task_remaining": "800000000000000000000000"
+      }
+     },
+     {
+      "event": "paid",
+      "data": {
+       "request_id": "b9794e1f7e2e6e6eb1fcb38e2725c367a776dfd590d77707355f3fb673b1f904:0",
+       "payee": "near:accountant.erfan-airlock.testnet",
+       "amount": "4200000000000000000000000"
+      }
+     }
+    ],
+    "failure": null
+   }
+  },
+  {
+   "kind": "view",
+   "method": "get_request",
+   "args": {
+    "id": "b9794e1f7e2e6e6eb1fcb38e2725c367a776dfd590d77707355f3fb673b1f904:0"
+   },
+   "result": {
+    "request_id": "b9794e1f7e2e6e6eb1fcb38e2725c367a776dfd590d77707355f3fb673b1f904:0",
+    "id": null,
+    "state": "Executed",
+    "agent": "erfan-agent.testnet",
+    "task_id": "e2e-U01-1793646346",
+    "asset": "near",
+    "payee": "near:accountant.erfan-airlock.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 4128,
+     "pc": 1
+    },
+    "created_ms": "1793646349008"
+   }
+  }
+ ]
+}

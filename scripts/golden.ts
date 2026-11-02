@@ -272,8 +272,9 @@ export async function main(argv: readonly string[], io: GoldenIo): Promise<numbe
   try {
     const lines = await io.preflight();
     for (const l of lines) io.out(formatLine(l));
-    // the Base Sepolia lines gate only the contractor step: a NEAR-lane step never signs through the MPC or touches the derived address
-    const gating = parsed.name === 'contractor' ? lines : lines.filter((l) => !EVM_ONLY_LINES.has(l.name));
+    // the Base Sepolia lines gate only the contractor step (a NEAR-lane step never signs through the MPC), and the pending line only the steps that create a request
+    const createsRequest = parsed.name === 'u01' || parsed.name === 'b01-escalate' || parsed.name === 'contractor';
+    const gating = lines.filter((l) => (parsed.name === 'contractor' || !EVM_ONLY_LINES.has(l.name)) && (createsRequest || l.name !== 'pending'));
     for (const l of lines) if (l.level === 'FAIL' && !gating.includes(l)) io.out(`NOTE ${l.name} does not gate the ${parsed.name} step`);
     if (!preflightOk(gating)) {
       io.out('PREFLIGHT FAILED');
@@ -291,6 +292,8 @@ export async function main(argv: readonly string[], io: GoldenIo): Promise<numbe
     }
     const line = (e as { line?: unknown }).line;
     if (typeof line === 'string') io.out(line);
+    // the error's class and name only (never its message, which can carry tool or model text), so an unknown failure can be traced
+    if (process.env.GOLDEN_DEBUG === '1') io.out(`CAUSE ${(e as Error)?.name ?? typeof e}: ${String((e as Error)?.message ?? '').slice(0, 300)}`);
     io.out(flakeLine(describeFailure(e)));
     return 1;
   }

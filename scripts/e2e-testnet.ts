@@ -20,7 +20,7 @@ import { signTask } from './sign-task.ts';
 import { CASES, EVM_FEE_RESERVE_WEI, isCaseId } from './e2e/cases.ts';
 import type { CaseId } from './e2e/cases.ts';
 import { BudgetExhaustedError, describeFailure, flakeLine } from './lib/flake.ts';
-import { baseRpc, checkAgentKey, checkDerivedBalance, checkPolicyBalance, checkUntrustedBudget, liveIo, nearViewAccount } from './lib/preflight.ts';
+import { nearTxTransferredTo, baseRpc, checkAgentKey, checkDerivedBalance, checkPolicyBalance, checkUntrustedBudget, liveIo, nearViewAccount } from './lib/preflight.ts';
 import type { Accounts, Check } from './lib/preflight.ts';
 import { feePolicyFromRegistry, runTask } from '../runtime/src/agent.ts';
 import { analyzePlan, bookFromRows, limitsFromPolicy, registryFromRows, toOwnerBounds } from '../runtime/src/analyze/index.ts';
@@ -202,6 +202,8 @@ export interface CaseIo {
   extract: Extractor;
   checks: PreflightChecks;
   nearBalance(account: string): Promise<bigint>;
+  /** NEAR moved to `account` by the receipts of a transaction (optional; the live io reads it from the archival node). */
+  txTransferredTo?(txHash: string, signer: string, account: string): Promise<bigint>;
   baseReceipt(hash: string): Promise<{ status: string; from: string } | null>;
   deriveSender(contractId: string, path: string): Promise<string>;
   broadcast?: typeof broadcast;
@@ -246,6 +248,7 @@ export function liveCaseIo(env: NodeJS.ProcessEnv = process.env, root: string = 
       untrustedBudget: (payee, asset, min) => checkUntrustedBudget(payee, asset, min, pf),
     },
     nearBalance: async (account) => (await nearViewAccount(account)).amount,
+    txTransferredTo: nearTxTransferredTo,
     baseReceipt: async (hash) => {
       const r = await baseRpc(env.BASE_SEPOLIA_RPC, 'eth_getTransactionReceipt', [hash]);
       if (r === null || r === undefined) return null;
@@ -633,9 +636,17 @@ export async function finishCase(caseId: CaseId, no: string, opts: { evidence?: 
     if (io.nowMs() >= deadline) throw new E2eExit(1, `FINISH request ${no} did not execute within ${FINISH_WAIT_MS / 1000} s, state ${view.state}`);
     await io.sleep(POLL_MS);
   }
-  await proveNearPayment(io, account, before, amount, BALANCE_WAIT_MS);
   const txHash = io.approveTxId(no);
   if (!isTxHash(txHash)) throw new E2eExit(1, `FINISH no approve transaction id (target/approve-${no}.txid, written by scripts/approve-cli.sh ${no} --run)`);
+  try {
+    await proveNearPayment(io, account, before, amount, BALANCE_WAIT_MS);
+  } catch (e) {
+    // the balance moved for another reason (a sweep back to the policy account): prove the payment from the approve transaction's receipts instead
+    if (!(e instanceof E2eExit) || !/^BALANCE .* changed by/.test(e.message) || io.txTransferredTo === undefined) throw e;
+    const moved = await io.txTransferredTo(txHash, io.accounts.owner, account);
+    if (moved !== amount) throw new E2eExit(1, `RECEIPT the approve transaction moved ${moved} yocto to ${account}, expected ${amount}`);
+    io.out(`PROOF transfer receipt of ${txHash} moved ${amount} yocto to ${account}`);
+  }
   printPaid(io, amount, account, txHash);
   const link = `${NEARBLOCKS}${txHash}`;
   if (opts.evidence === true) recordEvidence(io, evidenceRow(io, caseId, 'approved executed', link, state.request_id));

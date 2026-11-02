@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "name": "tamper",
+  "case": "B01",
+  "scenario": "B01",
+  "recordedAt": "2026-11-02T19:11:12.749Z",
+  "network": "testnet",
+  "contractId": "policy.erfan-airlock.testnet",
+  "llmMode": "record",
+  "planSha256": null,
+  "taskId": null,
+  "taskHash": null,
+  "requests": [
+    {
+      "request_id": "042475a53bd9fb692fef09a30701890fd18eafec2d503ff74643195a702268ac:0",
+      "outcome": "escalated",
+      "reason": "OverTaskBound",
+      "pending_id": "6"
+    }
+  ],
+  "trace": [],
+  "txs": [
+    {
+      "chain": "near",
+      "label": "tamper",
+      "hash": "5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj",
+      "status": "failure",
+      "url": "https://testnet.nearblocks.io/txns/5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj"
+    }
+  ],
+  "run": null,
+  "note": "approve rejected: WrongAmount; request 6 still Pending with its stored amount"
+}

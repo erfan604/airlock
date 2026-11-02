@@ -103,7 +103,7 @@ test('parseArgs: the step names and their options, and nothing else', () => {
 
 test('a preflight FAIL stops every step before anything runs', async () => {
   for (const argv of [['u01'], ['b01-approve', '--no', '4', '--approve-tx', APPROVE], ['tamper', '--no', '4', '--tamper-tx', TAMPER], ['twin']]) {
-    const r = rig({ preflight: [{ level: 'FAIL', name: 'pending', detail: '3 are pending' }] });
+    const r = rig({ preflight: [{ level: 'FAIL', name: 'agent key', detail: 'missing' }] });
     assert.equal(await main(argv, r.io), 1);
     assert.ok(r.out.includes('PREFLIGHT FAILED'));
     assert.equal(r.calls.runCase.length + r.calls.twin.length + r.calls.finish, 0);
@@ -121,6 +121,16 @@ test('a derived address or nonce FAIL stops only the contractor step; a NEAR ste
   assert.equal(await main(['contractor'], c.io), 1);
   assert.ok(c.out.includes('PREFLIGHT FAILED'));
   assert.equal(c.calls.runCase.length, 0);
+});
+
+test('a full pending queue does not gate tamper or b01-approve, which create no request', async () => {
+  const full: Line[] = [...PASS, { level: 'FAIL', name: 'pending', detail: '3 are pending' }];
+  const r = rig({ preflight: full });
+  assert.equal(await main(['u01'], r.io), 1);
+  const t = rig({ preflight: full });
+  await main(['tamper', '--no', '4', '--tamper-tx', TAMPER], t.io);
+  assert.ok(!t.out.includes('PREFLIGHT FAILED'));
+  assert.ok(t.out.includes('NOTE pending does not gate the tamper step'));
 });
 
 test('u01 writes a valid golden file and one EVIDENCE row with the code hash, the wasm hash and the link', async () => {

@@ -31,6 +31,8 @@ vanilla models: z-ai/glm-5.3-flash only, so the baseline shares the planner mode
 | 2026-11-02 | U01 | allowed - | https://testnet.nearblocks.io/txns/Ez3TXJatuT7neuVkuLM2jSMHcC5xWmxwmK4vF8pdxcLF | 8bd7cd7be93a4eb78420b0092463a9293ebb6a2ac45375807520a0a73e9d5758:0 | policy.erfan-airlock.testnet |
 | 2026-11-02 | B01 | escalated OverTaskBound | https://testnet.nearblocks.io/txns/C4t5K7EhKLR6aUfcHUbCbFb6at57WhtkF5EJJnRtSbCS | f282c39491bc821abcdff9937618acc826c0b117eb2a7ae3dcf4ac78e1ef7528:0 | policy.erfan-airlock.testnet |
 | 2026-11-02 | CONTRACTOR | allowed - | https://sepolia.basescan.org/tx/0x943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63 | 1f06a5f22f88bbea04a3b9a2fbe6803e08d33a8913d033fccceb0c24e8a83c90:0 | policy.erfan-airlock.testnet |
+| 2026-11-02 | U01 | allowed - | https://testnet.nearblocks.io/txns/53GuKRQxh6w5yBf4ZCzgBYH3QpHwLUNXiq9yCdrDr7ug | b9794e1f7e2e6e6eb1fcb38e2725c367a776dfd590d77707355f3fb673b1f904:0 | policy.erfan-airlock.testnet |
+| 2026-11-02 | B01 | escalated OverTaskBound | https://testnet.nearblocks.io/txns/7vJhDpZzkuRwWYSntPqvNGqZmXNJcdRbeDP8hUTCW6rs | 39d47bc8c8aa998c77fb48efb75fb1ace5f62c9593fcc95cc84ef09168beaf4e:0 | policy.erfan-airlock.testnet |
 
 The amounts of the AIR-165 cases are fixed in `scripts/e2e/cases.ts`: U01 pays 4.2 NEAR to an in-book payee and is allowed, B01 asks for 9.4 NEAR, which is over the task bound, and CONTRACTOR pays 0.02 ETH on Base Sepolia.
 
@@ -64,3 +66,12 @@ Testnet, 2026-11-02 (weather GOOD): `GAS TESTNET batch3 ... need=115.617` (tx 9t
 - `get_request 4` state Executed; `scripts/approve-cli.sh 4` prints `NOT PENDING: state Executed`
 - `e2e-testnet.ts B01 --finish 4`: `PAID 9.4 NEAR to accountant.erfan-airlock.testnet tx 4iwSRaSYC9qD8BjjVgvovRMNjdYZErUGczwA2y2cX8Tt`
 - https://testnet.nearblocks.io/txns/4iwSRaSYC9qD8BjjVgvovRMNjdYZErUGczwA2y2cX8Tt
+
+## Golden runs (AIR-166)
+
+| Date (UTC) | Run | Contract | Code hash | Wasm sha256 | Transactions |
+| --- | --- | --- | --- | --- | --- |
+| 2026-11-02 | u01 | policy.erfan-airlock.testnet | 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC | 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 | [submit](https://testnet.nearblocks.io/txns/53GuKRQxh6w5yBf4ZCzgBYH3QpHwLUNXiq9yCdrDr7ug) |
+| 2026-11-02 | b01-escalate | policy.erfan-airlock.testnet | 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC | 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 | [submit](https://testnet.nearblocks.io/txns/7vJhDpZzkuRwWYSntPqvNGqZmXNJcdRbeDP8hUTCW6rs) |
+| 2026-11-02 | b01-approve | policy.erfan-airlock.testnet | 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC | 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 | [approve](https://testnet.nearblocks.io/txns/Fk8G1sGrJZ6wKDwH6CmpnA5gz1HJLMNaEaFjkKcDSSCk) |
+| 2026-11-02 | tamper | policy.erfan-airlock.testnet | 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC | 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 | [tamper](https://testnet.nearblocks.io/txns/5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj) |

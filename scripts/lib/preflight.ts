@@ -163,6 +163,28 @@ async function rpc(urls: readonly string[], method: string, params: unknown): Pr
 
 const errorName = (a: JsonRpcAnswer): string => a.error?.cause?.name ?? a.error?.name ?? 'RPC_ERROR';
 
+/**
+ * The NEAR the receipts of transaction `txHash` (signed by `signer`) transferred to `account`, summed, in yocto. Archival nodes first, so an
+ * older transaction is still found. Used when the payee's balance moved for another reason (a sweep back between the hold and the approve).
+ */
+export async function nearTxTransferredTo(txHash: string, signer: string, account: string): Promise<bigint> {
+  const urls = ['https://archival-rpc.testnet.fastnear.com', 'https://archival-rpc.testnet.near.org', ...DEFAULT_RPC_URLS];
+  const answer = await rpc(urls, 'EXPERIMENTAL_tx_status', { tx_hash: txHash, sender_account_id: signer, wait_until: 'FINAL' });
+  if (answer.error !== undefined) throw new RpcNamedError(errorName(answer));
+  const receipts = ((answer.result as { receipts?: unknown[] }).receipts ?? []) as { receiver_id?: string; receipt?: { Action?: { actions?: unknown[] } } }[];
+  const outcomes = ((answer.result as { receipts_outcome?: unknown[] }).receipts_outcome ?? []) as { id?: string; outcome?: { status?: Record<string, unknown> } }[];
+  const failed = new Set(outcomes.filter((o) => o.outcome?.status !== undefined && 'Failure' in o.outcome.status).map((o) => o.id));
+  let sum = 0n;
+  for (const r of receipts as ({ receipt_id?: string } & (typeof receipts)[number])[]) {
+    if (r.receiver_id !== account || failed.has(r.receipt_id)) continue;
+    for (const a of r.receipt?.Action?.actions ?? []) {
+      const t = (a as { Transfer?: { deposit?: string } }).Transfer;
+      if (t?.deposit !== undefined && /^[0-9]+$/.test(t.deposit)) sum += BigInt(t.deposit);
+    }
+  }
+  return sum;
+}
+
 /** A NEAR testnet `query` call; the answer's `result` or a thrown Error with the node's error name. */
 export async function nearQuery(params: Record<string, unknown>): Promise<Record<string, unknown>> {
   const answer = await rpc(DEFAULT_RPC_URLS, 'query', { finality: 'final', ...params });

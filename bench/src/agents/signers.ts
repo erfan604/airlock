@@ -64,7 +64,7 @@ export class TestnetSigner implements Signer {
   }
 }
 
-const Credentials = z.strictObject({
+const Credentials = z.object({   // near-cli files carry more fields (public key, seed phrase); only these two are read
   account_id: z.string().min(2),
   private_key: z.string().regex(/^ed25519:[A-Za-z0-9]+$/),
 });
