@@ -40,7 +40,8 @@ function addressInText(literal: string, ownerText: string): boolean {
   for (const token of ownerText.match(ADDRESS_TOKEN) ?? []) {
     const got = parseAddress(token.replace(EDGE, ''));
     if (got === null || got.kind !== want.kind || got.addr !== want.addr) continue;
-    if (got.chain !== null && want.chain !== null && got.chain !== want.chain) continue;
+    // an owner token that names a chain grounds only a literal naming the same chain; a bare literal never matches it (fail closed)
+    if (got.chain !== null && got.chain !== want.chain) continue;
     return true;
   }
   return false;

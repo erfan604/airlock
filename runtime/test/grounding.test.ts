@@ -72,5 +72,6 @@ test('closed: evm:8453 grounds on the bare address in any case', () => {
   assert.equal(ground(`evm:8453:${EVM}`, 'address', `Send to ${EVM}`), true);
   assert.equal(ground(`evm:8453:${EVM}`, 'address', `Send to ${EVM.toLowerCase()}`), true);
 });
+test('closed: a bare literal does not ground on an owner token that names a chain', () => assert.equal(ground(EVM, 'address', `Send to evm:1:${EVM}`), false));
 test('closed: evm:8453 grounds on evm:8453', () => assert.equal(ground(`evm:8453:${EVM}`, 'address', `Send to evm:8453:${EVM}`), true));
 test('closed: near:alice.testnet grounds on alice.testnet', () => assert.equal(ground('near:alice.testnet', 'address', 'Send to alice.testnet.'), true));

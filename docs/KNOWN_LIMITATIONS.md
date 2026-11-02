@@ -46,3 +46,4 @@ The contract's agent registration and verification code derives from NEAR's Shad
 after April 19, 2026, and its repositories state it has not had a formal audit. We pin both, own the fork, and track
 upstream security fixes ourselves.
 
+- Literal grounding (defense in depth, never the wall) compares ASCII only: a non-ASCII character joins the word it touches, so a look-alike name or address never grounds, but digits are matched as ASCII runs, so owner text mixing scripts inside a number (`1٠25`) can ground the ASCII part (`25`). Such a literal is still checked against the book, the payee caps and the task bound.
