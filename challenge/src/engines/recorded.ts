@@ -10,12 +10,22 @@ import { NoRecording, readRecording, requestHashOf, setLlmOverride } from '@airl
 import type { LlmOpts, LlmResult } from '@airlock/runtime/llm';
 import { BenchSession } from '../../../bench/src/runner/run.ts';
 import { VerdictCliBackend } from '../../../bench/src/runner/backend.ts';
+import { loadCases } from '../../../bench/src/runner/cases.ts';
 import type { Case } from '../../../bench/src/runner/cases.ts';
 import { defaultDeps } from '../../../bench/src/cli.ts';
 import { resolveHooks } from '../../../bench/src/runner/hooks.ts';
 import type { Engine, EngineOutput, PaymentRow } from '../types.ts';
 
 const SEP = '\u0000';
+
+/**
+ * The cases the committed recordings cover: the bench's own cases that have recorded model output. The AIR-306 baseline cases are marked
+ * `pending_recording` and the CrAIBench cases are not `own`; neither has a recording in `bench/runs/recorded`, so replaying them throws NoRecording.
+ * The selftest and the board seeding both use this one list.
+ */
+export function recordedCases(root: string): Case[] {
+  return loadCases(join(root, 'bench', 'cases')).filter((c) => c.source_id['pending_recording'] !== true && c.source === 'own');
+}
 
 const fieldsOf = (schema: unknown): string => {
   const props = (schema as { properties?: Record<string, unknown> } | null | undefined)?.properties;

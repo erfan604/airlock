@@ -8,11 +8,10 @@ import net from 'node:net';
 import { join } from 'node:path';
 import { loadModelsConfig } from '@airlock/runtime/llm';
 import { formatBaseUnits } from '@airlock/runtime/money';
-import { loadCases } from '../../bench/src/runner/cases.ts';
 import { verdictCliPath } from '../../bench/src/runner/backend.ts';
 import { build } from './compose.ts';
 import { DEFAULT_LIMITS } from './limits.ts';
-import { RecordedEngine, recordedModel } from './engines/recorded.ts';
+import { RecordedEngine, recordedCases, recordedModel } from './engines/recorded.ts';
 import { caseInputText, caseLabel } from './seedcases.ts';
 import type { Attempt, EngineOutput, Scoreboard } from './types.ts';
 
@@ -69,7 +68,7 @@ export async function runSelftest(o: SelftestOptions): Promise<number> {
   let engine: RecordedEngine | undefined;
   try {
     // the AIR-306 baseline cases have no recorded model output yet (`pending_recording`): the selftest replays recorded cases only
-    const cases = loadCases(join(root, 'bench', 'cases')).filter((c) => c.source_id['pending_recording'] !== true && c.source === 'own');
+    const cases = recordedCases(root);
     if (cases.length !== EXPECTED_CASES) {
       out(`CHALLENGE FAIL ${String(cases.length)} bench cases loaded, expected ${String(EXPECTED_CASES)}`);
       return 1;

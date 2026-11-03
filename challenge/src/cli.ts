@@ -15,10 +15,9 @@ import { FastNearKeySource } from './fastnear.ts';
 import { KeyWatcher } from './watcher.ts';
 import { listen } from './listen.ts';
 import { createChallengeApp } from './server.ts';
-import { RecordedEngine, recordedModel } from './engines/recorded.ts';
+import { RecordedEngine, recordedCases, recordedModel } from './engines/recorded.ts';
 import { runSelftest } from './selftest.ts';
 import { caseInputText, caseLabel } from './seedcases.ts';
-import { loadCases } from '../../bench/src/runner/cases.ts';
 import { verdictCliPath } from '../../bench/src/runner/backend.ts';
 import type { Engine } from './types.ts';
 import { DailySalt } from './visitor.ts';
@@ -43,7 +42,7 @@ async function main(argv: string[]): Promise<number> {
   let floatProbe: (() => Promise<bigint | null>) | null = null;
   let bookKeys: (() => Promise<ReadonlySet<string>>) | null = null;
   let seeder: RecordedEngine | null = null;
-  const cases = loadCases(join(ROOT, 'bench', 'cases'));
+  const cases = recordedCases(ROOT);
   const models = loadModelsConfig();
   const recorded = new RecordedEngine({ cases, verdictCli: verdictCliPath(), model: models.planner, quarantineModel: models.quarantine, temperature: models.temperature, seed: models.seed });
   if (cfg.mode === 'live' && cfg.live !== null) {
