@@ -3,13 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json && vite build",
+    "gen:bench": "pnpm -C ../bench exec tsx src/scripts/web-bench-json.ts && pnpm -C ../bench exec tsx src/scripts/web-bench-json.ts --check ../docs/BENCH.md",
+    "build": "pnpm gen:bench && tsc -p tsconfig.json && vite build",
     "typecheck": "tsc -p tsconfig.json",
     "test": "tsx --test \"test/**/*.test.{ts,tsx}\"",
     "lint": "eslint src test e2e scripts",
     "e2e": "tsx e2e/run.ts",
     "preview": "vite preview",
-    "build:static": "tsc -p tsconfig.json && vite build --mode static && tsx scripts/export-static.ts",
+    "build:static": "pnpm gen:bench && tsc -p tsconfig.json && vite build --mode static && tsx scripts/export-static.ts",
     "preview:static": "tsx scripts/serve-static.ts"
   },
   "dependencies": {
