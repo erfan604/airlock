@@ -190,7 +190,10 @@ function check(): number {
     else {
       if (hm[1] !== m.sha) fail(`${name}: header sha ${hm[1]} differs from proofs.json (${m.sha})`);
       const known = spawnSync('git', ['cat-file', '-e', hm[1] + '^{commit}'], { cwd: ROOT }).status === 0;
-      if (!known) fail(`${name}: the commit ${hm[1]} named in the header is not in this repository`);
+      // a shallow clone (git clone --depth 1, the CI default) has no older commits to look up; the file hashes below still decide staleness
+      const shallow = spawnSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: ROOT, encoding: 'utf8' }).stdout.trim() === 'true';
+      if (!known && shallow) console.log(`SKIP ${name}: header commit ${hm[1].slice(0, 12)} not checked, this is a shallow clone (file hashes still checked)`);
+      else if (!known) fail(`${name}: the commit ${hm[1]} named in the header is not in this repository`);
       if (/=none/.test(hm[3] as string) && name === 'kani' && /kani=none/.test(hm[3] as string)) fail(`${name}: header says no kani version`);
     }
     if (!/^cmd=.+/.test(lines[1] as string)) fail(`${name}: line 2 is not cmd=<command>`);
