@@ -150,3 +150,17 @@ test('door b: a restart does not add the same chain request twice (the log is th
   assert.equal(await afterRestart.tick(), 0);
   assert.equal(r.built.log.size, 1);
 });
+
+test('door b: two request ids that share their first 20 characters are two attempts, and both land', async () => {
+  const r = rig();
+  const prefix = 'f'.repeat(40);
+  const mk = (suffix: string): KeyObservation => ({ requestId: `${prefix}${suffix}:0`, payee: 'near:evil.testnet', asset: 'near', amount: near(1), outcome: 'ESCALATE', reason: 'PayeeNotInBook', tx: 'B'.repeat(44), toBook: false });
+  const w = new KeyWatcher({ poll: () => Promise.resolve([mk('1'.repeat(24)), mk('2'.repeat(24))]) }, r.built.challenge);
+  assert.equal(await w.tick(), 2);
+  assert.equal(r.built.log.size, 2);
+  const sources = r.built.log.latest(2).map((a) => a.source);
+  assert.equal(new Set(sources).size, 2);
+  assert.ok(sources.every((x) => x.startsWith(`key:${prefix}`) && x.length === 4 + 64 + 2), 'the stored source is the whole request id');
+  const again = new KeyWatcher({ poll: () => Promise.resolve([mk('1'.repeat(24)), mk('2'.repeat(24))]) }, r.built.challenge);
+  assert.equal(await again.tick(), 0, 'a restart still dedupes on the whole id');
+});

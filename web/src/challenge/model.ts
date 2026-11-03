@@ -154,3 +154,9 @@ const REFUSALS: Record<string, string> = {
 };
 
 export const refusalWords = (code: string): string => (Object.hasOwn(REFUSALS, code) ? REFUSALS[code] : undefined) ?? 'The attempt was not run.';
+
+/** The source as the feed shows it: a long chain request id is shortened for display only; the log keeps the whole id. */
+export function shortSource(source: string): string {
+  const cs = Array.from(source);
+  return cs.length <= 28 ? source : `${cs.slice(0, 18).join('')}...${cs.slice(-6).join('')}`;
+}

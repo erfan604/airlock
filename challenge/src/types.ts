@@ -34,8 +34,8 @@ export const AttemptSchema = z.strictObject({
   at: z.string().max(40),
   door: z.enum(DOORS),
   mode: z.enum(MODES),
-  /** `bench:<case id>` for a seeded case, `ip:<8 hex>` for a visitor (a salted hash, never the address) */
-  source: z.string().max(64),
+  /** `bench:<case id>` for a seeded case, `ip:<8 hex>` for a visitor (a keyed hash, never the address), `key:<whole request id>` for a call of the published key */
+  source: z.string().max(128),
   /** a description from the case data (seeded attempts only) */
   label: z.string().max(200).nullable(),
   inputSha256: z.string().regex(/^[0-9a-f]{64}$/),

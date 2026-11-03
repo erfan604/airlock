@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ChallengeBody, AttemptRow } from '../src/challenge/ChallengeView.tsx';
 import type { ChallengeBodyProps } from '../src/challenge/ChallengeView.tsx';
-import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, reasonWords, refusalWords, sentenceOf, stateOf } from '../src/challenge/model.ts';
+import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, reasonWords, refusalWords, sentenceOf, shortSource, stateOf } from '../src/challenge/model.ts';
 import type { Attempt, ChallengeState } from '../src/challenge/model.ts';
 
 const NEAR = 10n ** 24n;
@@ -140,4 +140,12 @@ test('rows: a live attempt with no transaction says so and a recorded one says r
   assert.ok(live.includes('no transaction') && live.includes('ch-row-fresh'));
   const rec = renderToStaticMarkup(<ul><AttemptRow a={attempt(7)} nowMs={0} fresh={false} /></ul>);
   assert.ok(rec.includes('replayed'));
+});
+
+test('shortSource: a long chain request id is shortened for display only', () => {
+  const id = `key:${'a'.repeat(64)}:0`;
+  assert.equal(shortSource('bench:own-A01'), 'bench:own-A01');
+  assert.equal(shortSource('ip:6b8a37cd'), 'ip:6b8a37cd');
+  const short = shortSource(id);
+  assert.ok(short.length < id.length && short.includes('...') && short.endsWith('aaaa:0'));
 });

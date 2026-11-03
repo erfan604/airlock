@@ -112,7 +112,7 @@ export function buildMinimalAttempt(i: AttemptInput): Attempt {
     at: i.at,
     door: i.door,
     mode: i.mode,
-    source: cutUnits(i.source, 64),
+    source: cutUnits(i.source, 128),
     label: null,
     inputSha256: sha256Hex(i.text),
     inputChars: Array.from(i.text).length,

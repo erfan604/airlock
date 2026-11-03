@@ -9,7 +9,7 @@ import { UntrustedInline } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
 import { liveChallengeApi } from './api.ts';
 import type { AttemptResult, ChallengeApi } from './api.ts';
-import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, previewOf, reasonWords, refusalWords, sentenceOf, stateOf } from './model.ts';
+import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, previewOf, reasonWords, refusalWords, sentenceOf, shortSource, stateOf } from './model.ts';
 import type { Attempt, ChallengeState } from './model.ts';
 
 const FEED = 50;
@@ -60,7 +60,7 @@ export function AttemptRow({ a, nowMs, fresh }: { a: Attempt; nowMs: number; fre
       </div>
       <p className="ch-row-meta">
         <span className="ch-meta-item">{DOOR_NAMES[a.door]}</span>
-        <span className="ch-meta-item">{a.source}</span>
+        <span className="ch-meta-item" title={a.source}>{shortSource(a.source)}</span>
         <span className="ch-meta-item" title={a.at}>{ago(Date.parse(a.at), nowMs)}</span>
         {a.mode === 'live' ? <TxLink tx={a.tx} label="no transaction" /> : <span className="ch-meta-item">replayed</span>}
       </p>
