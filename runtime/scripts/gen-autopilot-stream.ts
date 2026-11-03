@@ -127,7 +127,8 @@ export function loadRawCases(root: string = REPO_ROOT): RawCase[] {
       if (line.trim() === '') continue;
       const c = JSON.parse(line) as RawCase;
       // a case still waiting for its recording is not part of the corpus the committed stream was drawn from (AIR-306)
-      if (c.source_id?.['pending_recording'] !== true) cases.push(c);
+      // and a case adapted from another benchmark (AIR-229, its own suite) is not part of the own corpus the stream was drawn from
+      if (c.source_id?.['pending_recording'] !== true && (c as { source?: string }).source === 'own') cases.push(c);
     }
   }
   return cases;

@@ -11,7 +11,7 @@ import { HooksProductUnavailable, resolveHooks } from './hooks.ts';
 import { ResultsFileSchema, readTranscript } from './record.ts';
 import type { ResultsFile, RunRecord, Transcript } from './record.ts';
 import { deriveBaselines } from '../baselines/derive.ts';
-import { renderBlock, replace } from '../report/render.ts';
+import { renderBlock, renderSuiteBlock, replace, replaceSuite } from '../report/render.ts';
 import { BenchSession, finishRecord } from './run.ts';
 import type { RunnerDeps } from './run.ts';
 
@@ -23,6 +23,8 @@ export interface ReplayOptions {
   deps: RunnerDeps;
   /** the file whose generated block is rewritten, or null for `--no-doc` */
   doc: string | null;
+  /** AIR-229: write the block of this suite (under `## Suite: <name>`) instead of the main block */
+  block?: string;
   out(line: string): void;
 }
 
@@ -161,7 +163,10 @@ export async function replay(o: ReplayOptions): Promise<number> {
     else process.env['LLM_RECORDINGS_DIR'] = saved.dir;
   }
   if (diffs > 0) return 1;
-  if (o.doc !== null) replace(o.doc, renderBlock(results, deriveBaselines(results.runs, o.cases)));
+  if (o.doc !== null) {
+    if (o.block === undefined) replace(o.doc, renderBlock(results, deriveBaselines(results.runs, o.cases)));
+    else replaceSuite(o.doc, o.block, renderSuiteBlock(results, o.block));
+  }
   o.out(`REPLAY OK ${count} runs`);
   return 0;
 }

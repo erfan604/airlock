@@ -30,7 +30,7 @@ import { checkCases } from './scripts/check-cases.ts';
 
 export const USAGE =
   'usage: pnpm bench --model <id> [--configs V0,V1,V1-tight,A1,A2] [--n 10] [--cases <glob>] --budget-usd <decimal> [--concurrency <k>] [--name <name>] [--hooks none|product] [--dry-run] [--mode assume-compromise]\n' +
-  'usage: pnpm bench:replay [--results <file>] [--recorded <dir>] [--cases <glob>] [--no-doc]';
+  'usage: pnpm bench:replay [--results <file>] [--recorded <dir>] [--cases <glob>] [--no-doc] [--block <name>]';
 
 export interface Io {
   out(line: string): void;
@@ -81,7 +81,7 @@ const NAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
 // `<dir>/<glob>` with * in the last segment, or a directory; the cases of the matching files, in name order
 function loadByGlob(pattern: string): Case[] {
   const last = basename(pattern);
-  if (!last.includes('*')) return loadCases(pattern);
+  if (!last.includes('*') && !last.endsWith('.jsonl')) return loadCases(pattern);
   const re = new RegExp('^' + last.split('*').map((p) => p.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$');
   return loadCases(dirname(pattern)).filter((c) => {
     const origin = caseOrigin(c);
@@ -116,6 +116,7 @@ function parse(argv: string[]): Flags | null {
         results: { type: 'string' },
         recorded: { type: 'string' },
         'no-doc': { type: 'boolean' },
+        block: { type: 'string' },
       },
     }).values;
   } catch {
@@ -142,7 +143,7 @@ function commitOf(): string {
 }
 
 async function runCommand(flags: Flags, io: Io): Promise<number> {
-  if (str(flags['results']) !== undefined || str(flags['recorded']) !== undefined || flags['no-doc'] === true) return usage(io);
+  if (str(flags['results']) !== undefined || str(flags['recorded']) !== undefined || flags['no-doc'] === true || str(flags['block']) !== undefined) return usage(io);
   const mode = str(flags['mode']);
   if (mode !== undefined && mode !== 'assume-compromise') return usage(io);
   if (mode === 'assume-compromise') {
@@ -290,7 +291,9 @@ async function replayCommand(flags: Flags, io: Io): Promise<number> {
     }
     throw e;
   }
-  return replay({ results, recorded, cases, deps: io.deps, doc: flags['no-doc'] === true ? null : io.paths.doc, out: (l) => io.out(l) });
+  const block = str(flags['block']);
+  if (block !== undefined && !NAME.test(block)) return usage(io);
+  return replay({ results, recorded, cases, deps: io.deps, doc: flags['no-doc'] === true ? null : io.paths.doc, ...(block === undefined ? {} : { block }), out: (l) => io.out(l) });
 }
 
 export async function main(argv: string[], io: Io = defaultIo()): Promise<number> {

@@ -221,7 +221,7 @@ test('8: no case or ticket-side file holds payload text and every data file pass
 });
 
 test('9: with the two counterparts the payment and no-spend mix of the benign set is 7 and 7', () => {
-  const benign = realCases().filter((c) => c.attacker_goal === null);
+  const benign = realCases().filter((c) => c.attacker_goal === null && c.source === 'own');
   assert.equal(benign.filter((c) => c.legit.action === 'transfer').length, 7);
   assert.equal(benign.filter((c) => c.legit.action === 'none').length, 7);
 });

@@ -141,7 +141,7 @@ test('4: the byte-rule scan flags U+2014, a bidi control, a tag character and by
 });
 
 test('5: every own reference plan passes checkPlan, and exactly B02 and U08 have analyzer errors', () => {
-  const cases = realCases();
+  const cases = realCases().filter((c) => c.source === 'own');
   const refused: string[] = [];
   for (const c of cases) {
     const plan = checkPlan(c.reference.plan);
@@ -168,7 +168,7 @@ test('6: the gate paths use the scripted extractor only: no fetch, and the runne
     throw new Error('the gate path must not use the network');
   }) as typeof fetch;
   try {
-    const cases = realCases().filter((c) => c.attacker_goal !== null && c.gate !== null && !/^own-(?:[SXP]|BL)\d/.test(c.id));
+    const cases = realCases().filter((c) => c.attacker_goal !== null && c.gate !== null && !/^(?:own-(?:[SXP]|BL)\d|cb-)/.test(c.id));
     assert.equal(cases.length, 14);
     for (const c of cases) {
       const res = await gatePath(c, 'A2', 'gate');
@@ -239,7 +239,7 @@ test('9: the not-run table has 26 rows with the five fields, unique ids, the 19 
 });
 
 test('10: the payment and no-spend mix of the utility set is 5 and 7, fixed here and printed by the table', async () => {
-  const utility = realCases().filter((c) => c.attacker_goal === null && !/^own-(?:[SXP]|BL)\d/.test(c.id));
+  const utility = realCases().filter((c) => c.attacker_goal === null && !/^(?:own-(?:[SXP]|BL)\d|cb-)/.test(c.id));
   const payment = utility.filter((c) => c.legit.action === 'transfer').map((c) => c.id).sort();
   const noSpend = utility.filter((c) => c.legit.action === 'none').map((c) => c.id).sort();
   assert.deepEqual(payment, ['own-BEN01', 'own-U01', 'own-U01-large', 'own-U02', 'own-U08']);

@@ -22,6 +22,18 @@ const sum = (runs: readonly RunRecord[], f: (r: RunRecord) => number): number =>
 
 /** The body of docs/BENCH.md between the markers: a pure function of the results file (no date, no path, no commit). */
 export function renderBlock(results: ResultsFile, baselines: readonly RunRecord[] = []): string {
+  return renderBetween(results, baselines, BEGIN_MARKER, END_MARKER);
+}
+
+export const suiteBegin = (name: string): string => `<!-- BEGIN SUITE ${name} -->`;
+export const suiteEnd = (name: string): string => `<!-- END SUITE ${name} -->`;
+
+/** The same body between the markers of a named suite (AIR-229): never the main block's markers, which other checks read. */
+export function renderSuiteBlock(results: ResultsFile, name: string, baselines: readonly RunRecord[] = []): string {
+  return renderBetween(results, baselines, suiteBegin(name), suiteEnd(name));
+}
+
+function renderBetween(results: ResultsFile, baselines: readonly RunRecord[], begin: string, end: string): string {
   const { meta } = results;
   const { stored, v0, all, feasible } = configRuns(results, baselines);
   const t = benchTables(results, baselines, null);
@@ -29,7 +41,7 @@ export function renderBlock(results: ResultsFile, baselines: readonly RunRecord[
   const attackCases = [...new Set(all.filter((r) => r.kind === 'attack').map((r) => r.case))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const infeasible = feasible === undefined ? [] : attackCases.filter((c) => !feasible.includes(c));
 
-  const out: string[] = [BEGIN_MARKER];
+  const out: string[] = [begin];
   if (t.draft) out.push(DRAFT_LINE);
   if (meta.attestation !== undefined) out.push(`model report ${meta.attestation.status} ${meta.attestation.model} report_sha256 ${meta.attestation.report_sha256 === '' ? 'none' : meta.attestation.report_sha256} verified_at ${meta.attestation.verified_at} nonce ${meta.attestation.nonce === '' ? 'none' : meta.attestation.nonce}, ${meta.attestation.checks.filter((c) => c.ok).length} of ${meta.attestation.checks.length} checks passed`);
   out.push(t.header);
@@ -71,7 +83,7 @@ export function renderBlock(results: ResultsFile, baselines: readonly RunRecord[
     else out.push(asText(ac));
   }
   if (results.extra !== undefined) out.push('', '### Extra rows', renderExtra(results.extra));
-  out.push(END_MARKER);
+  out.push(end);
   return out.join('\n');
 }
 
@@ -92,6 +104,27 @@ export function replace(file: string, block: string): void {
   const last = ends[0];
   if (begins.length !== 1 || ends.length !== 1 || first === undefined || last === undefined) throw new MarkerError('the file needs exactly one begin and one end marker line');
   if (last < first) throw new MarkerError('the end marker comes before the begin marker');
+  const next = [...lines.slice(0, first), ...block.split('\n'), ...lines.slice(last + 1)].join('\n');
+  if (next !== text) writeFileSync(file, next, 'utf8');
+}
+
+/**
+ * Rewrites only the lines of the named suite block, markers included. When the block is absent the heading `## Suite: <name>` and the block
+ * are added at the end of the file. Throws on a duplicated marker.
+ */
+export function replaceSuite(file: string, name: string, block: string): void {
+  const text = readFileSync(file, 'utf8');
+  const lines = text.split('\n');
+  const begins = lines.flatMap((l, i) => (l === suiteBegin(name) ? [i] : []));
+  const ends = lines.flatMap((l, i) => (l === suiteEnd(name) ? [i] : []));
+  if (begins.length === 0 && ends.length === 0) {
+    const body = text.endsWith('\n') ? text : `${text}\n`;
+    writeFileSync(file, `${body}\n## Suite: ${name}\n${block}\n`, 'utf8');
+    return;
+  }
+  const first = begins[0];
+  const last = ends[0];
+  if (begins.length !== 1 || ends.length !== 1 || first === undefined || last === undefined || last < first) throw new MarkerError(`the file needs exactly one begin and one end line of suite ${name}`);
   const next = [...lines.slice(0, first), ...block.split('\n'), ...lines.slice(last + 1)].join('\n');
   if (next !== text) writeFileSync(file, next, 'utf8');
 }
