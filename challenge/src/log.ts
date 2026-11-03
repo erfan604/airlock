@@ -30,6 +30,7 @@ export class AttemptLog {
   private recent: Attempt[] = [];
   private board: Scoreboard = { ...EMPTY_BOARD, doors: { ...EMPTY_BOARD.doors } };
   private seq = 0;
+  private readonly keySources = new Set<string>();
   private readonly subscribers = new Set<(a: Attempt) => void>();
   /** lines of the file that were skipped at load */
   skipped = 0;
@@ -60,6 +61,7 @@ export class AttemptLog {
   private take(a: Attempt): void {
     this.board = fold(this.board, a);
     this.seq = Math.max(this.seq, a.seq);
+    if (a.door === 'key') this.keySources.add(a.source);
     this.recent.push(a);
     if (this.recent.length > KEEP) this.recent.shift();
   }
@@ -92,6 +94,11 @@ export class AttemptLog {
         this.subscribers.delete(s);
       }
     }
+  }
+
+  /** True when an attempt of the published key with this source (`key:<request id>`) is in the log, however old: the watcher's dedupe survives a restart. */
+  hasKeySource(source: string): boolean {
+    return this.keySources.has(source);
   }
 
   scoreboard(): Scoreboard {

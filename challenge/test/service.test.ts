@@ -140,3 +140,13 @@ test('fail open audit: a log file that cannot be written does not drop the attem
   assert.equal(log.size, 1);
   void r;
 });
+
+test('door b: a restart does not add the same chain request twice (the log is the dedupe)', async () => {
+  const r = rig();
+  const o: KeyObservation = { requestId: 'a'.repeat(64) + ':0', payee: 'near:evil.testnet', asset: 'near', amount: near(1), outcome: 'ESCALATE', reason: 'PayeeNotInBook', tx: 'B'.repeat(44), toBook: false };
+  const first = new KeyWatcher({ poll: () => Promise.resolve([o]) }, r.built.challenge);
+  assert.equal(await first.tick(), 1);
+  const afterRestart = new KeyWatcher({ poll: () => Promise.resolve([o]) }, r.built.challenge);
+  assert.equal(await afterRestart.tick(), 0);
+  assert.equal(r.built.log.size, 1);
+});

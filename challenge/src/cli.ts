@@ -11,6 +11,8 @@ import { loadModelsConfig } from '@airlock/runtime/llm';
 import { ConfigError, parseConfig } from './config.ts';
 import { build } from './compose.ts';
 import { resolveAddress } from './address.ts';
+import { FastNearKeySource } from './fastnear.ts';
+import { KeyWatcher } from './watcher.ts';
 import { listen } from './listen.ts';
 import { createChallengeApp } from './server.ts';
 import { RecordedEngine, recordedModel } from './engines/recorded.ts';
@@ -39,6 +41,7 @@ async function main(argv: string[]): Promise<number> {
   const pausedFile = join(cfg.dataDir, 'PAUSED');
   let engine: Engine;
   let floatProbe: (() => Promise<bigint | null>) | null = null;
+  let bookKeys: (() => Promise<ReadonlySet<string>>) | null = null;
   let seeder: RecordedEngine | null = null;
   const cases = loadCases(join(ROOT, 'bench', 'cases'));
   const models = loadModelsConfig();
@@ -49,6 +52,7 @@ async function main(argv: string[]): Promise<number> {
       const parts = await liveParts(cfg.live);
       engine = parts.engine;
       floatProbe = parts.floatProbe;
+      bookKeys = parts.bookKeys;
     } catch (e) {
       console.error(`live mode did not start: ${e instanceof Error ? e.message.slice(0, 160) : 'failed'}`);
       return 2;
@@ -74,6 +78,11 @@ async function main(argv: string[]): Promise<number> {
     }
     console.log(`seeded ${String(built.log.size)} recorded attempts`);
   }
+  // door b: read the chain for calls made with the published key (FastNEAR transactions API), once the key is configured
+  if (cfg.mode === 'live' && cfg.live !== null && cfg.key !== null && bookKeys !== null) {
+    new KeyWatcher(new FastNearKeySource({ policy: cfg.live.policyAccount, publicKey: cfg.key.publicKey, bookKeys }), built.challenge).start(10_000);
+    console.log('door b watcher on');
+  } else if (cfg.mode === 'live') console.log('door b watcher off: CHALLENGE_KEY_PUBLIC is not set');
   const salt = new DailySalt();
   const app = createChallengeApp({
     cfg,
@@ -87,7 +96,7 @@ async function main(argv: string[]): Promise<number> {
       } catch {
         remote = undefined;
       }
-      const r = resolveAddress({ header: cfg.proxyHeader, trusted: cfg.trustedProxies }, remote, (name) => c.req.header(name));
+      const r = resolveAddress({ header: cfg.proxyHeader, trusted: cfg.trustedProxies, v6Prefix: cfg.v6Prefix }, remote, (name) => c.req.header(name));
       return r.ok ? r.address : null;
     },
     salt: () => salt.current(),

@@ -67,6 +67,11 @@ export class Challenge {
     return this.record('seed', `bench:${caseId}`, label, text, false, out);
   }
 
+  /** The log already holds this door (b) request. */
+  knowsKeySource(source: string): boolean {
+    return this.d.log.hasKeySource(source);
+  }
+
   /** An attempt observed on chain through the published key (door b). The chain watcher calls this once per request it has not seen. */
   observeKey(source: string, text: string, out: EngineOutput): Attempt {
     return this.record('key', source, null, text, false, out);

@@ -22,6 +22,8 @@ export interface LiveParts {
   engine: LiveEngine;
   /** the policy account's free balance in yocto (view_account amount) */
   floatProbe(): Promise<bigint>;
+  /** the payee keys of the policy's address book now */
+  bookKeys(): Promise<ReadonlySet<string>>;
 }
 
 export async function liveParts(cfg: LiveConfig): Promise<LiveParts> {
@@ -58,5 +60,9 @@ export async function liveParts(cfg: LiveConfig): Promise<LiveParts> {
     newTaskId: () => `ch-${randomBytes(8).toString('hex')}`,
     limits,
   });
-  return { engine, floatProbe: async () => (await nearViewAccount(cfg.policyAccount)).amount };
+  return {
+    engine,
+    floatProbe: async () => (await nearViewAccount(cfg.policyAccount)).amount,
+    bookKeys: async () => new Set((await chain.getBook()).map(([key]) => key)),
+  };
 }

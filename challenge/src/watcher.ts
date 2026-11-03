@@ -49,9 +49,10 @@ export class KeyWatcher {
     try {
       let added = 0;
       for (const o of await this.source.poll()) {
-        if (this.seen.has(o.requestId)) continue;
+        const source = `key:${o.requestId.slice(0, 20)}`;
+        if (this.seen.has(o.requestId) || this.challenge.knowsKeySource(source)) continue;
         this.seen.add(o.requestId);
-        this.challenge.observeKey(`key:${o.requestId.slice(0, 12)}`, `submit_batch ${o.requestId}`, observationOutput(o));
+        this.challenge.observeKey(source, `submit_batch ${o.requestId}`, observationOutput(o));
         added += 1;
       }
       return added;
