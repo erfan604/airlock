@@ -117,6 +117,15 @@ Printed by `scripts/evidence-pins.sh` at commit de29b93 on 2026-11-02.
 | omni-transaction | 0.5.0 | 0.5.0 | ok |
 | near-sandbox | 0.3.9 | 0.3.9 | ok |
 
+## x402 authorization (AIR-109)
+
+| What | Network | Id / hash / link | Date |
+| --- | --- | --- | --- |
+| Fresh policy account for the EIP-3009 wasm (AIR-048 redeploy rule: `AssetEntry` and `ExecInfo` changed layout) | NEAR testnet | account `policy-v2.erfan-airlock.testnet`, code_hash=C2o9rn3Gvgd2myPb9SPZkjpDTpVWwxXCR2Qkewn6eu1E (hex a3e652722d8cc0f9721f78e79e617e35dc028b83bb2dae3c4e94b9a69c32ec95, 1063563 bytes), deploy tx [2fVN7F26AtsTuppvFgwBx7DYnVJCwsZkkJXHUCDKVjAi](https://testnet.nearblocks.io/txns/2fVN7F26AtsTuppvFgwBx7DYnVJCwsZkkJXHUCDKVjAi), full_access_keys=1, bootstrapped with `scripts/bootstrap-policy.sh` (`POLICY MATCHES fixtures/policy.json`) | 2026-11-03 |
+| USDC asset registered by `scripts/register-x402-asset.sh` | NEAR testnet | `evm:84532:erc20:0x036cbd53842c5426634e7929541ec2318f3dcf7e`, path `base-sepolia-usdc-1`, derived address `0xa21c1448d465bbdd9cb4392fbc34da4889535812`, asset_set tx [GV1baJCpsC8dvBTGNmgSnrJbnsytA4bH7auwj9JxXRzA](https://testnet.nearblocks.io/txns/GV1baJCpsC8dvBTGNmgSnrJbnsytA4bH7auwj9JxXRzA), book_add tx [Eeie7wQxT6PGDKcqXFJKFpoxG4XJmoQKshaxxSPCezyF](https://testnet.nearblocks.io/txns/Eeie7wQxT6PGDKcqXFJKFpoxG4XJmoQKshaxxSPCezyF) | 2026-11-03 |
+
+The existing `policy.erfan-airlock.testnet` entry of `fixtures/accounts.testnet.json` is unchanged; the x402 scripts read the fresh account from the `policy` key of `fixtures/x402-asset.json`.
+
 ## Differential
 
 `scripts/diff-verdict.sh --commit` on 2026-11-02 at commit de29b93 printed `identical on 40000 cases`. No larger run was made.

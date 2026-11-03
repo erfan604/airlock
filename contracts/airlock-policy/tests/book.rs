@@ -378,6 +378,26 @@ async fn accepted_vector_keys_are_added() {
     ] {
         asset_set(&s, &format!("evm:{chain}:native"), evm_asset(symbol, path)).await;
     }
+    // AIR-109: the erc20 payee keys of the vector file need their asset in the registry (`unknown asset for payee key` otherwise)
+    asset_set(
+        &s,
+        "evm:84532:erc20:0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+        json!({
+            "symbol": "USDC.base",
+            "decimals": 6,
+            "hard_cap": "1000000",
+            "daily_cap": "5000000",
+            "max_fee_per_gas": "0",
+            "max_gas": "0",
+            "quick_task_cap": "5000000",
+            "path": "base-sepolia-usdc-1",
+            "eip712": {
+                "domain_separator": "71f17a3b2ff373b803d70a5a07c046c1a2bc8e89c09ef722fcb047abe94c9818",
+                "from": format!("0x{}", "11".repeat(20))
+            }
+        }),
+    )
+    .await;
     let doc: Value = serde_json::from_str(VECTORS).unwrap();
     let accepts = doc["payee_keys"]["accept"].as_array().unwrap();
     for entry in accepts {

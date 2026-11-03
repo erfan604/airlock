@@ -493,8 +493,8 @@ async fn retry_once_then_new_task() {
     let hex_text = one_event(&first, "evm_unsigned")["unsigned_hex"].clone();
     assert_eq!(one_event(&first, "failed")["retryable"], true);
     assert_eq!(state_of(&w, &id).await, "Retryable");
-    // the mock counts only a call that returns or parks: a `fail` call panics and rolls back (AIR-103)
-    assert_eq!(mock_calls(&w).await, 0);
+    // the mock counts every call it receives: a `fail` call fails in a child receipt and is still counted (AIR-109 changed AIR-103's mock)
+    assert_eq!(mock_calls(&w).await, 1);
     assert_eq!(nonce_of(&w).await, json!("1"));
     assert_eq!(ledgers_of(&w).await, before);
 
@@ -504,7 +504,7 @@ async fn retry_once_then_new_task() {
     let failed = one_event(&second, "failed");
     assert_eq!(failed["reason"], "MpcFailed");
     assert_eq!(failed["retryable"], false);
-    assert_eq!(mock_calls(&w).await, 0);
+    assert_eq!(mock_calls(&w).await, 2);
     assert_eq!(nonce_of(&w).await, json!("1"));
     assert_eq!(state_of(&w, &id).await, "Failed");
     assert_eq!(ledgers_of(&w).await, before);
@@ -517,13 +517,13 @@ async fn retry_once_then_new_task() {
         text.contains("request_id already used (UsedRequestId)"),
         "{text}"
     );
-    assert_eq!(mock_calls(&w).await, 0);
+    assert_eq!(mock_calls(&w).await, 2);
 
     // a new action index under the same task can try again
     let fresh = submit_ok(&w, vec![clean(&w, &task, 1, AMOUNT)], &task).await;
     assert_eq!(events(&fresh, "signed").len(), 1);
     assert_eq!(state_of(&w, &id_of(&task, 1)).await, "Executed");
-    assert_eq!(mock_calls(&w).await, 1);
+    assert_eq!(mock_calls(&w).await, 3);
 }
 
 // ---- the timeout branch -----------------------------------------------------------------------------------------------------

@@ -1707,9 +1707,8 @@ async fn refund_on_mpc_failure_restores_ledgers() {
         before,
         "approval, fail mode"
     );
-    // the mock's `fail` mode panics after counting, so its own receipt rolls the counter back: the failed receipts above are the proof
-    // that both attempts reached the signer
-    assert_signer_saw(&w, 0, None, "fail mode keeps no count").await;
+    // the mock's `fail` mode fails in a child receipt, so its calls are counted (AIR-109): both attempts reached the signer
+    assert_signer_saw(&w, 2, None, "fail mode counts every call").await;
 
     // the NEAR lane: a payee account that does not exist, so the transfer receipt fails
     let ghost = "near:ghost.sandbox";
