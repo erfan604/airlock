@@ -7,6 +7,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "demo": "tsx scripts/demo.ts",
+    "build:static": "VITE_CONTRACT_ID=policy.test.near VITE_AGENT_ACCOUNT_ID=agent.test.near pnpm -C web build:static",
     "demo:live": "tsx scripts/demo-live.ts",
     "demo:intents": "tsx scripts/intents-quote.ts",
     "verify-approval": "tsx scripts/verify-approval.ts",

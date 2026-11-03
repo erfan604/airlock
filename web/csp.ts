@@ -99,3 +99,25 @@ export function normalizeNonce(policy: string): string {
 export function previewProxy(runtimeOrigin: string): Record<string, { target: string; changeOrigin: false }> {
   return Object.fromEntries(PROXY_PATHS.map((p) => [p, { target: runtimeOrigin, changeOrigin: false as const }]));
 }
+
+/**
+ * AIR-310: the policy of the static build (`web/dist-static`). It is the preview policy with everything the replay never uses taken away: the
+ * runtime origin, the NEAR RPC hosts, the wallet origins and the wallet frames are gone, so the page can talk to its own origin only. There is no
+ * nonce because the built page has no inline script (a module script by `src` only). `frame-ancestors` cannot be set from a meta tag, so it is
+ * in the header form only (`_headers`); a host that ignores `_headers` (GitHub Pages) still gets everything else from the meta tag.
+ */
+export function buildStaticCsp(opts: { header: boolean }): string {
+  return [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "frame-src 'none'",
+    ...(opts.header ? ["frame-ancestors 'none'"] : []),
+    "base-uri 'none'",
+    "object-src 'none'",
+    "form-action 'none'",
+  ].join('; ');
+}

@@ -7,3 +7,5 @@
 ^web/src/replay/ReplayShell\.tsx:[0-9]+:.*href=\{txHref\(
 # The challenge page builds the link with explorerUrl, which returns null unless the value is a bare transaction hash (letters and digits only).
 ^web/src/challenge/ChallengeView\.tsx:[0-9]+:.*href=\{url\}
+# AIR-310: the static build's page links: `url()` puts the build's base path in front of a route from the constant list STATIC_LINKS.
+^web/src/static/StaticPages\.tsx:[0-9]+:.*href=\{url\((l\.path|'')\)\}

@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { preview } from 'vite';
+import { serveStatic } from '../scripts/serve-static.ts';
 import { buildCsp, defaultCspInputs, normalizeNonce } from '../csp.ts';
 import { listFixtures } from '../src/fixtures/index.ts';
 import { AUDIT_HEIGHT, AUDIT_WIDTHS, clipAudit } from './audit.ts';
@@ -54,11 +55,13 @@ async function runFixtures({ page, baseUrl }: E2EContext, problems: string[]): P
 
 const problems: string[] = [];
 let okLine = '';
-let server: Awaited<ReturnType<typeof preview>> | undefined;
+let server: { close(): Promise<unknown> } | undefined;
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
 let setupHandle: Awaited<ReturnType<E2ESetup>> | undefined;
 try {
-  if (!existsSync(join(webRoot, 'dist', 'index.html'))) throw new Error('web/dist/index.html is missing: run `pnpm -C web build` first');
+  // AIR-310: `static` serves web/dist-static as plain files, the way a static host does: no preview server, no proxy, no runtime
+  const isStatic = name === 'static';
+  if (!isStatic && !existsSync(join(webRoot, 'dist', 'index.html'))) throw new Error('web/dist/index.html is missing: run `pnpm -C web build` first');
   const setup = new URL(`./${name}.setup.ts`, import.meta.url);
   if (existsSync(fileURLToPath(setup))) {
     const mod = (await import(setup.href)) as { default?: E2ESetup };
@@ -69,8 +72,16 @@ try {
   const e2eFile = new URL(`./${name}.e2e.ts`, import.meta.url);
   if (name !== 'fixtures' && !existsSync(fileURLToPath(e2eFile))) throw new Error(`no e2e/${name}.e2e.ts`);
 
-  server = await preview({ root: webRoot, logLevel: 'error', preview: { host: '127.0.0.1', port: 0, strictPort: false, open: false } });
-  const baseUrl = (server.resolvedUrls?.local[0] ?? '').replace(/\/$/, '');
+  let baseUrl: string;
+  if (isStatic) {
+    const hosted = await serveStatic(join(webRoot, 'dist-static'), 0);
+    server = hosted;
+    baseUrl = hosted.url;
+  } else {
+    const live = await preview({ root: webRoot, logLevel: 'error', preview: { host: '127.0.0.1', port: 0, strictPort: false, open: false } });
+    server = live;
+    baseUrl = (live.resolvedUrls?.local[0] ?? '').replace(/\/$/, '');
+  }
   if (!baseUrl) throw new Error('the preview server has no URL');
 
   // Installed Google Chrome (patched stable) with the sandbox on, not Playwright's bundled Chromium (156.0.8078.4 in 1.64.1 lags the

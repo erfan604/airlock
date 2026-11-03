@@ -1,0 +1,141 @@
+// The static build in a real browser (AIR-310): web/dist-static served as plain files, the way Cloudflare Pages or GitHub Pages serve it. The
+// replay at /, the Bench, Proven, Challenge and Live pages at 375x667 and 1440x900, the clip audit at 375 and 1440 on each, screenshots to
+// web/audit/static-<page>-<width>.png, every request on the page's own host (no external request at all), the Content-Security-Policy of the
+// host header on every document, and the recorded hashes taken from the golden files. The harness fails on any console error.
+// Run: pnpm build:static && pnpm -C web e2e static
+import assert from 'node:assert/strict';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { Page } from 'playwright';
+import type { RequestView } from '@airlock/runtime/chain-types';
+import { buildStaticCsp } from '../csp.ts';
+import { approveArgs } from '../src/approvals/cardModel.ts';
+import { clipAudit } from './audit.ts';
+import type { E2E } from './types.ts';
+
+const web = fileURLToPath(new URL('../', import.meta.url));
+const repo = join(web, '..');
+const auditDir = join(web, 'audit');
+const golden = (name: string): { txs: { hash: string; url: string }[] } => JSON.parse(readFileSync(join(repo, 'bench', 'golden', `${name}.json`), 'utf8')) as { txs: { hash: string; url: string }[] };
+const dist = (path: string): unknown => JSON.parse(readFileSync(join(web, 'dist-static', path), 'utf8')) as unknown;
+const u01 = golden('u01');
+const approveGolden = golden('b01-approve');
+const tamperGolden = golden('tamper');
+
+const id = (testId: string, page: Page) => page.locator(`[data-testid="${testId}"]`);
+const WIDTHS = [{ width: 375, height: 667 }, { width: 1440, height: 900 }] as const;
+
+async function shot(page: Page, name: string, width: number): Promise<void> {
+  await page.evaluate(() => document.fonts.ready.then(() => true));
+  await page.screenshot({ path: join(auditDir, `static-${name}-${String(width)}.png`), fullPage: true });
+}
+
+async function audit(page: Page, label: string): Promise<void> {
+  assert.deepEqual(await clipAudit(page, [375, 1440]), [], `clip audit, ${label}`);
+}
+
+async function replayPage(page: Page, baseUrl: string, width: number): Promise<void> {
+  await page.goto(`${baseUrl}/`);
+  await id('replay-banner', page).waitFor();
+  assert.ok((await id('replay-banner', page).innerText()).includes('Replay of recorded run'), 'banner');
+  assert.equal(await page.locator('[data-testid="login-connect"]').count(), 0, 'no wallet login in the static copy');
+
+  // act 1: the invoice auto-paid
+  await id('act-u01', page).click();
+  await id('trace-end', page).waitFor();
+  assert.equal(await id('act-title', page).innerText(), 'Act 1 Invoice paid');
+  assert.equal(await id('verdict-stamp', page).getAttribute('data-state'), 'allowed');
+  assert.ok((await id('trace-list', page).innerText()).includes('4.2 NEAR'), 'the amount carries its symbol');
+  assert.equal(await id('tx-link', page).getAttribute('data-hash'), u01.txs[0]?.hash);
+  await shot(page, 'replay-act1', width);
+  await audit(page, 'act 1');
+
+  // act 2: the correction held, the real card, the replayed approval
+  await id('act-b01', page).click();
+  await id('trace-end', page).waitFor();
+  await id('card-title', page).waitFor();
+  assert.equal(await id('act-title', page).innerText(), 'Act 2 Correction held');
+  const stamp = page.locator('[data-testid="trace-list"] [data-testid="verdict-stamp"]');
+  assert.ok((await stamp.innerText()).includes('HELD FOR YOU'));
+  const held = dist('data/replay/request/' + encodeURIComponent(String((dist('data/replay/acts.json') as { acts: { id: string; pendingNo: string }[] }).acts.find((a) => a.id === 'b01')?.pendingNo)) + '.json') as { view: RequestView };
+  const title = await id('card-title', page).innerText();
+  assert.ok(title.startsWith('Pay 9.4 NEAR to ') && title.endsWith('?'), `card title: ${title}`);
+  const args = approveArgs(held.view);
+  for (const name of ['to', 'asset', 'amount', 'why', 'book'] as const) assert.equal(await id(`arg-${name}`, page).textContent(), args[name], `arg-${name}`);
+  assert.equal(await id('replay-label', page).innerText(), 'Replay: no wallet is used');
+  assert.ok(!(await page.locator('body').innerText()).includes('4.2 NEAR'), 'the April invoice never appears in act 2');
+  await shot(page, 'replay-act2', width);
+  await audit(page, 'act 2');
+  await id('open-approve', page).click();
+  await id('confirm-approve', page).click();
+  await page.locator('[data-testid="card"] [data-testid="verdict-stamp"][data-state="approved"]').waitFor();
+  assert.ok((await page.locator('[data-testid="card"] [data-testid="verdict-stamp"]').innerText()).includes('APPROVED BY YOU'));
+  assert.equal(await id('approve-link', page).getAttribute('data-hash'), approveGolden.txs[0]?.hash);
+  await shot(page, 'replay-act2-approved', width);
+
+  // act 3: the tampered approve
+  await id('act-tamper', page).click();
+  await id('tamper-result', page).waitFor();
+  assert.equal(await id('tamper-failure', page).innerText(), 'approve rejected: WrongAmount');
+  assert.equal(await id('tamper-link', page).getAttribute('data-hash'), tamperGolden.txs[0]?.hash);
+  await shot(page, 'replay-act3', width);
+  await audit(page, 'act 3');
+}
+
+const run: E2E = async ({ page, baseUrl }) => {
+  mkdirSync(auditDir, { recursive: true });
+  const hosts = new Set<string>();
+  const failed: string[] = [];
+  const csp: string[] = [];
+  page.on('request', (req) => {
+    const u = new URL(req.url());
+    if (u.protocol !== 'data:' && u.protocol !== 'blob:') hosts.add(u.host);
+  });
+  page.on('requestfailed', (req) => failed.push(`${req.url()} ${req.failure()?.errorText ?? ''}`));
+  page.on('response', (res) => {
+    if (res.request().resourceType() === 'document') csp.push(res.headers()['content-security-policy'] ?? '');
+  });
+
+  for (const viewport of WIDTHS) {
+    await page.setViewportSize(viewport);
+    await replayPage(page, baseUrl, viewport.width);
+
+    await page.goto(`${baseUrl}/bench`);
+    await page.waitForSelector('[data-testid="bench-compare"]');
+    await shot(page, 'bench', viewport.width);
+    await audit(page, 'bench');
+
+    await page.goto(`${baseUrl}/proven`);
+    await id('proven', page).waitFor();
+    await shot(page, 'proven', viewport.width);
+    await audit(page, 'proven');
+
+    await page.goto(`${baseUrl}/challenge`);
+    await id('static-challenge', page).waitFor();
+    assert.ok((await id('needs-server', page).innerText()).includes('needs the challenge service running'));
+    assert.ok((await id('static-challenge', page).innerText()).includes('pnpm challenge'));
+    await shot(page, 'challenge', viewport.width);
+    await audit(page, 'challenge');
+
+    await page.goto(`${baseUrl}/live`);
+    await id('static-live', page).waitFor();
+    assert.ok((await id('static-live', page).innerText()).includes('pnpm demo:live'));
+    await shot(page, 'live', viewport.width);
+    await audit(page, 'live');
+    await page.setViewportSize(viewport);
+  }
+
+  // an unknown path is a 404 from the host and still serves the console page
+  const missing = await page.request.get(`${baseUrl}/no-such-page`);
+  assert.equal(missing.status(), 404);
+  assert.ok((await missing.text()).includes('<div id="root">'));
+
+  const origin = new URL(baseUrl).host;
+  assert.deepEqual([...hosts], [origin], `every request goes to ${origin}, got ${[...hosts].join(', ')}`);
+  assert.deepEqual(failed, [], 'no request failed');
+  const want = buildStaticCsp({ header: true });
+  assert.ok(csp.length > 0 && csp.every((c) => c === want), 'every document carries the static Content-Security-Policy');
+};
+
+export default run;

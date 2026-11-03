@@ -7,6 +7,8 @@ import { ProvenPage } from './proven/ProvenPage.tsx';
 import { ChallengeView } from './challenge/ChallengeView.tsx';
 import { ReplayAware } from './replay/ReplayAware.tsx';
 import { TaskPage } from './task/TaskPage.tsx';
+import { STATIC } from './static.ts';
+import { StaticChallenge, StaticLive } from './static/StaticPages.tsx';
 // AIR-192: the read-only Bench page loads on demand, so the shell's bundle does not grow
 const BenchPage = lazy(() => import('./bench/BenchPage.tsx'));
 
@@ -15,6 +17,8 @@ export const ROUTES: Record<string, () => ReactElement> = {
   '/proven': () => createElement(ProvenPage),
   '/approvals': () => createElement(ReplayAware, { live: () => createElement(ApprovalsRoute) }),
   // AIR-301: the public Steal this agent page; it reads the challenge service and needs no session
-  '/challenge': () => createElement(ChallengeView),
+  // AIR-310: a hosted static copy has no challenge service, so the page says so and points at the commands
+  '/challenge': () => createElement(STATIC ? StaticChallenge : ChallengeView),
+  '/live': () => createElement(StaticLive),
   '/bench': () => createElement(Suspense, { fallback: null }, createElement(BenchPage)),
 };

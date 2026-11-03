@@ -8,7 +8,9 @@
     "test": "tsx --test \"test/**/*.test.{ts,tsx}\"",
     "lint": "eslint src test e2e scripts",
     "e2e": "tsx e2e/run.ts",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:static": "tsc -p tsconfig.json && vite build --mode static && tsx scripts/export-static.ts",
+    "preview:static": "tsx scripts/serve-static.ts"
   },
   "dependencies": {
     "@airlock/runtime": "workspace:*",

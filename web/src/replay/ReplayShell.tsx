@@ -12,6 +12,8 @@ import { parseEvidence } from '../approvals/evidence.ts';
 import { TraceListView } from '../task/TraceList.tsx';
 import { createTraceStore } from '../task/traceStore.ts';
 import type { TraceStore } from '../task/traceStore.ts';
+import { STATIC } from '../static.ts';
+import { StaticEventSource } from './staticEventSource.ts';
 import { AutopilotChart } from './AutopilotChart.tsx';
 import { liveReplayApi } from './api.ts';
 import type { Act, ActId, ActLink, HeldRequest, ReplayApi, TamperResult } from './api.ts';
@@ -41,7 +43,7 @@ function Links({ links }: { links: ActLink[] }) {
 }
 
 function TraceBlock({ runId, registry }: { runId: string; registry: AssetRegistry | null }) {
-  const store = useMemo<TraceStore>(() => createTraceStore({ registry: () => registry }), [registry]);
+  const store = useMemo<TraceStore>(() => createTraceStore({ registry: () => registry, ...(STATIC ? { EventSource: StaticEventSource as unknown as typeof EventSource } : {}) }), [registry]);
   useEffect(() => {
     store.connect(runId);
     return () => store.disconnect();

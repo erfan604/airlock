@@ -3,6 +3,8 @@
 import { DoorSprite } from './components/Door.tsx';
 import { getFixture } from './fixtures/index.ts';
 import { ROUTES } from './routes.ts';
+import { STATIC, routePath } from './static.ts';
+import { StaticNav } from './static/StaticPages.tsx';
 
 function Placeholder({ line }: { line: string }) {
   return (
@@ -13,7 +15,8 @@ function Placeholder({ line }: { line: string }) {
   );
 }
 
-export function App({ pathname }: { pathname: string }) {
+export function App({ pathname: rawPathname }: { pathname: string }) {
+  const pathname = routePath(rawPathname);
   const m = /^\/fixtures\/([^/]+)\/?$/.exec(pathname);
   const fixture = m ? getFixture(m[1] as string) : undefined;
   const path = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname;
@@ -25,6 +28,7 @@ export function App({ pathname }: { pathname: string }) {
         <span className="shell-mark">AIRLOCK</span>
         <span className="shell-net">testnet</span>
       </header>
+      {STATIC ? <StaticNav /> : null}
       {fixture ? fixture.render() : m ? <Placeholder line="No such fixture." /> : route ? route() : <Placeholder line="Console shell. No task is open." />}
     </>
   );

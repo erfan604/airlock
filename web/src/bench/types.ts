@@ -1,5 +1,7 @@
 // AIR-192: the shape of web/public/bench.json, written by bench/src/scripts/web-bench-json.ts from the same function that prints docs/BENCH.md.
 // Every string is shown as text; the numbers (`k`, `n`, `p`, `lo`, `hi`) only place a marker. Nothing is computed here.
+import { url } from '../static.ts';
+
 export type Row = { k: number; n: number; p: number; lo: number; hi: number };
 export type Kind = 'attack' | 'intent' | 'tap' | 'plain';
 export type TableRow = { cells: string[]; whiskers: (Row | null)[] };
@@ -57,7 +59,7 @@ export function parseBench(raw: unknown): BenchData | null {
 /** Fetches the bench file from the page's own origin. Any failure, a non-200 status or a malformed body gives null. */
 export async function loadBench(fetchFn: typeof fetch = fetch): Promise<BenchData | null> {
   try {
-    const res = await fetchFn('/bench.json');
+    const res = await fetchFn(url('bench.json'));
     if (!res.ok) return null;
     return parseBench((await res.json()) as unknown);
   } catch {

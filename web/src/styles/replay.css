@@ -166,3 +166,54 @@
   height: 12px;
   border-radius: 2px;
 }
+
+/* AIR-310: the static build's page links and the pages that need a live server. */
+.static-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--hair);
+}
+.static-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--font-data);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.static-nav-link:hover {
+  color: var(--signal);
+}
+.static-page {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 48rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.static-title {
+  margin: 0;
+}
+.static-commands {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.static-command {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.static-code {
+  font-family: var(--font-data);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
