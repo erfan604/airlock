@@ -66,7 +66,8 @@ describe('AIR-220 replay', () => {
     assert.equal(await main(args, io(root, lines)), 0);
     assert.equal(readFileSync(doc, 'utf8'), first);
     const stored = JSON.parse(readFileSync(join(RECORDED, 'results.json'), 'utf8')) as ResultsFile;
-    assert.equal(first, `# Benchmark\n## Results\n${renderBlock(stored, deriveBaselines(stored.runs, loadCases(join(RECORDED, 'cases'))))}\n## Reproduce\n`);
+    const cases = loadCases(join(RECORDED, 'cases'));
+    assert.equal(first, `# Benchmark\n## Results\n${renderBlock(stored, deriveBaselines(stored.runs, cases), cases)}\n## Reproduce\n`);
     assert.equal(lines.filter((l) => l === 'REPLAY OK 30 runs').length, 2);
   });
 

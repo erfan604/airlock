@@ -388,7 +388,8 @@ test('allowlist: planner and quarantine accept each of the four TEE ids', () => 
 });
 
 test('allowlist: vanilla accepts grok and every TEE id', () => {
-  assert.equal(VANILLA_MODELS.length, 5);
+  assert.equal(VANILLA_MODELS.length, 6);
+  assertModelAllowed('vanilla', 'openai/gpt-6.1-sol');
   for (const model of VANILLA_MODELS) assertModelAllowed('vanilla', model);
   assertModelAllowed('vanilla', 'x-ai/grok-4.7');
 });

@@ -72,6 +72,24 @@ if [ -s "$CB_RES" ]; then
     exit 1
   fi
 fi
+# the model sensitivity run: V0 on a frontier model, its own results file and recordings; same checks, no key, no network
+FR_REC="${BENCH_FRONTIER_RECORDED:-bench/runs/recorded-frontier}"
+FR_RES="${BENCH_FRONTIER_RESULTS:-bench/results/frontier-v0.json}"
+if [ -s "$FR_RES" ]; then
+  if [ ! -s "$FR_REC/MANIFEST.sha256" ] || ! (cd "$FR_REC" && sha256sum -c MANIFEST.sha256 > /dev/null 2>&1); then
+    echo "FAIL manifest ($FR_REC/MANIFEST.sha256 is missing or a recording differs)"
+    exit 1
+  fi
+  fout="target/bench-replay-frontier.out"
+  if ! env -i PATH="$PATH" HOME="$HOME" NODE_OPTIONS="--require $PWD/scripts/no-network.cjs" \
+    pnpm bench:replay --no-doc --results "$FR_RES" --recorded "$FR_REC" > "$fout" 2>&1 || ! grep -q '^REPLAY OK [0-9][0-9]* runs$' "$fout"; then
+    head -30 "$fout"
+    cp target/BENCH.before.md docs/BENCH.md
+    echo "FAIL replay of the frontier run (see the lines above)"
+    exit 1
+  fi
+  pnpm -C bench exec tsx src/scripts/model-sensitivity.ts --base "../$RES" --frontier "../$FR_RES" > /dev/null
+fi
 if ! cmp -s docs/BENCH.md target/BENCH.before.md; then
   diff target/BENCH.before.md docs/BENCH.md | head -20 || true
   cp target/BENCH.before.md docs/BENCH.md

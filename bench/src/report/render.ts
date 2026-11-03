@@ -1,6 +1,7 @@
 // The generated block of docs/BENCH.md (AIR-220). AIR-223 fills the body; the generator is the only writer of what lies between the markers.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { formatBaseUnits, toBaseUnits } from '@airlock/runtime/money';
+import type { Case } from '../runner/cases.ts';
 import type { ResultsFile, RunRecord } from '../runner/record.ts';
 import { renderExtra, visibleNotRun } from './extra.ts';
 import { DRAFT_LINE, ORDER, benchTables, configRuns, tableLines } from './tables.ts';
@@ -21,22 +22,22 @@ const sumNano = (runs: readonly RunRecord[]): bigint => runs.reduce((s, r) => s 
 const sum = (runs: readonly RunRecord[], f: (r: RunRecord) => number): number => runs.reduce((s, r) => s + f(r), 0);
 
 /** The body of docs/BENCH.md between the markers: a pure function of the results file (no date, no path, no commit). */
-export function renderBlock(results: ResultsFile, baselines: readonly RunRecord[] = []): string {
-  return renderBetween(results, baselines, BEGIN_MARKER, END_MARKER);
+export function renderBlock(results: ResultsFile, baselines: readonly RunRecord[] = [], cases: readonly Case[] | null = null): string {
+  return renderBetween(results, baselines, BEGIN_MARKER, END_MARKER, cases);
 }
 
 export const suiteBegin = (name: string): string => `<!-- BEGIN SUITE ${name} -->`;
 export const suiteEnd = (name: string): string => `<!-- END SUITE ${name} -->`;
 
 /** The same body between the markers of a named suite (AIR-229): never the main block's markers, which other checks read. */
-export function renderSuiteBlock(results: ResultsFile, name: string, baselines: readonly RunRecord[] = []): string {
-  return renderBetween(results, baselines, suiteBegin(name), suiteEnd(name));
+export function renderSuiteBlock(results: ResultsFile, name: string, baselines: readonly RunRecord[] = [], cases: readonly Case[] | null = null): string {
+  return renderBetween(results, baselines, suiteBegin(name), suiteEnd(name), cases);
 }
 
-function renderBetween(results: ResultsFile, baselines: readonly RunRecord[], begin: string, end: string): string {
+function renderBetween(results: ResultsFile, baselines: readonly RunRecord[], begin: string, end: string, cases: readonly Case[] | null): string {
   const { meta } = results;
   const { stored, v0, all, feasible } = configRuns(results, baselines);
-  const t = benchTables(results, baselines, null);
+  const t = benchTables(results, baselines, null, cases);
 
   const attackCases = [...new Set(all.filter((r) => r.kind === 'attack').map((r) => r.case))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const infeasible = feasible === undefined ? [] : attackCases.filter((c) => !feasible.includes(c));
@@ -63,7 +64,7 @@ function renderBetween(results: ResultsFile, baselines: readonly RunRecord[], be
     out.push('', `### ${tb.title}`, ...tableLines(tb));
     if (tb.note !== null) out.push(tb.note);
   };
-  for (const tb of [t.attack, t.benign, ...t.completion, t.outcomes, t.owner]) heading(tb);
+  for (const tb of [t.attack, ...(t.attackFeasible === null ? [] : [t.attackFeasible]), ...(t.breakdown === null ? [] : [t.breakdown]), t.benign, ...t.completion, t.outcomes, t.owner]) heading(tb);
 
   out.push('', '### Infeasible attack cases');
   if (feasible === undefined) out.push('n/a (no V0 runs)');

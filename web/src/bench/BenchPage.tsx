@@ -47,7 +47,7 @@ function CompareChart({ rows, residualText }: { rows: CompareRow[]; residualText
       <h2 id="bc-title" className="bench-h2">Seven designs, same attacks, same tasks</h2>
       <div className="bc-head" aria-hidden="true">
         <span />
-        <span className="bc-col">Attacks that moved money<em>lower is better</em></span>
+        <span className="bc-col">Attacks that moved money, all attack runs<em>lower is better</em></span>
         <span className="bc-col">Task done by itself<em>higher is better</em></span>
         <span className="bc-col">Task done after one owner tap<em>hollow marker</em></span>
       </div>
@@ -62,7 +62,7 @@ function CompareChart({ rows, residualText }: { rows: CompareRow[]; residualText
                 <span className="bc-config">{r.config}</span>
                 {r.note === null ? null : <span className="bc-sub">{r.note}</span>}
               </p>
-              <div className="bc-cell" data-label="Attacks that moved money">
+              <div className="bc-cell" data-label="Attacks that moved money, all attack runs">
                 <span className="bc-text">{r.attack.text}</span>
                 <DotWhisker row={r.attack.row} kind="attack" label={r.attack.text} />
               </div>
@@ -114,6 +114,12 @@ export function BenchView({ data }: { data: BenchData | null }) {
         <h2 id="bench-owner-title" className="bench-h2">{data.owner.title}</h2>
         <BenchTable table={data.owner} testId="bench-owner" />
       </section>
+      {data.breakdown === undefined || data.breakdown === null ? null : (
+        <section className="bench-block" aria-labelledby="bench-breakdown-title" data-testid="bench-breakdown-block">
+          <h2 id="bench-breakdown-title" className="bench-h2">{data.breakdown.title}</h2>
+          <BenchTable table={data.breakdown} testId="bench-breakdown" />
+        </section>
+      )}
       {data.gaps === null ? null : (
         <section className="bench-block" aria-labelledby="bench-gaps-title" data-testid="bench-gaps-block">
           <h2 id="bench-gaps-title" className="bench-h2">{data.gaps.title}</h2>
@@ -122,6 +128,7 @@ export function BenchView({ data }: { data: BenchData | null }) {
       )}
       {[
         { t: data.attack, id: 'bench-attack' },
+        ...(data.attackFeasible === undefined || data.attackFeasible === null ? [] : [{ t: data.attackFeasible, id: 'bench-attack-feasible' }]),
         { t: data.benign, id: 'bench-benign' },
         { t: data.outcomes, id: 'bench-outcomes' },
       ].map(({ t, id }) => (

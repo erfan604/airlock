@@ -84,7 +84,17 @@ const BLOCK_DIGEST = '1d3883c41a033c4cc0393b98d3255488d301d442b04d1e9e53fff51caf
 // AIR-308 added tables between the benign table and the infeasible list. The pin is kept as it was: the block with exactly those added
 // tables cut out must still hash to the old digest, so nothing that existed before changed.
 function withoutAir308Tables(block: string): string {
-  const lines = block.split('\n');
+  let lines = block.split('\n');
+  // the headline change: the all-runs attack table is cut out and the filtered one is the old "Attack groups" table again, without its note
+  const first = lines.findIndex((l) => l === '### Attack groups, all attack runs');
+  const second = lines.findIndex((l) => l.startsWith('### Attack groups, on the '));
+  assert.ok(first > 0 && second > first, 'the all-runs attack table is in the block');
+  lines = [...lines.slice(0, first - 1), ...lines.slice(second - 1)];
+  const heading = lines.findIndex((l) => l.startsWith('### Attack groups, on the '));
+  lines[heading] = '### Attack groups';
+  const note = lines.findIndex((l, i) => i > heading && l.startsWith('The same rows counted only over'));
+  assert.ok(note > heading);
+  lines.splice(note, 1);
   const from = lines.findIndex((l) => l.startsWith('### Benign tasks, completed by itself'));
   const to = lines.findIndex((l) => l === '### Infeasible attack cases');
   assert.ok(from > 0 && to > from, 'the AIR-308 tables are in the block');

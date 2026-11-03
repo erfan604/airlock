@@ -10,6 +10,7 @@ export const PRICES: Readonly<Record<string, { in: string; out: string }>> = {
   'Qwen/Qwen3.8-27B': { in: '0.04', out: '1.35' },
   'z-ai/glm-5.3-flash': { in: '0.08', out: '0.5' },
   'x-ai/grok-4.7': { in: '2', out: '6' },
+  'openai/gpt-6.1-sol': { in: '2', out: '10' },
 };
 
 const MILLION = 1_000_000n;

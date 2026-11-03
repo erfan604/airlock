@@ -9,11 +9,11 @@ CAP S01b 0:05-0:10 [SRC:S1] May 2026 report; no transaction hash was published
 SHOT S02 0:10-0:25 mode BROWSER-SOURCE
 RUN open http://localhost:4173/bench
 SCREEN S02a "Seven designs, same attacks, same tasks"
-SCREEN S02b "Attacks that moved money"
-CAP S02a 0:10-0:14.5 [BENCH:V0/ALL] Unprotected agent: attacks win in 69 of 90 runs
-CAP S02b 0:14.5-0:17.5 [BENCH:CAPS/ALL] Caps guard rebuilt: 67 of 90
-CAP S02c 0:17.5-0:20.5 [BENCH:BLOCKLIST/ALL] Blocklist rebuilt: 68 of 90
-CAP S02d 0:20.5-0:25 [BENCH:A1/ALL] Strict mode A1: attacks win in 0 of 90 runs
+SCREEN S02b "Attacks that moved money, all attack runs"
+CAP S02a 0:10-0:14.5 [BENCH:V0/ALL] Unprotected agent: attacks win in 69 of 250 runs
+CAP S02b 0:14.5-0:17.5 [BENCH:CAPS/ALL] Caps guard rebuilt: 67 of 250
+CAP S02c 0:17.5-0:20.5 [BENCH:BLOCKLIST/ALL] Blocklist rebuilt: 68 of 250
+CAP S02d 0:20.5-0:25 [BENCH:A1/ALL] Strict mode A1: attacks win in 0 of 250 runs
 
 SHOT S03 0:25-0:45 mode REPLAY
 RUN pnpm demo:live --dry-run

@@ -164,8 +164,8 @@ export async function replay(o: ReplayOptions): Promise<number> {
   }
   if (diffs > 0) return 1;
   if (o.doc !== null) {
-    if (o.block === undefined) replace(o.doc, renderBlock(results, deriveBaselines(results.runs, o.cases)));
-    else replaceSuite(o.doc, o.block, renderSuiteBlock(results, o.block));
+    if (o.block === undefined) replace(o.doc, renderBlock(results, deriveBaselines(results.runs, o.cases), o.cases));
+    else replaceSuite(o.doc, o.block, renderSuiteBlock(results, o.block, [], o.cases));
   }
   o.out(`REPLAY OK ${count} runs`);
   return 0;

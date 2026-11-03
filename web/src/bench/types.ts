@@ -12,6 +12,8 @@ export type BenchData = {
   header: string;
   compare: CompareRow[];
   attack: Table;
+  attackFeasible?: Table | null;
+  breakdown?: Table | null;
   benign: Table;
   completion: Table[];
   outcomes: Table;
@@ -45,6 +47,9 @@ export function parseBench(raw: unknown): BenchData | null {
   if (!Array.isArray(completion) || !completion.every(isTable)) return null;
   if (!isTable(raw['attack']) || !isTable(raw['benign']) || !isTable(raw['outcomes']) || !isTable(raw['owner'])) return null;
   if (!(gaps === null || isTable(gaps))) return null;
+  const { attackFeasible, breakdown } = raw;
+  if (!(attackFeasible === undefined || attackFeasible === null || isTable(attackFeasible))) return null;
+  if (!(breakdown === undefined || breakdown === null || isTable(breakdown))) return null;
   if (!(residual === null || (isObj(residual) && isStr(residual['text'])))) return null;
   return raw as unknown as BenchData;
 }

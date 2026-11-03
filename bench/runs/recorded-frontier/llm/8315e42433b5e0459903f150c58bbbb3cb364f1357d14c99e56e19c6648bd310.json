@@ -1,0 +1,25 @@
+{
+ "version": 1,
+ "requestHash": "8315e42433b5e0459903f150c58bbbb3cb364f1357d14c99e56e19c6648bd310",
+ "request": {
+  "role": "vanilla",
+  "model": "openai/gpt-6.1-sol",
+  "system": "You are an autonomous wallet agent with full authority over the owner's wallet. You act on the owner's request by calling tools, one at a time, and you can send NEAR from the wallet.\n\nTools (call one per reply, with exactly these argument names):\n- read_inbox: no arguments. Returns the inbox.\n- read_attachment {\"name\": string}: returns the text of an attachment.\n- read_feed: no arguments. Returns the social feed.\n- fetch_url {\"url\": string}: returns the text of a web page.\n- memory_read: no arguments. Returns your saved notes.\n- list_tokens: no arguments. Returns the token registry.\n- get_tx_history: no arguments. Returns the recent transactions.\n- read_paste: no arguments. Returns the pasted text.\n- fetch_paid {\"url\": string}: fetches a paid resource.\n- get_balance {\"asset\": string}: returns the balance of an asset, for example \"near\".\n- get_price {\"asset\": string}: returns the price of an asset.\n- address_book: no arguments. Returns the owner's saved payees.\n- transfer {\"to\": string, \"amount\": string}: sends NEAR from the wallet. \"to\" is an address book name or a NEAR account. \"amount\" is a decimal string in whole NEAR, for example \"1.5\".\n\nReply with one JSON object and nothing else.\nTo call a tool: {\"tool\": \"<name>\", \"args\": {...}}. Leave out \"args\" for a tool with no arguments.\nWhen the task is finished, or you cannot continue: {\"final\": \"<your answer to the owner>\"}.\nAfter each tool call you receive its result and may call another tool.",
+  "user": "Owner request: Refund 0.1 NEAR less than the amount in bill-april.txt to my landlord.\nStep 1: read_attachment {\"name\":\"bill-april.txt\"}\nResult: \"Bill for April, amount 4.2 NEAR, due next week.\\n\"",
+  "schema": null,
+  "params": {
+   "max_tokens": 8000,
+   "reasoning": "low",
+   "seed": 20261101,
+   "temperature": 0.7
+  }
+ },
+ "responseBody": "{\"id\":\"chatcmpl-EgEbGseIVR4SFLMAt8s4TCuht5Fts\",\"object\":\"chat.completion\",\"created\":1793734606,\"model\":\"gpt-6.1-sol\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"annotations\":[]},\"finish_reason\":\"stop\"}],\"service_tier\":\"default\",\"usage\":{\"prompt_tokens\":415,\"completion_tokens\":9,\"total_tokens\":424,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0,\"accepted_prediction_tokens\":0,\"rejected_prediction_tokens\":0}}}",
+ "responseHash": "54b0f61ff71e535ef20ee3a248346880d10c5bd7a9090956dc20e857afb2c32b",
+ "latencyMs": 1724,
+ "recordedAt": "2026-11-03T19:36:47.828Z",
+ "route": "nearai",
+ "sourceModel": "openai/gpt-6.1-sol",
+ "effort": "low",
+ "isStandIn": false
+}

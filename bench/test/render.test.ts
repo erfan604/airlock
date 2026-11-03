@@ -75,7 +75,10 @@ test('12 table and group order is fixed whatever the order of the input records'
   assert.equal(backward, forward);
   const attackRows = lines(forward).filter((x) => x.startsWith('| ') && /^\| (V0|V1|V3|A2)/.test(x) && cells(x)[1] !== undefined && /^(A|B|C|S|X|P|ALL)$/.test(cells(x)[1] ?? ''));
   const order = attackRows.map((x) => `${cells(x)[0]?.split(' ')[0]} ${cells(x)[1]}`);
-  assert.deepEqual(order, ['V0 A', 'V0 ALL', 'V1 A', 'V1 ALL', 'V3 A', 'V3 ALL', 'A2 A', 'A2 B', 'A2 ALL']);
+  // the table over all attack runs comes first, then the same rows over the cases that work against V0
+  const one = ['V0 A', 'V0 ALL', 'V1 A', 'V1 ALL', 'V3 A', 'V3 ALL', 'A2 A', 'A2 B', 'A2 ALL'];
+  assert.deepEqual(order, [...one, ...one]);
+  assert.ok(forward.indexOf('### Attack groups, all attack runs') < forward.indexOf('### Attack groups, on the '));
   assert.ok(attackRows.some((x) => cells(x)[0] === 'V3 (derived from V0)'));
 });
 

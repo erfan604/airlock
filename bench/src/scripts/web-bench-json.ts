@@ -44,7 +44,7 @@ function between(text: string, begin: string, end: string): string[] {
 
 /** Null when the markdown holds every row of the tables, else the first row that it does not. */
 export function checkAgainst(t: BenchTables, markdown: string): string | null {
-  const main = [t.attack, t.benign, ...t.completion, t.outcomes, t.owner].flatMap(rowLines);
+  const main = [t.attack, ...(t.attackFeasible === null ? [] : [t.attackFeasible]), ...(t.breakdown === null ? [] : [t.breakdown]), t.benign, ...t.completion, t.outcomes, t.owner].flatMap(rowLines);
   const miss = firstMissing(main, between(markdown, BEGIN_MARKER, END_MARKER));
   if (miss !== null) return miss;
   return t.gaps === null ? null : firstMissing(rowLines(t.gaps), between(markdown, GAP_BEGIN, GAP_END));
@@ -54,14 +54,15 @@ function build(values: { results?: string; gaps?: string; fixture?: boolean }): 
   // the helper's case_meta types the group as a string; its groups are the runner's
   if (values.fixture === true) return benchTables(resultsOf(fixtureRuns()) as unknown as ResultsFile);
   const results = readResults(values.results ?? 'results/latest.json');
-  const baselines = deriveBaselines(results.runs, loadCases(resolve('cases')));
+  const cases = loadCases(resolve('cases'));
+  const baselines = deriveBaselines(results.runs, cases);
   let gaps: Table | null = null;
   if (values.gaps !== 'none') {
     const extra = readResults(values.gaps ?? 'results/baselines-extra.json');
     const stored = extra.runs as RunRecord[];
     gaps = gapTable(stored, deriveBaselines(stored, loadCases(resolve('cases'))));
   }
-  return benchTables(results, baselines, gaps);
+  return benchTables(results, baselines, gaps, cases);
 }
 
 function main(): number {

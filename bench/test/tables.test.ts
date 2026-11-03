@@ -60,7 +60,7 @@ test('the comparison rows carry the cell text of the ALL rows of the tables', ()
 
 test('checkAgainst finds every row in the block and names the first row it cannot find', () => {
   const t = benchTables(results());
-  const md = ['<!-- BEGIN GENERATED -->', ...[t.attack, t.benign, ...t.completion, t.outcomes, t.owner].flatMap((x) => tableLines(x)), '<!-- END GENERATED -->'].join('\n');
+  const md = ['<!-- BEGIN GENERATED -->', ...[t.attack, ...(t.attackFeasible === null ? [] : [t.attackFeasible]), t.benign, ...t.completion, t.outcomes, t.owner].flatMap((x) => tableLines(x)), '<!-- END GENERATED -->'].join('\n');
   assert.equal(checkAgainst(t, md), null);
   const bad = md.replace('(', '[');
   assert.ok(checkAgainst(t, bad) !== null);

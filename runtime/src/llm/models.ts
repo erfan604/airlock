@@ -5,7 +5,14 @@ import type { Role } from './types.ts';
 
 export const TEE_MODELS = ['moonshotai/kimi-k3', 'Qwen/Qwen3.6-35B-A3B-FP8', 'Qwen/Qwen3.8-27B', 'z-ai/glm-5.3-flash'] as const;
 
-export const VANILLA_MODELS = [...TEE_MODELS, 'x-ai/grok-4.7'] as const;
+/**
+ * `openai/gpt-6.1-sol` is a frontier model that is not a TEE model (it is routed outside the enclave): it is allowed for the
+ * vanilla role only, to measure how the unprotected agent V0 behaves on a stronger model (bench/results/frontier-v0.json).
+ */
+export const VANILLA_MODELS = [...TEE_MODELS, 'x-ai/grok-4.7', 'openai/gpt-6.1-sol'] as const;
+
+/** Models whose route rejects a temperature other than its default (HTTP 400 for 0.7): the request leaves `temperature` out. */
+export const FIXED_TEMPERATURE: readonly string[] = ['openai/gpt-6.1-sol'];
 
 /**
  * The routes whose output may be called TEE output: the one attested route this client calls. Typed wide on purpose: with

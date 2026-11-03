@@ -5,7 +5,7 @@ import { readRecording, recordingsDir, writeRecording } from './cache.ts';
 import { recordCall } from './collect.ts';
 import { BadMode, LlmHttpError, MissingKey, NoRecording } from './errors.ts';
 import { DEFAULT_MAX_TOKENS, requestHashOf } from './hash.ts';
-import { assertModelAllowed, reasoningFields } from './models.ts';
+import { FIXED_TEMPERATURE, assertModelAllowed, reasoningFields } from './models.ts';
 import { getLlmOverride } from './override.ts';
 import { parseChat } from './parse.ts';
 import type { Complete, LlmOpts, LlmResult } from './types.ts';
@@ -51,7 +51,7 @@ function wireBody(o: LlmOpts): Record<string, unknown> {
     ],
     max_tokens: o.params?.max_tokens ?? DEFAULT_MAX_TOKENS,
   };
-  if (o.params?.temperature !== undefined) body.temperature = o.params.temperature;
+  if (o.params?.temperature !== undefined && !FIXED_TEMPERATURE.includes(o.model)) body.temperature = o.params.temperature;
   if (o.params?.seed !== undefined) body.seed = o.params.seed;
   if (o.jsonSchema !== undefined) {
     body.response_format = { type: 'json_schema', json_schema: { name: SCHEMA_NAMES[o.role], strict: true, schema: o.jsonSchema } };

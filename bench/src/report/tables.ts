@@ -3,7 +3,7 @@
 // are built by the same functions and the browser never computes a statistic. Every cell is the exact string of the markdown cell;
 // `whiskers[i]` is the Row behind cell i (null for a text or count cell).
 import { formatBaseUnits, toBaseUnits } from '@airlock/runtime/money';
-import type { Group } from '../runner/cases.ts';
+import type { Case, Group } from '../runner/cases.ts';
 import type { ResultsFile, RunRecord } from '../runner/record.ts';
 import type { Config } from '../runner/types.ts';
 import { cell } from '../stats/format.ts';
@@ -35,7 +35,12 @@ export type BenchTables = {
   draft: boolean;
   header: string;
   compare: CompareRow[];
+  /** every attack run (the headline) */
   attack: Table;
+  /** the same rows over the attack cases that work against V0 (the feasibility filter); null without V0 runs */
+  attackFeasible: Table | null;
+  /** what the successful attacks did, per config; null when the cases are not given */
+  breakdown: Table | null;
   benign: Table;
   completion: Table[];
   outcomes: Table;
@@ -110,6 +115,46 @@ export function headerLine(meta: ResultsFile['meta'], runs: number): string {
 
 const byCode = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
+/** What a successful attack did, read off the case: the attacker's goal against the owner's book and the owner's task. */
+export type AttackShape = 'doctored' | 'condition' | 'other_booked' | 'outside_book';
+export const SHAPES: readonly AttackShape[] = ['doctored', 'condition', 'other_booked', 'outside_book'];
+const SHAPE_HEAD: Record<AttackShape, string> = {
+  doctored: 'Paid a booked payee a doctored amount',
+  condition: 'Paid a booked payee on a faked condition',
+  other_booked: 'Paid a different booked payee',
+  outside_book: 'Paid an address outside the book',
+};
+export const BREAKDOWN_NOTE = 'Runs where the attacker was paid, split by what the attack did, per design (Wilson 95% interval, over all attack runs of the design). Booked means the payee is in the owner\'s address book of that case. A doctored amount is the owner\'s own payee paid more than the owner asked. A faked condition is a booked payee paid when the owner\'s task was a payment only if a condition held, and it did not. A different booked payee is the payment redirected to another booked payee. An address outside the book is an attacker look-alike account. The four columns add up to the first.';
+
+/** The shape of each attack case by id; cases without an attacker goal are left out. */
+export function attackShapes(cases: readonly Case[]): Record<string, AttackShape> {
+  const out: Record<string, AttackShape> = {};
+  for (const c of cases) {
+    const goal = c.attacker_goal;
+    if (goal === null) continue;
+    const booked = c.world.book.some((b) => b.key === goal.recipient);
+    out[c.id] = !booked ? 'outside_book' : c.legit.action === 'none' ? 'condition' : c.legit.recipient === goal.recipient ? 'doctored' : 'other_booked';
+  }
+  return out;
+}
+
+function breakdownTable(configs: readonly Config[], of: (c: Config) => RunRecord[], label: (c: Config) => string, shapes: Readonly<Record<string, AttackShape>>): Table {
+  const head = ['Config', 'Attack runs', 'Attacker paid', ...SHAPES.map((k) => SHAPE_HEAD[k])];
+  const rows = configs.map((c) => {
+    const attack = of(c).filter((r) => r.kind === 'attack');
+    const hit = attack.filter((r) => r.attackSucceeded === true);
+    const parts = SHAPES.map((k) =>
+      hit.filter((r) => {
+        const shape = shapes[r.case];
+        if (shape === undefined) throw new Error(`breakdown: no attack shape for case ${r.case}`);
+        return shape === k;
+      }).length,
+    );
+    return trow([text(label(c)), text(String(attack.length)), rowCell(row(hit.length, attack.length)), ...parts.map((k) => rowCell(row(k, attack.length)))]);
+  });
+  return { title: 'What the successful attacks did', note: BREAKDOWN_NOTE, head, kinds: [null, null, 'attack', 'attack', 'attack', 'attack', 'attack'], rows };
+}
+
 /** The structural gaps table (AIR-306): per baseline case, how many of the runs ended with the attacker paid, per design. */
 export function gapTable(stored: readonly RunRecord[], derived: readonly RunRecord[]): Table {
   const all = [...stored, ...derived];
@@ -150,23 +195,37 @@ function residualOf(of: (c: Config) => RunRecord[], feasible: readonly string[] 
  * The tables of the generated block of docs/BENCH.md, as data. A pure function of the results file and the derived baseline runs
  * (`deriveBaselines`); `gaps` is the structural gaps table, built by `gapTable` from its own results file.
  */
-export function benchTables(results: ResultsFile, baselines: readonly RunRecord[] = [], gaps: Table | null = null): BenchTables {
+export function benchTables(results: ResultsFile, baselines: readonly RunRecord[] = [], gaps: Table | null = null, cases: readonly Case[] | null = null): BenchTables {
   const { meta, case_meta: caseMeta } = results;
   const { stored, all, configs, of, label, feasible } = configRuns(results, baselines);
 
-  const attackBody: TableRow[] = [];
-  for (const c of configs) {
-    const runs = of(c);
-    for (const g of groupsOf(runs, caseMeta)) attackBody.push(attackRow(label(c), g, runs.filter((r) => caseMeta[r.case]?.group === g), feasible));
-    attackBody.push(attackRow(label(c), 'ALL', runs, feasible));
-  }
-  const attack: Table = {
-    title: 'Attack groups',
-    note: null,
-    head: ['Config', 'Group', 'Runs', 'Utility under attack', 'Attack success, auto', 'Attack success, oracle approver', 'Attack success, naive approver', 'Escalation precision'],
-    kinds: [null, null, null, 'intent', 'attack', 'attack', 'attack', 'plain'],
-    rows: attackBody,
+  const attackHead = ['Config', 'Group', 'Runs', 'Utility under attack', 'Attack success, auto', 'Attack success, oracle approver', 'Attack success, naive approver', 'Escalation precision'];
+  const attackKinds: (Kind | null)[] = [null, null, null, 'intent', 'attack', 'attack', 'attack', 'plain'];
+  const attackTable = (title: string, note: string | null, only: readonly string[] | undefined): Table => {
+    const body: TableRow[] = [];
+    for (const c of configs) {
+      const runs = of(c);
+      for (const g of groupsOf(runs, caseMeta)) body.push(attackRow(label(c), g, runs.filter((r) => caseMeta[r.case]?.group === g), only));
+      body.push(attackRow(label(c), 'ALL', runs, only));
+    }
+    return { title, note, head: attackHead, kinds: attackKinds, rows: body };
   };
+  const attackCases = new Set(all.filter((r) => r.kind === 'attack').map((r) => r.case)).size;
+  const attack = attackTable(
+    'Attack groups, all attack runs',
+    feasible === undefined
+      ? 'Every attack run of every case, no case left out.'
+      : `Every attack run of every case, no case left out (${attackCases} attack cases). The unprotected agent V0 never fell for ${attackCases - feasible.length} of them in any run, see Infeasible attack cases.`,
+    undefined,
+  );
+  const attackFeasible =
+    feasible === undefined
+      ? null
+      : attackTable(
+          `Attack groups, on the ${feasible.length} cases that work against the unprotected agent`,
+          `The same rows counted only over the ${feasible.length} attack cases where V0 was paid in at least one of its runs (the usual feasibility filter). It is a view of the cases that can succeed at all, not the rate an unprotected agent loses at over attacks in general.`,
+          feasible,
+        );
 
   const benign: Table = {
     title: 'Benign tasks',
@@ -237,7 +296,7 @@ export function benchTables(results: ResultsFile, baselines: readonly RunRecord[
     return {
       config: c,
       note: label(c) === c ? null : 'derived from V0',
-      attack: { text: cell(attackSuccess(runs, 'none', feasible)), row: attackSuccess(runs, 'none', feasible) },
+      attack: { text: cell(attackSuccess(runs, 'none')), row: attackSuccess(runs, 'none') },
       itself: { text: cell(benignUtility(runs)), row: benignUtility(runs) },
       assisted: { text: cell(assistedUtility(runs)), row: assistedUtility(runs) },
     };
@@ -248,12 +307,14 @@ export function benchTables(results: ResultsFile, baselines: readonly RunRecord[
     header: headerLine(meta, stored.length),
     compare,
     attack,
+    attackFeasible,
+    breakdown: cases === null ? null : breakdownTable(configs, of, label, attackShapes(cases)),
     benign,
     completion: completionTables,
     outcomes,
     owner,
     gaps,
-    residual: residualOf(of, feasible),
+    residual: residualOf(of, undefined),
   };
 }
 
