@@ -611,7 +611,7 @@ async fn x402_retry_resigns_the_identical_authorization() {
     assert_eq!(sent2["payload_hex"], digest_of(&e).as_str());
 }
 
-/// A retry after the stored `valid_before` signs nothing: the request fails `AuthorizationExpired`, the charges are released and the
+/// A retry after the stored `valid_before` signs nothing (and refunds only after a further 300 s skew margin): the request fails `AuthorizationExpired`, the charges are released and the
 /// signer is not called again.
 #[tokio::test]
 async fn x402_retry_after_expiry_refuses_and_signs_nothing() {
@@ -637,6 +637,23 @@ async fn x402_retry_after_expiry_refuses_and_signs_nothing() {
         "the window has passed"
     );
     w.set_mpc_mode("ok").await;
+    // between `valid_before` and the skew margin: no signing and no refund, the retry reverts and the request stays Retryable
+    let between = w.submit(vec![clean(&w, &task, 0)], &task).await;
+    assert!(
+        failure_text(&between).contains("refund after skew margin"),
+        "{:?}",
+        failure_text(&between)
+    );
+    assert_eq!(state_of(&w, &id).await, "Retryable");
+    assert_eq!(mock_calls(&w).await, 1, "nothing new was signed");
+    w.sandbox
+        .fast_forward(1200)
+        .await
+        .expect("the sandbox fast-forwards");
+    assert!(
+        final_block_ms(&w) / 1000 >= valid_before + 300,
+        "the skew margin has passed"
+    );
     let second = submit_ok(&w, vec![clean(&w, &task, 0)], &task).await;
     assert!(events(&second, "x402_signed").is_empty());
     let failed = one_event(&second, "failed");

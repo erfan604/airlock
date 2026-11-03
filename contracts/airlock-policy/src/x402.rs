@@ -14,6 +14,9 @@ use crate::*;
 /// The authorization is valid for 300 s from the block time of the signing transaction: the facilitator needs at least now + 6 s and
 /// the MPC answers within 200 blocks (about 116 s at the measured 0.58 s per block).
 pub const X402_WINDOW_S: u64 = 300;
+/// A retry refunds an expired authorization only when block time is at or past `valid_before` plus this margin: NEAR time ahead of Base
+/// time must not release the charges while the old authorization is still redeemable.
+pub const X402_REFUND_SKEW_S: u64 = 300;
 
 /// keccak256 of `TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)`.
 pub const TRANSFER_WITH_AUTHORIZATION_TYPEHASH: [u8; 32] = [
@@ -168,7 +171,7 @@ impl Contract {
     /// A retry (AIR-105, Retryable once) rebuilds the digest from the stored attempt, checks it equals the stored one and signs it again:
     /// the first signing may have completed in the signer even though the callback saw a failure, so a fresh nonce could leave the payee
     /// two valid authorizations. When block time is at or past the stored `valid_before` the old authorization is expired, so the retry
-    /// signs nothing: the request fails with `AuthorizationExpired` through `fail_request` (the refunding path, as `InsufficientBalance`
+    /// signs nothing: once block time is at or past `valid_before + X402_REFUND_SKEW_S` the request fails with `AuthorizationExpired` through `fail_request` (the refunding path, as `InsufficientBalance`
     /// of the NEAR lane; a second failure is final) and `None` comes back. A panic reverts the whole `submit_batch` (charges included) or
     /// leaves the escalation Pending (`approve`). Plain `impl`: never exported.
     pub fn start_x402(&mut self, id: &str) -> Option<Promise> {
@@ -195,10 +198,17 @@ impl Contract {
         };
         let attempt = match self.x402_attempts.get(id).cloned() {
             Some(stored) => {
-                if env::block_timestamp_ms() / 1000 >= stored.valid_before {
+                let now_s = env::block_timestamp_ms() / 1000;
+                if now_s >= stored.valid_before.saturating_add(X402_REFUND_SKEW_S) {
                     self.fail_request(id, FailReason::AuthorizationExpired);
                     return None;
                 }
+                // between `valid_before` and the skew margin the old authorization may still be redeemable on Base (NEAR clock ahead
+                // of Base): neither sign again nor refund
+                require!(
+                    now_s < stored.valid_before,
+                    "authorization expired, refund after skew margin"
+                );
                 require!(
                     stored.valid_after == 0
                         && digest_of(&stored.nonce, stored.valid_before) == stored.digest,
