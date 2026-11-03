@@ -1,0 +1,56 @@
+{
+  "network": "testnet",
+  "attestation_expiration_time_ms": "1209600000",
+  "assets": {
+    "near": {
+      "symbol": "NEAR",
+      "decimals": 24,
+      "hard_cap": "5000000000000000000000000",
+      "daily_cap": "10000000000000000000000000",
+      "max_fee_per_gas": "0",
+      "max_gas": "0",
+      "quick_task_cap": "5000000000000000000000000",
+      "path": null
+    }
+  },
+  "book": [
+    {
+      "name": "accountant",
+      "key": "near:{accountant}",
+      "cap": "5000000000000000000000000",
+      "daily_untrusted_budget": "10000000000000000000000000",
+      "daily_limit": "10000000000000000000000000",
+      "label": "Accountant"
+    },
+    {
+      "name": "landlord",
+      "key": "near:{landlord}",
+      "cap": null,
+      "daily_untrusted_budget": "0",
+      "daily_limit": "5000000000000000000000000",
+      "label": "Landlord"
+    },
+    {
+      "name": "sam",
+      "key": "near:{sam}",
+      "cap": null,
+      "daily_untrusted_budget": "0",
+      "daily_limit": "2000000000000000000000000",
+      "label": "Sam"
+    }
+  ],
+  "flags": {
+    "max_pending_per_agent": 3,
+    "pending_ttl_ms": "3600000",
+    "hourly_escalation_budget": 6,
+    "lock_consecutive_rejects": 3,
+    "lock_rejects_per_day": 20,
+    "max_task_ttl_ms": "3600000",
+    "max_task_actions": 20
+  },
+  "task_public_key": null,
+  "nonce": {
+    "path": "airlock-challenge-1"
+  },
+  "_note": "AIR-301: the Steal this agent challenge policy (challenge.erfan-airlock.testnet). Same wasm and the same shape as fixtures/policy.json with a small float: NEAR only, 5 NEAR per request and 10 NEAR per day, the three demo payees. scripts/challenge-setup.sh feeds it to scripts/bootstrap-policy.sh."
+}
