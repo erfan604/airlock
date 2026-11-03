@@ -46,6 +46,8 @@ export interface ChallengeConfig {
   proxyHeader: string | null;
   /** the addresses or IPv4 blocks of the proxies whose header is believed */
   trustedProxies: string[];
+  /** bits of an IPv6 address that make one visitor (48 to 64) */
+  v6Prefix: number;
   live: LiveConfig | null;
   key: PublishedKey | null;
 }
@@ -138,6 +140,7 @@ export function parseConfig(env: NodeJS.ProcessEnv, repoRoot: string): Challenge
   // a direct listener (CHALLENGE_DIRECT=1: the socket address is the visitor)
   if (proxyHeader !== null && trustedProxies.length === 0) bad.push('CHALLENGE_TRUSTED_PROXIES');
   if (mode === 'live' && proxyHeader === null && clean(env['CHALLENGE_DIRECT']) !== '1') bad.push('CHALLENGE_DIRECT');
+  const v6Prefix = count(env, 'CHALLENGE_IPV6_PREFIX', 64, bad, 48, 64);
   if (bad.length > 0) throw new ConfigError([...new Set(bad)]);
-  return { mode, port, host, dataDir: clean(env['CHALLENGE_DATA_DIR']) ?? join(repoRoot, 'challenge', 'data'), limits, proxyHeader, trustedProxies, live, key };
+  return { mode, port, host, dataDir: clean(env['CHALLENGE_DATA_DIR']) ?? join(repoRoot, 'challenge', 'data'), limits, proxyHeader, trustedProxies, v6Prefix, live, key };
 }

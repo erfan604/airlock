@@ -63,3 +63,9 @@ test('live mode needs a trusted address source: a direct listener or a named pro
   assert.throws(() => parseConfig({ ...live, CHALLENGE_PROXY_HEADER: 'x-forwarded-for', CHALLENGE_TRUSTED_PROXIES: 'proxy.example' }, '/repo'), ConfigError);
   assert.equal(parseConfig({}, '/repo').proxyHeader, null);
 });
+
+test('the IPv6 prefix defaults to 64 and accepts 48 to 64 only', () => {
+  assert.equal(parseConfig({}, '/repo').v6Prefix, 64);
+  assert.equal(parseConfig({ CHALLENGE_IPV6_PREFIX: '56' }, '/repo').v6Prefix, 56);
+  for (const bad of ['47', '65', 'x']) assert.throws(() => parseConfig({ CHALLENGE_IPV6_PREFIX: bad }, '/repo'), ConfigError);
+});

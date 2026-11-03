@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isTrusted, normalizeIp, resolveAddress, validTrustedEntry } from '../src/address.ts';
+import { bucketOf, isTrusted, normalizeIp, resolveAddress, validTrustedEntry } from '../src/address.ts';
 import { DailySalt, visitorKey } from '../src/visitor.ts';
 
 const h = (map: Record<string, string>) => (name: string): string | undefined => map[name];
@@ -20,7 +20,7 @@ test('a header from a socket that is not a trusted proxy is ignored: spoofing bu
 test('from a trusted proxy X-Forwarded-For gives its rightmost hop, never the client supplied left side', () => {
   assert.deepEqual(resolveAddress(rules, '10.0.0.5', h({ 'x-forwarded-for': '6.6.6.6, 7.7.7.7, 198.51.100.4' })), { ok: true, address: '198.51.100.4' });
   assert.deepEqual(resolveAddress(rules, '192.168.4.4', h({ 'x-forwarded-for': '198.51.100.4' })), { ok: true, address: '198.51.100.4' });
-  assert.deepEqual(resolveAddress(rules, '10.0.0.5', h({ 'x-forwarded-for': '2001:db8::1' })), { ok: true, address: '2001:db8::1' });
+  assert.deepEqual(resolveAddress(rules, '10.0.0.5', h({ 'x-forwarded-for': '2001:db8::1' })), { ok: true, address: '2001:db8:0:0::/64' });
 });
 
 test('from a trusted proxy a missing, malformed or over long header is refused, not replaced by the socket address', () => {
@@ -68,4 +68,40 @@ test('visitor key: an HMAC under a random secret, not recomputable from the date
 
 test('the real salt source is random per process', () => {
   assert.notEqual(new DailySalt().current(), new DailySalt().current());
+});
+
+const direct = (ip: string, v6Prefix?: number) => resolveAddress({ header: null, trusted: [], ...(v6Prefix === undefined ? {} : { v6Prefix }) }, ip, h({}));
+
+test('IPv6: two addresses in one /64 share a bucket, different /64s do not', () => {
+  const a = direct('2001:db8:1:2:aaaa:bbbb:cccc:dddd');
+  const b = direct('2001:db8:1:2:1::1');
+  const c = direct('2001:db8:1:3::1');
+  assert.deepEqual(a, { ok: true, address: '2001:db8:1:2::/64' });
+  assert.deepEqual(a, b);
+  assert.notDeepEqual(a, c);
+  assert.deepEqual(direct('2001:0db8:0001:0002:0000:0000:0000:0001'), a, 'the long form is the same bucket');
+  assert.deepEqual(direct('fe80::1%eth0'), direct('fe80::2'), 'a zone id does not split a bucket');
+});
+
+test('IPv6 prefix is configurable from /48 to /64 and masks inside a hextet', () => {
+  assert.equal(bucketOf('2001:db8:1:2::1', 48), '2001:db8:1::/48');
+  assert.equal(bucketOf('2001:db8:1:2::1', 56), '2001:db8:1:0::/56');
+  assert.equal(bucketOf('2001:db8:1:ffff::1', 56), '2001:db8:1:ff00::/56');
+  assert.equal(bucketOf('2001:db8:1:2::1', 10), '2001:db8:1::/48', 'below 48 is raised to 48');
+  assert.equal(bucketOf('2001:db8:1:2::1', 128), '2001:db8:1:2::/64', 'above 64 is lowered to 64');
+  assert.deepEqual(direct('2001:db8:1:2::9', 48), direct('2001:db8:1:3::9', 48));
+  assert.notDeepEqual(direct('2001:db8:1:2::9', 64), direct('2001:db8:1:3::9', 64));
+});
+
+test('IPv4 stays whole and an IPv4-mapped IPv6 address is the same visitor as plain IPv4', () => {
+  assert.deepEqual(direct('203.0.113.9'), { ok: true, address: '203.0.113.9' });
+  assert.notDeepEqual(direct('203.0.113.9'), direct('203.0.113.10'));
+  assert.deepEqual(direct('::ffff:203.0.113.9'), direct('203.0.113.9'));
+  assert.deepEqual(direct('::FFFF:203.0.113.9'), direct('203.0.113.9'));
+});
+
+test('the bucket applies to the proxy header address too, and an embedded IPv4 form buckets without error', () => {
+  const via = resolveAddress({ header: 'x-forwarded-for', trusted: ['10.0.0.5'] }, '10.0.0.5', h({ 'x-forwarded-for': '9.9.9.9, 2001:db8:1:2:5::7' }));
+  assert.deepEqual(via, { ok: true, address: '2001:db8:1:2::/64' });
+  assert.equal(bucketOf('64:ff9b::198.51.100.4'), '64:ff9b:0:0::/64');
 });
