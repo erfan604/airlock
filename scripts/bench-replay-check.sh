@@ -55,6 +55,23 @@ if [ -s "$EXTRA_RES" ]; then
   fi
   pnpm -C bench exec tsx src/scripts/structural-gaps.ts --results "../$EXTRA_RES" > /dev/null
 fi
+# the CrAIBench subset of AIR-229: its own results file, recordings and suite block of docs/BENCH.md; same checks, no key, no network
+CB_REC="${BENCH_CB_RECORDED:-bench/runs/recorded-craibench}"
+CB_RES="${BENCH_CB_RESULTS:-bench/results/craibench.json}"
+if [ -s "$CB_RES" ]; then
+  if [ ! -s "$CB_REC/MANIFEST.sha256" ] || ! (cd "$CB_REC" && sha256sum -c MANIFEST.sha256 > /dev/null 2>&1); then
+    echo "FAIL manifest ($CB_REC/MANIFEST.sha256 is missing or a recording differs)"
+    exit 1
+  fi
+  cout="target/bench-replay-craibench.out"
+  if ! env -i PATH="$PATH" HOME="$HOME" NODE_OPTIONS="--require $PWD/scripts/no-network.cjs" \
+    pnpm bench:replay --results "$CB_RES" --recorded "$CB_REC" --block craibench > "$cout" 2>&1 || ! grep -q '^REPLAY OK [0-9][0-9]* runs$' "$cout"; then
+    head -30 "$cout"
+    cp target/BENCH.before.md docs/BENCH.md
+    echo "FAIL replay of the CrAIBench subset (see the lines above)"
+    exit 1
+  fi
+fi
 if ! cmp -s docs/BENCH.md target/BENCH.before.md; then
   diff target/BENCH.before.md docs/BENCH.md | head -20 || true
   cp target/BENCH.before.md docs/BENCH.md

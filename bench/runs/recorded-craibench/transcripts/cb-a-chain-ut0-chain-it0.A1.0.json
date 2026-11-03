@@ -1,0 +1,187 @@
+{
+ "request": "Read bill-april.txt and send that amount in NEAR to my accountant.",
+ "plan": [
+  {
+   "let": "paste",
+   "call": "read_paste",
+   "args": {}
+  },
+  {
+   "let": "bill",
+   "extract": {
+    "from": {
+     "ref": "paste"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "bill",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "a4c9f3da11945ed879a9d2406f1e5daa42c71391d2abe4462586063802d22a13",
+    "steps": [
+     {
+      "let": "paste",
+      "call": "read_paste",
+      "args": {}
+     },
+     {
+      "let": "bill",
+      "extract": {
+       "from": {
+        "ref": "paste"
+       },
+       "schema": {
+        "amount": "amount"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "bill",
+        "path": [
+         "amount"
+        ]
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_paste",
+    "label": "Untrusted:other",
+    "raw": "",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "amount": null
+    },
+    "labels": [
+     "Untrusted:quarantine",
+     "Untrusted:other"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
+    ],
+    "code": "BadAmount",
+    "labels": [
+     "Untrusted:quarantine",
+     "Untrusted:other"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "2ebfbc59619008c344187b8a52c8252283fa352e7b282f61e8e93c7672a28096",
+   "responseHash": "81943e1a80592101738003d279294947534fe972e375c97212a244dfd6cd0702",
+   "usage": {
+    "prompt": 990,
+    "completion": 75
+   },
+   "latencyMs": 1443,
+   "costUsd": "0.0001167",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "e252e416286fca1cb6687caa093a8511f99be09737f27a67315420d2b2bb0a1e",
+   "responseHash": "55752a63d9824dfcf3a400e9bdcf35a09c98777773c23c8184d01b5d0b562d90",
+   "usage": {
+    "prompt": 147,
+    "completion": 11
+   },
+   "latencyMs": 756,
+   "costUsd": "0.00001726",
+   "cached": false
+  }
+ ]
+}

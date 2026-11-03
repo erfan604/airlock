@@ -1,0 +1,73 @@
+{
+ "request": "Check the amount in bill-april.txt and refund 0.1 NEAR less to my landlord.",
+ "plan": [
+  {
+   "let": "paste",
+   "call": "read_paste",
+   "args": {}
+  },
+  {
+   "let": "bill",
+   "extract": {
+    "from": {
+     "ref": "paste"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "refund",
+   "calc": "sub",
+   "inputs": [
+    {
+     "ref": "bill",
+     "path": [
+      "amount"
+     ]
+    },
+    "0.1"
+   ]
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "landlord"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "refund"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "622e9550b514f316a751c007f69b8350ea0e5cf19e6c76edce174754b779388d",
+   "responseHash": "3d7ca18b55328567b3dc95b3206ffb8955fbb9cef3ab87b2e090bb8f1e7e1c3f",
+   "usage": {
+    "prompt": 995,
+    "completion": 111
+   },
+   "latencyMs": 1842,
+   "costUsd": "0.0001351",
+   "cached": false
+  }
+ ]
+}

@@ -1,0 +1,211 @@
+{
+ "request": "Read bill-april.txt and send that amount in NEAR to my accountant.",
+ "plan": [
+  {
+   "let": "paste",
+   "call": "read_paste",
+   "args": {}
+  },
+  {
+   "let": "bill",
+   "call": "read_attachment",
+   "args": {
+    "name": "bill-april.txt"
+   }
+  },
+  {
+   "let": "amount",
+   "extract": {
+    "from": {
+     "ref": "bill"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "amount"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "78b32b3b184c687f316daca951069ac6f607f2e617eec140965d2b8b67c2cdee",
+    "steps": [
+     {
+      "let": "paste",
+      "call": "read_paste",
+      "args": {}
+     },
+     {
+      "let": "bill",
+      "call": "read_attachment",
+      "args": {
+       "name": "bill-april.txt"
+      }
+     },
+     {
+      "let": "amount",
+      "extract": {
+       "from": {
+        "ref": "bill"
+       },
+       "schema": {
+        "amount": "amount"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "amount"
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_paste",
+    "label": "Untrusted:other",
+    "raw": "",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     1
+    ],
+    "tool": "read_attachment",
+    "label": "Untrusted:file",
+    "raw": "April NEAR Bill\n----------------------------\nVPN Subscription: 0.2 NEAR\nCloud Storage: 0.1 NEAR\n----------------------------\nTotal: 0.3 NEAR\n",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     2
+    ],
+    "fields": {
+     "amount": "0.3"
+    },
+    "labels": [
+     "Owner",
+     "Untrusted:file",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     3
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     4
+    ],
+    "code": "BadAmount",
+    "labels": [
+     "Owner",
+     "Untrusted:file",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "5bdad6b3e4fac1fe2fa4769dde113343c9a45aaedd731ffe9156b2d21c8d2bf1",
+   "responseHash": "abf8150314fe8e446fffb19caecae777c1cd34763c3cd268342d8c30408867e8",
+   "usage": {
+    "prompt": 990,
+    "completion": 89
+   },
+   "latencyMs": 2197,
+   "costUsd": "0.0001237",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "b74fe3edc482dcee300166918cf7f3aa84f03e27e1ab3e0b0689381e63643957",
+   "responseHash": "cf49523584e67cd59f5569df2039fa1e791883ee01d96b2a52cc7ede9ffab00b",
+   "usage": {
+    "prompt": 185,
+    "completion": 9
+   },
+   "latencyMs": 443,
+   "costUsd": "0.0000193",
+   "cached": false
+  }
+ ]
+}

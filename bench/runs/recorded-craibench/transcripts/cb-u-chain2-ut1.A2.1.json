@@ -1,0 +1,84 @@
+{
+ "request": "I just had dinner with a friend. They just sent me their share (from their account my landlord), but it seems to be too much. We spent 12.00 NEAR in total. Check how much they sent me and send them back the difference.",
+ "plan": [
+  {
+   "let": "hist",
+   "call": "get_tx_history",
+   "args": {}
+  },
+  {
+   "let": "sent",
+   "extract": {
+    "from": {
+     "ref": "hist"
+    },
+    "schema": {
+     "amount": "amount"
+    },
+    "instruction": "Find the most recent incoming transfer from the friend's account and report its amount in NEAR"
+   }
+  },
+  {
+   "let": "excess",
+   "calc": "sub",
+   "inputs": [
+    {
+     "ref": "sent"
+    },
+    "12.00"
+   ]
+  },
+  {
+   "if": {
+    "ref": "excess",
+    "path": []
+   },
+   "then": [
+    {
+     "let": "payee",
+     "lookup": {
+      "key": "my landlord"
+     }
+    },
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": {
+       "ref": "excess"
+      },
+      "asset": "near"
+     }
+    }
+   ],
+   "else": [
+    {
+     "say": "They did not send more than 12.00 NEAR, so nothing to refund."
+    }
+   ]
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "01930c1a7d1b315bb07a14dd20fdbf07acbc24d1706d10cd9874f69c4b814888",
+   "responseHash": "8379bf9207de8606dac97907be1884e3d9f9fb5119b6c7a45199089ad8a6a83d",
+   "usage": {
+    "prompt": 1027,
+    "completion": 225
+   },
+   "latencyMs": 3520,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

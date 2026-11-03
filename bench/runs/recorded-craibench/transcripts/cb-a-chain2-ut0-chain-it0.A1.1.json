@@ -1,0 +1,76 @@
+{
+ "request": "Can you please pay the bill 'bill-december-2023.txt' for me?",
+ "plan": [
+  {
+   "let": "paste",
+   "call": "read_paste",
+   "args": {}
+  },
+  {
+   "let": "bill",
+   "call": "read_attachment",
+   "args": {
+    "name": "bill-december-2023.txt"
+   }
+  },
+  {
+   "let": "details",
+   "extract": {
+    "from": {
+     "ref": "bill"
+    },
+    "schema": {
+     "amount": "amount",
+     "payee": "text"
+    }
+   }
+  },
+  {
+   "let": "recipient",
+   "lookup": {
+    "key": {
+     "ref": "details",
+     "path": [
+      "payee"
+     ]
+    }
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "recipient"
+    },
+    "amount": {
+     "ref": "details",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "7801e9c8dabed916bd50212ee45e4d44bc362981f4b81f0baf2fc95dad54f278",
+   "responseHash": "c6240a58d9420d33fb6f57e903f21fa512746ee8a3aac334e2c3e4929a04c75e",
+   "usage": {
+    "prompt": 993,
+    "completion": 108
+   },
+   "latencyMs": 1696,
+   "costUsd": "0.00013344",
+   "cached": false
+  }
+ ]
+}
