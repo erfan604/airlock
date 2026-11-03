@@ -154,7 +154,11 @@ step_if fixtures/payloads.sha256 payloads payloads scripts/check-payloads.sh    
 step guard-selftest python3 .claude/hooks/guard_bash.py --self-test
 step_if scripts/claims-lint.ts claims-lint claims-lint pnpm tsx scripts/claims-lint.ts                # AIR-240, AIR-276
 step_if scripts/claims-lint.test.ts claims-lint claims-lint-test pnpm tsx --test scripts/claims-lint.test.ts
+step_if scripts/claims-lint.ts claims-lint claims-lint-evidence pnpm tsx scripts/claims-lint.ts --check-evidence   # AIR-284
 step_if scripts/check-commits.sh commits commits scripts/check-commits.sh
+step_if scripts/verify-doc-check.sh verify-doc verify-doc scripts/verify-doc-check.sh            # AIR-284
+step_if scripts/hidden-text-scan.sh hidden-text hidden-text scripts/hidden-text-scan.sh          # AIR-286
+step_if scripts/security-pass.sh security-pass security-pass scripts/security-pass.sh            # AIR-286
 step gitleaks gitleaks_scan
 
 # ---- full: quick plus ----
