@@ -35,6 +35,6 @@ What can be checked with which tools, how long each command takes and the last l
 
 Commands beyond the five (the live demo, the challenge self test, the intents quote, approval verification, the model report check) are listed with their last lines in the README section "More commands". Every label there says whether a run is recorded or live.
 
-No continuous integration runs here. The gate is `scripts/check.sh full`. The full gate takes about 41 minutes (2485 s measured) because it needs Kani, Lean and the NEAR sandbox. `scripts/fresh-clone-check.sh` clones the repository into empty directories and runs the quick and the full gate; its last result was `FRESH CLONE OK` on 27a89dd (AIR-281).
+A hosted job, `.github/workflows/quick-tier.yml`, runs the T1 tier on every push to main (the replay demo, the node tier of the claims and the proof transcripts). The gate is `scripts/check.sh full`, run locally. The full gate takes about 41 minutes (2485 s measured) because it needs Kani, Lean and the NEAR sandbox. `scripts/fresh-clone-check.sh` clones the repository into empty directories and runs the quick and the full gate; its last result was `FRESH CLONE OK` on 27a89dd (AIR-281).
 
 The Lean language server for editors is off by default: copy `.mcp.json.example` to `.mcp.json` to use it.

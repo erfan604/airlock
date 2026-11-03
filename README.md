@@ -56,7 +56,7 @@ The strings above are asserted by the browser test `pnpm -C web e2e demo`, which
 | 4 | T3 | `scripts/check.sh full` | about 360 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
 
-Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean (the maintainer gate), T4 plus read only RPC. A row whose tool is missing prints `SKIP <id> needs <tool>`. Details in `docs/VERIFY.md`. No continuous integration runs here: the gate is `scripts/check.sh full`.
+Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean (the maintainer gate), T4 plus read only RPC. A row whose tool is missing prints `SKIP <id> needs <tool>`. Details in `docs/VERIFY.md`. A hosted job (`.github/workflows/quick-tier.yml`) runs the T1 tier on every push to main; the full gate is `scripts/check.sh full`, run locally.
 
 ## Verify everything
 
@@ -229,7 +229,7 @@ Each item answers one entry of the Not covered list under Proven. None is built.
 - TEE: register the runtime in a TEE and link the registration transaction in `docs/EVIDENCE.md`; the runtime is in local mode, unattested.
 - Chain and MPC signer: these stay trusted; the on chain evidence of each run stays re-checkable with `pnpm verify-approval` and `pnpm tsx scripts/verify-golden.ts`.
 
-Continuous integration: none runs here. The full gate needs Kani, Lean and the NEAR sandbox and takes about 41 minutes, which a hosted runner does not give. `scripts/fresh-clone-check.sh` is the reproducible equivalent: it clones the repository, builds in empty directories and runs the gate, and its last result was `FRESH CLONE OK` on commit 27a89dd.
+Continuous integration: `.github/workflows/quick-tier.yml` runs the T1 tier on every push to main (`pnpm i`, the replay demo, `scripts/claims-run.sh --tier node` and `pnpm proven:transcripts`, about a minute). The full gate needs Kani, Lean and the NEAR sandbox and takes about 41 minutes, so it runs locally. `scripts/fresh-clone-check.sh` is the reproducible equivalent: it clones the repository, builds in empty directories and runs the gate, and its last result was `FRESH CLONE OK` on commit 27a89dd.
 
 ## Console
 
