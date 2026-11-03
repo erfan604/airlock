@@ -10,6 +10,7 @@ import { getConnInfo } from '@hono/node-server/conninfo';
 import { loadModelsConfig } from '@airlock/runtime/llm';
 import { ConfigError, parseConfig } from './config.ts';
 import { build } from './compose.ts';
+import { resolveAddress } from './address.ts';
 import { listen } from './listen.ts';
 import { createChallengeApp } from './server.ts';
 import { RecordedEngine, recordedModel } from './engines/recorded.ts';
@@ -18,6 +19,7 @@ import { caseInputText, caseLabel } from './seedcases.ts';
 import { loadCases } from '../../bench/src/runner/cases.ts';
 import { verdictCliPath } from '../../bench/src/runner/backend.ts';
 import type { Engine } from './types.ts';
+import { DailySalt } from './visitor.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -72,23 +74,23 @@ async function main(argv: string[]): Promise<number> {
     }
     console.log(`seeded ${String(built.log.size)} recorded attempts`);
   }
+  const salt = new DailySalt();
   const app = createChallengeApp({
     cfg,
     challenge: built.challenge,
     log: built.log,
     admission: built.admission,
     addressOf: (c) => {
-      if (cfg.proxyHeader !== null) {
-        const v = c.req.header(cfg.proxyHeader);
-        if (v !== undefined && v.length <= 64) return v.split(',')[0]?.trim() ?? 'unknown';
-      }
+      let remote: string | undefined;
       try {
-        return getConnInfo(c).remote.address ?? 'unknown';
+        remote = getConnInfo(c).remote.address;
       } catch {
-        return 'unknown';
+        remote = undefined;
       }
+      const r = resolveAddress({ header: cfg.proxyHeader, trusted: cfg.trustedProxies }, remote, (name) => c.req.header(name));
+      return r.ok ? r.address : null;
     },
-    salt: () => new Date().toISOString().slice(0, 10),
+    salt: () => salt.current(),
     clock: Date.now,
   });
   await listen(app, cfg.port, cfg.host);

@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { AttemptLog } from '../src/log.ts';
+import { AttemptSchema } from '../src/types.ts';
 import { observationOutput, KeyWatcher } from '../src/watcher.ts';
 import type { KeyObservation, KeyWatcherSource } from '../src/watcher.ts';
+import { join } from 'node:path';
+import { buildAttempt } from '../src/attempt.ts';
 import { near, output, row, rig } from './helpers.ts';
 
 test('a visitor attempt runs the engine once and lands on the board with the money columns', async () => {
@@ -79,4 +85,58 @@ test('door b: the watcher adds each observed request once, even if the source re
   const b = r.built.log.scoreboard();
   assert.deepEqual([b.attempts, b.escalate, b.doors.key, b.stolenYocto], [3, 3, 3, '0']);
   assert.equal(observationOutput(obs('r9')).payments[0]?.reason, 'PayeeNotInBook');
+});
+
+test('fail open audit: an attempt whose full record fails validation is still counted, with its money columns', async () => {
+  const r = rig();
+  const long = 'near:' + 'x'.repeat(300);
+  r.engine.next = () =>
+    Promise.resolve(
+      output({
+        payments: [
+          row({ payee: long, toBook: false, amount: near(5), reason: 'r'.repeat(200) }),
+          row({ payee: 'near:accountant.testnet', amount: near(2) }),
+          ...Array.from({ length: 9 }, () => row({ amount: near(1) })),
+        ],
+        tx: 'not a tx hash!',
+      }),
+    );
+  const res = await r.built.challenge.attempt('k', 's'.repeat(100), 'x');
+  assert.ok(res.ok);
+  if (res.ok) {
+    assert.equal(res.attempt.reason, 'RecordSanitized');
+    assert.equal(res.attempt.payments.length, 8);
+    assert.equal(res.attempt.payments[0]?.payee.length, 128);
+    assert.equal(res.attempt.tx, null);
+    assert.equal(res.attempt.preview, null);
+    assert.ok(AttemptSchema.safeParse(res.attempt).success);
+  }
+  const b = r.built.log.scoreboard();
+  assert.equal(b.attempts, 1);
+  assert.equal(b.stolenYocto, near(5), 'the money that left to a payee outside the book stays on the board');
+  assert.equal(b.paidToBookYocto, near(2 + 9), 'the payments past the eighth row are summed too');
+});
+
+test('fail open audit: a malformed row in the engine output still yields a counted entry', async () => {
+  const r = rig();
+  r.engine.next = () => Promise.resolve(output({ payments: [row({ amount: 'NaN' }), row({ amount: near(3), payee: 'near:evil.testnet', toBook: false }), { ...row(), outcome: 'WEIRD' as 'ALLOW' }] }));
+  const res = await r.built.challenge.attempt('k', 's', 'x');
+  assert.ok(res.ok);
+  const b = r.built.log.scoreboard();
+  assert.equal(b.attempts, 1);
+  assert.equal(b.stolenYocto, near(3));
+  assert.equal(b.block, 1, 'an outcome it does not know reads as the strictest one');
+});
+
+test('fail open audit: a log file that cannot be written does not drop the attempt from the board', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ch-ro-'));
+  writeFileSync(join(dir, 'blocker'), 'a file where a directory is needed');
+  const log = new AttemptLog(join(dir, 'blocker', 'attempts.jsonl'));
+  const r = rig();
+  const a = buildAttempt({ seq: 1, id: '0000000000000001', at: '2026-11-03T12:00:00.000Z', door: 'text', mode: 'live', source: 's', label: null, text: 'x', keepPreview: false, out: output({ payments: [row({ payee: 'near:evil.testnet', toBook: false })] }) });
+  log.append(a);
+  assert.equal(log.writeFailures, 1);
+  assert.equal(log.scoreboard().stolenYocto, near(4));
+  assert.equal(log.size, 1);
+  void r;
 });

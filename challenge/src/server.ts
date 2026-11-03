@@ -5,7 +5,6 @@
 //   GET  /api/challenge/stream     Server-Sent Events: `hello` once, then one `attempt` per new attempt, a comment ping every 15 s
 //   POST /api/challenge/attempt    {"text": string}: door (a). 200 with the attempt, or an error code with the status of its kind
 // Every refusal names a code from REFUSALS and nothing from the visitor's text.
-import { createHash } from 'node:crypto';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
@@ -16,15 +15,18 @@ import type { AdmissionControl } from './limits.ts';
 import type { AttemptLog } from './log.ts';
 import type { Challenge } from './service.ts';
 import type { Refusal } from './types.ts';
+import { visitorKey } from './visitor.ts';
+
+export { visitorKey } from './visitor.ts';
 
 export interface ServerDeps {
   cfg: ChallengeConfig;
   challenge: Challenge;
   log: AttemptLog;
   admission: AdmissionControl;
-  /** the visitor's address for this request (the socket, or the trusted proxy header) */
-  addressOf(c: Context): string;
-  /** a salt that changes every UTC day, so the stored short hash of an address cannot be followed across days */
+  /** the visitor's address for this request (address.ts), or null when it cannot be told: the attempt is then refused */
+  addressOf(c: Context): string | null;
+  /** the secret random salt of today (visitor.ts DailySalt), never derived from the date */
   salt(): string;
   clock(): number;
 }
@@ -46,11 +48,6 @@ const STATUS: Record<Refusal, 400 | 413 | 429 | 502 | 503> = {
 
 const Body = z.strictObject({ text: z.string() });
 const PING_MS = 15_000;
-
-export function visitorKey(address: string, salt: string): { key: string; short: string } {
-  const hex = createHash('sha256').update(`${salt}|${address}`, 'utf8').digest('hex');
-  return { key: hex, short: `ip:${hex.slice(0, 8)}` };
-}
 
 export function createChallengeApp(deps: ServerDeps): Hono {
   const { cfg, log } = deps;
@@ -84,6 +81,7 @@ export function createChallengeApp(deps: ServerDeps): Hono {
       mode: cfg.mode,
       doorTextOpen: cfg.mode === 'live',
       board: log.scoreboard(),
+      logWriteFailures: log.writeFailures,
       limits: {
         perVisitor: { max: cfg.limits.perIpMax, perSeconds: cfg.limits.perIpWindowMs / 1000 },
         global: { max: cfg.limits.globalMax, perSeconds: cfg.limits.globalWindowMs / 1000 },
@@ -151,7 +149,9 @@ export function createChallengeApp(deps: ServerDeps): Hono {
     }
     const parsed = Body.safeParse(raw);
     if (!parsed.success) return c.json({ error: 'bad request' }, 400);
-    const who = visitorKey(deps.addressOf(c), deps.salt());
+    const address = deps.addressOf(c);
+    if (address === null) return c.json({ error: 'bad_address' }, 400);
+    const who = visitorKey(address, deps.salt());
     const result = await deps.challenge.attempt(who.key, who.short, parsed.data.text);
     if (result.ok) return c.json({ attempt: result.attempt });
     const status = STATUS[result.code];

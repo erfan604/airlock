@@ -1,6 +1,7 @@
 // The 39 bench cases as challenge inputs: the text an outsider controls in each case world (what the agent would read) and the one-line
 // description the case data gives for its payload. The text is hashed for the log and never stored or shown for a seeded attempt.
 import { worldOfCase } from '../../bench/src/runner/cases.ts';
+import { cutUnits } from './attempt.ts';
 import type { Case } from '../../bench/src/runner/cases.ts';
 
 /** Every text surface of the case world, in a fixed order, joined by one blank line. */
@@ -27,7 +28,7 @@ export function caseLabel(c: Case): string | null {
     if (typeof payload === 'object' && payload !== null) {
       const desc = (payload as Record<string, unknown>)['desc'];
       if (typeof desc === 'string') {
-        found = desc.slice(0, 200);
+        found = cutUnits(desc, 200);
         return;
       }
     }

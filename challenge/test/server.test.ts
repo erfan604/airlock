@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseConfig } from '../src/config.ts';
-import { createChallengeApp, visitorKey } from '../src/server.ts';
+import { createChallengeApp } from '../src/server.ts';
+import { visitorKey } from '../src/visitor.ts';
 import { near, output, row, rig } from './helpers.ts';
 
 function app(limits = {}, mode: 'live' | 'recorded' = 'live') {
   const r = rig(limits, mode);
   const cfg = { ...parseConfig({}, '/repo'), mode, limits: { ...parseConfig({}, '/repo').limits, ...limits } };
-  const a = createChallengeApp({ cfg, challenge: r.built.challenge, log: r.built.log, admission: r.built.admission, addressOf: (c) => c.req.header('x-test-ip') ?? 'unknown', salt: () => '2026-11-03', clock: () => r.clock.now });
+  const a = createChallengeApp({ cfg, challenge: r.built.challenge, log: r.built.log, admission: r.built.admission, addressOf: (c) => (c.req.header('x-test-none') === '1' ? null : (c.req.header('x-test-ip') ?? '198.51.100.7')), salt: () => '2026-11-03', clock: () => r.clock.now });
   return { r, a };
 }
 
@@ -92,4 +93,12 @@ test('stream: hello first, then each new attempt as an event', async () => {
   await until('event: attempt');
   await until('bench:own-A01');
   await reader?.cancel();
+});
+
+test('attempt: an address that cannot be told is refused with 400 and nothing runs', async () => {
+  const { a, r } = app();
+  const res = await post(a, { text: 'hello' }, { 'x-test-none': '1' });
+  assert.equal(res.status, 400);
+  assert.deepEqual(await res.json(), { error: 'bad_address' });
+  assert.deepEqual(r.engine.calls, []);
 });

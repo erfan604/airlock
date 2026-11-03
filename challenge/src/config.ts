@@ -4,6 +4,7 @@
 // switched on by setting CHALLENGE_MODE=live, not by editing code.
 import { join } from 'node:path';
 import { toBaseUnits } from '@airlock/runtime/money';
+import { validTrustedEntry } from './address.ts';
 import { DEFAULT_LIMITS } from './limits.ts';
 import type { Limits } from './limits.ts';
 import type { Mode } from './types.ts';
@@ -43,6 +44,8 @@ export interface ChallengeConfig {
   limits: Limits;
   /** header that carries the visitor's address behind a trusted proxy (for example cf-connecting-ip), or null to use the socket */
   proxyHeader: string | null;
+  /** the addresses or IPv4 blocks of the proxies whose header is believed */
+  trustedProxies: string[];
   live: LiveConfig | null;
   key: PublishedKey | null;
 }
@@ -129,6 +132,12 @@ export function parseConfig(env: NodeJS.ProcessEnv, repoRoot: string): Challenge
   if (!/^[A-Za-z0-9.:-]{1,64}$/.test(host)) bad.push('CHALLENGE_HOST');
   const proxyHeader = clean(env['CHALLENGE_PROXY_HEADER']) ?? null;
   if (proxyHeader !== null && !/^[a-z][a-z0-9-]{1,40}$/.test(proxyHeader)) bad.push('CHALLENGE_PROXY_HEADER');
+  const trustedProxies = (clean(env['CHALLENGE_TRUSTED_PROXIES']) ?? '').split(',').map((e) => e.trim()).filter((e) => e !== '');
+  if (!trustedProxies.every(validTrustedEntry)) bad.push('CHALLENGE_TRUSTED_PROXIES');
+  // a proxy header is believed only from a named proxy, and live mode needs a trusted way to tell visitors apart: a proxy it believes, or
+  // a direct listener (CHALLENGE_DIRECT=1: the socket address is the visitor)
+  if (proxyHeader !== null && trustedProxies.length === 0) bad.push('CHALLENGE_TRUSTED_PROXIES');
+  if (mode === 'live' && proxyHeader === null && clean(env['CHALLENGE_DIRECT']) !== '1') bad.push('CHALLENGE_DIRECT');
   if (bad.length > 0) throw new ConfigError([...new Set(bad)]);
-  return { mode, port, host, dataDir: clean(env['CHALLENGE_DATA_DIR']) ?? join(repoRoot, 'challenge', 'data'), limits, proxyHeader, live, key };
+  return { mode, port, host, dataDir: clean(env['CHALLENGE_DATA_DIR']) ?? join(repoRoot, 'challenge', 'data'), limits, proxyHeader, trustedProxies, live, key };
 }

@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync, appendFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { buildAttempt, firstChars, sha256Hex, stolenOf, verdictOf } from '../src/attempt.ts';
+import { buildAttempt, cutUnits, buildMinimalAttempt, sha256Hex, stolenOf, verdictOf } from '../src/attempt.ts';
 import { AttemptLog } from '../src/log.ts';
 import { AttemptSchema } from '../src/types.ts';
 import type { Attempt } from '../src/types.ts';
@@ -42,8 +42,18 @@ test('buildAttempt: hashes the input, keeps a preview only when asked, names the
   assert.ok(AttemptSchema.safeParse(held).success);
 });
 
-test('firstChars never splits a code point', () => {
-  assert.equal(firstChars('a\u{1F600}b', 2), 'a\u{1F600}');
+test('cutUnits cuts in UTF-16 units and never leaves half of a surrogate pair', () => {
+  assert.equal(cutUnits('a\u{1F600}b', 3), 'a\u{1F600}');
+  assert.equal(cutUnits('a\u{1F600}b', 2), 'a');
+  assert.equal(cutUnits('abc', 10), 'abc');
+});
+
+test('preview: astral input of any length always passes the schema (the schema counts UTF-16 units)', () => {
+  for (const text of ['\u{1F600}'.repeat(1000), 'a'.repeat(239) + '\u{1F600}'.repeat(50), '\u{10FFFF}'.repeat(241)]) {
+    const a = buildAttempt({ ...base, text, out: output() });
+    assert.ok(a.preview !== null && a.preview.length <= 240);
+    assert.ok(AttemptSchema.safeParse(a).success, 'valid');
+  }
 });
 
 const attempt = (seq: number, o: Partial<Attempt> = {}): Attempt => ({ ...buildAttempt({ ...base, seq, id: seq.toString(16).padStart(16, '0'), out: output() }), ...o });

@@ -12,6 +12,7 @@ const live = {
   CHALLENGE_LLM_CAP_USD: '1.00',
   CHALLENGE_NEAR_DAILY_CAP: '10',
   CHALLENGE_NEAR_FLOAT_MIN: '2',
+  CHALLENGE_DIRECT: '1',
   LLM_MODE: 'live',
 };
 
@@ -50,4 +51,15 @@ test('a bad value names the variable and never repeats the value', () => {
     () => parseConfig({ CHALLENGE_PORT: '99999999999', CHALLENGE_LLM_CAP_USD: 'lots', CHALLENGE_MODE: 'sideways' }, '/repo'),
     (e: unknown) => e instanceof ConfigError && !e.message.includes('lots') && !e.message.includes('sideways') && e.variables.length === 3,
   );
+});
+
+test('live mode needs a trusted address source: a direct listener or a named proxy, and a proxy header never stands alone', () => {
+  const { CHALLENGE_DIRECT: _direct, ...noDirect } = live;
+  void _direct;
+  assert.throws(() => parseConfig(noDirect, '/repo'), (e: unknown) => e instanceof ConfigError && e.variables.includes('CHALLENGE_DIRECT'));
+  assert.throws(() => parseConfig({ ...live, CHALLENGE_PROXY_HEADER: 'x-forwarded-for' }, '/repo'), (e: unknown) => e instanceof ConfigError && e.variables.includes('CHALLENGE_TRUSTED_PROXIES'));
+  const ok = parseConfig({ ...noDirect, CHALLENGE_PROXY_HEADER: 'x-forwarded-for', CHALLENGE_TRUSTED_PROXIES: '10.0.0.5, 192.168.0.0/16' }, '/repo');
+  assert.deepEqual(ok.trustedProxies, ['10.0.0.5', '192.168.0.0/16']);
+  assert.throws(() => parseConfig({ ...live, CHALLENGE_PROXY_HEADER: 'x-forwarded-for', CHALLENGE_TRUSTED_PROXIES: 'proxy.example' }, '/repo'), ConfigError);
+  assert.equal(parseConfig({}, '/repo').proxyHeader, null);
 });

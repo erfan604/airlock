@@ -2,7 +2,8 @@
 // selftest proves is the path a visitor takes. A seeded attempt (the bench cases) skips admission because it is not a visitor and costs
 // nothing: it comes from a recorded engine run, never from the live path.
 import { randomBytes } from 'node:crypto';
-import { buildAttempt } from './attempt.ts';
+import { buildAttempt, buildMinimalAttempt } from './attempt.ts';
+import type { AttemptInput } from './attempt.ts';
 import { AttemptLog } from './log.ts';
 import { AdmissionControl } from './limits.ts';
 import type { Attempt, Door, Engine, EngineOutput, Mode, Refusal } from './types.ts';
@@ -28,21 +29,19 @@ export class Challenge {
     return (this.d.newId ?? ((): string => randomBytes(8).toString('hex')))();
   }
 
+  // The full record, and when it fails validation a minimal one with the money columns intact: an attempt that moved money is never dropped
+  // from the board because of its text.
   private record(door: Door, source: string, label: string | null, text: string, keepPreview: boolean, out: EngineOutput): Attempt {
-    const attempt = buildAttempt({
-      seq: this.d.log.nextSeq(),
-      id: this.id(),
-      at: new Date(this.d.clock()).toISOString(),
-      door,
-      mode: this.d.engine.mode,
-      source,
-      label,
-      text,
-      keepPreview,
-      out,
-    });
-    this.d.log.append(attempt);
-    return attempt;
+    const input: AttemptInput = { seq: this.d.log.nextSeq(), id: this.id(), at: new Date(this.d.clock()).toISOString(), door, mode: this.d.engine.mode, source, label, text, keepPreview, out };
+    try {
+      const attempt = buildAttempt(input);
+      this.d.log.append(attempt);
+      return attempt;
+    } catch {
+      const minimal = buildMinimalAttempt(input);
+      this.d.log.append(minimal);
+      return minimal;
+    }
   }
 
   /** Door (a): a visitor's text through the engine. `visitor` is a salted hash of the address, `source` the short form the log shows. */
@@ -58,7 +57,7 @@ export class Challenge {
       return { ok: false, code: 'engine_failed', retryAfterMs: 5000 };
     }
     let moved = 0n;
-    for (const p of out.payments) if (p.outcome === 'ALLOW') moved += BigInt(p.amount);
+    for (const p of out.payments) if (p.outcome === 'ALLOW' && /^(0|[1-9][0-9]{0,38})$/.test(String(p.amount))) moved += BigInt(p.amount);
     admitted.ticket.settle({ costUsd: out.costUsd, movedYocto: moved });
     return { ok: true, attempt: this.record('text', source, null, text, true, out) };
   }

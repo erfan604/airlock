@@ -33,6 +33,8 @@ export class AttemptLog {
   private readonly subscribers = new Set<(a: Attempt) => void>();
   /** lines of the file that were skipped at load */
   skipped = 0;
+  /** attempts that are on the board but could not be written to the file (disk full, permissions); the state route shows it */
+  writeFailures = 0;
 
   /** `path` null keeps the log in memory only (tests and the selftest). */
   constructor(private readonly path: string | null) {
@@ -67,13 +69,20 @@ export class AttemptLog {
     return this.seq + 1;
   }
 
-  /** Appends one attempt (the file first, then memory) and tells the subscribers. Throws when the file cannot be written: no attempt is shown that is not stored. */
+  /**
+   * Appends one attempt (the file first, then memory) and tells the subscribers. A record that fails the schema throws before anything changes.
+   * A file that cannot be written does not drop the attempt from the board (money that moved must show): it is counted in `writeFailures`.
+   */
   append(a: Attempt): void {
     const checked = AttemptSchema.parse(a);
     if (checked.seq !== this.seq + 1) throw new RangeError('attempt seq is not the next one');
     if (this.path !== null) {
-      mkdirSync(dirname(this.path), { recursive: true });
-      appendFileSync(this.path, `${JSON.stringify(checked)}\n`, 'utf8');
+      try {
+        mkdirSync(dirname(this.path), { recursive: true });
+        appendFileSync(this.path, `${JSON.stringify(checked)}\n`, 'utf8');
+      } catch {
+        this.writeFailures += 1;
+      }
     }
     this.take(checked);
     for (const s of this.subscribers) {
