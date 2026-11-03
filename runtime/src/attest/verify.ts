@@ -3,8 +3,7 @@
 // cannot run is a failed row, never a skipped one (the policy page: "treat required checks as fail-closed"). Nothing here throws on bad input:
 // a report that is malformed fails the check that reads it.
 import { createHash } from 'node:crypto';
-import { DEFAULT_POLICY } from './types.ts';
-import type { Attestation, Check, VerifiedQuote, VerifyDeps, VerifyPolicy } from './types.ts';
+import type { Attestation, Check, MeasurementPins, VerifiedQuote, VerifyDeps, VerifyPolicy } from './types.ts';
 
 const HEX64 = /^[0-9a-f]{64}$/;
 const sha = (alg: 'sha256' | 'sha384', ...parts: (Buffer | string)[]): Buffer => {
@@ -66,6 +65,7 @@ async function quoteChecks(
   nonce: string,
   deps: VerifyDeps,
   policy: VerifyPolicy,
+  pins: MeasurementPins | undefined,
 ): Promise<{ checks: Check[]; quote: VerifiedQuote | null }> {
   const p = (n: string) => `${who}.${n}`;
   if (report === null) return { checks: [{ name: p('report'), ok: false, detail: 'missing or not an object' }], quote: null };
@@ -110,6 +110,30 @@ async function quoteChecks(
     if (v.mr_config_id !== expected) throw new Error('MRCONFIGID of the verified quote differs from the hash of app_compose');
     return `MRCONFIGID equals 01 plus sha256(app_compose) ${hash.slice(0, 16)}`;
   }));
+  checks.push(await row(p('os_measurements'), () => {
+    const info = asObject(report.info);
+    const tcb = asObject(jsonIfText(info?.tcb_info));
+    if (tcb === null) throw new Error('no info.tcb_info to compare with the quote');
+    if (pins === undefined) throw new Error('no pinned measurements are configured for this report');
+    const fields = [['mrtd', 'mr_td'], ['rtmr0', 'rtmr0'], ['rtmr1', 'rtmr1'], ['rtmr2', 'rtmr2']] as const;
+    for (const [reportKey, pinKey] of fields) {
+      const fromQuote = v[pinKey];
+      const claimed = tcb[reportKey];
+      if (typeof claimed !== 'string' || claimed.toLowerCase() !== fromQuote) throw new Error(`${reportKey} in the report differs from the verified quote`);
+      const list = pins[pinKey];
+      if (!Array.isArray(list) || list.length === 0) throw new Error(`no pinned ${reportKey} allowlist`);
+      if (!list.includes(fromQuote)) throw new Error(`${reportKey} ${fromQuote} is not in the pinned allowlist`);
+    }
+    return 'MRTD and RTMR0 to 2 equal the report and are in the pinned allowlist';
+  }));
+  checks.push(await row(p('compose_pin'), () => {
+    const list = pins?.compose_hash;
+    if (!Array.isArray(list) || list.length === 0) throw new Error('no pinned compose hash allowlist is configured');
+    const id = Buffer.from(v.mr_config_id, 'hex');
+    const hash = id.length === 48 ? id.subarray(1, 33).toString('hex') : '';
+    if (!list.includes(hash)) throw new Error(`compose hash ${hash} is not in the pinned allowlist`);
+    return `compose hash ${hash.slice(0, 16)} is pinned`;
+  }));
   return { checks, quote };
 }
 
@@ -123,7 +147,7 @@ export interface VerifyInput {
 }
 
 /** Verifies a fetched report. Never throws; the result is VERIFIED only when every row is ok. */
-export async function verifyReport(input: VerifyInput, deps: VerifyDeps, policy: VerifyPolicy = DEFAULT_POLICY): Promise<Attestation> {
+export async function verifyReport(input: VerifyInput, deps: VerifyDeps, policy: VerifyPolicy): Promise<Attestation> {
   const nonce = input.nonce.toLowerCase();
   const reportSha = sha('sha256', Buffer.from(input.rawBody, 'utf8')).toString('hex');
   const out: Attestation = {
@@ -148,7 +172,7 @@ export async function verifyReport(input: VerifyInput, deps: VerifyDeps, policy:
   });
   out.checks.push(parsed);
   const b: Record<string, unknown> | null = parsed.ok ? asObject(JSON.parse(input.rawBody)) : null;
-  const gateway = await quoteChecks('gateway', asObject(b?.gateway_attestation), nonce, deps, policy);
+  const gateway = await quoteChecks('gateway', asObject(b?.gateway_attestation), nonce, deps, policy, policy.gateway);
   out.checks.push(...gateway.checks);
 
   const candidates = Array.isArray(b?.model_attestations) ? (b.model_attestations as unknown[]) : [];
@@ -165,7 +189,7 @@ export async function verifyReport(input: VerifyInput, deps: VerifyDeps, policy:
       return `model_name equals ${input.model}`;
     });
     out.checks.push(named);
-    const m = await quoteChecks('model', rep, nonce, deps, policy);
+    const m = await quoteChecks('model', rep, nonce, deps, policy, policy.models?.[input.model]);
     out.checks.push(...m.checks.map((k) => ({ ...k, name: k.name.replace(/^model\./, `${tag}.`) })));
     out.checks.push(await row(`${tag}.gpu`, async () => {
       if (rep === null || typeof rep.nvidia_payload !== 'string') throw new Error('no nvidia_payload (GPU evidence is required)');
@@ -174,13 +198,6 @@ export async function verifyReport(input: VerifyInput, deps: VerifyDeps, policy:
       if (!(await deps.verifyGpu(payload))) throw new Error('NVIDIA NRAS overall attestation result is not true');
       return 'GPU evidence carries our nonce and NVIDIA NRAS reports an overall pass';
     }));
-    if (policy.acceptedComposeHashes !== undefined) {
-      out.checks.push(await row(`${tag}.allowlist`, () => {
-        const hash = composeHashOf(rep ?? {});
-        if (!policy.acceptedComposeHashes?.includes(hash)) throw new Error(`compose hash ${hash} is not in the allowlist`);
-        return 'compose hash is in the allowlist';
-      }));
-    }
     if (i === 0) {
       out.signing_address = typeof rep?.signing_address === 'string' ? rep.signing_address : null;
       out.tcb_status = m.quote?.status ?? null;

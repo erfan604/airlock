@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto';
 import * as dcap from '@phala/dcap-qvl';
 import { unattested, verifyReport } from './verify.ts';
 import type { Attestation, GpuVerifier, QuoteVerifier, VerifiedQuote, VerifyDeps, VerifyPolicy } from './types.ts';
-import { DEFAULT_POLICY } from './types.ts';
+import { readFileSync } from 'node:fs';
 
 export const REPORT_URL = 'https://cloud-api.near.ai/v1/attestation/report';
 export const NRAS_URL = 'https://nras.attestation.nvidia.com/v3/attest/gpu';
@@ -30,6 +30,9 @@ export function readQuote(v: { status: string; advisory_ids: string[]; report: {
     mr_config_id: need('mrConfigId'),
     rtmr3: need('rtMr3'),
     mr_td: need('mrTd'),
+    rtmr0: need('rtMr0'),
+    rtmr1: need('rtMr1'),
+    rtmr2: need('rtMr2'),
   };
 }
 
@@ -86,6 +89,15 @@ export function nrasVerdict(json: unknown): boolean {
   }
 }
 
+/** The pinned policy file; each value says where it came from and how to rotate it (see the `_comment` keys). */
+export const POLICY_PATH = new URL('../../config/attest-policy.json', import.meta.url);
+
+export function loadPolicy(path: URL = POLICY_PATH): VerifyPolicy {
+  const raw = JSON.parse(readFileSync(path, 'utf8')) as VerifyPolicy;
+  if (!Array.isArray(raw.acceptedTcb) || raw.acceptedTcb.length === 0) throw new Error('policy has no acceptedTcb');
+  return raw;
+}
+
 export interface FetchOpts {
   env?: Record<string, string | undefined>;
   fetch?: typeof fetch;
@@ -103,6 +115,12 @@ export async function attestModel(model: string, opts: FetchOpts = {}): Promise<
   const now = opts.now ?? (() => new Date());
   const f = opts.fetch ?? fetch;
   const nonce = opts.nonce ?? randomBytes(32).toString('hex');
+  let policy: VerifyPolicy;
+  try {
+    policy = opts.policy ?? loadPolicy();
+  } catch (e) {
+    return unattested(model, nonce, `no usable attestation policy: ${e instanceof Error ? e.message : 'error'}`, now());
+  }
   const key = env.NEARAI_API_KEY;
   if (key === undefined || key === '') return unattested(model, nonce, 'no NEARAI_API_KEY in the environment', now());
   const url = `${REPORT_URL}?${new URLSearchParams({ model, provider: 'near', signing_algo: 'ecdsa', nonce })}`;
@@ -123,5 +141,5 @@ export async function attestModel(model: string, opts: FetchOpts = {}): Promise<
     verifyGpu: opts.deps?.verifyGpu ?? liveGpuVerifier(f),
     now,
   };
-  return verifyReport({ rawBody, model, nonce }, deps, opts.policy ?? DEFAULT_POLICY);
+  return verifyReport({ rawBody, model, nonce }, deps, policy);
 }

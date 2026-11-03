@@ -1,11 +1,16 @@
 // AIR-303 offline tests. The fixture is a real report fetched from NEAR AI Cloud on 2026-11-03 (scripts/attest.ts --fixture) together with the
 // quote collateral and the NVIDIA answer of that run, so the Intel signature chain is verified for real at the recorded time, offline.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { attestModel, nrasVerdict, replayRtmr3, unattested, verifyReport, verifyWithCollateral } from '../src/attest/index.ts';
-import type { Attestation, QuoteVerifier, VerifyDeps } from '../src/attest/index.ts';
+import { attestModel, loadPolicy, nrasVerdict, replayRtmr3, unattested, verifyReport, verifyWithCollateral } from '../src/attest/index.ts';
+import type { Attestation, QuoteVerifier, VerifyDeps, VerifyPolicy } from '../src/attest/index.ts';
+
+const policy = loadPolicy();
 
 interface Fixture {
   model: string;
@@ -39,8 +44,8 @@ const withBody = (edit: (b: Record<string, any>) => void): string => {
   edit(b);
   return JSON.stringify(b);
 };
-const run = (rawBody: string, over: { model?: string; nonce?: string } = {}, d: VerifyDeps = deps) =>
-  verifyReport({ rawBody, model: over.model ?? fx.model, nonce: over.nonce ?? fx.nonce }, d);
+const run = (rawBody: string, over: { model?: string; nonce?: string } = {}, d: VerifyDeps = deps, pol: VerifyPolicy = policy) =>
+  verifyReport({ rawBody, model: over.model ?? fx.model, nonce: over.nonce ?? fx.nonce }, d, pol);
 
 test('a good report verifies, every check passes and the record names the hash', async () => {
   const a = await run(fx.raw_body);
@@ -78,8 +83,8 @@ test('a nonce that is not 32 bytes of hex fails nonce_format', async () => {
 
 test('a wrong model fails model.id', async () => {
   const a = await run(fx.raw_body, { model: 'z-ai/glm-5.3' });
+  assert.ok(failed(a).includes('model.id'));
   assert.equal(a.status, 'FAILED');
-  assert.deepEqual(failed(a), ['model.id']);
 });
 
 test('a report for another model fails model.id', async () => {
@@ -181,9 +186,51 @@ test('a malformed body fails closed without throwing', async () => {
   }
 });
 
-test('the compose allowlist rejects an unlisted configuration', async () => {
-  const ok = await verifyReport({ rawBody: fx.raw_body, model: fx.model, nonce: fx.nonce }, deps, { acceptedTcb: ['UpToDate'], acceptedComposeHashes: ['00'.repeat(32)] });
-  assert.deepEqual(failed(ok), ['model.allowlist']);
+const withPins = (edit: (m: any, g: any) => void): VerifyPolicy => {
+  const c = JSON.parse(JSON.stringify(policy)) as any;
+  edit(c.models[fx.model], c.gateway);
+  return c as VerifyPolicy;
+};
+
+test('the pinned policy file passes the recorded report and has the rows os_measurements and compose_pin for both reports', async () => {
+  const a = await run(fx.raw_body);
+  for (const n of ['gateway.os_measurements', 'gateway.compose_pin', 'model.os_measurements', 'model.compose_pin']) assert.ok(a.checks.some((c) => c.name === n && c.ok), n);
+});
+
+test('an otherwise valid report with an unpinned MRTD, RTMR or compose hash fails with the named row', async () => {
+  for (const key of ['mr_td', 'rtmr0', 'rtmr1', 'rtmr2'] as const) {
+    const a = await run(fx.raw_body, {}, deps, withPins((m) => (m[key] = ['00'.repeat(48)])));
+    assert.deepEqual(failed(a), ['model.os_measurements'], key);
+    assert.equal(a.status, 'FAILED');
+  }
+  const g = await run(fx.raw_body, {}, deps, withPins((_m, gw) => (gw.rtmr2 = ['00'.repeat(48)])));
+  assert.deepEqual(failed(g), ['gateway.os_measurements']);
+  const c = await run(fx.raw_body, {}, deps, withPins((m) => (m.compose_hash = ['00'.repeat(32)])));
+  assert.deepEqual(failed(c), ['model.compose_pin']);
+  const gc = await run(fx.raw_body, {}, deps, withPins((_m, gw) => (gw.compose_hash = ['00'.repeat(32)])));
+  assert.deepEqual(failed(gc), ['gateway.compose_pin']);
+});
+
+test('no policy, a model with no pins, or an empty list fails: nothing is skipped', async () => {
+  const none = await run(fx.raw_body, {}, deps, { acceptedTcb: ['UpToDate'] });
+  assert.equal(none.status, 'FAILED');
+  assert.deepEqual(failed(none).sort(), ['gateway.compose_pin', 'gateway.os_measurements', 'model.compose_pin', 'model.os_measurements']);
+  const other = await run(fx.raw_body, {}, deps, { ...policy, models: {} });
+  assert.deepEqual(failed(other).sort(), ['model.compose_pin', 'model.os_measurements']);
+  const empty = await run(fx.raw_body, {}, deps, withPins((m) => (m.rtmr0 = [])));
+  assert.deepEqual(failed(empty), ['model.os_measurements']);
+});
+
+test('a report whose tcb_info disagrees with the verified quote fails os_measurements', async () => {
+  const a = await run(withBody((b) => (b.model_attestations[0].info.tcb_info.rtmr1 = '11'.repeat(48))));
+  assert.deepEqual(failed(a), ['model.os_measurements']);
+});
+
+test('loadPolicy rejects a missing file and a file with no accepted TCB status', () => {
+  assert.throws(() => loadPolicy(new URL('file:///nonexistent/attest-policy.json')));
+  const dir = mkdtempSync(join(tmpdir(), 'attest-'));
+  writeFileSync(join(dir, 'p.json'), '{"acceptedTcb":[]}');
+  assert.throws(() => loadPolicy(pathToFileURL(join(dir, 'p.json'))), /acceptedTcb/);
 });
 
 test('the RTMR3 replay is deterministic and rejects a wrong event digest', () => {
@@ -194,7 +241,7 @@ test('the RTMR3 replay is deterministic and rejects a wrong event digest', () =>
 });
 
 test('no key, an HTTP error and a network error give UNATTESTED, and the key is never in the record', async () => {
-  const noKey = await attestModel(fx.model, { env: {}, fetch: async () => assert.fail('no request without a key') });
+  const noKey = await attestModel(fx.model, { env: {}, policy, fetch: async () => assert.fail('no request without a key') });
   assert.equal(noKey.status, 'UNATTESTED');
   assert.equal(noKey.report_sha256, '');
   const key = 'sk-test-key-that-must-not-leak';

@@ -144,7 +144,7 @@ The existing `policy.erfan-airlock.testnet` entry of `fixtures/accounts.testnet.
 ## Private reasoning attestation (AIR-303)
 
 `pnpm -C runtime attest` on 2026-11-03 fetched the NEAR AI Cloud attestation report of the planner and quarantine model `z-ai/glm-5.3-flash` with a fresh client nonce
-and `x-no-aliasing: true`, and every check passed (17 rows, run offline again by `runtime/test/attest.test.ts` from the stored fixture):
+and `x-no-aliasing: true`, and every check passed (21 rows, run offline again by `runtime/test/attest.test.ts` from the stored fixture):
 
 - verified at: 2026-11-03T15:15:29.932Z
 - nonce: 6eef3d938ae1a4180919449f1c2665d4d3106f913eb22c2f25f83f31bda6b598
@@ -152,7 +152,7 @@ and `x-no-aliasing: true`, and every check passed (17 rows, run offline again by
 - model signing address: 0x3b753b4406613c5e70ae640508632b600424fa0c
 - Intel TCB status: UpToDate; MRCONFIGID compose hash: a0e3c6f4f21a60ea3f5c96bc7ef319b03a184ca2049605399275fbcea74e8c5f
 - the record: `runtime/recordings/attest/z-ai_glm-5.3-flash.json`; the raw report, the quote collateral and the NVIDIA answer: `runtime/test/fixtures/attest/fixture.json`
-- checks, for the gateway report and the model report: Intel DCAP quote signature chain and collateral at TCB UpToDate, TDX debug bit clear, echoed nonce, quote report data binds the signing address and the nonce, RTMR3 replay of the event log, MRCONFIGID equals sha256 of `app_compose`; for the model report also the model id and the NVIDIA GPU evidence (nonce match, NRAS overall result true)
+- checks, for the gateway report and the model report: Intel DCAP quote signature chain and collateral at TCB UpToDate, TDX debug bit clear, echoed nonce, quote report data binds the signing address and the nonce, RTMR3 replay of the event log, MRCONFIGID equals sha256 of `app_compose`, MRTD and RTMR0 to 2 equal the report and are in the pinned allowlist, compose hash is pinned (`runtime/config/attest-policy.json`, mandatory: a missing allowlist fails the row); for the model report also the model id and the NVIDIA GPU evidence (nonce match, NRAS overall result true)
 - cost: the report endpoint is not billed, so the live check spent usd 0.00 of the NEAR AI credit (plan/LLM_BUDGET.md ledger)
 - scope: this is evidence about the model TEE instance that answered the report request. It is not a signature on any single completion, and the report does not name which instance serves a later completion (docs.near.ai, model-attestations and verification-policy pages). Facts and URLs: research repo `notes/nearai_attestation_2026-11-03.md`.
 

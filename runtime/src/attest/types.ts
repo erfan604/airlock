@@ -41,6 +41,9 @@ export interface VerifiedQuote {
   mr_config_id: string;
   rtmr3: string;
   mr_td: string;
+  rtmr0: string;
+  rtmr1: string;
+  rtmr2: string;
 }
 
 /** Verifies the Intel quote (hex) and throws when the quote or its collateral is invalid. */
@@ -55,11 +58,21 @@ export interface VerifyDeps {
   now: () => Date;
 }
 
-export interface VerifyPolicy {
-  /** Intel TCB statuses accepted; the default is `UpToDate` only */
-  acceptedTcb: readonly string[];
-  /** when set, the model's compose hash must be one of these (an allowlist of measured configurations) */
-  acceptedComposeHashes?: readonly string[];
+/** The measurements one kind of report (the gateway, or one model) must have. A missing or empty list fails its row: nothing is skipped. */
+export interface MeasurementPins {
+  mr_td: readonly string[];
+  rtmr0: readonly string[];
+  rtmr1: readonly string[];
+  rtmr2: readonly string[];
+  /** sha256 of app_compose, the same value the quote's MRCONFIGID carries */
+  compose_hash: readonly string[];
 }
 
-export const DEFAULT_POLICY: VerifyPolicy = { acceptedTcb: ['UpToDate'] };
+/** Measurement pinning is mandatory (AIR-303 review): there is no default policy. See runtime/config/attest-policy.json. */
+export interface VerifyPolicy {
+  /** Intel TCB statuses accepted */
+  acceptedTcb: readonly string[];
+  gateway?: MeasurementPins;
+  /** by canonical model id */
+  models?: Readonly<Record<string, MeasurementPins>>;
+}
