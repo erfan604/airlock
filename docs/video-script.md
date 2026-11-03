@@ -34,6 +34,7 @@ RUN open https://testnet.nearblocks.io/txns/4A9ErvQsLTSZ2Dgj4xzT5ZPGk8nsAXWKDCgs
 SCREEN S04a "CONFIRM AND RUN"
 SCREEN S04b "ALLOWED"
 SCREEN S04c "HELD FOR YOU"
+SCREEN-FMT S04g "Pay {amount} {symbol} to {to}?" amount=9.4 symbol=NEAR to=near:accountant.erfan-airlock.testnet
 SCREEN S04d "This amount is more than is left in the task you signed."
 SCREEN S04e "APPROVED BY YOU"
 SCREEN-DATA S04f fixtures/world.jsonl scenario B01 item inv-april-correction

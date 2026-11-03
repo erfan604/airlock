@@ -857,8 +857,8 @@ function loadRecorded(ctx: Ctx): Recorded {
   }
   const entries = json !== null && typeof json === 'object' ? (json as Record<string, unknown>)['entries'] : undefined;
   if (!Array.isArray(entries)) return { problem: rel + ' has no entries array' };
-  const entry = entries.find((e) => e !== null && typeof e === 'object' && (e as Record<string, unknown>)['kind'] === 'view' && (e as Record<string, unknown>)['method'] === 'get_request');
-  if (entry === undefined) return { problem: rel + ' has no get_request view entry' };
+  const entry = entries.find((e) => e !== null && typeof e === 'object' && (e as Record<string, unknown>)['kind'] === 'view' && (e as Record<string, unknown>)['method'] === 'get_request' && (e as Record<string, unknown>)['result'] !== null && (e as Record<string, unknown>)['result'] !== undefined);
+  if (entry === undefined) return { problem: rel + ' has no get_request view entry with a result' };
   const amount = findKey(entry, 'amount');
   const payee = findKey(entry, 'payee');
   if (typeof amount !== 'string' && typeof amount !== 'number') return { problem: 'the get_request entry of ' + rel + ' has no amount' };

@@ -38,6 +38,15 @@ export function approveArgs(v: RequestView): ApproveArgs {
   return Object.freeze({ id: v.id, to: v.payee, asset: v.display.asset_symbol, amount: v.display.amount_decimal, why: v.reason, book: v.book_status });
 }
 
+/** The card title as one template: the video script checker (SCREEN-FMT) searches the source for exactly this text. */
+export const CARD_TITLE_TEMPLATE = 'Pay {amount} {symbol} to {to}?';
+
+/** Fills `CARD_TITLE_TEMPLATE` from the stored arguments; a value is inserted once and never re-scanned for placeholders. */
+export function cardTitle(args: ApproveArgs): string {
+  const values: Record<string, string> = { amount: args.amount, symbol: args.asset, to: args.to };
+  return CARD_TITLE_TEMPLATE.replace(/\{(amount|symbol|to)\}/g, (_m, k: string) => values[k] ?? '');
+}
+
 export type RowName = 'TO' | 'AMOUNT' | 'BECAUSE';
 export const ROW_ORDER: readonly RowName[] = ['TO', 'AMOUNT', 'BECAUSE'];
 
@@ -293,7 +302,7 @@ export function buildCardModel(
   return Object.freeze<CardModel>({
     no: args.id,
     requestId: v.request_id,
-    title: `Pay ${args.amount} ${args.asset} to ${args.to}?`,
+    title: cardTitle(args),
     sheetTitle: `Approve ${args.amount} ${args.asset} to ${args.to}?`,
     approveLabel: `Approve ${args.amount} ${args.asset}`,
     ref: `Request #${args.id}`,
