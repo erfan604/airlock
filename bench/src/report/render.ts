@@ -6,13 +6,15 @@ import type { ResultsFile, RunRecord } from '../runner/record.ts';
 import type { Config } from '../runner/types.ts';
 import { cell } from '../stats/format.ts';
 import { renderExtra, visibleNotRun } from './extra.ts';
-import { applyApprover, assistedUtility, attackSuccess, benignUtility, ep100, escalationPrecision, feasibility, utilityUnderAttack, v3FromV0 } from '../stats/metrics.ts';
+import { OUTCOME_CLASSES, applyApprover, assistedUtility, attackSuccess, benignOutcomes, benignUtility, completion, ep100, escalationPrecision, feasibility, ownerActions, utilityUnderAttack, v3FromV0 } from '../stats/metrics.ts';
 
 export const BEGIN_MARKER = '<!-- BEGIN GENERATED -->';
 export const END_MARKER = '<!-- END GENERATED -->';
 
 const ORDER: readonly Config[] = ['V0', 'CAPS', 'BLOCKLIST', 'MANDATE', 'MANDATE-C', 'V1', 'V1-tight', 'V2', 'V3', 'A1', 'A2'];
 const DERIVED_BASELINES: ReadonlySet<Config> = new Set<Config>(['CAPS', 'BLOCKLIST', 'MANDATE', 'MANDATE-C']);
+/** The configurations whose guard needs the owner to write a mandate (payee, amount, asset) for every payment task before the agent runs. */
+const WRITES_MANDATE: ReadonlySet<Config> = new Set<Config>(['MANDATE', 'MANDATE-C']);
 const GROUPS: readonly string[] = ['A', 'B', 'C', 'S', 'X', 'P'];
 const NANO = 9;
 
@@ -125,6 +127,32 @@ export function renderBlock(results: ResultsFile, baselines: readonly RunRecord[
     ];
   });
   out.push('', '### Benign tasks', ...table(['Config', 'Runs', 'Benign utility', 'Assisted utility, oracle approver', 'EP100', 'Runs with an escalation', 'Mean cost per run USD', 'Mean latency ms'], benignBody));
+
+  // AIR-308: an Escalate is a cost to the owner and not a failure (D26), so the same runs are split three ways; the columns above are unchanged
+  const split = (c: Config, payments: boolean): string[] => {
+    const k = completion(of(c), 'benign', caseMeta, payments);
+    return [label(c), String(k.n), cell(k.byItself), cell(k.afterTap), cell(k.failed)];
+  };
+  const splitHead = ['Config', 'Runs', 'Completed by itself', 'Completed after one owner tap', 'Failed'];
+  out.push('', '### Benign tasks, completed by itself, after one owner tap, or failed', ...table(splitHead, configs.map((c) => split(c, false))));
+  out.push('', '### Benign payment tasks only (read-only tasks left out)', ...table(splitHead, configs.map((c) => split(c, true))));
+  const attackSplit = configs.map((c) => {
+    const k = completion(of(c), 'attack', caseMeta);
+    return [label(c), String(k.n), cell(k.byItself), cell(k.afterTap), cell(k.failed)];
+  });
+  out.push('', '### Legitimate task under attack, completed by itself, after one owner tap, or failed', ...table(splitHead, attackSplit));
+  const outcomeBody = configs.map((c) => {
+    const o = benignOutcomes(of(c));
+    return [label(c), ...OUTCOME_CLASSES.map((k) => String(o[k]))];
+  });
+  out.push('', '### Benign runs by outcome', ...table(['Config', ...OUTCOME_CLASSES], outcomeBody));
+  const burdenBody = configs.map((c) => {
+    const a = ownerActions(of(c), caseMeta, WRITES_MANDATE.has(c));
+    const per = (n: number): string => (a.paymentTasks === 0 ? 'n/a' : `${n} (${(n / a.paymentTasks).toFixed(2)} per task)`);
+    return [label(c), String(a.paymentTasks), per(a.mandates), per(a.taps)];
+  });
+  out.push('', '### Owner actions per payment task', ...table(['Config', 'Payment-task runs', 'Mandates written before the run (payee, amount, asset)', 'Owner taps on a waiting payment'], burdenBody));
+  out.push('Not counted: the address book, caps and lists, which are written once and not per task, and the owner\'s request, which every configuration needs.');
 
   out.push('', '### Infeasible attack cases');
   if (feasible === undefined) out.push('n/a (no V0 runs)');

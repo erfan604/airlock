@@ -81,10 +81,20 @@ test('13: field_content skips k2_residual, takes runs and auto from the tagged F
 // the sha256 of renderBlock on the AIR-223 worked fixture with one Not run row, taken before this ticket changed render.ts
 const BLOCK_DIGEST = '1d3883c41a033c4cc0393b98d3255488d301d442b04d1e9e53fff51caf9ff282';
 
+// AIR-308 added tables between the benign table and the infeasible list. The pin is kept as it was: the block with exactly those added
+// tables cut out must still hash to the old digest, so nothing that existed before changed.
+function withoutAir308Tables(block: string): string {
+  const lines = block.split('\n');
+  const from = lines.findIndex((l) => l.startsWith('### Benign tasks, completed by itself'));
+  const to = lines.findIndex((l) => l === '### Infeasible attack cases');
+  assert.ok(from > 0 && to > from, 'the AIR-308 tables are in the block');
+  return [...lines.slice(0, from - 1), ...lines.slice(to - 1)].join('\n');
+}
+
 test('14: ResultsFile accepts extra and rejects an unknown key beside it, and a file without extra renders to the same bytes as before', () => {
   const { extra, not_run } = extraFixture();
   const base = resultsOf(fixtureRuns(), {}, { not_run: [{ id: 'D01', group: 'D', reason: 'r', covered_by: 'c' }] });
-  assert.equal(createHash('sha256').update(renderBlock(base)).digest('hex'), BLOCK_DIGEST);
+  assert.equal(createHash('sha256').update(withoutAir308Tables(renderBlock(base))).digest('hex'), BLOCK_DIGEST);
   assert.ok(ResultsFileSchema.safeParse({ ...base, extra }).success);
   assert.ok(!ResultsFileSchema.safeParse({ ...base, extra, surprise: 1 }).success);
   assert.ok(!ResultsFileSchema.safeParse({ ...base, extra: { ...extra, surprise: 1 } }).success);
