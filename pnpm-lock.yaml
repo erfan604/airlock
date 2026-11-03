@@ -201,6 +201,31 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  challenge:
+    dependencies:
+      '@airlock/runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      '@hono/node-server':
+        specifier: 2.1.5
+        version: 2.1.5(hono@4.13.13)
+      hono:
+        specifier: 4.13.13
+        version: 4.13.13
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: 24.19.0
+        version: 24.19.0
+      tsx:
+        specifier: 4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   runtime:
     dependencies:
       '@hono/node-server':
