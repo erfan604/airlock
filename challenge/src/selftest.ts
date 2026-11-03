@@ -68,7 +68,8 @@ export async function runSelftest(o: SelftestOptions): Promise<number> {
   model.install();
   let engine: RecordedEngine | undefined;
   try {
-    const cases = loadCases(join(root, 'bench', 'cases'));
+    // the AIR-306 baseline cases have no recorded model output yet (`pending_recording`): the selftest replays recorded cases only
+    const cases = loadCases(join(root, 'bench', 'cases')).filter((c) => c.source_id['pending_recording'] !== true);
     if (cases.length !== EXPECTED_CASES) {
       out(`CHALLENGE FAIL ${String(cases.length)} bench cases loaded, expected ${String(EXPECTED_CASES)}`);
       return 1;
