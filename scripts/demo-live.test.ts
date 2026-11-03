@@ -172,3 +172,23 @@ test('bad arguments print usage and exit 2', async () => {
   assert.equal(await runDemo(['--dry-run', '--twins-live'], r.io), 2);
   assert.equal(parseArgs(['--nope']), null);
 });
+
+test('the guard reads and the action targets receive the same policy account when the override is set', async () => {
+  const { liveIo } = await import('./lib/preflight.ts');
+  const { liveWorld } = await import('./lib/world.ts');
+  const { liveCaseIo } = await import('./e2e-testnet.ts');
+  const { liveDemoIo, DEFAULT_DEMO_POLICY } = await import('./demo-live.ts');
+  const env = { DEMO_POLICY: DEFAULT_DEMO_POLICY };
+  const fixture = (JSON.parse(readFileSync(join(ROOT, 'fixtures', 'accounts.testnet.json'), 'utf8')) as { policy: string }).policy;
+  assert.notEqual(fixture, DEFAULT_DEMO_POLICY);
+  const seen = {
+    preflight: liveIo(ROOT, env).accounts().policy,
+    world: liveWorld(ROOT, env).policy,
+    action: liveCaseIo(env, ROOT).accounts.policy,
+    demo: liveDemoIo(ROOT, env as NodeJS.ProcessEnv).contractId,
+  };
+  assert.deepEqual(Object.values(seen), [DEFAULT_DEMO_POLICY, DEFAULT_DEMO_POLICY, DEFAULT_DEMO_POLICY, DEFAULT_DEMO_POLICY]);
+  // without the override every one of them reads the fixture
+  assert.equal(liveIo(ROOT, {}).accounts().policy, fixture);
+  assert.equal(liveWorld(ROOT, {}).policy, fixture);
+});

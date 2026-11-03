@@ -226,9 +226,9 @@ export async function baseRpc(extraFirst: string | undefined, method: string, pa
 }
 
 /** The real testnet behind a PreflightIo. `env` carries AGENT_CREDENTIALS_PATH and BASE_SEPOLIA_RPC only. */
-export function liveIo(root: string = REPO, env: { AGENT_CREDENTIALS_PATH?: string | undefined; BASE_SEPOLIA_RPC?: string | undefined } = process.env): PreflightIo {
+export function liveIo(root: string = REPO, env: { AGENT_CREDENTIALS_PATH?: string | undefined; BASE_SEPOLIA_RPC?: string | undefined; DEMO_POLICY?: string | undefined } = process.env): PreflightIo {
   const readJson = <T>(rel: string): T => JSON.parse(readFileSync(join(root, rel), 'utf8')) as T;
-  const accounts = (): Accounts => loadAccounts(root);
+  const accounts = (): Accounts => loadAccounts(root, env);
   return {
     credentialsPath: () => env.AGENT_CREDENTIALS_PATH,
     readCredentials: (path) => {

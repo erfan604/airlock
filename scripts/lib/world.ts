@@ -200,9 +200,9 @@ const callView = async (account: string, method: string, args: unknown): Promise
 
 export const MPC_CONTRACT = 'v1.signer-prod.testnet';
 
-export function liveWorld(root: string = REPO, env: { BASE_SEPOLIA_RPC?: string | undefined } = process.env): WorldIo {
+export function liveWorld(root: string = REPO, env: { BASE_SEPOLIA_RPC?: string | undefined; DEMO_POLICY?: string | undefined } = process.env): WorldIo {
   const read = <T>(rel: string): T => JSON.parse(readFileSync(join(root, rel), 'utf8')) as T;
-  const a = loadAccounts<Record<string, string>>(root);
+  const a = loadAccounts<Record<string, string>>(root, env);
   const policyFile = read<{ assets: Record<string, { path: string | null }> }>('fixtures/policy.json');
   const baseUrls = [...(env.BASE_SEPOLIA_RPC === undefined || env.BASE_SEPOLIA_RPC === '' ? [] : [env.BASE_SEPOLIA_RPC]), ...BASE_SEPOLIA_RPCS];
   return {

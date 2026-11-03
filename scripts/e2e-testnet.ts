@@ -258,7 +258,7 @@ export function liveCaseIo(env: NodeJS.ProcessEnv = process.env, root: string = 
     },
     deriveSender,
     showCard: (no) => {
-      spawnSync(join(root, 'scripts', 'approve-cli.sh'), [no], { stdio: 'inherit', cwd: root });
+      spawnSync(join(root, 'scripts', 'approve-cli.sh'), [no], { stdio: 'inherit', cwd: root, env: { ...process.env, POLICY: accounts.policy as string } });
     },
     approveTxId: (no) => {
       const file = join(targetDir, `approve-${no}.txid`);

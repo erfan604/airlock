@@ -343,7 +343,7 @@ async function liveRun(io: DemoIo, args: Args, twinAtStart: GoldenRun | null): P
   const no = b01.pendingNo;
   if (b01.outcome !== 'escalated' || b01.reason !== 'OverTaskBound' || no === null) throw new Stop(1, 'FAIL B01 was not escalated OverTaskBound with a pending number');
   io.out(`ACT 2 B01 escalated OverTaskBound pending ${no}`);
-  io.out(`WAIT the owner approves request ${no}: scripts/approve-cli.sh ${no} --run (type yes), or the console wallet at /approvals; up to ${APPROVAL_WAIT_MS / 60_000} minutes`);
+  io.out(`WAIT the owner approves request ${no}: POLICY=${io.contractId} scripts/approve-cli.sh ${no} --run (type yes), or the console wallet at /approvals; up to ${APPROVAL_WAIT_MS / 60_000} minutes`);
   await waitExecuted(io, no);
   let approval = io.approvalTx(no);
   if (approval === null) {
@@ -440,11 +440,13 @@ export async function runDemo(argv: readonly string[], io: DemoIo): Promise<numb
 // ---- the live io ----
 
 export function liveDemoIo(root: string, env: NodeJS.ProcessEnv = process.env): DemoIo {
+  // the policy account is resolved here, once; the same value goes to the preflight, every guard, every action and the evidence file
   const accounts = loadAccounts<Record<string, string>>(root, env);
-  const caseIo = liveCaseIo(env, root);
-  const world = liveWorld(root, env);
-  const pf = liveIo(root, env);
-  const goldenIo = (): ReturnType<typeof liveGoldenIo> => liveGoldenIo(root, env);
+  const pinned = { ...env, DEMO_POLICY: accounts.policy as string };
+  const caseIo = liveCaseIo(pinned, root);
+  const world = liveWorld(root, pinned);
+  const pf = liveIo(root, pinned);
+  const goldenIo = (): ReturnType<typeof liveGoldenIo> => liveGoldenIo(root, pinned);
   const owner = accounts.owner as string;
   const policy = accounts.policy as string;
   const signers = { agent: accounts.agent as string, owner, twin: accounts.twin_vanilla as string };
@@ -502,7 +504,7 @@ export function liveDemoIo(root: string, env: NodeJS.ProcessEnv = process.env): 
       writeFileSync(txidFile(no), `${hash}\n`);
     },
     tamper: async (no) => {
-      const run = spawnSync(process.execPath, ['--import', 'tsx', join(root, 'scripts', 'demo-tamper.ts'), no], { cwd: root, encoding: 'utf8', timeout: 180_000 });
+      const run = spawnSync(process.execPath, ['--import', 'tsx', join(root, 'scripts', 'demo-tamper.ts'), no], { cwd: root, encoding: 'utf8', timeout: 180_000, env: { ...process.env, POLICY: policy } });
       const text = `${run.stdout ?? ''}`;
       const m = new RegExp(`^TAMPER REVERTED ([A-Za-z0-9]{20,100}) ${WRONG_AMOUNT}$`, 'm').exec(text);
       if (run.status === 0 && m !== null) return { hash: m[1] as string, line: '' };

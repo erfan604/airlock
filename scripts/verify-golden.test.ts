@@ -175,3 +175,22 @@ test('a run with several submit transactions and requests passes each transactio
   const stray = [{ request_id: 'R9', outcome: 'allowed', reason: null, pending_id: null }];
   assert.deepEqual(await oks(io, run('live-latest', stray, [tx('submit', SUBMIT)])), [false]);
 });
+
+test('every chain read uses the account recorded in the run file (AIR-247)', async () => {
+  const seen: string[] = [];
+  const base = world();
+  const io: VerifyIo = {
+    ...base,
+    nearTx: async (h, s, p) => {
+      seen.push(p);
+      return base.nearTx(h, s, p);
+    },
+    getRequest: async (id, p) => {
+      seen.push(p);
+      return base.getRequest(id, p);
+    },
+  };
+  const r = { ...run('live-latest', R1, [tx('submit', SUBMIT)]), contractId: 'policy-v2.erfan-airlock.testnet' };
+  assert.deepEqual(await oks(io, r), [true]);
+  assert.ok(seen.length >= 2 && seen.every((p) => p === 'policy-v2.erfan-airlock.testnet'));
+});

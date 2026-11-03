@@ -20,11 +20,12 @@ const WRONG_AMOUNT = 'approve rejected: WrongAmount';
 
 export interface VerifyIo {
   accounts: { agent: string; owner: string; twin_vanilla: string; policy: string };
-  nearTx(hash: string, signerAccount: string): Promise<NearTx>;
-  getRequest(id: string): Promise<RequestView | null>;
+  /** `policy` is the contract account recorded in the run file, never a re-read fixture */
+  nearTx(hash: string, signerAccount: string, policy: string): Promise<NearTx>;
+  getRequest(id: string, policy: string): Promise<RequestView | null>;
   baseReceipt(hash: string): Promise<{ status: string } | null>;
   baseTx(hash: string): Promise<{ to: string; value: bigint; from: string } | null>;
-  derivedSender(): Promise<string>;
+  derivedSender(policy: string): Promise<string>;
 }
 
 export interface Verdict {
@@ -36,8 +37,8 @@ const verdict = (t: GoldenTx, why: string | null): Verdict => (why === null ? { 
 const bare = (key: string): string => (key.startsWith('near:') ? key.slice('near:'.length) : key);
 const ev = <K extends ChainEvent['event']>(events: ChainEvent[], name: K): Extract<ChainEvent, { event: K }>[] => events.filter((e) => e.event === name) as Extract<ChainEvent, { event: K }>[];
 
-async function paidOk(io: VerifyIo, events: ChainEvent[], requestId: string): Promise<string | null> {
-  const view = await io.getRequest(requestId);
+async function paidOk(io: VerifyIo, events: ChainEvent[], requestId: string, policy: string): Promise<string | null> {
+  const view = await io.getRequest(requestId, policy);
   if (view === null) return `the chain has no request ${requestId}`;
   if (view.asset.startsWith('evm:')) return null;
   const paid = ev(events, 'paid').find((e) => e.data.request_id === requestId);
@@ -48,7 +49,7 @@ async function paidOk(io: VerifyIo, events: ChainEvent[], requestId: string): Pr
 
 async function verifyNear(io: VerifyIo, run: GoldenRun, t: GoldenTx): Promise<string | null> {
   const signer = t.label === 'submit' ? io.accounts.agent : t.label === 'twin' ? io.accounts.twin_vanilla : io.accounts.owner;
-  const seen = await io.nearTx(t.hash, signer);
+  const seen = await io.nearTx(t.hash, signer, run.contractId);
   if (seen.status !== t.status) return `recorded ${t.status}, the chain says ${seen.status}`;
   if (t.label === 'twin') return seen.status === 'success' ? null : 'the twin transaction failed';
   if (t.label === 'tamper') return seen.failure.includes(WRONG_AMOUNT) ? null : `the failure text lacks "${WRONG_AMOUNT}"`;
@@ -63,7 +64,7 @@ async function verifyNear(io: VerifyIo, run: GoldenRun, t: GoldenTx): Promise<st
       const match = decided.find((e) => e.data.request_id === r.request_id);
       if (match === undefined || match.event !== r.outcome) return `the recorded outcome ${r.outcome} is not the event of request ${r.request_id}`;
       if (r.outcome === 'allowed') {
-        const bad = await paidOk(io, seen.events, r.request_id);
+        const bad = await paidOk(io, seen.events, r.request_id, run.contractId);
         if (bad !== null) return bad;
       }
     }
@@ -73,12 +74,12 @@ async function verifyNear(io: VerifyIo, run: GoldenRun, t: GoldenTx): Promise<st
   const held = run.requests.filter((q) => q.pending_id !== null);
   const r = held.find((q) => ev(seen.events, 'approved').some((e) => e.data.request_id === q.request_id)) ?? held[0];
   if (r === undefined || r.pending_id === null) return 'the run records no pending request to approve';
-  const view = await io.getRequest(r.pending_id);
+  const view = await io.getRequest(r.pending_id, run.contractId);
   if (view === null || view.digest === null) return 'the chain has no stored digest for the request';
   const approved = ev(seen.events, 'approved').find((e) => e.data.request_id === r.request_id);
   if (approved === undefined) return 'no approved event for the request';
   if (approved.data.digest !== view.digest) return 'the approved digest differs from get_request';
-  return paidOk(io, seen.events, r.request_id);
+  return paidOk(io, seen.events, r.request_id, run.contractId);
 }
 
 async function verifyBase(io: VerifyIo, run: GoldenRun, t: GoldenTx): Promise<string | null> {
@@ -89,12 +90,12 @@ async function verifyBase(io: VerifyIo, run: GoldenRun, t: GoldenTx): Promise<st
   const raw = await io.baseTx(t.hash);
   if (raw === null) return 'no transaction on Base Sepolia';
   const r = run.requests[0];
-  const view = r === undefined ? null : await io.getRequest(r.request_id);
+  const view = r === undefined ? null : await io.getRequest(r.request_id, run.contractId);
   if (view === null) return 'the chain has no stored request for the run';
   const to = view.payee.slice(view.payee.lastIndexOf(':') + 1).toLowerCase();
   if (raw.to.toLowerCase() !== to) return 'the recipient differs from the request';
   if (raw.value !== BigInt(view.amount)) return 'the value differs from the request';
-  if (raw.from.toLowerCase() !== (await io.derivedSender()).toLowerCase()) return 'the sender is not the derived address';
+  if (raw.from.toLowerCase() !== (await io.derivedSender(run.contractId)).toLowerCase()) return 'the sender is not the derived address';
   return null;
 }
 
@@ -189,9 +190,9 @@ export function liveVerifyIo(root: string, env: NodeJS.ProcessEnv = process.env)
   const policyFile = JSON.parse(readFileSync(join(root, 'fixtures', 'policy.json'), 'utf8')) as { assets: Record<string, { path: string | null }> };
   return {
     accounts: { agent: a.agent as string, owner: a.owner as string, twin_vanilla: a.twin_vanilla as string, policy: a.policy as string },
-    nearTx: (hash, signer) => archivalTx(hash, signer, a.policy as string),
-    getRequest: async (id) => {
-      const r = await nearQuery({ request_type: 'call_function', account_id: a.policy, method_name: 'get_request', args_base64: Buffer.from(JSON.stringify({ id })).toString('base64') });
+    nearTx: (hash, signer, policy) => archivalTx(hash, signer, policy),
+    getRequest: async (id, policy) => {
+      const r = await nearQuery({ request_type: 'call_function', account_id: policy, method_name: 'get_request', args_base64: Buffer.from(JSON.stringify({ id })).toString('base64') });
       const text = Buffer.from(r.result as number[]).toString('utf8');
       return text === 'null' || text === '' ? null : parseRequestView(JSON.parse(text));
     },
@@ -204,7 +205,7 @@ export function liveVerifyIo(root: string, env: NodeJS.ProcessEnv = process.env)
       if (r === null || r === undefined || typeof r.to !== 'string' || typeof r.value !== 'string' || typeof r.from !== 'string') return null;
       return { to: r.to, value: BigInt(r.value), from: r.from };
     },
-    derivedSender: async () => deriveSender(a.policy as string, policyFile.assets['evm:84532:native']?.path as string),
+    derivedSender: async (policy) => deriveSender(policy, policyFile.assets['evm:84532:native']?.path as string),
   };
 }
 
