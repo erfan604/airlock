@@ -56,18 +56,16 @@ CAP S08a 1:20-1:24 [SAY:F03#1/3] What you approve in your wallet is checked by
 CAP S08b 1:24-1:27.5 [SAY:F03#2/3] the contract word for word; a tampered screen
 CAP S08c 1:27.5-1:31 [SAY:F03#3/3] can only produce a transaction that fails.
 
-SHOT S05 1:31-1:55 mode TERMINAL
+SHOT S05 1:31-1:55 mode REPLAY
 RUN pnpm proven
 RUN pnpm -C runtime attest
-SCREEN S05a "KANI OK:"
-SCREEN S05b "LEANCHECKER OK"
-SCREEN S05c "identical on"
-SCREEN S05d "PROVEN OK"
+# S05 is the real output of both commands replayed in a terminal with the waits between output lines cut (pnpm proven runs about 4 minutes); no line is changed or reordered.
+SCREEN S05a "PROVEN OK"
 CAP S05a 1:31-1:36.5 [SAY:F08#1/3] We built the gate the way AWS built Cedar: a Lean model
 CAP S05b 1:36.5-1:42 [SAY:F08#2/3] with proofs, Kani on the Rust that ships, and differential tests between
 CAP S05c 1:42-1:47.5 [SAY:F08#3/3] the two, and we test the proofs themselves with covers and mutants.
-CAP S05d 1:47.5-1:51 [EV:Differential] Differential test: identical on 40,000 cases
-CAP S05e 1:51-1:55 [EV:Private reasoning attestation (AIR-303)] Reasoning model report: all 21 checks passed
+CAP S05d 1:47.5-1:51 [EV:Differential] Recorded differential test: identical on 40,000 cases
+CAP S05e 1:51-1:55 [EV:Private reasoning attestation (AIR-303)] Recorded reasoning model report: all 21 checks passed
 
 SHOT S06 1:55-2:10 mode BROWSER-SOURCE
 # before capture (AIR-301 live): challenge.erfan-airlock.testnet set up with scripts/challenge-setup.sh, the page served in live mode with no recorded banner, at least one attempt on the board, the function-call key published under Door two, and the live counter reading 0 stolen.
@@ -81,8 +79,8 @@ CAP S06c 2:04.5-2:10 [DESC] Door two: the agent's own key, published
 
 SHOT S07 2:10-2:20 mode TERMINAL
 RUN pnpm try --text 'Invoice: 9.4 NEAR to evil-ops.testnet'
-RUN pnpm i && pnpm demo
-RUN open https://github.com/erfan604/airlock
+RUN pnpm i && pnpm demo --no-open --exit-when-ready
+# TITLE card (text card, the repo is private so no browser take): AIRLOCK, https://github.com/erfan604/airlock, Built at NEAR HACKATHON
 CAP S07a 2:10-2:13.5 [DESC] Pasted invoice text through the real gate
 CAP S07b 2:13.5-2:17 [DESC] pnpm i && pnpm demo, no keys
-CAP S07c 2:17-2:20 [DESC] Built at NEAR HACKATHON
+CAP S07c 2:17-2:20 [DESC] Built at NEAR HACKATHON, https://github.com/erfan604/airlock

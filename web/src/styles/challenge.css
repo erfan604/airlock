@@ -68,6 +68,7 @@
   line-height: 20px;
   color: var(--ink);
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
   word-break: break-all;
 }
 
@@ -151,7 +152,7 @@
 }
 @media (min-width: 880px) {
   .ch-doors {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0;
   }
   .ch-doors > .ch-door:first-child {

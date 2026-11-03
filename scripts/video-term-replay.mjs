@@ -18,13 +18,14 @@ const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 }, 
 const page = await ctx.newPage();
 await page.setContent(html);
 await page.evaluate(() => {
-  window.term = new Terminal({ fontSize: 22, fontFamily: 'Menlo, monospace', cols: 110, rows: 38, convertEol: true, theme: { background: '#0b0e11' }, cursorBlink: false });
+  window.term = new Terminal({ fontSize: 30, fontFamily: 'Menlo, monospace', cols: 90, rows: 28, convertEol: true, theme: { background: '#0b0e11' }, cursorBlink: false });
   window.term.open(document.getElementById('t'));
 });
 const w = (s) => page.evaluate((s) => new Promise((r) => window.term.write(s, r)), s);
 await sleep(800);
 for (const st of spec.steps) {
-  if (st.card) { await w('\x1b[2J\x1b[H\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n'); for (const l of st.card) { await w('   ' + l + '\r\n\r\n'); await sleep(300); } await sleep((st.hold ?? 3) * 1000); continue; }
+  if (st.card) { await page.evaluate(() => { window.term.options.fontSize = 56; window.term.resize(52, 14); }); await w('\x1b[2J\x1b[H\r\n\r\n'); for (const l of st.card) { await w('   ' + l + '\r\n\r\n'); await sleep(300); } await sleep((st.hold ?? 3) * 1000); continue; }
+  if (st !== spec.steps[0]) await w('\x1b[2J\x1b[H');
   await w('\x1b[32m$\x1b[0m ');
   for (const ch of st.prompt) { await w(ch); await sleep(45); }
   await sleep(500);
