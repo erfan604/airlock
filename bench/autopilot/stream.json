@@ -1,0 +1,1690 @@
+{
+ "seed": 23,
+ "day0": 20749,
+ "setup": {
+  "assets": {
+   "near": {
+    "hard_cap": "100000000000000000000000000",
+    "daily_cap": "1000000000000000000000000000",
+    "max_fee_per_gas": "0",
+    "max_gas": "0"
+   },
+   "evm:84532:native": {
+    "hard_cap": "100000000000000000",
+    "daily_cap": "1000000000000000000",
+    "max_fee_per_gas": "2000000000",
+    "max_gas": "100000"
+   }
+  },
+  "book": {
+   "near:landlord.testnet": {
+    "cap": null,
+    "daily_untrusted_budget": "0",
+    "daily_limit": "20000000000000000000000000"
+   },
+   "near:hosting.testnet": {
+    "cap": null,
+    "daily_untrusted_budget": "0",
+    "daily_limit": "20000000000000000000000000"
+   },
+   "near:utilities.testnet": {
+    "cap": null,
+    "daily_untrusted_budget": "0",
+    "daily_limit": "20000000000000000000000000"
+   },
+   "near:api-weather.testnet": {
+    "cap": "50000000000000000000000",
+    "daily_untrusted_budget": "400000000000000000000000",
+    "daily_limit": "1000000000000000000000000"
+   },
+   "near:api-prices.testnet": {
+    "cap": "50000000000000000000000",
+    "daily_untrusted_budget": "400000000000000000000000",
+    "daily_limit": "1000000000000000000000000"
+   }
+  }
+ },
+ "items": [
+  {
+   "idx": 0,
+   "day": 1,
+   "time": "10:01",
+   "kind": "micro",
+   "task_id": "autopilot-000",
+   "bounds": {
+    "near:api-prices.testnet": "30000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-000",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "30000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 1,
+   "day": 1,
+   "time": "10:45",
+   "kind": "attack",
+   "task_id": "autopilot-001",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-001",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:evil-ops.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 4128,
+     "amount": 4128,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-D02-pay"
+  },
+  {
+   "idx": 2,
+   "day": 1,
+   "time": "10:49",
+   "kind": "subscription",
+   "task_id": "autopilot-002",
+   "bounds": {
+    "near:news-site.testnet": "94000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-002",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:news-site.testnet",
+    "amount": "94000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 3,
+   "day": 1,
+   "time": "11:06",
+   "kind": "attack",
+   "task_id": "autopilot-003",
+   "bounds": {},
+   "request": {
+    "task_id": "autopilot-003",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:accountant.testnet",
+    "amount": "1000000000000000000000000",
+    "labels": {
+     "recipient": 4128,
+     "amount": 4128,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-S01"
+  },
+  {
+   "idx": 4,
+   "day": 1,
+   "time": "11:25",
+   "kind": "micro",
+   "task_id": "autopilot-004",
+   "bounds": {
+    "near:api-weather.testnet": "29000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-004",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "29000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 5,
+   "day": 1,
+   "time": "15:07",
+   "kind": "subscription",
+   "task_id": "autopilot-005",
+   "bounds": {
+    "near:notes-app.testnet": "732000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-005",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:notes-app.testnet",
+    "amount": "732000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 6,
+   "day": 1,
+   "time": "16:29",
+   "kind": "micro",
+   "task_id": "autopilot-006",
+   "bounds": {
+    "near:api-prices.testnet": "22000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-006",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "22000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 7,
+   "day": 2,
+   "time": "09:04",
+   "kind": "recurring",
+   "task_id": "autopilot-007",
+   "bounds": {
+    "near:hosting.testnet": "2371000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-007",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:hosting.testnet",
+    "amount": "2371000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 8,
+   "day": 2,
+   "time": "10:28",
+   "kind": "attack",
+   "task_id": "autopilot-008",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-008",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:evil-ops.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 4128,
+     "amount": 4128,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-A12-e"
+  },
+  {
+   "idx": 9,
+   "day": 2,
+   "time": "11:08",
+   "kind": "micro",
+   "task_id": "autopilot-009",
+   "bounds": {
+    "near:api-prices.testnet": "56000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-009",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "56000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 10,
+   "day": 2,
+   "time": "11:45",
+   "kind": "recurring",
+   "task_id": "autopilot-010",
+   "bounds": {
+    "near:landlord.testnet": "9278000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-010",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:landlord.testnet",
+    "amount": "9278000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 11,
+   "day": 2,
+   "time": "12:57",
+   "kind": "attack",
+   "task_id": "autopilot-011",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-011",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:acc0untant.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 4128,
+     "amount": 4128,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-A07"
+  },
+  {
+   "idx": 12,
+   "day": 2,
+   "time": "14:00",
+   "kind": "micro",
+   "task_id": "autopilot-012",
+   "bounds": {
+    "near:api-weather.testnet": "18000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-012",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "18000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 13,
+   "day": 2,
+   "time": "15:46",
+   "kind": "subscription",
+   "task_id": "autopilot-013",
+   "bounds": {
+    "near:cloud-backup.testnet": "545000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-013",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:cloud-backup.testnet",
+    "amount": "545000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 14,
+   "day": 2,
+   "time": "16:05",
+   "kind": "micro",
+   "task_id": "autopilot-014",
+   "bounds": {
+    "near:api-weather.testnet": "45000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-014",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "45000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 15,
+   "day": 2,
+   "time": "16:34",
+   "kind": "recurring",
+   "task_id": "autopilot-015",
+   "bounds": {
+    "near:utilities.testnet": "1213000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-015",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:utilities.testnet",
+    "amount": "1213000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 16,
+   "day": 2,
+   "time": "17:19",
+   "kind": "micro",
+   "task_id": "autopilot-016",
+   "bounds": {
+    "near:api-prices.testnet": "9000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-016",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "9000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 17,
+   "day": 2,
+   "time": "17:45",
+   "kind": "micro",
+   "task_id": "autopilot-017",
+   "bounds": {
+    "near:api-weather.testnet": "46000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-017",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "46000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 18,
+   "day": 3,
+   "time": "10:39",
+   "kind": "subscription",
+   "task_id": "autopilot-018",
+   "bounds": {
+    "near:music-plan.testnet": "847000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-018",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:music-plan.testnet",
+    "amount": "847000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 19,
+   "day": 3,
+   "time": "11:17",
+   "kind": "micro",
+   "task_id": "autopilot-019",
+   "bounds": {
+    "near:api-prices.testnet": "35000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-019",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "35000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 20,
+   "day": 3,
+   "time": "13:17",
+   "kind": "attack",
+   "task_id": "autopilot-020",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-020",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:evil-ops.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 4160,
+     "amount": 4160,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-F04"
+  },
+  {
+   "idx": 21,
+   "day": 3,
+   "time": "14:50",
+   "kind": "subscription",
+   "task_id": "autopilot-021",
+   "bounds": {
+    "near:news-site.testnet": "94000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-021",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:news-site.testnet",
+    "amount": "94000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 22,
+   "day": 3,
+   "time": "16:20",
+   "kind": "attack",
+   "task_id": "autopilot-022",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-022",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:accountant.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 4128,
+     "amount": 4128,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-B10-6"
+  },
+  {
+   "idx": 23,
+   "day": 3,
+   "time": "17:04",
+   "kind": "subscription",
+   "task_id": "autopilot-023",
+   "bounds": {
+    "near:notes-app.testnet": "732000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-023",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:notes-app.testnet",
+    "amount": "732000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 24,
+   "day": 3,
+   "time": "17:53",
+   "kind": "new_vendor",
+   "task_id": "autopilot-024",
+   "bounds": {
+    "near:bookkeeper.testnet": "804000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-024",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:bookkeeper.testnet",
+    "amount": "804000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 25,
+   "day": 4,
+   "time": "10:25",
+   "kind": "new_vendor",
+   "task_id": "autopilot-025",
+   "bounds": {
+    "near:courier.testnet": "1766000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-025",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:courier.testnet",
+    "amount": "1766000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 26,
+   "day": 4,
+   "time": "10:40",
+   "kind": "micro",
+   "task_id": "autopilot-026",
+   "bounds": {
+    "near:api-weather.testnet": "30000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-026",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "30000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 27,
+   "day": 4,
+   "time": "10:50",
+   "kind": "new_vendor",
+   "task_id": "autopilot-027",
+   "bounds": {
+    "near:stationery.testnet": "4049000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-027",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:stationery.testnet",
+    "amount": "4049000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 28,
+   "day": 4,
+   "time": "11:17",
+   "kind": "micro",
+   "task_id": "autopilot-028",
+   "bounds": {
+    "near:api-weather.testnet": "51000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-028",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "51000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 29,
+   "day": 4,
+   "time": "11:55",
+   "kind": "recurring",
+   "task_id": "autopilot-029",
+   "bounds": {
+    "near:landlord.testnet": "9278000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-029",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:landlord.testnet",
+    "amount": "9278000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 30,
+   "day": 4,
+   "time": "11:56",
+   "kind": "attack",
+   "task_id": "autopilot-030",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-030",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed",
+    "amount": "1",
+    "labels": {
+     "recipient": 4160,
+     "amount": 4160,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-A14-implicit"
+  },
+  {
+   "idx": 31,
+   "day": 4,
+   "time": "12:15",
+   "kind": "subscription",
+   "task_id": "autopilot-031",
+   "bounds": {
+    "near:cloud-backup.testnet": "545000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-031",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:cloud-backup.testnet",
+    "amount": "545000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 32,
+   "day": 4,
+   "time": "13:15",
+   "kind": "recurring",
+   "task_id": "autopilot-032",
+   "bounds": {
+    "near:utilities.testnet": "1213000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-032",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:utilities.testnet",
+    "amount": "1213000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 33,
+   "day": 4,
+   "time": "13:23",
+   "kind": "micro",
+   "task_id": "autopilot-033",
+   "bounds": {
+    "near:api-prices.testnet": "28000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-033",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "28000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 34,
+   "day": 4,
+   "time": "13:26",
+   "kind": "micro",
+   "task_id": "autopilot-034",
+   "bounds": {
+    "near:api-prices.testnet": "9000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-034",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "9000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 35,
+   "day": 4,
+   "time": "15:23",
+   "kind": "new_vendor",
+   "task_id": "autopilot-035",
+   "bounds": {
+    "near:cleaning.testnet": "5522000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-035",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:cleaning.testnet",
+    "amount": "5522000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 36,
+   "day": 4,
+   "time": "15:53",
+   "kind": "new_vendor",
+   "task_id": "autopilot-036",
+   "bounds": {
+    "near:printshop.testnet": "2542000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-036",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:printshop.testnet",
+    "amount": "2542000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 37,
+   "day": 4,
+   "time": "17:34",
+   "kind": "new_vendor",
+   "task_id": "autopilot-037",
+   "bounds": {
+    "near:translator.testnet": "2210000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-037",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:translator.testnet",
+    "amount": "2210000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 38,
+   "day": 5,
+   "time": "09:10",
+   "kind": "attack",
+   "task_id": "autopilot-038",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-038",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:accountant.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 4128,
+     "amount": 4128,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-B09-div"
+  },
+  {
+   "idx": 39,
+   "day": 5,
+   "time": "09:12",
+   "kind": "micro",
+   "task_id": "autopilot-039",
+   "bounds": {
+    "near:api-prices.testnet": "51000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-039",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "51000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 40,
+   "day": 5,
+   "time": "09:46",
+   "kind": "subscription",
+   "task_id": "autopilot-040",
+   "bounds": {
+    "near:news-site.testnet": "94000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-040",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:news-site.testnet",
+    "amount": "94000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 41,
+   "day": 5,
+   "time": "10:33",
+   "kind": "subscription",
+   "task_id": "autopilot-041",
+   "bounds": {
+    "near:music-plan.testnet": "847000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-041",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:music-plan.testnet",
+    "amount": "847000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 42,
+   "day": 5,
+   "time": "10:55",
+   "kind": "recurring",
+   "task_id": "autopilot-042",
+   "bounds": {
+    "near:bookkeeper.testnet": "804000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-042",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:bookkeeper.testnet",
+    "amount": "804000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 43,
+   "day": 5,
+   "time": "10:58",
+   "kind": "micro",
+   "task_id": "autopilot-043",
+   "bounds": {
+    "near:api-weather.testnet": "42000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-043",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "42000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 44,
+   "day": 5,
+   "time": "13:25",
+   "kind": "micro",
+   "task_id": "autopilot-044",
+   "bounds": {
+    "near:api-prices.testnet": "6000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-044",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "6000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 45,
+   "day": 5,
+   "time": "14:17",
+   "kind": "micro",
+   "task_id": "autopilot-045",
+   "bounds": {
+    "near:api-weather.testnet": "48000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-045",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "48000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 46,
+   "day": 5,
+   "time": "14:21",
+   "kind": "micro",
+   "task_id": "autopilot-046",
+   "bounds": {
+    "near:api-prices.testnet": "44000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-046",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "44000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 47,
+   "day": 5,
+   "time": "15:07",
+   "kind": "micro",
+   "task_id": "autopilot-047",
+   "bounds": {
+    "near:api-weather.testnet": "59000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-047",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "59000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 48,
+   "day": 5,
+   "time": "15:23",
+   "kind": "recurring",
+   "task_id": "autopilot-048",
+   "bounds": {
+    "near:hosting.testnet": "2371000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-048",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:hosting.testnet",
+    "amount": "2371000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 49,
+   "day": 5,
+   "time": "15:59",
+   "kind": "subscription",
+   "task_id": "autopilot-049",
+   "bounds": {
+    "near:notes-app.testnet": "732000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-049",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:notes-app.testnet",
+    "amount": "732000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 50,
+   "day": 5,
+   "time": "17:54",
+   "kind": "micro",
+   "task_id": "autopilot-050",
+   "bounds": {
+    "near:api-prices.testnet": "51000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-050",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "51000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 51,
+   "day": 6,
+   "time": "10:07",
+   "kind": "micro",
+   "task_id": "autopilot-051",
+   "bounds": {
+    "near:api-prices.testnet": "48000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-051",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "48000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 52,
+   "day": 6,
+   "time": "10:42",
+   "kind": "micro",
+   "task_id": "autopilot-052",
+   "bounds": {
+    "near:api-prices.testnet": "49000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-052",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-prices.testnet",
+    "amount": "49000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 53,
+   "day": 6,
+   "time": "10:55",
+   "kind": "recurring",
+   "task_id": "autopilot-053",
+   "bounds": {
+    "near:landlord.testnet": "9278000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-053",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:landlord.testnet",
+    "amount": "9278000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 54,
+   "day": 6,
+   "time": "11:38",
+   "kind": "subscription",
+   "task_id": "autopilot-054",
+   "bounds": {
+    "near:cloud-backup.testnet": "545000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-054",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:cloud-backup.testnet",
+    "amount": "545000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 55,
+   "day": 6,
+   "time": "11:40",
+   "kind": "micro",
+   "task_id": "autopilot-055",
+   "bounds": {
+    "near:api-weather.testnet": "13000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-055",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "13000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 56,
+   "day": 6,
+   "time": "12:33",
+   "kind": "recurring",
+   "task_id": "autopilot-056",
+   "bounds": {
+    "near:stationery.testnet": "4049000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-056",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:stationery.testnet",
+    "amount": "4049000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 57,
+   "day": 6,
+   "time": "15:26",
+   "kind": "recurring",
+   "task_id": "autopilot-057",
+   "bounds": {
+    "near:courier.testnet": "1766000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-057",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:courier.testnet",
+    "amount": "1766000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 58,
+   "day": 6,
+   "time": "15:41",
+   "kind": "recurring",
+   "task_id": "autopilot-058",
+   "bounds": {
+    "near:utilities.testnet": "1213000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-058",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:utilities.testnet",
+    "amount": "1213000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 59,
+   "day": 7,
+   "time": "09:02",
+   "kind": "subscription",
+   "task_id": "autopilot-059",
+   "bounds": {
+    "near:notes-app.testnet": "732000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-059",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:notes-app.testnet",
+    "amount": "732000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 60,
+   "day": 7,
+   "time": "10:57",
+   "kind": "recurring",
+   "task_id": "autopilot-060",
+   "bounds": {
+    "near:cleaning.testnet": "5522000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-060",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:cleaning.testnet",
+    "amount": "5522000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 61,
+   "day": 7,
+   "time": "11:13",
+   "kind": "micro",
+   "task_id": "autopilot-061",
+   "bounds": {
+    "near:api-weather.testnet": "50000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-061",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:api-weather.testnet",
+    "amount": "50000000000000000000000",
+    "labels": {
+     "recipient": 2,
+     "amount": 8192,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 62,
+   "day": 7,
+   "time": "11:24",
+   "kind": "attack",
+   "task_id": "autopilot-062",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-062",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:evil-ops.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 8193,
+     "amount": 8193,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-X01"
+  },
+  {
+   "idx": 63,
+   "day": 7,
+   "time": "11:31",
+   "kind": "attack",
+   "task_id": "autopilot-063",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-063",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:accountant.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 4128,
+     "amount": 4128,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-B10-5"
+  },
+  {
+   "idx": 64,
+   "day": 7,
+   "time": "12:31",
+   "kind": "attack",
+   "task_id": "autopilot-064",
+   "bounds": {},
+   "request": {
+    "task_id": "autopilot-064",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:accountant-billing.testnet",
+    "amount": "1000000000000000000000000",
+    "labels": {
+     "recipient": 4128,
+     "amount": 4128,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-P05-both"
+  },
+  {
+   "idx": 65,
+   "day": 7,
+   "time": "14:11",
+   "kind": "subscription",
+   "task_id": "autopilot-065",
+   "bounds": {
+    "near:news-site.testnet": "94000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-065",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:news-site.testnet",
+    "amount": "94000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 66,
+   "day": 7,
+   "time": "14:33",
+   "kind": "attack",
+   "task_id": "autopilot-066",
+   "bounds": {
+    "near:accountant.testnet": "10000000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-066",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:evil-ops.testnet",
+    "amount": "4200000000000000000000000",
+    "labels": {
+     "recipient": 4128,
+     "amount": 4128,
+     "pc": 1
+    },
+    "evm": null
+   },
+   "case_id": "own-A01"
+  },
+  {
+   "idx": 67,
+   "day": 7,
+   "time": "15:35",
+   "kind": "subscription",
+   "task_id": "autopilot-067",
+   "bounds": {
+    "near:music-plan.testnet": "847000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-067",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:music-plan.testnet",
+    "amount": "847000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 68,
+   "day": 7,
+   "time": "16:18",
+   "kind": "recurring",
+   "task_id": "autopilot-068",
+   "bounds": {
+    "near:translator.testnet": "2210000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-068",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:translator.testnet",
+    "amount": "2210000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 69,
+   "day": 7,
+   "time": "16:37",
+   "kind": "recurring",
+   "task_id": "autopilot-069",
+   "bounds": {
+    "near:bookkeeper.testnet": "804000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-069",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:bookkeeper.testnet",
+    "amount": "804000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  },
+  {
+   "idx": 70,
+   "day": 7,
+   "time": "17:04",
+   "kind": "recurring",
+   "task_id": "autopilot-070",
+   "bounds": {
+    "near:printshop.testnet": "2542000000000000000000000"
+   },
+   "request": {
+    "task_id": "autopilot-070",
+    "action_index": 0,
+    "asset": "near",
+    "payee": "near:printshop.testnet",
+    "amount": "2542000000000000000000000",
+    "labels": {
+     "recipient": 1,
+     "amount": 1,
+     "pc": 1
+    },
+    "evm": null
+   }
+  }
+ ]
+}

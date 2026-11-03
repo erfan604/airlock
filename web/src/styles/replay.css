@@ -109,3 +109,60 @@
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }
+/* The autopilot week chart (AIR-300): console tokens only. */
+.autopilot {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.autopilot-svg {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+.ap-paid {
+  fill: var(--clear);
+  background: var(--clear);
+}
+.ap-blocked {
+  fill: var(--ink-3);
+  background: var(--ink-3);
+}
+.ap-attack {
+  fill: var(--alarm);
+  background: var(--alarm);
+}
+.ap-legit {
+  fill: var(--signal);
+  background: var(--signal);
+}
+.ap-axis {
+  stroke: var(--edge);
+  stroke-width: 1;
+}
+.ap-tick {
+  fill: var(--ink-3);
+  font-family: var(--font-data);
+  font-size: 11px;
+}
+.autopilot-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+.autopilot-key {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.autopilot-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}

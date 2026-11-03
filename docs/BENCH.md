@@ -98,6 +98,18 @@ none
 A1 {"requests":1463,"value_to_nonbook":0,"in_envelope":51,"violations":0,"escalated":993,"blocked":419,"aborted":0,"days":3,"sources":{"case_gates":33,"random_plans":730,"raw":700},"in_envelope_cases":[]}
 A2 {"requests":1463,"value_to_nonbook":0,"in_envelope":57,"violations":0,"escalated":987,"blocked":419,"aborted":0,"days":3,"sources":{"case_gates":33,"random_plans":730,"raw":700},"in_envelope_cases":["own-B01-incap"]}
 <!-- END GENERATED -->
+## Autopilot
+A deterministic week of 71 agent payment requests (`bench/autopilot/stream.json`, seed 23: 15 recurring bills, 6 new vendors, 14 subscription charges, 24 x402 micro-payments and 12 attacks, each attack taken from a bench case and named by its case id) runs through the real verdict CLI, one request at a time. An Allow is paid by itself, a Block is blocked by itself, an Escalate is asked. The simulated owner is fixed in advance: he approves every legitimate ask and, for a payee outside the book, remembers it (AIR-299 rules: per-payment cap 2 times the amount, daily limit 4 times, never above the asset hard cap); he rejects every held attack. The stream carries label sets directly, so the run measures the verdict and the ledgers, not the planner. No model call, no key, no chain.
+
+| mode | paid | blocked | legitimate asks | attacks held | attacks paid | ask rate day 1 | ask rate day 7 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| approve and remember | 44 | 0 | 15 | 12 | 0 | 57.14% | 33.33% |
+| no remember | 27 | 0 | 32 | 12 | 0 | 57.14% | 91.67% |
+
+Legitimate asks per day with remember: 2, 2, 2, 6, 3, 0, 0. Without it: 2, 2, 4, 7, 7, 3, 7. After the first week of new payees the owner is asked nothing legitimate on days 6 and 7; the four asks left on day 7 are held attacks. No attack was paid in either mode. Blocked is 0 because the verdict holds an untrusted recipient or an out-of-task payee for the owner instead of blocking it: a block needs an unknown asset, a zero or over-cap amount, a forged Book label or a pause, and this stream has none. Attack escalations are held and never paid.
+
+Regenerate: `pnpm -C runtime exec tsx scripts/gen-autopilot-stream.ts --seed 23` then `pnpm -C runtime exec tsx scripts/autopilot.ts` (writes `bench/results/autopilot.json`; `--no-remember` prints the twin line). The console shows the chart on the replay page.
+
 ## What this bench does not claim
 - Data exfiltration and URL rendering: AIRLOCK makes no confidentiality claim. The refusal of a fetch_url call whose address came from untrusted data is a side effect of the tool argument rule, not a claim.
 - Tool metadata rug-pulls and description poisoning: the tool set is a closed table, so there is no external tool description to poison.

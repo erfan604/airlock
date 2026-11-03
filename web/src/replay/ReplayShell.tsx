@@ -12,6 +12,7 @@ import { parseEvidence } from '../approvals/evidence.ts';
 import { TraceListView } from '../task/TraceList.tsx';
 import { createTraceStore } from '../task/traceStore.ts';
 import type { TraceStore } from '../task/traceStore.ts';
+import { AutopilotChart } from './AutopilotChart.tsx';
 import { liveReplayApi } from './api.ts';
 import type { Act, ActId, ActLink, HeldRequest, ReplayApi, TamperResult } from './api.ts';
 import { REJECT_NOTE, replayApprove } from './replayApprove.ts';
@@ -194,6 +195,7 @@ export function ReplayShell({ api = liveReplayApi }: { api?: ReplayApi }) {
             ))}
           </nav>
           {act === undefined ? null : <ActView key={act.id} act={act} api={api} registry={loaded.registry} held={loaded.held} />}
+          <AutopilotChart />
         </>
       ) : null}
     </main>
