@@ -226,7 +226,11 @@ function tailOf(text: string): string[] {
 function execute(row: Row): { reasons: string[]; seconds: number; tail: string[] } {
   const before = gitStatus() ?? '';
   const t0 = Date.now();
-  const p = spawnSync('/bin/sh', ['-c', row.command], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 29 });
+  // Node 24 prints its test summary as `ℹ fail 0` unless a reporter is named; the expected outputs are the TAP form (`# fail 0`), so a machine
+  // that never sourced scripts/env.sh gets the same form here.
+  const nodeOptions = process.env['NODE_OPTIONS'] ?? '';
+  const env = nodeOptions.includes('--test-reporter=') ? process.env : { ...process.env, NODE_OPTIONS: `${nodeOptions} --test-reporter=tap`.trim() };
+  const p = spawnSync('/bin/sh', ['-c', row.command], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 29, env });
   const seconds = Math.round((Date.now() - t0) / 1000);
   const output = (p.stdout ?? '') + (p.stderr ?? '');
   const reasons: string[] = [];

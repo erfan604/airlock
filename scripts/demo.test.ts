@@ -47,3 +47,24 @@ test('pnpm demo with an empty golden directory exits 1 and prints the MISSING li
   assert.equal(r.status, 1, r.stdout + r.stderr);
   assert.equal(r.stdout.trim(), `MISSING ${join(empty, 'u01.json')}`);
 });
+
+test('pnpm demo exits 1 at once and names the flag when its console port is already taken', async () => {
+  const { createServer } = await import('node:net');
+  const holder = createServer().listen(0, '127.0.0.1');
+  await new Promise((r) => holder.once('listening', r));
+  const port = (holder.address() as { port: number }).port;
+  try {
+    const r = await new Promise<{ status: number | null; stdout: string }>((resolveRun) => {
+      let out = '';
+      import('node:child_process').then(({ spawn }) => {
+        const p = spawn(process.execPath, ['--import', 'tsx', join(ROOT, 'scripts', 'demo.ts'), '--no-open', '--exit-when-ready', '--console-port', String(port), '--runtime-port', '8897'], { cwd: ROOT });
+        p.stdout.on('data', (d: Buffer) => (out += d.toString('utf8')));
+        p.on('exit', (status) => resolveRun({ status, stdout: out }));
+      });
+    });
+    assert.equal(r.status, 1);
+    assert.equal(r.stdout.trim(), `port ${String(port)} is already in use: stop what holds it or pass --console-port <free port>`);
+  } finally {
+    holder.close();
+  }
+});

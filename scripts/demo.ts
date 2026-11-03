@@ -11,6 +11,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import net from 'node:net';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -69,11 +70,34 @@ async function ready(consoleUrl: string): Promise<boolean> {
   }
 }
 
+/** True when something already answers on 127.0.0.1:<port>; the demo says so at once instead of waiting 90 s for a foreign server. */
+function portBusy(port: number): Promise<boolean> {
+  return new Promise((resolveBusy) => {
+    const sock = net.connect({ host: '127.0.0.1', port });
+    sock.setTimeout(1000);
+    sock.once('connect', () => {
+      sock.destroy();
+      resolveBusy(true);
+    });
+    sock.once('timeout', () => {
+      sock.destroy();
+      resolveBusy(false);
+    });
+    sock.once('error', () => resolveBusy(false));
+  });
+}
+
 export async function main(argv: readonly string[]): Promise<number> {
   const args = parseArgs(argv);
   if (args === null) {
     console.log('usage: pnpm demo [--no-open] [--exit-when-ready] [--golden <dir>] [--chain <dir>] [--console-port <n>] [--runtime-port <n>]');
     return 2;
+  }
+  for (const [flag, port] of [['--console-port', args.consolePort], ['--runtime-port', args.runtimePort]] as const) {
+    if (await portBusy(port)) {
+      console.log(`port ${String(port)} is already in use: stop what holds it or pass ${flag} <free port>`);
+      return 1;
+    }
   }
   const started = Date.now();
   const consoleUrl = `http://127.0.0.1:${args.consolePort}`;

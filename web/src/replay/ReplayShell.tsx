@@ -17,6 +17,10 @@ import { liveReplayApi } from './api.ts';
 import type { Act, ActId, ActLink, HeldRequest, ReplayApi, TamperResult } from './api.ts';
 import { REJECT_NOTE, replayApprove } from './replayApprove.ts';
 
+/** A link from the replay server is shown only when it points at one of the two block explorers of the recorded runs. */
+const EXPLORER_PREFIXES = ['https://testnet.nearblocks.io/txns/', 'https://sepolia.basescan.org/tx/'];
+const txHref = (url: string): string | undefined => (EXPLORER_PREFIXES.some((p) => url.startsWith(p)) ? url : undefined);
+
 const SCOPE = { network: 'testnet', contractId: 'policy.test.near' } as const;
 const STAYED = 'The stored request stayed pending with its stored amount. Nothing was signed.';
 
@@ -27,7 +31,7 @@ function Links({ links }: { links: ActLink[] }) {
       {links.map((l) => (
         <li key={`${l.label}:${l.hash}`} className="replay-link">
           <span className="replay-link-label">{`${l.label} (${l.status})`}</span>
-          <a data-testid="tx-link" data-hash={l.hash} href={l.url} target="_blank" rel="noopener noreferrer">
+          <a data-testid="tx-link" data-hash={l.hash} href={txHref(l.url)} target="_blank" rel="noopener noreferrer">
             {l.hash}
           </a>
         </li>
@@ -83,7 +87,7 @@ function HeldCard({ act, api, data }: { act: Act; api: ReplayApi; data: HeldData
       {approved === null ? null : (
         <p className="replay-approved" data-testid="replay-approve-link">
           {'Recorded approval '}
-          <a href={approved.url} target="_blank" rel="noopener noreferrer" data-testid="approve-link" data-hash={approved.tx}>
+          <a href={txHref(approved.url)} target="_blank" rel="noopener noreferrer" data-testid="approve-link" data-hash={approved.tx}>
             {approved.tx}
           </a>
         </p>
@@ -116,7 +120,7 @@ function TamperBlock({ api }: { api: ReplayApi }) {
       <ul className="replay-links">
         <li className="replay-link">
           <span className="replay-link-label">tamper (failure)</span>
-          <a data-testid="tamper-link" data-hash={result.tx} href={result.url} target="_blank" rel="noopener noreferrer">
+          <a data-testid="tamper-link" data-hash={result.tx} href={txHref(result.url)} target="_blank" rel="noopener noreferrer">
             {result.tx}
           </a>
         </li>

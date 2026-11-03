@@ -3,3 +3,7 @@
 # constant, a route of this app, or a system URL built from a value that matched ^(0x)?[0-9a-f]{64}$.
 # An in-document sprite reference built from the typed door state (a closed set of literals), not from text.
 ^web/src/components/Door\.tsx:[0-9]+:.*<use href=\{`#door-\$\{state\}`\}
+# A link to a block explorer: the replay shell passes the server's url through txHref, which keeps it only when it starts with one of the two explorer prefixes of the recorded runs.
+^web/src/replay/ReplayShell\.tsx:[0-9]+:.*href=\{txHref\(
+# The challenge page builds the link with explorerUrl, which returns null unless the value is a bare transaction hash (letters and digits only).
+^web/src/challenge/ChallengeView\.tsx:[0-9]+:.*href=\{url\}

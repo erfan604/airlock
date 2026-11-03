@@ -12,6 +12,7 @@ source "$HERE/scripts/env.sh"
 unset -f grep 2>/dev/null || true
 
 SECRET_RE='NEARAI_API_KEY|private_key|AGENT_CREDENTIALS|ed25519:[1-9A-HJ-NP-Za-km-z]{80,}'
+SECRET_RE_NO_SIG='NEARAI_API_KEY|private_key|AGENT_CREDENTIALS'
 SINK_RE='dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.write'
 
 # each check takes the root directory as $1, prints reasons on stdout and returns 1 on failure
@@ -51,7 +52,7 @@ c_html_sinks() {
 
 c_wrap_allow() {
   need_dir "$1" web/src || return 1
-  local hit; hit=$(gg "$1" -lE 'wrapUntrusted' -- web/src | grep -vE '^web/src/(approvals/evidence\.ts|task/traceStore\.ts|components/untrusted\.ts|fixtures/)')
+  local hit; hit=$(gg "$1" -lE 'wrapUntrusted' -- web/src | grep -vE '^web/src/(approvals/evidence\.ts|task/traceStore\.ts|challenge/model\.ts|components/untrusted\.ts|fixtures/)')
   [ -z "$hit" ] || { echo "wrapUntrusted outside its allow-list: $(echo "$hit" | head -1)"; return 1; }
 }
 
@@ -90,7 +91,8 @@ c_secrets_dist() {
 c_secrets_docs() {
   need_dir "$1" docs || return 1
   need_dir "$1" fixtures || return 1
-  local hit; hit=$(gg "$1" -nE "$SECRET_RE" -- docs fixtures | cut -c1-120)
+  # docs/evidence/near holds saved public RPC answers: a transaction signature there looks like a key, so that folder is scanned for the named secrets only
+  local hit; hit=$({ gg "$1" -nE "$SECRET_RE" -- docs fixtures ':!docs/evidence/near'; gg "$1" -nE "$SECRET_RE_NO_SIG" -- docs/evidence/near; } | cut -c1-120)
   [ -z "$hit" ] || { echo "secret pattern in docs or fixtures: $(echo "$hit" | head -1)"; return 1; }
 }
 
