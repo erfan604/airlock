@@ -99,6 +99,7 @@ test('rotation adds the build and logs date, report hash and reason when only th
 });
 
 test('rotation refuses a build whose other checks fail, and the policy is untouched', async () => {
+  const before = JSON.stringify(policy);
   const bad = JSON.parse(fx.raw_body);
   bad.model_attestations[0].info.tcb_info.app_compose += ' ';
   const body = JSON.stringify(bad);
@@ -110,7 +111,9 @@ test('rotation refuses a build whose other checks fail, and the policy is untouc
   const gw = withPins(() => undefined);
   (gw as any).gateway.compose_hash = ['00'.repeat(32)];
   await assert.rejects(rotate(withPins((m) => (m.compose_hash = ['00'.repeat(32)])) && gw, fx.raw_body), /gateway\.compose_pin/);
-  assert.equal(policy['_rotate_log'], undefined);
+  // the committed policy may already carry a reviewed rotation; refused rotations must leave it exactly as it was
+  assert.equal(JSON.stringify(policy), before);
+  assert.equal(JSON.stringify(loadPolicy()), before);
 });
 
 test('rotation refuses an already pinned build, a wrong hash, no reason and no report', async () => {
