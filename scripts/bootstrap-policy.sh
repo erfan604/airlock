@@ -51,6 +51,8 @@ EXPECTED="$(jq -c --slurpfile acc "$ACCOUNTS" '
   .book |= map(.key |= (res | if startswith("evm:") then ascii_downcase else . end))' "$POLICY_FILE")" \
   || { echo "REFUSED: could not resolve the placeholders of $POLICY_FILE" >&2; exit 2; }
 NONCE_PATH="$(printf '%s' "$EXPECTED" | jq -r '.nonce.path')"
+# A NEAR-only policy (no asset with an EVM signing path) has no EVM nonce to set or verify: the contract answers "unknown path".
+HAS_EVM="$(printf '%s' "$EXPECTED" | jq -r '[.assets[]? | select(.path != null)] | length > 0')"
 ATT_MS="$(printf '%s' "$EXPECTED" | jq -r '.attestation_expiration_time_ms')"
 
 # ---- helpers ----
@@ -133,7 +135,8 @@ bootstrap() {
   owner_tx set_flags "$(printf '%s' "$EXPECTED" | jq -c '{flags: .flags}')"
   owner_tx set_task_key "$(jq -nc --arg k "$TASK_KEY" '{public_key:$k}')"
 
-  # 11: the EVM nonce, never lowered
+  # 11: the EVM nonce, never lowered (skipped when the policy has no EVM asset)
+  if [ "$HAS_EVM" != "true" ]; then echo "nonce skipped: no EVM asset in the policy"; return 0; fi
   n="$(chain_nonce)" || die "FAILED: could not read the pending nonce of the derived address from $BASE_RPC"
   cur="$(view get_nonce "$(jq -nc --arg p "$NONCE_PATH" '{path:$p}')")" || die "FAILED: get_nonce view"
   cur="$(printf '%s' "$cur" | jq -r 'if . == null then "null" else tostring end')"
@@ -250,7 +253,9 @@ verify() {
     echo "agent valid until $d"
   fi
 
-  # the nonce: at least the chain's pending count
+  # the nonce: at least the chain's pending count (nothing to verify without an EVM asset)
+  if [ "$HAS_EVM" != "true" ]; then echo "nonce skipped: no EVM asset in the policy";
+  else
   item_start
   if chain="$(chain_nonce)" && cur="$(view get_nonce "$(jq -nc --arg p "$NONCE_PATH" '{path:$p}')")"; then
     cur="$(printf '%s' "$cur" | jq -r 'if . == null then "null" else tostring end')"
@@ -263,6 +268,7 @@ verify() {
     fi
     item_end nonce
   else unreadable nonce; fi
+  fi
 
   if [ "$DRIFTS" -eq 0 ]; then
     echo "POLICY MATCHES fixtures/policy.json"

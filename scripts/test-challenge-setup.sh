@@ -74,8 +74,8 @@ grep -q '^near|' "$FAKE_LOG" && fail refusals "near was called by a refused run"
 run "$SETUP" || { tail -5 "$T/out"; fail full_run_order "exit $?"; }
 grep -q 'CHALLENGE SETUP DONE challenge.erfan-airlock.testnet' "$T/out" || fail full_run_order "no done line"
 order="$(sed -E 's/\|.*//' "$FAKE_LOG" | tr '\n' ' ')"
-# account lookup (near), create-account (near), deploy, bootstrap, add-key door a, add-key door b, list-keys (near), bootstrap --verify
-[ "$order" = "near near deploy bootstrap near near near bootstrap " ] || fail full_run_order "order was: $order"
+# account lookup (near), create-account (near), code hash lookup (near), deploy, bootstrap, add-key door a, add-key door b, list-keys (near), bootstrap --verify
+[ "$order" = "near near near deploy bootstrap near near near bootstrap " ] || fail full_run_order "order was: $order"
 sed -n 1p "$FAKE_LOG" | grep -q '^near|account|view-account-summary' || fail full_run_order "the first call should look up the account"
 grep -q 'create-account|fund-myself|challenge.erfan-airlock.testnet|25 NEAR|autogenerate-new-keypair|save-to-keychain|sign-as|erfan-airlock.testnet|network-config|testnet|sign-with-keychain|send' "$FAKE_LOG" || fail full_run_order "create-account call"
 [ "$(grep -c 'add-key|erfan-agent.testnet|grant-function-call-access|--allowance|1 NEAR|--contract-account-id|challenge.erfan-airlock.testnet|--function-names|submit_batch|use-manually-provided-public-key|ed25519:.*|network-config|testnet|sign-with-keychain|send' "$FAKE_LOG")" = 2 ] || fail full_run_order "want two add-key calls (door a and door b), each submit_batch only, contract the challenge policy, 1 NEAR, keychain"

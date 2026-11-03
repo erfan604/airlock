@@ -119,8 +119,13 @@ else
 fi
 
 # ---- 2. deploy ----
-echo "step 2: deploy"
-deploy > /dev/null || die "FAILED: deploy (run it again with output: AIRLOCK_ACCOUNTS_FILE=... scripts/deploy-testnet.sh)"
+LOCAL_SHA="$(shasum -a 256 "$ROOT/contracts/airlock-policy/res/airlock_policy.wasm" | cut -c1-64)"
+if "$NEAR" account view-account-summary "$POLICY" network-config testnet now 2> /dev/null | grep -q "$LOCAL_SHA"; then
+  echo "step 2: $POLICY already runs the committed wasm ($LOCAL_SHA), deploy kept"   # a rerun after a later step failed
+else
+  echo "step 2: deploy"
+  deploy > /dev/null || die "FAILED: deploy (run it again with output: AIRLOCK_ACCOUNTS_FILE=... scripts/deploy-testnet.sh)"
+fi
 
 # ---- 3. configure ----
 echo "step 3: configure the policy"
