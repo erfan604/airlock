@@ -21,7 +21,7 @@ import { EVM_ONLY_LINES, archivalTx, liveGoldenIo, main as goldenMain } from './
 import type { NearTx } from './golden.ts';
 import { GoldenRunSchema, NEARBLOCKS, readGolden, goldenPath } from './lib/golden.ts';
 import type { GoldenRun, GoldenTx } from './lib/golden.ts';
-import { liveIo, nearQuery, nearViewAccount } from './lib/preflight.ts';
+import { liveIo, loadAccounts, nearQuery, nearViewAccount } from './lib/preflight.ts';
 import { formatLine, liveWorld, preflightOk, runPreflight } from './lib/world.ts';
 import type { Line } from './lib/world.ts';
 import { formatBaseUnits } from '../runtime/src/money/index.ts';
@@ -31,6 +31,7 @@ import { parseRequestView } from '../runtime/src/chain/types.ts';
 const NEAR = 10n ** 24n;
 /** U01 4.2 NEAR plus the approved B01 9.4 NEAR, both through the accountant's untrusted day budget (AIR-247) */
 export const MIN_BUDGET = 136n * 10n ** 23n;
+export const DEFAULT_DEMO_POLICY = 'policy-v2.erfan-airlock.testnet';
 export const MAX_PENDING = 3;
 export const MAX_HOUR_ESCALATIONS = 5;
 export const APPROVAL_WAIT_MS = 600_000;
@@ -257,7 +258,7 @@ async function dryRun(io: DemoIo, ap: Autopilot, twin: GoldenRun | null): Promis
   const restore = blockNetwork();
   try {
     if (io.duringDryRun !== undefined) await io.duringDryRun();
-    io.out('DRY RUN no signer, no key, no network: every REPLAY line below comes from bench/golden and runtime/recordings/chain');
+    io.out(`DRY RUN no signer, no key, no network: every REPLAY line below comes from bench/golden and runtime/recordings/chain (recorded on ${twin?.contractId ?? 'policy.erfan-airlock.testnet'}, a live run uses ${io.contractId})`);
     for (const l of autopilotLines(ap)) io.out(`REPLAY ${l}`);
     await act1(io, twin, 'REPLAY ', false);
     const g = (n: string): GoldenRun => {
@@ -439,7 +440,7 @@ export async function runDemo(argv: readonly string[], io: DemoIo): Promise<numb
 // ---- the live io ----
 
 export function liveDemoIo(root: string, env: NodeJS.ProcessEnv = process.env): DemoIo {
-  const accounts = JSON.parse(readFileSync(join(root, 'fixtures', 'accounts.testnet.json'), 'utf8')) as Record<string, string>;
+  const accounts = loadAccounts<Record<string, string>>(root, env);
   const caseIo = liveCaseIo(env, root);
   const world = liveWorld(root, env);
   const pf = liveIo(root, env);
@@ -516,6 +517,8 @@ if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.
   const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
   const argv = process.argv.slice(2);
   const dry = argv.includes('--dry-run');
+  // the demo runs against policy-v2 (coordinator decision 2026-11-03); the golden evidence stays on the account of fixtures/accounts.testnet.json
+  if (process.env.DEMO_POLICY === undefined || process.env.DEMO_POLICY === '') process.env.DEMO_POLICY = DEFAULT_DEMO_POLICY;
   if (!dry && (process.env.LLM_MODE === undefined || process.env.LLM_MODE === '')) process.env.LLM_MODE = 'record';
   const io: DemoIo = dry ? dryIo(root) : liveDemoIo(root);
   runDemo(argv, io).then((code) => {
@@ -525,7 +528,7 @@ if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.
 
 /** The io of a dry run: only the reads of the repo files; every other member throws, so a stray call is loud. */
 function dryIo(root: string): DemoIo {
-  const accounts = JSON.parse(readFileSync(join(root, 'fixtures', 'accounts.testnet.json'), 'utf8')) as Record<string, string>;
+  const accounts = loadAccounts<Record<string, string>>(root);
   const no = (): never => {
     throw new Error('a dry run must not touch the chain');
   };

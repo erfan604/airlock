@@ -131,6 +131,16 @@ export async function checkUntrustedBudget(payee: string, asset: string, min: bi
   return pass(`PASS untrusted budget ${remaining} base units remain`);
 }
 
+/**
+ * fixtures/accounts.testnet.json, with the policy account replaced by `DEMO_POLICY` when that is set (AIR-247: `pnpm demo:live` runs against
+ * policy-v2 while the golden evidence stays on the file's account). Without the variable the file is read as is.
+ */
+export function loadAccounts<T extends { policy?: string }>(root: string, env: { DEMO_POLICY?: string | undefined } = process.env): T {
+  const a = JSON.parse(readFileSync(join(root, 'fixtures', 'accounts.testnet.json'), 'utf8')) as T;
+  if (env.DEMO_POLICY !== undefined && env.DEMO_POLICY !== '') a.policy = env.DEMO_POLICY;
+  return a;
+}
+
 // ---- the live reads ----
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -218,7 +228,7 @@ export async function baseRpc(extraFirst: string | undefined, method: string, pa
 /** The real testnet behind a PreflightIo. `env` carries AGENT_CREDENTIALS_PATH and BASE_SEPOLIA_RPC only. */
 export function liveIo(root: string = REPO, env: { AGENT_CREDENTIALS_PATH?: string | undefined; BASE_SEPOLIA_RPC?: string | undefined } = process.env): PreflightIo {
   const readJson = <T>(rel: string): T => JSON.parse(readFileSync(join(root, rel), 'utf8')) as T;
-  const accounts = (): Accounts => readJson<Accounts>('fixtures/accounts.testnet.json');
+  const accounts = (): Accounts => loadAccounts(root);
   return {
     credentialsPath: () => env.AGENT_CREDENTIALS_PATH,
     readCredentials: (path) => {

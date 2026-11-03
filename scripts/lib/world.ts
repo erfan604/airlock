@@ -9,7 +9,7 @@ import { BASE_SEPOLIA_RPCS } from '../../runtime/src/chain/evm.ts';
 import { DEFAULT_RPC_URLS } from '../../runtime/src/chain/rpc.ts';
 import { formatBaseUnits } from '../../runtime/src/money/index.ts';
 import { EVM_FEE_RESERVE_WEI } from '../e2e/cases.ts';
-import { baseRpc, checkAgentKey, checkPolicyBalance, checkUntrustedBudget, liveIo, nearQuery } from './preflight.ts';
+import { baseRpc, checkAgentKey, checkPolicyBalance, checkUntrustedBudget, liveIo, loadAccounts, nearQuery } from './preflight.ts';
 import type { PreflightIo } from './preflight.ts';
 
 export interface Line {
@@ -202,7 +202,7 @@ export const MPC_CONTRACT = 'v1.signer-prod.testnet';
 
 export function liveWorld(root: string = REPO, env: { BASE_SEPOLIA_RPC?: string | undefined } = process.env): WorldIo {
   const read = <T>(rel: string): T => JSON.parse(readFileSync(join(root, rel), 'utf8')) as T;
-  const a = read<Record<string, string>>('fixtures/accounts.testnet.json');
+  const a = loadAccounts<Record<string, string>>(root);
   const policyFile = read<{ assets: Record<string, { path: string | null }> }>('fixtures/policy.json');
   const baseUrls = [...(env.BASE_SEPOLIA_RPC === undefined || env.BASE_SEPOLIA_RPC === '' ? [] : [env.BASE_SEPOLIA_RPC]), ...BASE_SEPOLIA_RPCS];
   return {

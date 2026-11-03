@@ -20,7 +20,7 @@ import { signTask } from './sign-task.ts';
 import { CASES, EVM_FEE_RESERVE_WEI, isCaseId } from './e2e/cases.ts';
 import type { CaseId } from './e2e/cases.ts';
 import { BudgetExhaustedError, describeFailure, flakeLine } from './lib/flake.ts';
-import { nearTxTransferredTo, baseRpc, checkAgentKey, checkDerivedBalance, checkPolicyBalance, checkUntrustedBudget, liveIo, nearViewAccount } from './lib/preflight.ts';
+import { loadAccounts, nearTxTransferredTo, baseRpc, checkAgentKey, checkDerivedBalance, checkPolicyBalance, checkUntrustedBudget, liveIo, nearViewAccount } from './lib/preflight.ts';
 import type { Accounts, Check } from './lib/preflight.ts';
 import { feePolicyFromRegistry, runTask } from '../runtime/src/agent.ts';
 import { analyzePlan, bookFromRows, limitsFromPolicy, registryFromRows, toOwnerBounds } from '../runtime/src/analyze/index.ts';
@@ -214,7 +214,7 @@ export interface CaseIo {
 }
 
 export function liveCaseIo(env: NodeJS.ProcessEnv = process.env, root: string = REPO): CaseIo {
-  const accounts = JSON.parse(readFileSync(join(root, 'fixtures', 'accounts.testnet.json'), 'utf8')) as Accounts;
+  const accounts = loadAccounts<Accounts>(root, env);
   const pf = liveIo(root, env);
   const targetDir = join(root, 'target');
   let extractor: Extractor | undefined;
