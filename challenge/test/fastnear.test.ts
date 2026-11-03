@@ -125,3 +125,94 @@ test('observationsOf: a payee outside the book is marked so, and other keys, oth
   assert.deepEqual(observationsOf(failed, POLICY, KEY, BOOK), []);
   assert.deepEqual(observationsOf({ junk: 1 }, POLICY, KEY, BOOK), []);
 });
+
+// a fake indexer whose listing and transaction bodies the test can change between polls
+interface Ctl {
+  pages: Array<typeof page.account_txs>;
+  tweak: (tx: { transaction: { hash: string }; receipts: Array<{ execution_outcome: { outcome: { status: Record<string, unknown> } } }> }) => unknown;
+}
+function live(ctl: Ctl): { fetchFn: typeof fetch; accountBodies: Array<Record<string, unknown>> } {
+  const accountBodies: Array<Record<string, unknown>> = [];
+  const fetchFn: typeof fetch = (input, init) => {
+    const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    const json = (v: unknown): Promise<Response> => Promise.resolve(new Response(JSON.stringify(v)));
+    if (String(input).endsWith('/v0/account')) {
+      accountBodies.push(body);
+      const at = body['resume_token'] === undefined ? 0 : +String(body['resume_token']).replace('p', '');
+      return json({ account_txs: ctl.pages[at] ?? [], resume_token: at + 1 < ctl.pages.length ? `p${String(at + 1)}` : null });
+    }
+    const hashes = body['tx_hashes'] as string[];
+    return json({ transactions: txs.transactions.filter((t) => hashes.includes(t.transaction.hash)).map((t) => ctl.tweak(JSON.parse(JSON.stringify(t)) as Parameters<Ctl['tweak']>[0])).filter((t) => t !== null) });
+  };
+  return { fetchFn, accountBodies };
+}
+
+test('maxPages 1 over a multi page listing: the unread pages are continued from their resume token on the next polls, nothing is skipped', async () => {
+  const all = page.account_txs;
+  const pages = [all.slice(0, 2), all.slice(2, 4), all.slice(4, 6), all.slice(6)];
+  const ctl: Ctl = { pages, tweak: (t) => t };
+  const { fetchFn, accountBodies } = live(ctl);
+  const s = source(fetchFn, { maxPages: 1 });
+  const seen: string[] = [];
+  const rounds: string[][] = [];
+  for (let i = 0; i < 6; i += 1) {
+    const got = (await s.poll()).map((o) => o.tx ?? '');
+    rounds.push(got);
+    seen.push(...got);
+  }
+  // the listing is [4A9E, ED95] [6XaB, F83w] ...: ED95 is on page 0 and 6XaB on page 1, so the second one arrives a round later
+  assert.deepEqual(rounds[0], [HELD_TX]);
+  assert.deepEqual(rounds[1], [ALLOWED_TX]);
+  assert.deepEqual([...seen].sort(), [ALLOWED_TX, HELD_TX].sort(), 'each of the two exactly once');
+  const tokens = accountBodies.map((b) => b['resume_token']).filter((t) => t !== undefined);
+  assert.ok(tokens.includes('p1') && tokens.includes('p2') && tokens.includes('p3'), `the gap is walked page by page: ${tokens.join(',')}`);
+});
+
+test('a new transaction listed while an older gap is still being read is not lost', async () => {
+  const all = page.account_txs;
+  const ctl: Ctl = { pages: [all.slice(0, 2), all.slice(2, 4), all.slice(4)], tweak: (t) => t };
+  const { fetchFn } = live(ctl);
+  const s = source(fetchFn, { maxPages: 1 });
+  await s.poll();
+  // the newest page now starts with a transaction above every height seen: ALLOWED_TX is moved up as if it had just happened
+  const newest = { ...(all.find((t) => t.transaction_hash === ALLOWED_TX) as (typeof all)[number]), tx_block_height: (all[0]?.tx_block_height ?? 0) + 100 };
+  ctl.pages = [[newest, ...all.slice(0, 2)], all.slice(2, 4), all.slice(4)];
+  const got = (await s.poll()).map((o) => o.tx);
+  assert.ok(got.includes(ALLOWED_TX));
+});
+
+test('a policy receipt without a final status is not done: the transaction is asked again, even when the listing no longer shows it', async () => {
+  let phase: 'pending' | 'noreceipt' | 'final' = 'pending';
+  const ctl: Ctl = {
+    pages: [page.account_txs],
+    tweak: (t) => {
+      if (t.transaction.hash !== ALLOWED_TX || phase === 'final') return t;
+      if (phase === 'noreceipt') return { ...t, receipts: [] };
+      for (const r of t.receipts) r.execution_outcome.outcome.status = { SuccessReceiptId: 'later' };
+      return t;
+    },
+  };
+  const { fetchFn } = live(ctl);
+  const s = source(fetchFn);
+  assert.deepEqual((await s.poll()).map((o) => o.tx), [HELD_TX], 'only the final one lands');
+  ctl.pages = [[]];
+  phase = 'noreceipt';
+  assert.deepEqual(await s.poll(), [], 'no receipt yet, still waiting');
+  phase = 'final';
+  assert.deepEqual((await s.poll()).map((o) => o.tx), [ALLOWED_TX], 'it lands once the receipt is final');
+  assert.deepEqual(await s.poll(), [], 'and only once');
+});
+
+test('a policy receipt that Failed is final: it is done and adds nothing', async () => {
+  const ctl: Ctl = {
+    pages: [page.account_txs],
+    tweak: (t) => {
+      if (t.transaction.hash === ALLOWED_TX) for (const r of t.receipts) r.execution_outcome.outcome.status = { Failure: {} };
+      return t;
+    },
+  };
+  const { fetchFn } = live(ctl);
+  const s = source(fetchFn);
+  assert.deepEqual((await s.poll()).map((o) => o.tx), [HELD_TX]);
+  assert.deepEqual(await s.poll(), []);
+});

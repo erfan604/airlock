@@ -62,32 +62,58 @@ const b64json = (value: unknown): unknown => {
   }
 };
 
-/** The observations of one transaction, or [] when it is not a successful submit_batch of the published key to the policy. */
-export function observationsOf(raw: unknown, policy: string, publicKey: string, book: ReadonlySet<string>): KeyObservation[] {
+export type TxState = { state: 'skip' } | { state: 'pending' } | { state: 'final'; obs: KeyObservation[] };
+
+/**
+ * What one transaction is for the watcher. `skip`: not a submit_batch of the published key to the policy, nothing to wait for. `pending`: it is
+ * one, but the policy receipt is not there yet or has no final status (SuccessValue or Failure), so the transaction is asked again later.
+ * `final`: the receipt is final; a failed call gives no observations, a successful one gives one per request with the contract's verdict.
+ */
+export function classifyTx(raw: unknown, policy: string, publicKey: string, book: ReadonlySet<string>): TxState {
   const parsed = Tx.safeParse(raw);
-  if (!parsed.success) return [];
+  if (!parsed.success) return { state: 'skip' };
   const { transaction: tx, receipts } = parsed.data;
-  if (tx.public_key !== publicKey || tx.receiver_id !== policy) return [];
+  if (tx.public_key !== publicKey || tx.receiver_id !== policy) return { state: 'skip' };
   const call = tx.actions.map((a) => (a['FunctionCall'] ?? null) as { method_name?: unknown; args?: unknown } | null).find((a) => a !== null && a.method_name === 'submit_batch');
-  if (call === undefined || call === null) return [];
-  const args = z.object({ reqs: z.array(z.unknown()) }).safeParse(b64json(call.args));
+  if (call === undefined || call === null) return { state: 'skip' };
   const receipt = receipts.find((r) => r.execution_outcome.outcome.executor_id === policy && r.receipt.predecessor_id === tx.signer_id);
-  const answer = receipt === undefined ? undefined : b64json(receipt.execution_outcome.outcome.status['SuccessValue']);
-  if (!args.success || answer === undefined) return [];
-  const outcomes = z.array(Outcome).safeParse(answer);
-  if (!outcomes.success || outcomes.data.length !== args.data.reqs.length) return [];
-  const out: KeyObservation[] = [];
+  if (receipt === undefined) return { state: 'pending' };
+  const status = receipt.execution_outcome.outcome.status;
+  if ('Failure' in status) return { state: 'final', obs: [] };
+  if (!('SuccessValue' in status)) return { state: 'pending' };
+  const args = z.object({ reqs: z.array(z.unknown()) }).safeParse(b64json(call.args));
+  const outcomes = z.array(Outcome).safeParse(b64json(status['SuccessValue']));
+  if (!args.success || !outcomes.success || outcomes.data.length !== args.data.reqs.length) return { state: 'final', obs: [] };
+  const obs: KeyObservation[] = [];
   for (const [i, o] of outcomes.data.entries()) {
     const req = Req.safeParse(args.data.reqs[i]);
     if (!req.success) continue;
-    out.push({ requestId: o.request_id, payee: req.data.payee, asset: req.data.asset, amount: req.data.amount, outcome: OUTCOME[o.outcome], reason: o.reason, tx: tx.hash, toBook: book.has(req.data.payee) });
+    obs.push({ requestId: o.request_id, payee: req.data.payee, asset: req.data.asset, amount: req.data.amount, outcome: OUTCOME[o.outcome], reason: o.reason, tx: tx.hash, toBook: book.has(req.data.payee) });
   }
-  return out;
+  return { state: 'final', obs };
+}
+
+/** The observations of one transaction once it is final, else []. */
+export function observationsOf(raw: unknown, policy: string, publicKey: string, book: ReadonlySet<string>): KeyObservation[] {
+  const t = classifyTx(raw, policy, publicKey, book);
+  return t.state === 'final' ? t.obs : [];
+}
+
+interface Gap {
+  /** continue the listing from here (older transactions) */
+  token: string;
+  /** until a listed transaction is at or below this height: everything older was already listed */
+  floor: number;
 }
 
 export class FastNearKeySource implements KeyWatcherSource {
   private readonly done = new Set<string>();
-  private cursor = -1;
+  /** listed transactions whose policy receipt is not final yet, with their heights: asked again on every poll */
+  private readonly pending = new Map<string, number>();
+  /** unread stretches of the listing left behind when a scan ended on maxPages */
+  private gaps: Gap[] = [];
+  /** the highest block height listed so far */
+  private high = -1;
   private readonly base: string;
   private readonly fetchFn: typeof fetch;
 
@@ -107,50 +133,65 @@ export class FastNearKeySource implements KeyWatcherSource {
     return (await res.json()) as unknown;
   }
 
-  /** The hashes of transactions newer than the cursor that have not been handled, with their block heights. */
-  private async fresh(): Promise<Array<{ hash: string; height: number }>> {
-    const found: Array<{ hash: string; height: number }> = [];
-    let token: string | null = null;
+  /**
+   * Reads up to maxPages pages from `token` (null: the newest) and adds the unhandled transactions to `into`. It stops at a listed transaction
+   * at or below `floor`, at the end of the listing, or at maxPages; in the last case it returns the token to continue from.
+   */
+  private async scan(token: string | null, floor: number, into: Map<string, number>): Promise<{ top: number; rest: string | null }> {
+    let top = -1;
+    let at = token;
     for (let page = 0; page < (this.o.maxPages ?? 5); page += 1) {
       const body: Record<string, unknown> = { account_id: this.o.policy, is_function_call: true, limit: this.o.pageLimit ?? 50 };
-      if (token !== null) body['resume_token'] = token;
+      if (at !== null) body['resume_token'] = at;
       const parsed = AccountPage.safeParse(await this.post('/v0/account', body));
       if (!parsed.success) throw new Error('fastnear /v0/account answered something unexpected');
-      let reachedKnown = false;
+      let reachedFloor = false;
       for (const t of parsed.data.account_txs) {
-        if (t.tx_block_height <= this.cursor) reachedKnown = true;
-        else if (!this.done.has(t.transaction_hash) && t.is_success !== false) found.push({ hash: t.transaction_hash, height: t.tx_block_height });
+        top = Math.max(top, t.tx_block_height);
+        if (t.tx_block_height <= floor) reachedFloor = true;
+        else if (!this.done.has(t.transaction_hash) && t.is_success !== false) into.set(t.transaction_hash, t.tx_block_height);
       }
-      token = parsed.data.resume_token ?? null;
-      if (reachedKnown || token === null || parsed.data.account_txs.length === 0) break;
+      at = parsed.data.resume_token ?? null;
+      if (reachedFloor || at === null || parsed.data.account_txs.length === 0) return { top, rest: null };
     }
-    return found;
+    return { top, rest: at };
   }
 
   async poll(): Promise<KeyObservation[]> {
-    const todo = await this.fresh();
-    if (todo.length === 0) return [];
+    const todo = new Map(this.pending);
+    // the newest transactions, down to the highest block already listed; a stretch this scan could not reach becomes a gap read next time
+    const fresh = await this.scan(null, this.high, todo);
+    const gapOfThisScan: Gap | null = fresh.rest === null ? null : { token: fresh.rest, floor: this.high };
+    this.high = Math.max(this.high, fresh.top);
+    // the stretches earlier polls left behind, each continued from its own token (the one this poll leaves is read from the next poll on)
+    const open: Gap[] = [];
+    for (const gap of this.gaps) {
+      const next = await this.scan(gap.token, gap.floor, todo);
+      if (next.rest !== null) open.push({ token: next.rest, floor: gap.floor });
+    }
+    this.gaps = gapOfThisScan === null ? open : [...open, gapOfThisScan];
+    if (todo.size === 0) return [];
     const book = await this.o.bookKeys();
-    const heights = new Map(todo.map((t) => [t.hash, t.height] as const));
     const got: Array<{ height: number; obs: KeyObservation[] }> = [];
-    let missingFloor = Infinity;
     const size = this.o.batch ?? 20;
-    for (let i = 0; i < todo.length; i += size) {
-      const hashes = todo.slice(i, i + size).map((t) => t.hash);
-      const list = TxList.parse(await this.post('/v0/transactions', { tx_hashes: hashes }));
-      const returned = new Set<string>();
+    const hashes = [...todo.keys()];
+    for (let i = 0; i < hashes.length; i += size) {
+      const chunk = hashes.slice(i, i + size);
+      const list = TxList.parse(await this.post('/v0/transactions', { tx_hashes: chunk }));
+      const settled = new Set<string>();
       for (const raw of list.transactions) {
         const hash = (raw as { transaction?: { hash?: unknown } } | null)?.transaction?.hash;
-        if (typeof hash !== 'string' || !heights.has(hash)) continue;
-        returned.add(hash);
+        if (typeof hash !== 'string' || !todo.has(hash)) continue;
+        const t = classifyTx(raw, this.o.policy, this.o.publicKey, book);
+        if (t.state === 'pending') continue;
+        settled.add(hash);
         this.done.add(hash);
-        got.push({ height: heights.get(hash) ?? 0, obs: observationsOf(raw, this.o.policy, this.o.publicKey, book) });
+        this.pending.delete(hash);
+        if (t.state === 'final') got.push({ height: todo.get(hash) ?? 0, obs: t.obs });
       }
-      // a listed transaction the second call does not return yet is asked again next time, and the cursor stays below it
-      for (const h of hashes) if (!returned.has(h)) missingFloor = Math.min(missingFloor, (heights.get(h) ?? 0) - 1);
+      // a listed transaction that is not returned yet, or has no final policy receipt, is kept and asked again on the next poll
+      for (const h of chunk) if (!settled.has(h)) this.pending.set(h, todo.get(h) ?? 0);
     }
-    const top = Math.max(...todo.map((t) => t.height));
-    this.cursor = Math.max(this.cursor, Math.min(top, missingFloor));
     return got.sort((a, b) => a.height - b.height).flatMap((g) => g.obs);
   }
 }
