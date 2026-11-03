@@ -159,6 +159,7 @@ step_if scripts/check-commits.sh commits commits scripts/check-commits.sh
 step_if scripts/verify-doc-check.sh verify-doc verify-doc scripts/verify-doc-check.sh            # AIR-284
 step_if scripts/hidden-text-scan.sh hidden-text hidden-text scripts/hidden-text-scan.sh          # AIR-286
 step_if scripts/security-pass.sh security-pass security-pass scripts/security-pass.sh            # AIR-286
+step_if docs/evidence/proofs.json proof-transcripts proof-transcripts pnpm tsx scripts/proof-transcripts.ts   # AIR-285
 step gitleaks gitleaks_scan
 
 # ---- full: quick plus ----
