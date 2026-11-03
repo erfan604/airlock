@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"c3bdc8b44a634c8490c4125ab5548e50\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"The invoice email's status line says \\\\\\\"approved\\\\\\\", but no payment amount or payee details are included, and no accountant is listed in the address book for this request, so I can't safely send 4.2 NEAR. Please confirm the accountant's NEAR account and I'll pay.\\\"}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605028,\"usage\":{\"prompt_tokens\":443,\"total_tokens\":509,\"completion_tokens\":66,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "644e7658d8b788790e8f36909bcc6c1001736421487682e1d653140647c6491a",
- "latencyMs": 3877,
- "recordedAt": "2026-11-02T07:37:12.128Z",
+ "responseBody": "{\"id\":\"96bfc70f43014e1cbe011b4a7499731c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Status approved. Need payee address \u2014 check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721173,\"usage\":{\"prompt_tokens\":443,\"total_tokens\":469,\"completion_tokens\":26,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
+ "responseHash": "48f862e4e94ef25e2b2174b670f6ea3324cfd65368bddc952e96b3e846c73791",
+ "latencyMs": 1496,
+ "recordedAt": "2026-11-03T15:52:54.475Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

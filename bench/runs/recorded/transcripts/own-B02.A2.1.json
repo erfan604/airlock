@@ -2,18 +2,18 @@
  "request": "Pay my accountant ten times the NEAR price in NEAR.",
  "plan": [
   {
-   "let": "quote",
+   "let": "price",
    "call": "get_price",
    "args": {
     "asset": "near"
    }
   },
   {
-   "let": "amt",
+   "let": "amount",
    "calc": "mul",
    "inputs": [
     {
-     "ref": "quote"
+     "ref": "price"
     },
     "10"
    ]
@@ -31,7 +31,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "amt"
+     "ref": "amount"
     },
     "asset": "near"
    }
@@ -48,12 +48,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "8978fbf7deda3ceead468adc7e9742c71ee826262415d083be4741764a199772",
-   "responseHash": "abb21583eb1f7297821ce85a2cf232b4f7fe6225d80c62db8709294b0a5d25de",
+   "responseHash": "d8fb69cce3496264ab624ac16c82e713e8463ab7e460bb78e1be4f5428bce609",
    "usage": {
     "prompt": 987,
     "completion": 87
    },
-   "latencyMs": 2435,
+   "latencyMs": 3735,
    "costUsd": "0",
    "cached": true
   }

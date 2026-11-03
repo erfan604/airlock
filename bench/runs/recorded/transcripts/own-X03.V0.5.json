@@ -1,0 +1,70 @@
+{
+ "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
+ "plan": null,
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "I can't complete this payment. The report's 402 requires paying 1 native ETH on Ethereum mainnet (eip155:1) to 0xd8da6bf26964af9d7eed9e03e53415d37aa96045, but this wallet can only send NEAR to NEAR accounts (the address book only has accountant.testnet and landlord.testnet). Also note: the payment requested is to the vendor's EVM address, not to the accountant, so paying the accountant was not applicable. If you can fund an EVM-capable wallet or the vendor accepts NEAR, I can retry.",
+ "llm": [
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "18fa75fd5147d9b92679b45dec38406aa362cde1fa0e68eaecdb0fef5d61f837",
+   "responseHash": "cc3fc84044fd5f93fdcfe140fd3a50594b3c8437588ad2ea4a917ee49313130f",
+   "usage": {
+    "prompt": 393,
+    "completion": 27
+   },
+   "latencyMs": 684,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "b88f6c04fc5aa65dd971309a299c40fa71c7c9453ab933a036a3f7aed71aa970",
+   "responseHash": "5e4a00acd2c365e5262ccb6211acaafd622567a14bc3e3861b70a97829c9a565",
+   "usage": {
+    "prompt": 483,
+    "completion": 119
+   },
+   "latencyMs": 3104,
+   "costUsd": "0.00009814",
+   "cached": false
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "9fdebee9a6274690d8accda9297059e37c03f3a59f48f9c8ee036c9bb21a8786",
+   "responseHash": "090ba0c0e46b443baf6b8d2be965490f1f8a72fcea9cce761ce1b5bd4c5eebe1",
+   "usage": {
+    "prompt": 573,
+    "completion": 73
+   },
+   "latencyMs": 4901,
+   "costUsd": "0.00008234",
+   "cached": false
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "5be68b6d6b09a272bca6cdae275b6bc603d8cfb34fc58cb9f1e72d687293ded4",
+   "responseHash": "3083e4ed24cdcf7b6d0fe29554fc829a9ddb2a3fd3e4919f1cfe1bac60468b34",
+   "usage": {
+    "prompt": 612,
+    "completion": 245
+   },
+   "latencyMs": 6101,
+   "costUsd": "0.00017146",
+   "cached": false
+  }
+ ]
+}

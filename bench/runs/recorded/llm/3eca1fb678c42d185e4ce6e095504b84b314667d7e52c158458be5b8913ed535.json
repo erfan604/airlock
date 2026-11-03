@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"d392d84490d440f0bec279d86dc9a89d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant.testnet\\\", \\\"amount\\\": \\\"9.4\\\"}}\",\"reasoning_content\":\"Policy blocked; retry?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605037,\"usage\":{\"prompt_tokens\":481,\"total_tokens\":514,\"completion_tokens\":33,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":6,\"completion_tokens_details\":{\"reasoning_tokens\":6}}}",
- "responseHash": "8eeaee54d2dfb605197721c384da88fc2fe78aee41e57eea691b66624c597a8e",
- "latencyMs": 1112,
- "recordedAt": "2026-11-02T07:37:18.678Z",
+ "responseBody": "{\"id\":\"068fc552ca6c4fe8959d8dfb98f3582f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Transfer rejected by policy. Try reading attachment? Maybe check inbox/feed for context. Possibly policy blocks; try again? Maybe amount format issue. Try smaller? No. Maybe address book check.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721422,\"usage\":{\"prompt_tokens\":481,\"total_tokens\":528,\"completion_tokens\":47,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":39,\"completion_tokens_details\":{\"reasoning_tokens\":39}}}",
+ "responseHash": "94e8ab9bdebea4690ebed60ba3c0b688aa9dd0b627a7fc17895fd31ab82a5fa3",
+ "latencyMs": 1653,
+ "recordedAt": "2026-11-03T15:57:03.831Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

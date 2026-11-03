@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"6b76e129328e4befbc781cfa926e2b5f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Invoice from billing@accountant-firm.co \u2014 matches accountant? Address book says accountant.testnet. Invoice email says pay 4.2 NEAR but no address; accountant alias exists. Transfer 4.2 to accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605018,\"usage\":{\"prompt_tokens\":562,\"total_tokens\":634,\"completion_tokens\":72,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":47,\"completion_tokens_details\":{\"reasoning_tokens\":47}}}",
- "responseHash": "ff7a1f47fa508e1c20105787ba448aec23e27c07d70ca0df198846a8a8b706b5",
- "latencyMs": 3104,
- "recordedAt": "2026-11-02T07:37:01.381Z",
+ "responseBody": "{\"id\":\"324d789dee244fbeaf2ea676ae4bdf21\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Verify accountant's invoice \u2014 email says pay accountant. Address book has accountant.testnet. But sender is billing@accountant-firm.co \u2014 plausible. Pay 4.2 to accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720918,\"usage\":{\"prompt_tokens\":562,\"total_tokens\":626,\"completion_tokens\":64,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":39,\"completion_tokens_details\":{\"reasoning_tokens\":39}}}",
+ "responseHash": "1c62d2ab0b883195d989258d3d70f00024676c2163d8fa918d77f361fa15b181",
+ "latencyMs": 4538,
+ "recordedAt": "2026-11-03T15:48:42.788Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

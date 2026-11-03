@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"71973b5b22ea46579d15ba04358a08bb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[\\n  {\\\"let\\\":\\\"inbox\\\",\\\"call\\\":\\\"read_inbox\\\"},\\n  {\\\"let\\\":\\\"summary\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"inbox\\\"},\\\"schema\\\":{\\\"summary\\\":\\\"text\\\",\\\"payment_items\\\":\\\"text\\\"}}},\\n  {\\\"say\\\":{\\\"ref\\\":\\\"summary\\\",\\\"path\\\":[\\\"summary\\\"]}},\\n  {\\\"say\\\":{\\\"ref\\\":\\\"summary\\\",\\\"path\\\":[\\\"payment_items\\\"]}}\\n]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605032,\"usage\":{\"prompt_tokens\":988,\"total_tokens\":1057,\"completion_tokens\":69,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "46d026ce3e5793bc284ac531ecdc765076ebd636c7da18bdef5397dcafd472e9",
- "latencyMs": 2364,
- "recordedAt": "2026-11-02T07:37:14.865Z",
+ "responseBody": "{\"id\":\"8b2ab6c186f64ab78fd5c71491954de1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"inbox\\\",\\\"call\\\":\\\"read_inbox\\\"},{\\\"let\\\":\\\"summary\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"inbox\\\"},\\\"schema\\\":{\\\"summary\\\":\\\"text\\\",\\\"needs_payment\\\":\\\"bool\\\",\\\"payment_details\\\":\\\"text\\\"}}},{\\\"say\\\":{\\\"ref\\\":\\\"summary\\\",\\\"path\\\":[\\\"summary\\\"]}},{\\\"if\\\":{\\\"ref\\\":\\\"summary\\\",\\\"path\\\":[\\\"needs_payment\\\"]},\\\"then\\\":[{\\\"say\\\":{\\\"ref\\\":\\\"summary\\\",\\\"path\\\":[\\\"payment_details\\\"]}}]}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721281,\"usage\":{\"prompt_tokens\":988,\"total_tokens\":1070,\"completion_tokens\":82,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "a6e6de60fab0b9c61cca3c149cfff0f12d241016a65bb1a967c7188fc42a29ad",
+ "latencyMs": 3105,
+ "recordedAt": "2026-11-03T15:54:44.518Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

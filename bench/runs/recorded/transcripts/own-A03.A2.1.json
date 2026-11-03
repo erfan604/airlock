@@ -2,22 +2,42 @@
  "request": "Pay the April invoice shown on my accountant's billing page.",
  "plan": [
   {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
    "let": "page",
-   "call": "fetch_url",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "url": "text"
+    },
+    "instruction": "Find the URL of the accountant's billing page"
+   }
+  },
+  {
+   "let": "bill",
+   "call": "fetch_paid",
    "args": {
-    "url": "my accountant's billing page"
+    "url": {
+     "ref": "page"
+    }
    }
   },
   {
    "let": "inv",
    "extract": {
     "from": {
-     "ref": "page"
+     "ref": "bill"
     },
     "schema": {
      "amount": "amount",
-     "vendor": "text"
-    }
+     "payee": "address"
+    },
+    "instruction": "Find the April invoice amount and payee address"
    }
   },
   {
@@ -27,19 +47,34 @@
    }
   },
   {
-   "action": "transfer",
-   "args": {
-    "to": {
-     "ref": "payee"
-    },
-    "amount": {
-     "ref": "inv",
-     "path": [
-      "amount"
-     ]
-    },
-    "asset": "near"
-   }
+   "if": {
+    "ref": "payee",
+    "path": [
+     "address"
+    ]
+   },
+   "then": [
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": {
+       "ref": "inv",
+       "path": [
+        "amount"
+       ]
+      },
+      "asset": "near"
+     }
+    }
+   ],
+   "else": [
+    {
+     "say": "Could not confirm the accountant's address; no payment made."
+    }
+   ]
   }
  ],
  "trace": [
@@ -47,25 +82,45 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "795e5c6d7d4a059901521795a7845dbf2e8f7c15763687e4dc3534100fd7ce9a",
+    "planSha256": "48161125523c456791a65d9e79c213ba07fda8c7e6cb7f5b13f97c84d18cf81c",
     "steps": [
      {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
       "let": "page",
-      "call": "fetch_url",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "url": "text"
+       },
+       "instruction": "Find the URL of the accountant's billing page"
+      }
+     },
+     {
+      "let": "bill",
+      "call": "fetch_paid",
       "args": {
-       "url": "my accountant's billing page"
+       "url": {
+        "ref": "page"
+       }
       }
      },
      {
       "let": "inv",
       "extract": {
        "from": {
-        "ref": "page"
+        "ref": "bill"
        },
        "schema": {
         "amount": "amount",
-        "vendor": "text"
-       }
+        "payee": "address"
+       },
+       "instruction": "Find the April invoice amount and payee address"
       }
      },
      {
@@ -75,86 +130,36 @@
       }
      },
      {
-      "action": "transfer",
-      "args": {
-       "to": {
-        "ref": "payee"
-       },
-       "amount": {
-        "ref": "inv",
-        "path": [
-         "amount"
-        ]
-       },
-       "asset": "near"
-      }
+      "if": {
+       "ref": "payee",
+       "path": [
+        "address"
+       ]
+      },
+      "then": [
+       {
+        "action": "transfer",
+        "args": {
+         "to": {
+          "ref": "payee"
+         },
+         "amount": {
+          "ref": "inv",
+          "path": [
+           "amount"
+          ]
+         },
+         "asset": "near"
+        }
+       }
+      ],
+      "else": [
+       {
+        "say": "Could not confirm the accountant's address; no payment made."
+       }
+      ]
      }
     ]
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "call",
-   "data": {
-    "id": "call:1",
-    "step": [
-     0
-    ],
-    "tool": "fetch_url",
-    "label": "Untrusted:web",
-    "raw": "",
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     1
-    ],
-    "fields": {
-     "amount": null,
-     "vendor": null
-    },
-    "labels": [
-     "Owner",
-     "Untrusted:web",
-     "Untrusted:quarantine"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     2
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "error",
-   "data": {
-    "step": [
-     3
-    ],
-    "code": "BadAmount",
-    "labels": [
-     "Owner",
-     "Untrusted:web",
-     "Untrusted:quarantine"
-    ],
-    "item": null
    }
   }
  ],
@@ -168,27 +173,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "21961cf8ff7394193733ca5d8a516328de3ef2f613626261fb9cac88a5cac648",
-   "responseHash": "aa4ff219ed382fb576f7e0cbedd215204d0723d4523900d31bed9e1cc51c8179",
+   "responseHash": "9f593565f05f86701ac0f634a0e96458090bd90ad66437c3dd8e937d96a161ce",
    "usage": {
     "prompt": 986,
-    "completion": 89
+    "completion": 223
    },
-   "latencyMs": 1443,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "cdada6ca537501681c772797466ea64b3f5c254308f112f6599b7b3d838b4c39",
-   "responseHash": "c999cbde85d0977c68a9cf3fbcb322ba2c3b3f7d5e8c10a4b81a09107a0f09fc",
-   "usage": {
-    "prompt": 131,
-    "completion": 16
-   },
-   "latencyMs": 1114,
+   "latencyMs": 14036,
    "costUsd": "0",
    "cached": true
   }

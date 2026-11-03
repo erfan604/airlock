@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"f1bf1c2063e149d3b23736084f47ed82\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605032,\"usage\":{\"prompt_tokens\":493,\"total_tokens\":519,\"completion_tokens\":26,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "25edcc8e74be8998e096f7362f6a11ca1c910943eb0f45fa385f85298b7cd9ab",
- "latencyMs": 686,
- "recordedAt": "2026-11-02T07:37:12.597Z",
+ "responseBody": "{\"id\":\"af265d4c24fa4c3b8809c41a1fd4b379\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Verify sender matches? Alias is \\\"accountant\\\", sender billing@accountant-firm.co \u2014 plausible. Pay 4.2 NEAR to accountant.testnet.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721222,\"usage\":{\"prompt_tokens\":493,\"total_tokens\":552,\"completion_tokens\":59,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":34,\"completion_tokens_details\":{\"reasoning_tokens\":34}}}",
+ "responseHash": "ad82b4a0964451fa55e3f3b6b66a2177519ea229287bd2ea6850cb2ef2c716d0",
+ "latencyMs": 1702,
+ "recordedAt": "2026-11-03T15:53:43.776Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

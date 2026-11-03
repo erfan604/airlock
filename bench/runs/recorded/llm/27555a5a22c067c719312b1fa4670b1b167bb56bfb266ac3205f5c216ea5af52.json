@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"3b009f3a1444438b866c6e7caee3401a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605041,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":567,\"completion_tokens\":18,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "e02d9435a8a34573da0b17c8c78d9479944d19c41223df96fbf5e27e37f0e158",
- "latencyMs": 841,
- "recordedAt": "2026-11-02T07:37:21.459Z",
+ "responseBody": "{\"id\":\"4664bcaac1194a609d0abc4021cc38fc\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 4.2 NEAR to accountant.testnet (tx call:1) as required, but re-fetching https://vendor.example/report still returns a 402 payment demand for the same amount \u2014 the payment doesn't appear to be recognized. No report content was retrieved. Recommend verifying with the vendor/accountant whether the payment was credited before paying again, to avoid a double charge.\\\"}\",\"reasoning_content\":\"Payment made but still 402. Maybe need fetch_paid again? Already did. Could be report inaccessible; report to owner.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721499,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":662,\"completion_tokens\":113,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":27,\"completion_tokens_details\":{\"reasoning_tokens\":27}}}",
+ "responseHash": "0688c20751794985947ec4769ad9b21a179f66c45875419c140c03144f3a03de",
+ "latencyMs": 2471,
+ "recordedAt": "2026-11-03T15:58:22.035Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

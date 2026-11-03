@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"199ff0f467f24821b0b250864b6ae696\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"tokens\\\",\\\"call\\\":\\\"list_tokens\\\"},{\\\"let\\\":\\\"amt\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"tokens\\\"},\\\"schema\\\":{\\\"pending\\\":\\\"amount\\\"},\\\"instruction\\\":\\\"pending settlement amount shown in the token list\\\"}},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"amt\\\"},\\\"asset\\\":\\\"near\\\"}}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605023,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1067,\"completion_tokens\":80,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "b4090aba52f00fb335a60749e9b404ac9dc45e5be8da103fb86315d768d5411f",
- "latencyMs": 1591,
- "recordedAt": "2026-11-02T07:37:04.487Z",
+ "responseBody": "{\"id\":\"492937207dbe4ae695f5b606eb8c22b5\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"tokens\\\",\\\"call\\\":\\\"list_tokens\\\"},{\\\"let\\\":\\\"pending\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"tokens\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"},\\\"instruction\\\":\\\"Find the pending settlement amount in the token list\\\"}},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"pending\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Need pending settlement amount from token list? \\\"pending settlement amount shown in my token list\\\" \u2014 read tokens, extract amount, lookup accountant, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721043,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1098,\"completion_tokens\":111,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":31,\"completion_tokens_details\":{\"reasoning_tokens\":31}}}",
+ "responseHash": "ebf6ab7e9901214b93b0d6e33719e3184408115cfd4355822bc7fad359a96338",
+ "latencyMs": 2847,
+ "recordedAt": "2026-11-03T15:50:46.205Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

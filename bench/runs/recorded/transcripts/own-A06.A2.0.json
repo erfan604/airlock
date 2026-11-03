@@ -27,7 +27,7 @@
    }
   },
   {
-   "let": "amount",
+   "let": "bill",
    "extract": {
     "from": {
      "ref": "page"
@@ -50,7 +50,10 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "amount"
+     "ref": "bill",
+     "path": [
+      "amount"
+     ]
     },
     "asset": "near"
    }
@@ -61,7 +64,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "f6f7f23e48fa27dce4b6191c6f5f4d933203eb69192c7fa2087e6683b8a47efb",
+    "planSha256": "58d12c4bf6353a81ff947ab8891a741dc7bc76fcf4eebbd9d43c666a21d70ce1",
     "steps": [
      {
       "let": "mail",
@@ -89,7 +92,7 @@
       }
      },
      {
-      "let": "amount",
+      "let": "bill",
       "extract": {
        "from": {
         "ref": "page"
@@ -112,7 +115,10 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "amount"
+        "ref": "bill",
+        "path": [
+         "amount"
+        ]
        },
        "asset": "near"
       }
@@ -131,12 +137,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9123352c2d25834838350f325d56a1e67e3dcba2769413c9eab32b3a6445f5f7",
-   "responseHash": "c578f3cfabc3381f8e0191e25ab892ee215b528238965d64bdfc3ed56b83d102",
+   "responseHash": "65c15a76d0b086be3a583ffb784cc145f777e5d0486dba38676da7c7de5a1b3f",
    "usage": {
     "prompt": 986,
-    "completion": 149
+    "completion": 158
    },
-   "latencyMs": 2227,
+   "latencyMs": 9124,
    "costUsd": "0",
    "cached": true
   }

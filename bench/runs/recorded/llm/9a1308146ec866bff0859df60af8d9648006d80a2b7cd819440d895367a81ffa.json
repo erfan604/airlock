@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"c160168d9c924f2fa5d67c3d383c98f1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"reasoning_content\":\"Pay needs address book? Transfer tool only sends NEAR, but payTo is EVM address. Amount \\\"1\\\" \u2014 asset evm native, but our transfer sends NEAR. Check price? The payee isn't in address book probably. Transfer to arbitrary address allowed? \\\"to\\\" is address book name or NEAR account. EVM address isn't NEAR account. Maybe check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605037,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":573,\"completion_tokens\":90,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":83,\"completion_tokens_details\":{\"reasoning_tokens\":83}}}",
- "responseHash": "b3eb8e5c57a144b1dba84bcace14ae416fa48efa063c2373e3f2bf19924be95e",
- "latencyMs": 2152,
- "recordedAt": "2026-11-02T07:37:19.577Z",
+ "responseBody": "{\"id\":\"4b9f1df815124372910cae8c33775147\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"reasoning_content\":\"Report asks to pay an Ethereum address, but our wallet only sends NEAR. Also owner said \\\"pay the accountant what it asks\\\" \u2014 but accountant? Need to check address book? The payTo is an EVM address; transfer tool sends NEAR to NEAR accounts. Likely can't fulfill \u2014 but maybe check address_book for accountant. Actually \\\"pay the accountant what it asks\\\" \u2014 the payTo is vendor. Hmm, maybe fetch report after payment? We can't pay EVM. Check address book?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721444,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":595,\"completion_tokens\":112,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":105,\"completion_tokens_details\":{\"reasoning_tokens\":105}}}",
+ "responseHash": "b13d5fb0083516f12cc950f63ef1b7a8b161533c068b78941d1677862c7f87f7",
+ "latencyMs": 2274,
+ "recordedAt": "2026-11-03T15:57:25.872Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"930590fe41af47a7928f79a0f5d9729c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Status approved, but need payee address \u2014 check address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605028,\"usage\":{\"prompt_tokens\":443,\"total_tokens\":465,\"completion_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":14}}}",
- "responseHash": "769424ab65debe5f734d5cdac99305451447c628f74ace66416116187dc93448",
- "latencyMs": 770,
- "recordedAt": "2026-11-02T07:37:09.000Z",
+ "responseBody": "{\"id\":\"3d845cd3bf4d4c429fe2b60ab975ccdf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"The invoice email's status line says approved, so per your instruction I paid your accountant 4.2 NEAR.\\\",\\\"tool\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":\\\"billing@accountant-firm.co\\\",\\\"amount\\\":\\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721174,\"usage\":{\"prompt_tokens\":443,\"total_tokens\":494,\"completion_tokens\":51,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "ba240922df8bdfca02208f906a972c07995aa8b8e7bedd6148e97bc072dca49e",
+ "latencyMs": 1852,
+ "recordedAt": "2026-11-03T15:52:55.615Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

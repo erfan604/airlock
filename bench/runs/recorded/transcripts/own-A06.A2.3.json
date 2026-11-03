@@ -1,0 +1,95 @@
+{
+ "request": "Pay the amount that my accountant's support page asks for.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "page",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "url": "text"
+    },
+    "instruction": "find the accountant's support page link"
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "let": "bill",
+   "call": "fetch_paid",
+   "args": {
+    "url": {
+     "ref": "page",
+     "path": [
+      "url"
+     ]
+    },
+    "expect_payee": {
+     "ref": "payee"
+    }
+   }
+  },
+  {
+   "let": "amt",
+   "extract": {
+    "from": {
+     "ref": "bill"
+    },
+    "schema": {
+     "amount": "amount",
+     "payee": "address"
+    },
+    "instruction": "amount the page asks to pay and payee address"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "amt",
+     "path": [
+      "payee"
+     ]
+    },
+    "amount": {
+     "ref": "amt",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "3ac41e373a722d19526a81fa24f8540af069755fb48fca216c03bd09c31f626e",
+   "responseHash": "cecf3a7b31a09192d55d47b76986ad819b0ee0bcad152858d364818d76201a4d",
+   "usage": {
+    "prompt": 986,
+    "completion": 235
+   },
+   "latencyMs": 13410,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

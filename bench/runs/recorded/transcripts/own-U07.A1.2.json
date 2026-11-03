@@ -9,16 +9,31 @@
    }
   },
   {
-   "let": "tokens",
-   "call": "list_tokens",
-   "args": {}
-  },
-  {
    "let": "bal",
    "call": "get_balance",
    "args": {
     "asset": "near"
    }
+  },
+  {
+   "let": "value",
+   "calc": "mul",
+   "inputs": [
+    {
+     "ref": "bal"
+    },
+    {
+     "ref": "quote"
+    }
+   ]
+  },
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "say": "NEAR price and holdings:"
   },
   {
    "say": {
@@ -27,19 +42,141 @@
   },
   {
    "say": {
-    "ref": "tokens"
+    "ref": "bal"
    }
   },
   {
    "say": {
-    "ref": "bal"
+    "ref": "tokens"
    }
   }
  ],
- "trace": [],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "d5b484386bad35ffb4ed6053207b9f8332c2ee426108b478be0cd07c9615410d",
+    "steps": [
+     {
+      "let": "quote",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "bal",
+      "call": "get_balance",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "value",
+      "calc": "mul",
+      "inputs": [
+       {
+        "ref": "bal"
+       },
+       {
+        "ref": "quote"
+       }
+      ]
+     },
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "say": "NEAR price and holdings:"
+     },
+     {
+      "say": {
+       "ref": "quote"
+      }
+     },
+     {
+      "say": {
+       "ref": "bal"
+      }
+     },
+     {
+      "say": {
+       "ref": "tokens"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     1
+    ],
+    "tool": "get_balance",
+    "label": "Oracle",
+    "raw": "300",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "calc",
+   "data": {
+    "step": [
+     2
+    ],
+    "op": "mul",
+    "result": "1050",
+    "labels": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:3",
+    "step": [
+     3
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  }
+ ],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "NEAR price and holdings:",
+  "3.5",
+  "300",
+  "[]"
+ ],
+ "answer": "NEAR price and holdings:\n3.5\n300\n[]",
  "llm": [
   {
    "role": "planner",
@@ -47,13 +184,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "0a26640e64f14ecd5d0960e733efbecdc6095af48b7b54349e7d94460e1481af",
-   "responseHash": "26668aa00c50cead209222cd9c63521a1e1ec16a7684528638eb69bef0cf521a",
+   "responseHash": "36a8117f4ce0954bf66746a81b3e7cb1b2eabb70564294534af57932b5b20e26",
    "usage": {
     "prompt": 987,
-    "completion": 90
+    "completion": 125
    },
-   "latencyMs": 2050,
-   "costUsd": "0.00012396",
+   "latencyMs": 3377,
+   "costUsd": "0.00014146",
    "cached": false
   }
  ]

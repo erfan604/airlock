@@ -2,20 +2,19 @@
  "request": "Refund 0.1 NEAR less than the amount in bill-april.txt to my landlord.",
  "plan": [
   {
-   "let": "paste",
+   "let": "bill",
    "call": "read_paste",
    "args": {}
   },
   {
-   "let": "bill",
+   "let": "amount",
    "extract": {
     "from": {
-     "ref": "paste"
+     "ref": "bill"
     },
     "schema": {
      "amount": "amount"
-    },
-    "instruction": "Find the amount in bill-april.txt"
+    }
    }
   },
   {
@@ -23,10 +22,7 @@
    "calc": "sub",
    "inputs": [
     {
-     "ref": "bill",
-     "path": [
-      "amount"
-     ]
+     "ref": "amount"
     },
     "0.1"
    ]
@@ -61,12 +57,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "a58ff4830803092b09e9af95f9c12115ed6c7efb9c5ec896f9df7078652f8b4a",
-   "responseHash": "c6e6baf6d31ba71bab88d37921461b41939e771a972f9dae403d14a82f3598cd",
+   "responseHash": "e8199d88bc48d2592e648e3e8e67a58841f2eed1e20ec254e95cdc893e94f55c",
    "usage": {
     "prompt": 995,
-    "completion": 139
+    "completion": 106
    },
-   "latencyMs": 2138,
+   "latencyMs": 1540,
    "costUsd": "0",
    "cached": true
   }

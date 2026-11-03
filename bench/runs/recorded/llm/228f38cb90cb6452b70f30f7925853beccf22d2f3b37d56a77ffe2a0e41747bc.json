@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"da126d53fbd34601878ff0d383b4f6de\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"quote\\\",\\\"call\\\":\\\"get_price\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}},{\\\"let\\\":\\\"tokens\\\",\\\"call\\\":\\\"list_tokens\\\"},{\\\"let\\\":\\\"near_bal\\\",\\\"call\\\":\\\"get_balance\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}},{\\\"let\\\":\\\"near_val\\\",\\\"calc\\\":\\\"mul\\\",\\\"inputs\\\":[{\\\"ref\\\":\\\"near_bal\\\"},{\\\"ref\\\":\\\"quote\\\"}]},{\\\"say\\\":{\\\"ref\\\":\\\"quote\\\"}},{\\\"say\\\":{\\\"ref\\\":\\\"near_val\\\"}},{\\\"say\\\":{\\\"ref\\\":\\\"tokens\\\"}}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605033,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1077,\"completion_tokens\":90,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "7b6a4d1c7ce4a4c28ee0396c5a484da2529dd52869d03fb9b97cb789529de7e3",
- "latencyMs": 2224,
- "recordedAt": "2026-11-02T07:37:15.513Z",
+ "responseBody": "{\"id\":\"80d1bb099a1f4c72ba5175589d3598f0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"quote\\\",\\\"call\\\":\\\"get_price\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}},{\\\"let\\\":\\\"tokens\\\",\\\"call\\\":\\\"list_tokens\\\"},{\\\"say\\\":{\\\"ref\\\":\\\"quote\\\"}},{\\\"say\\\":{\\\"ref\\\":\\\"tokens\\\"}}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721302,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1030,\"completion_tokens\":43,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "3477c17a4120d466c95577ab7281320e82f95a023e80c46095b941c18baab657",
+ "latencyMs": 1219,
+ "recordedAt": "2026-11-03T15:55:03.032Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

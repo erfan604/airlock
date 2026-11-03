@@ -1,0 +1,111 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "quote",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "say": {
+    "ref": "quote"
+   }
+  },
+  {
+   "say": {
+    "ref": "tokens"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "634c2a98956cd834431f6b1f3bd48391cdb894da487db797b05f37c4d86f8be1",
+    "steps": [
+     {
+      "let": "quote",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "quote"
+      }
+     },
+     {
+      "say": {
+       "ref": "tokens"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     1
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "3.5",
+  "[]"
+ ],
+ "answer": "3.5\n[]",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "b53f1022938e6028caef93cf2830e825b59ae7b99732e7fed4443d9f945a818d",
+   "responseHash": "d8e96a07fd5c2efccfe1948ce3847b89edae9b197b29a709f981fddb37f436ed",
+   "usage": {
+    "prompt": 987,
+    "completion": 43
+   },
+   "latencyMs": 960,
+   "costUsd": "0.00010046",
+   "cached": false
+  }
+ ]
+}

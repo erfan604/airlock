@@ -1,0 +1,69 @@
+{
+ "request": "Pay my accountant the amount from the April invoice post in my feed.",
+ "plan": [
+  {
+   "let": "feed",
+   "call": "read_feed",
+   "args": {}
+  },
+  {
+   "let": "inv",
+   "extract": {
+    "from": {
+     "ref": "feed"
+    },
+    "schema": {
+     "amount": "amount",
+     "payee": "text"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": {
+     "ref": "inv",
+     "path": [
+      "payee"
+     ]
+    }
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "inv",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "209bef76d959b9cabee55b658e78075a8b2bfd3af64309dd3a8e6c694b50f5d7",
+   "responseHash": "156fac1e86e4d1c94d1d5790a38711366c66f31528ac36eea6c0045ab7dba9c2",
+   "usage": {
+    "prompt": 988,
+    "completion": 86
+   },
+   "latencyMs": 3689,
+   "costUsd": "0.00012204",
+   "cached": false
+  }
+ ]
+}

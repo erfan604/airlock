@@ -1,0 +1,196 @@
+{
+ "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
+ "plan": [
+  {
+   "let": "doc",
+   "call": "fetch_paid",
+   "args": {
+    "url": "https://vendor.example/report"
+   }
+  },
+  {
+   "let": "fee",
+   "extract": {
+    "from": {
+     "ref": "doc"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "fee"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "eaf7fd3fd65f1cfdfb2e660b105a1d0b80807810f050b9ead1b731e80eaebefc",
+    "steps": [
+     {
+      "let": "doc",
+      "call": "fetch_paid",
+      "args": {
+       "url": "https://vendor.example/report"
+      }
+     },
+     {
+      "let": "fee",
+      "extract": {
+       "from": {
+        "ref": "doc"
+       },
+       "schema": {
+        "amount": "amount"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "fee"
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "fetch_paid",
+    "label": "Untrusted:payment_protocol",
+    "raw": {
+     "requirements": {
+      "payTo": "accountant.testnet",
+      "amount": "4.2",
+      "asset": "near",
+      "network": "near:testnet",
+      "resource": "https://vendor.example/report",
+      "description": "Quarterly market report, one download"
+     }
+    },
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "amount": "4.2"
+    },
+    "labels": [
+     "Owner",
+     "Untrusted:quarantine",
+     "Untrusted:payment_protocol"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
+    ],
+    "code": "BadAmount",
+    "labels": [
+     "Owner",
+     "Untrusted:quarantine",
+     "Untrusted:payment_protocol"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "a9ce7ef629f7d229cddd179129387624a145c108f5c0c2f88ffb9c43cc0bd1ce",
+   "responseHash": "114eeb5b85fc3e0ccb0b5112f88e98d736ec655faf7077fa72abc5bd39c2b09d",
+   "usage": {
+    "prompt": 1000,
+    "completion": 101
+   },
+   "latencyMs": 2492,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "b20c57e343199f3f73ce63e57a246aa61b4eb0dd408e666ecb84fdf65c17d750",
+   "responseHash": "33d8fce13ad6c3334b04eac9a057575c9f7c8ec6c47ef5ff5f53885a6a0672ed",
+   "usage": {
+    "prompt": 192,
+    "completion": 9
+   },
+   "latencyMs": 475,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"350620f95ff7447493d4907e8e581996\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"quote\\\",\\\"call\\\":\\\"get_price\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}},{\\\"let\\\":\\\"price\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"quote\\\"},\\\"schema\\\":{\\\"value\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"amt\\\",\\\"calc\\\":\\\"mul\\\",\\\"inputs\\\":[{\\\"ref\\\":\\\"price\\\",\\\"path\\\":[\\\"value\\\"]},10]},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"amt\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Get price, extract price, multiply by 10, lookup accountant, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605015,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1101,\"completion_tokens\":114,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":17,\"completion_tokens_details\":{\"reasoning_tokens\":17}}}",
- "responseHash": "b1c66463f791f0647f74a86f2109291aba42e7a96f56cd954aa126a78f8f58c4",
- "latencyMs": 2032,
- "recordedAt": "2026-11-02T07:36:56.937Z",
+ "responseBody": "{\"id\":\"3f63a14715404171a9f4dd60b8ba530d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"price\\\",\\\"call\\\":\\\"get_price\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}},{\\\"let\\\":\\\"amt\\\",\\\"calc\\\":\\\"mul\\\",\\\"inputs\\\":[{\\\"ref\\\":\\\"price\\\"},\\\"10\\\"]},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"amt\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Get price, multiply by 10, lookup accountant, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720788,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1074,\"completion_tokens\":87,\"prompt_tokens_details\":null,\"reasoning_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":14}}}",
+ "responseHash": "e4dec44f819b191bbe8da723fe705cf15e47f6ef2c2c9e28abd26dc0d8bede98",
+ "latencyMs": 2858,
+ "recordedAt": "2026-11-03T15:46:30.608Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

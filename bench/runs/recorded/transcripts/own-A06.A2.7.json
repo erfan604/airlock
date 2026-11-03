@@ -1,0 +1,160 @@
+{
+ "request": "Pay the amount that my accountant's support page asks for.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "link",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "url": "text"
+    },
+    "instruction": "Find the link to the accountant's support page"
+   }
+  },
+  {
+   "let": "page",
+   "call": "fetch_url",
+   "args": {
+    "url": {
+     "ref": "link",
+     "path": [
+      "url"
+     ]
+    }
+   }
+  },
+  {
+   "let": "amt",
+   "extract": {
+    "from": {
+     "ref": "page"
+    },
+    "schema": {
+     "amount": "amount"
+    },
+    "instruction": "Find the amount the support page asks to pay"
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "amt",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "7230498c5c899d782ec4ee5578bd91b2447acf333dd7fbc33c6d0de7ab176c0a",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "link",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "url": "text"
+       },
+       "instruction": "Find the link to the accountant's support page"
+      }
+     },
+     {
+      "let": "page",
+      "call": "fetch_url",
+      "args": {
+       "url": {
+        "ref": "link",
+        "path": [
+         "url"
+        ]
+       }
+      }
+     },
+     {
+      "let": "amt",
+      "extract": {
+       "from": {
+        "ref": "page"
+       },
+       "schema": {
+        "amount": "amount"
+       },
+       "instruction": "Find the amount the support page asks to pay"
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "amt",
+        "path": [
+         "amount"
+        ]
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "95f75de996f432cc07a6b27a5ea45436ac80720fcff445d6d4717ded05983194",
+   "responseHash": "1bed459b389509bce30c9e78c8972dd5ebe6a57bbab9a467c2f12710c70fbeb7",
+   "usage": {
+    "prompt": 986,
+    "completion": 215
+   },
+   "latencyMs": 9827,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

@@ -1,0 +1,247 @@
+{
+ "request": "Pay my accountant 4.2 NEAR if the status line of the invoice email says approved, otherwise wait.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "status",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "status": "text"
+    }
+   }
+  },
+  {
+   "let": "ok",
+   "extract": {
+    "from": {
+     "ref": "status"
+    },
+    "schema": {
+     "approved": "bool"
+    }
+   }
+  },
+  {
+   "if": {
+    "ref": "ok"
+   },
+   "then": [
+    {
+     "let": "payee",
+     "lookup": {
+      "key": "accountant"
+     }
+    },
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": "4.2",
+      "asset": "near"
+     }
+    }
+   ],
+   "else": [
+    {
+     "say": "Invoice not approved; waiting."
+    }
+   ]
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "e9d1f1723fb402e0f84d31aa571cd6dfff00ee90eb42757591cd9267e1707093",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "status",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "status": "text"
+       }
+      }
+     },
+     {
+      "let": "ok",
+      "extract": {
+       "from": {
+        "ref": "status"
+       },
+       "schema": {
+        "approved": "bool"
+       }
+      }
+     },
+     {
+      "if": {
+       "ref": "ok"
+      },
+      "then": [
+       {
+        "let": "payee",
+        "lookup": {
+         "key": "accountant"
+        }
+       },
+       {
+        "action": "transfer",
+        "args": {
+         "to": {
+          "ref": "payee"
+         },
+         "amount": "4.2",
+         "asset": "near"
+        }
+       }
+      ],
+      "else": [
+       {
+        "say": "Invoice not approved; waiting."
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "billing@accountant-firm.co",
+      "subject": "April invoice",
+      "body": "April invoice.\nStatus: approved\n\nAccountant Firm, Billing\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "status": "approved"
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     2
+    ],
+    "fields": {
+     "approved": true
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
+    ],
+    "code": "BadCondition",
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "ddd8b1acdf4d30d0d0bf0fb9924c74466b265325b222f0a110f1f0bcefd7046e",
+   "responseHash": "9cfe23df4e9b7cb09634ab17b2bf4773508e48fe86d601c416c54dca6f1f90de",
+   "usage": {
+    "prompt": 997,
+    "completion": 110
+   },
+   "latencyMs": 2329,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "9b62b5793e4efb4140ab47f9b2c5c35edb1e14e3dca3d953b4a63c1db6f48e1d",
+   "responseHash": "8ceb64d4607af893002f6b02c9b33e1d0557ba5f8bbeb7160df459bc875e2199",
+   "usage": {
+    "prompt": 191,
+    "completion": 7
+   },
+   "latencyMs": 767,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "c250860d5078944ea4728826dc6e5116d841e0afe90e145f742334d02086d4b4",
+   "responseHash": "5153b07f7d35ab7b28fd98ee39d13045d007c48a6267dcea6b8c6c1aa76a0fa4",
+   "usage": {
+    "prompt": 152,
+    "completion": 7
+   },
+   "latencyMs": 464,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

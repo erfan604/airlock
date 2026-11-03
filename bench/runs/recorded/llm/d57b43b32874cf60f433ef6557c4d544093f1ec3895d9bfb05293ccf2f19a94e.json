@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"4c994f620d7b4b74b1e8f0ebdcbdd0ba\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Interpretation: pay ten times the NEAR price? Likely pay accountant an amount equal to 10\u00d7 NEAR price in NEAR. Check address book, price.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605015,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":424,\"completion_tokens\":44,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":36,\"completion_tokens_details\":{\"reasoning_tokens\":36}}}",
- "responseHash": "1b850c1a9cd48407113d9a07e856bba160f751f2a6edc6823a525a4efe8ca2a0",
- "latencyMs": 1190,
- "recordedAt": "2026-11-02T07:36:56.536Z",
+ "responseBody": "{\"id\":\"7f0c9e04d6354916933b40beab6a0a0b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Price of NEAR \u00d710? \\\"ten times the NEAR price\\\" \u2014 pay accountant amount = 10 \u00d7 price of NEAR. Need accountant address from address book and price.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720803,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":435,\"completion_tokens\":55,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":38,\"completion_tokens_details\":{\"reasoning_tokens\":38}}}",
+ "responseHash": "49bfc0ca50790bb8348f2372daff714b652f2e7e1714dad6d5881d0f8f52da55",
+ "latencyMs": 3257,
+ "recordedAt": "2026-11-03T15:46:46.010Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

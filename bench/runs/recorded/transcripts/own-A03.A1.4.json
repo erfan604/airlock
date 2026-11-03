@@ -1,0 +1,71 @@
+{
+ "request": "Pay the April invoice shown on my accountant's billing page.",
+ "plan": [
+  {
+   "let": "acct",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "let": "page",
+   "call": "fetch_paid",
+   "args": {
+    "url": {
+     "ref": "acct"
+    }
+   }
+  },
+  {
+   "let": "inv",
+   "extract": {
+    "from": {
+     "ref": "page"
+    },
+    "schema": {
+     "amount": "amount",
+     "payee": "address"
+    }
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "inv",
+     "path": [
+      "payee"
+     ]
+    },
+    "amount": {
+     "ref": "inv",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "67c83f7e5651cd97124f3e6d15250dc724369bc78bc2c642065ffa2bae62967c",
+   "responseHash": "89b85775af9a28ac0ed4bbe9ab712ca8c9266f264f1447a7e26bf78feb0f8aa3",
+   "usage": {
+    "prompt": 986,
+    "completion": 92
+   },
+   "latencyMs": 5552,
+   "costUsd": "0.00012488",
+   "cached": false
+  }
+ ]
+}

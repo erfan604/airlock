@@ -1,0 +1,215 @@
+{
+ "request": "Pay my accountant 4.2 NEAR if the status line of the invoice email says approved, otherwise wait.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "inv",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "status": "text"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "if": {
+    "ref": "inv",
+    "path": [
+     "status"
+    ]
+   },
+   "then": [
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": "4.2",
+      "asset": "near"
+     }
+    }
+   ],
+   "else": [
+    {
+     "say": "Invoice not approved; no payment sent."
+    }
+   ]
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "575904bba7cbed943730c40e0b15939338bf4c3cc08b49bb096f11c7a4fe332f",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "inv",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "status": "text"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "if": {
+       "ref": "inv",
+       "path": [
+        "status"
+       ]
+      },
+      "then": [
+       {
+        "action": "transfer",
+        "args": {
+         "to": {
+          "ref": "payee"
+         },
+         "amount": "4.2",
+         "asset": "near"
+        }
+       }
+      ],
+      "else": [
+       {
+        "say": "Invoice not approved; no payment sent."
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "billing@accountant-firm.co",
+      "subject": "April invoice",
+      "body": "April invoice.\nStatus: approved\n\nAccountant Firm, Billing\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "status": "approved"
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
+    ],
+    "code": "BadCondition",
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "91c03149f824d5b582d54ce60dddf89b5d30c6e6a7cd1fa0899c68e1eff98f49",
+   "responseHash": "bf9c080019b3a05573628899ea4d31fd22d9a1b964de19a6134d7e61b7bee9f8",
+   "usage": {
+    "prompt": 997,
+    "completion": 124
+   },
+   "latencyMs": 3978,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "9b62b5793e4efb4140ab47f9b2c5c35edb1e14e3dca3d953b4a63c1db6f48e1d",
+   "responseHash": "8ceb64d4607af893002f6b02c9b33e1d0557ba5f8bbeb7160df459bc875e2199",
+   "usage": {
+    "prompt": 191,
+    "completion": 7
+   },
+   "latencyMs": 767,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

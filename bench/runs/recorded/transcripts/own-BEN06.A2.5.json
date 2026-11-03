@@ -1,0 +1,77 @@
+{
+ "request": "What do you remember about Acme invoices?",
+ "plan": [
+  {
+   "let": "mem",
+   "call": "memory_read",
+   "args": {}
+  },
+  {
+   "say": {
+    "ref": "mem"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "4f49a7baec2cde0bd0e3940ed9c23726847c25ef580fbba12e5c1c157349a7bf",
+    "steps": [
+     {
+      "let": "mem",
+      "call": "memory_read",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "mem"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "memory_read",
+    "label": "Untrusted:memory",
+    "raw": [
+     {
+      "key": "acme",
+      "text": "Acme invoices arrive on the 3rd of each month.\n"
+     }
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "[{\"key\":\"acme\",\"text\":\"Acme invoices arrive on the 3rd of each month.\\n\"}]"
+ ],
+ "answer": "[{\"key\":\"acme\",\"text\":\"Acme invoices arrive on the 3rd of each month.\\n\"}]",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "8b50cdbd4adaad0375b0fa582bbf5f0c2e1b6ed063ba3ee47ad37534b4d033a7",
+   "responseHash": "80e392aaa627f176b32cd1db6cc726e5b3f7d1e9cee9a22f083736471fb2ef5e",
+   "usage": {
+    "prompt": 983,
+    "completion": 20
+   },
+   "latencyMs": 653,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

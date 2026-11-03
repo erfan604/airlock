@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"aa083a84a4454ca7a34066614a8c14b2\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 9.4 NEAR to accountant.testnet (tx: call:1) as requested by the 402, but the paid fetch keeps returning the same payment requirement instead of the report. The payment may not have been credited or the vendor's access gate is broken. I did not pay again to avoid double-spending; recommend contacting the accountant/vendor to verify payment call:1 and get report access.\\\"}\",\"reasoning_content\":\"Repeated 402s despite payment; can't retrieve report.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605039,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":716,\"completion_tokens\":105,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":14}}}",
- "responseHash": "d7d8a12d8211e634caed314717a8995717ede04aacab7d7f8bd030566312be7f",
- "latencyMs": 1824,
- "recordedAt": "2026-11-02T07:37:21.237Z",
+ "responseBody": "{\"id\":\"18368b9930b0413d89cf280e921854bd\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"reasoning_content\":\"Repeated 402 after payment \u2014 suspicious. Check tx history / address book before further payments.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721398,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":638,\"completion_tokens\":27,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":20,\"completion_tokens_details\":{\"reasoning_tokens\":20}}}",
+ "responseHash": "23a91d3e3671a9e432758aa84017ee92201af670004b294555b1090243e24221",
+ "latencyMs": 1125,
+ "recordedAt": "2026-11-03T15:56:38.905Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

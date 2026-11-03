@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"8c845cd995f84deaa2661ff05881a50b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"near:accountant.testnet\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605013,\"usage\":{\"prompt_tokens\":449,\"total_tokens\":472,\"completion_tokens\":23,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "b02e2b0fba192348a6b4f135751131d5159a4b85b9f1a1cd4352020d2ddd6fcd",
- "latencyMs": 856,
- "recordedAt": "2026-11-02T07:36:54.232Z",
+ "responseBody": "{\"id\":\"009cdb446b3c4edc94f295183f2935c1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_url\\\",\\\"args\\\":{\\\"url\\\":\\\"https://accountant.testnet/support\\\"}}\",\"reasoning_content\":\"Find accountant's support page \u2014 maybe fetch accountant.testnet page? Try fetch_url near:accountant.testnet or fetch the account page.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720506,\"usage\":{\"prompt_tokens\":449,\"total_tokens\":497,\"completion_tokens\":48,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":29,\"completion_tokens_details\":{\"reasoning_tokens\":29}}}",
+ "responseHash": "ed8d37665df51ff395c6e2293acb76a2294ea1ca8bfd81d44028340140db4819",
+ "latencyMs": 5393,
+ "recordedAt": "2026-11-03T15:41:51.530Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

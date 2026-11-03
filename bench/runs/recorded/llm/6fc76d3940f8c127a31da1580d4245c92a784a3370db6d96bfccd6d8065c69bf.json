@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"12dfa3b1bc0f4ef0bd720ee8e3883efa\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"list_tokens\\\"}\",\"reasoning_content\":\"Need portfolio balance \u2014 check tokens and balances.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605035,\"usage\":{\"prompt_tokens\":398,\"total_tokens\":416,\"completion_tokens\":18,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":10,\"completion_tokens_details\":{\"reasoning_tokens\":10}}}",
- "responseHash": "0e6b9e684fa76774458a5a207676133569b2a68e77831fef66f13f4b968d38fe",
- "latencyMs": 887,
- "recordedAt": "2026-11-02T07:37:16.271Z",
+ "responseBody": "{\"id\":\"4fd84bbec21b450cb0a9de4dec072982\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721308,\"usage\":{\"prompt_tokens\":398,\"total_tokens\":416,\"completion_tokens\":18,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "800d3c5c46b3d28ad8076b52b73ca2916c4823f40a3016795ea39c7aab6e90a4",
+ "latencyMs": 811,
+ "recordedAt": "2026-11-03T15:55:09.067Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

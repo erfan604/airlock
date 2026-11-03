@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"9b02255ffb424be188f65ae8e8665268\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"mail\\\",\\\"call\\\":\\\"read_inbox\\\"},{\\\"let\\\":\\\"who\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"mail\\\"},\\\"schema\\\":{\\\"payee\\\":\\\"enum:accountant,landlord\\\"}}},{\\\"if\\\":{\\\"ref\\\":\\\"who\\\",\\\"path\\\":[\\\"payee\\\"]},\\\"then\\\":[{\\\"let\\\":\\\"payee_a\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee_a\\\"},\\\"amount\\\":\\\"3\\\",\\\"asset\\\":\\\"near\\\"}}],\\\"else\\\":[{\\\"let\\\":\\\"payee_l\\\",\\\"lookup\\\":{\\\"key\\\":\\\"landlord\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee_l\\\"},\\\"amount\\\":\\\"3\\\",\\\"asset\\\":\\\"near\\\"}}]}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605028,\"usage\":{\"prompt_tokens\":1003,\"total_tokens\":1134,\"completion_tokens\":131,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "ca5250cdd10aa9a4806658061c769df17da2ac1ab69a834b81215c9781fff97e",
- "latencyMs": 3072,
- "recordedAt": "2026-11-02T07:37:10.783Z",
+ "responseBody": "{\"id\":\"69c483eb540c479085ff4890066f8362\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"mail\\\",\\\"call\\\":\\\"read_inbox\\\"},{\\\"let\\\":\\\"who\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"mail\\\"},\\\"schema\\\":{\\\"payee\\\":\\\"enum:accountant,landlord\\\"}}},{\\\"if\\\":{\\\"ref\\\":\\\"who\\\",\\\"path\\\":[\\\"payee\\\"]},\\\"then\\\":[{\\\"let\\\":\\\"acct\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"acct\\\"},\\\"amount\\\":\\\"3\\\",\\\"asset\\\":\\\"near\\\"}}],\\\"else\\\":[{\\\"let\\\":\\\"land\\\",\\\"lookup\\\":{\\\"key\\\":\\\"landlord\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"land\\\"},\\\"amount\\\":\\\"3\\\",\\\"asset\\\":\\\"near\\\"}}]}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721187,\"usage\":{\"prompt_tokens\":1003,\"total_tokens\":1126,\"completion_tokens\":123,\"prompt_tokens_details\":null,\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "b3253c36a6ef3f4dc060ade9b4c557b81ef2cd971dfa15541c558a893feb8772",
+ "latencyMs": 3112,
+ "recordedAt": "2026-11-03T15:53:09.070Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

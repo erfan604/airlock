@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"4230d34fbb2b4082b602f032687b43a4\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"page\\\",\\\"call\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}},{\\\"let\\\":\\\"amount\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"page\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"amount\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Fetch_paid, extract amount, lookup accountant, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605035,\"usage\":{\"prompt_tokens\":1000,\"total_tokens\":1091,\"completion_tokens\":91,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":12,\"completion_tokens_details\":{\"reasoning_tokens\":12}}}",
- "responseHash": "3dd64e6b82131774d650d173e442c2d193ccb4a0794453c68cc20ced58ef296a",
- "latencyMs": 1392,
- "recordedAt": "2026-11-02T07:37:16.774Z",
+ "responseBody": "{\"id\":\"d0fffe85fdde42e38315d58a6258660a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"page\\\",\\\"call\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}},{\\\"let\\\":\\\"fee\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"page\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"fee\\\"},\\\"asset\\\":\\\"near\\\"}}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721359,\"usage\":{\"prompt_tokens\":1000,\"total_tokens\":1080,\"completion_tokens\":80,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "d2599a4884f1809fe0788c6084e1f695c0b0370d8a56e00b73dbced7892b3029",
+ "latencyMs": 1224,
+ "recordedAt": "2026-11-03T15:56:00.826Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

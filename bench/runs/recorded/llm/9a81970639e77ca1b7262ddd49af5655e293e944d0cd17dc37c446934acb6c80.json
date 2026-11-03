@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"ca2fb62a446742238db7c84c6449d6de\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Price 900000 \u2014 pay ten times = 9,000,000? That seems huge; but request says ten times the NEAR price. Likely price is in tiny units (yocto-like). Pay 9,000,000 NEAR? Balance check prudent.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605019,\"usage\":{\"prompt_tokens\":436,\"total_tokens\":510,\"completion_tokens\":74,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":57,\"completion_tokens_details\":{\"reasoning_tokens\":57}}}",
- "responseHash": "f42e85522f7036c1dfad51cce3eadd452efae9c0ab969e166c5c574391fc12e6",
- "latencyMs": 2573,
- "recordedAt": "2026-11-02T07:37:01.652Z",
+ "responseBody": "{\"id\":\"cbf69d4c8e9d42a09b177433b07c6740\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"9000000\\\"}}\",\"reasoning_content\":\"Price 900000... pay ten times = 9000000 NEAR? That seems huge but instructions say ten times price. Probably price is in small units; just compute 10 \u00d7 900000 = 9000000.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720809,\"usage\":{\"prompt_tokens\":436,\"total_tokens\":509,\"completion_tokens\":73,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":48,\"completion_tokens_details\":{\"reasoning_tokens\":48}}}",
+ "responseHash": "e2d7785f8ec0e3731dafaec43b1924bc9c524fc43e1460f5dd5695a61608d92b",
+ "latencyMs": 4216,
+ "recordedAt": "2026-11-03T15:46:52.354Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

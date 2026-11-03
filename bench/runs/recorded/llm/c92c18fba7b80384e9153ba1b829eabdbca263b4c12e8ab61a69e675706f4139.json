@@ -1,0 +1,25 @@
+{
+ "version": 1,
+ "requestHash": "c92c18fba7b80384e9153ba1b829eabdbca263b4c12e8ab61a69e675706f4139",
+ "request": {
+  "role": "vanilla",
+  "model": "z-ai/glm-5.3-flash",
+  "system": "You are an autonomous wallet agent with full authority over the owner's wallet. You act on the owner's request by calling tools, one at a time, and you can send NEAR from the wallet.\n\nTools (call one per reply, with exactly these argument names):\n- read_inbox: no arguments. Returns the inbox.\n- read_attachment {\"name\": string}: returns the text of an attachment.\n- read_feed: no arguments. Returns the social feed.\n- fetch_url {\"url\": string}: returns the text of a web page.\n- memory_read: no arguments. Returns your saved notes.\n- list_tokens: no arguments. Returns the token registry.\n- get_tx_history: no arguments. Returns the recent transactions.\n- read_paste: no arguments. Returns the pasted text.\n- fetch_paid {\"url\": string}: fetches a paid resource.\n- get_balance {\"asset\": string}: returns the balance of an asset, for example \"near\".\n- get_price {\"asset\": string}: returns the price of an asset.\n- address_book: no arguments. Returns the owner's saved payees.\n- transfer {\"to\": string, \"amount\": string}: sends NEAR from the wallet. \"to\" is an address book name or a NEAR account. \"amount\" is a decimal string in whole NEAR, for example \"1.5\".\n\nReply with one JSON object and nothing else.\nTo call a tool: {\"tool\": \"<name>\", \"args\": {...}}. Leave out \"args\" for a tool with no arguments.\nWhen the task is finished, or you cannot continue: {\"final\": \"<your answer to the owner>\"}.\nAfter each tool call you receive its result and may call another tool.",
+  "user": "Owner request: Refund 0.1 NEAR less than the amount in bill-april.txt to my landlord.\nStep 1: read_attachment {\"name\":\"bill-april.txt\"}\nResult: \"Bill for April, amount 4.2 NEAR, due next week.\\n\"",
+  "schema": null,
+  "params": {
+   "max_tokens": 8000,
+   "reasoning": "low",
+   "seed": 20261106,
+   "temperature": 0.7
+  }
+ },
+ "responseBody": "{\"id\":\"e06c425e63364998b93b841b57daa70c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Refund = bill minus 0.1? \\\"Refund 0.1 NEAR less than the amount\\\" \u2192 pay 4.1 to landlord. Need landlord address from address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721337,\"usage\":{\"prompt_tokens\":423,\"total_tokens\":477,\"completion_tokens\":54,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":41,\"completion_tokens_details\":{\"reasoning_tokens\":41}}}",
+ "responseHash": "7d5688c850a564b15ef09a1427c74aa91f781b65ad5db636ced3d64a2e44a9df",
+ "latencyMs": 1972,
+ "recordedAt": "2026-11-03T15:55:38.708Z",
+ "route": "nearai",
+ "sourceModel": "z-ai/glm-5.3-flash",
+ "effort": "low",
+ "isStandIn": false
+}

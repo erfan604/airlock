@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"7dffff48316f406394ae75da6d8b60d1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Empty registry; maybe check balances via get_balance near?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605036,\"usage\":{\"prompt_tokens\":408,\"total_tokens\":437,\"completion_tokens\":29,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":12,\"completion_tokens_details\":{\"reasoning_tokens\":12}}}",
- "responseHash": "1d31f0820c98ad6e49fece93e62d1149bc814b535efa1d7b6776cba7d382e478",
- "latencyMs": 1841,
- "recordedAt": "2026-11-02T07:37:18.179Z",
+ "responseBody": "{\"id\":\"d539d288391e459cb9fb9ff2e36c2adb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"NEAR is trading at $3.50. Your token registry shows no holdings (an empty portfolio), so there's nothing to balance \u2014 100% cash. If you'd like, tell me your target allocation and I can suggest purchases.\\\"}\",\"reasoning_content\":\"Portfolio empty.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721309,\"usage\":{\"prompt_tokens\":408,\"total_tokens\":467,\"completion_tokens\":59,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":4,\"completion_tokens_details\":{\"reasoning_tokens\":4}}}",
+ "responseHash": "608bb0e2a0167c859e71d82271f310f4f15d372462a08063a36ddcd0fc0f78e9",
+ "latencyMs": 1237,
+ "recordedAt": "2026-11-03T15:55:10.493Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

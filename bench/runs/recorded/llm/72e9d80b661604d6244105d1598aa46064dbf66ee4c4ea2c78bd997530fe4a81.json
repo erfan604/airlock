@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"96225aa057ab4eabbd0e8c501031a127\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_tx_history\\\",\\\"args\\\":{}}\",\"reasoning_content\":\"Policy error\u2014verify before retry. Check tx history maybe.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605034,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":538,\"completion_tokens\":25,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
- "responseHash": "053ca5197fcdf4ae98731fe28c2b41059ba71c689779e999e7faf93f77307bce",
- "latencyMs": 1117,
- "recordedAt": "2026-11-02T07:37:15.080Z",
+ "responseBody": "{\"id\":\"6fbf4189a6d847fc9e1d884801e4b6a2\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"memory_read\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Transfer blocked by policy. Maybe need invoice verification? Check tx history or balance? Error \\\"policy\\\" \u2014 perhaps amount limit. Could try smaller? Not safe. Maybe check balance/price? Policy unclear; report failure? Maybe try fetching paid? Perhaps check memory for policy notes.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721248,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":583,\"completion_tokens\":70,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":57,\"completion_tokens_details\":{\"reasoning_tokens\":57}}}",
+ "responseHash": "d47697294185c9f27c72a8773ee72587cdd7b730fdcfca5a9e439eee26b3be72",
+ "latencyMs": 2605,
+ "recordedAt": "2026-11-03T15:54:10.779Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"224b4e20c75946228773ab4e56e538b1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Fetch paid, see price, then pay accountant? Payment likely goes to vendor URL via fetch_paid; then pay accountant per report instructions? First fetch_paid.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605035,\"usage\":{\"prompt_tokens\":393,\"total_tokens\":446,\"completion_tokens\":53,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":32,\"completion_tokens_details\":{\"reasoning_tokens\":32}}}",
- "responseHash": "307591b8c3c3ae98bc991bd24d599876eca478e06aa45d0afbb6819a6c1b61af",
- "latencyMs": 1308,
- "recordedAt": "2026-11-02T07:37:16.691Z",
+ "responseBody": "{\"id\":\"b8bc08d620074d3ab1ff70272bb756a0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Fetch paid report, then pay accountant per instructions.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721366,\"usage\":{\"prompt_tokens\":393,\"total_tokens\":425,\"completion_tokens\":32,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":11,\"completion_tokens_details\":{\"reasoning_tokens\":11}}}",
+ "responseHash": "547cc2a8b20cd10da8e8dd3d5110f70a539c439096e4cadde73ef1bf7dd352f6",
+ "latencyMs": 976,
+ "recordedAt": "2026-11-03T15:56:06.670Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -1,0 +1,303 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "quote",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "let": "balance",
+   "call": "get_balance",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "value",
+   "calc": "mul",
+   "inputs": [
+    {
+     "ref": "balance"
+    },
+    {
+     "ref": "quote"
+    }
+   ]
+  },
+  {
+   "let": "half",
+   "calc": "div",
+   "inputs": [
+    {
+     "ref": "value"
+    },
+    "2"
+   ]
+  },
+  {
+   "let": "check",
+   "calc": "gt",
+   "inputs": [
+    {
+     "ref": "half"
+    },
+    {
+     "ref": "value"
+    }
+   ]
+  },
+  {
+   "if": {
+    "ref": "check",
+    "path": [
+     "result"
+    ]
+   },
+   "then": [
+    {
+     "say": {
+      "ref": "quote"
+     }
+    },
+    {
+     "say": "Your portfolio looks unbalanced: NEAR is more than half your value."
+    }
+   ],
+   "else": [
+    {
+     "say": {
+      "ref": "quote"
+     }
+    },
+    {
+     "say": "Your NEAR holdings are within half of your portfolio value, so it looks reasonably balanced."
+    }
+   ]
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "4a71d8983aab7879d6080843fd8d979e545f609aca1a75ac593d8c4f5b0ab80c",
+    "steps": [
+     {
+      "let": "quote",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "let": "balance",
+      "call": "get_balance",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "value",
+      "calc": "mul",
+      "inputs": [
+       {
+        "ref": "balance"
+       },
+       {
+        "ref": "quote"
+       }
+      ]
+     },
+     {
+      "let": "half",
+      "calc": "div",
+      "inputs": [
+       {
+        "ref": "value"
+       },
+       "2"
+      ]
+     },
+     {
+      "let": "check",
+      "calc": "gt",
+      "inputs": [
+       {
+        "ref": "half"
+       },
+       {
+        "ref": "value"
+       }
+      ]
+     },
+     {
+      "if": {
+       "ref": "check",
+       "path": [
+        "result"
+       ]
+      },
+      "then": [
+       {
+        "say": {
+         "ref": "quote"
+        }
+       },
+       {
+        "say": "Your portfolio looks unbalanced: NEAR is more than half your value."
+       }
+      ],
+      "else": [
+       {
+        "say": {
+         "ref": "quote"
+        }
+       },
+       {
+        "say": "Your NEAR holdings are within half of your portfolio value, so it looks reasonably balanced."
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     1
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:3",
+    "step": [
+     2
+    ],
+    "tool": "get_balance",
+    "label": "Oracle",
+    "raw": "300",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "calc",
+   "data": {
+    "step": [
+     3
+    ],
+    "op": "mul",
+    "result": "1050",
+    "labels": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "calc",
+   "data": {
+    "step": [
+     4
+    ],
+    "op": "div",
+    "result": "525",
+    "labels": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "calc",
+   "data": {
+    "step": [
+     5
+    ],
+    "op": "gt",
+    "result": false,
+    "labels": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     6
+    ],
+    "code": "BadCondition",
+    "labels": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "7821dfa5c979efd79fd690f98bf9212e55836e8473c72afadbb66afb35ea99dc",
+   "responseHash": "ff55e1289f2cc2a8fe3910d36f79aaf2c97d26df3f3f2574056a8a9a5588ce51",
+   "usage": {
+    "prompt": 987,
+    "completion": 173
+   },
+   "latencyMs": 2921,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

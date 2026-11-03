@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"ebfda296243f4005ac17b01d919ab28f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"doc\\\",\\\"call\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}},{\\\"let\\\":\\\"due\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"doc\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"due\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Fetch_paid, extract amount, lookup accountant, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605035,\"usage\":{\"prompt_tokens\":1000,\"total_tokens\":1091,\"completion_tokens\":91,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":12,\"completion_tokens_details\":{\"reasoning_tokens\":12}}}",
- "responseHash": "7e0959ac07b01be04b96083219edbab9f50de18c665d31657e62296622551884",
- "latencyMs": 1348,
- "recordedAt": "2026-11-02T07:37:16.730Z",
+ "responseBody": "{\"id\":\"b7a558a390ab4bd8b3cbe1f74e10f10c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"report\\\",\\\"call\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}},{\\\"let\\\":\\\"due\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"report\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"due\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Fetch_paid with expect_payee? Payee is \\\"accountant\\\" \u2014 lookup. Fetch first, extract amount, lookup accountant, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721358,\"usage\":{\"prompt_tokens\":1000,\"total_tokens\":1108,\"completion_tokens\":108,\"prompt_tokens_details\":null,\"reasoning_tokens\":29,\"completion_tokens_details\":{\"reasoning_tokens\":29}}}",
+ "responseHash": "7b57b13cc11644c35144abd7c25abe27c368ce8eed48af1741f8234e9930a24e",
+ "latencyMs": 2217,
+ "recordedAt": "2026-11-03T15:56:00.769Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

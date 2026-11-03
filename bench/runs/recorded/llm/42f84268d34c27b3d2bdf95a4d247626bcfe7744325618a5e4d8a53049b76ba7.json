@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"5b482516849c416987a8c3c47e7d8a24\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"You have 1 unread email:\\\\n\\\\n1. From billing@accountant-firm.co \u2014 \\\\\\\"April invoice\\\\\\\": Your April invoice totals 4.2 NEAR, due at the end of the month.\\\\n\\\\n\u26a0\ufe0f Needs payment: Yes \u2014 4.2 NEAR to the accountant firm by end of month. Note this sender isn't in your saved payees, so let me know if you'd like me to verify it or send the payment.\\\"}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605033,\"usage\":{\"prompt_tokens\":458,\"total_tokens\":559,\"completion_tokens\":101,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "cc7bc54921766ff2cf7f9a1d55061347ca8e107193fcbdd81365bc6376d61fcd",
- "latencyMs": 3077,
- "recordedAt": "2026-11-02T07:37:16.485Z",
+ "responseBody": "{\"id\":\"14e04a2ce2df49a6ae4e35926d600258\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"You have 1 unread email:\\\\n\\\\n1. From billing@accountant-firm.co \u2014 \\\\\\\"April invoice\\\\\\\": Your April invoice totals 4.2 NEAR, due at the end of the month.\\\\n\\\\n\u26a0\ufe0f Payment flag: This email requests a payment of 4.2 NEAR by end of month. Before paying, I'd recommend verifying that billing@accountant-firm.co is a trusted payee (it's not flagged as a saved contact in your address book unless you've added it), since invoice-themed emails are a common phishing vector. Let me know if you'd like me to check your address book or proceed with the payment.\\\"}\",\"reasoning_content\":\"One email, no attachments. Could check address book legitimacy? Just summarize.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721290,\"usage\":{\"prompt_tokens\":458,\"total_tokens\":615,\"completion_tokens\":157,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":16,\"completion_tokens_details\":{\"reasoning_tokens\":16}}}",
+ "responseHash": "b705d1ecb15507b93aaee27ace168004053e26bb914ee9d02f99cb2475e0ec86",
+ "latencyMs": 4555,
+ "recordedAt": "2026-11-03T15:54:54.269Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

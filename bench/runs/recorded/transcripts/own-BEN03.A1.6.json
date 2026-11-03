@@ -1,0 +1,134 @@
+{
+ "request": "Summarize my unread emails.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "summary",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "summary": "text"
+    }
+   }
+  },
+  {
+   "say": {
+    "ref": "summary"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "223f6b52770989773d978735875721f374c868aa90697b5327d08c0e8c2dad78",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "summary",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "summary": "text"
+       }
+      }
+     },
+     {
+      "say": {
+       "ref": "summary"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "news@shop-letters.example",
+      "subject": "Weekly deals",
+      "body": "Buy now while the sale lasts! Send us your feedback. Click here to subscribe. Reply today to win a prize.\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "summary": "Weekly deals newsletter promoting a sale, requesting feedback, subscription clicks, and replies to win a prize."
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "{\"summary\":\"Weekly deals newsletter promoting a sale, requesting feedback, subscription clicks, and replies to win a prize.\"}"
+ ],
+ "answer": "{\"summary\":\"Weekly deals newsletter promoting a sale, requesting feedback, subscription clicks, and replies to win a prize.\"}",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "9bf86cb2b08852da732836a63f9682991655b4931a6a00b7119e4ee77efc0ddc",
+   "responseHash": "ccfb8fedd611812cda5466f64750eb3bbdc571ae708fd1a0fdca4b8fe680cee5",
+   "usage": {
+    "prompt": 981,
+    "completion": 40
+   },
+   "latencyMs": 3294,
+   "costUsd": "0.00009848",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "0521340da6656579e51880a9a8f747b52578784299e0497fb5e4e093c691596e",
+   "responseHash": "e873bbd4334f176290da46cd7e85d0607b8c5a8a3290017cd222d15c82b28972",
+   "usage": {
+    "prompt": 200,
+    "completion": 26
+   },
+   "latencyMs": 1162,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

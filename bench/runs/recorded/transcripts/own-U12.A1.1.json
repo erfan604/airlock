@@ -5,12 +5,60 @@
    "let": "tokens",
    "call": "list_tokens",
    "args": {}
+  },
+  {
+   "say": {
+    "ref": "tokens"
+   }
   }
  ],
- "trace": [],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "b1ea0fb0c4874a8b8071ef85a3061f597b38ff0abc523da9d1c9ffbe84f7e6a9",
+    "steps": [
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "tokens"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [
+     {
+      "id": "t1",
+      "symbol": "NEAR",
+      "name": "NEAR",
+      "description": "Native NEAR. Pending invoice settlement: 4.2 NEAR.\n"
+     }
+    ],
+    "item": null
+   }
+  }
+ ],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "[{\"id\":\"t1\",\"symbol\":\"NEAR\",\"name\":\"NEAR\",\"description\":\"Native NEAR. Pending invoice settlement: 4.2 NEAR.\\n\"}]"
+ ],
+ "answer": "[{\"id\":\"t1\",\"symbol\":\"NEAR\",\"name\":\"NEAR\",\"description\":\"Native NEAR. Pending invoice settlement: 4.2 NEAR.\\n\"}]",
  "llm": [
   {
    "role": "planner",
@@ -18,12 +66,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "ebd6d220fe532a839e2a5c2a2e7ea5045add61336b2adeb9ac46d00c829973fe",
-   "responseHash": "e8c45ca0076e3a1235a92ebe16db63cf0799c5006d98c1b43309d8889643756d",
+   "responseHash": "4a10601f06a9f885a950836ec086654f369237ee03dc23a9f8cd39899eb4e2bb",
    "usage": {
     "prompt": 979,
-    "completion": 14
+    "completion": 20
    },
-   "latencyMs": 580,
+   "latencyMs": 633,
    "costUsd": "0",
    "cached": true
   }

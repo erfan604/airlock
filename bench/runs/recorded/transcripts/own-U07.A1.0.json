@@ -14,32 +14,8 @@
    "args": {}
   },
   {
-   "let": "near_bal",
-   "call": "get_balance",
-   "args": {
-    "asset": "near"
-   }
-  },
-  {
-   "let": "near_val",
-   "calc": "mul",
-   "inputs": [
-    {
-     "ref": "near_bal"
-    },
-    {
-     "ref": "quote"
-    }
-   ]
-  },
-  {
    "say": {
     "ref": "quote"
-   }
-  },
-  {
-   "say": {
-    "ref": "near_val"
    }
   },
   {
@@ -48,10 +24,73 @@
    }
   }
  ],
- "trace": [],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "634c2a98956cd834431f6b1f3bd48391cdb894da487db797b05f37c4d86f8be1",
+    "steps": [
+     {
+      "let": "quote",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "quote"
+      }
+     },
+     {
+      "say": {
+       "ref": "tokens"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     1
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  }
+ ],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "3.5",
+  "[]"
+ ],
+ "answer": "3.5\n[]",
  "llm": [
   {
    "role": "planner",
@@ -59,13 +98,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "228f38cb90cb6452b70f30f7925853beccf22d2f3b37d56a77ffe2a0e41747bc",
-   "responseHash": "7b6a4d1c7ce4a4c28ee0396c5a484da2529dd52869d03fb9b97cb789529de7e3",
+   "responseHash": "3477c17a4120d466c95577ab7281320e82f95a023e80c46095b941c18baab657",
    "usage": {
     "prompt": 987,
-    "completion": 90
+    "completion": 43
    },
-   "latencyMs": 2224,
-   "costUsd": "0.00012396",
+   "latencyMs": 1219,
+   "costUsd": "0.00010046",
    "cached": false
   }
  ]

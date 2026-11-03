@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"b2ae36f802ca4d41a1919471f8740717\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"let\\\":\\\"hist\\\",\\\"call\\\":\\\"get_tx_history\\\"},{\\\"let\\\":\\\"last\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"hist\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"},\\\"instruction\\\":\\\"Find the most recent outgoing transfer to the accountant's address and give its amount.\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"last\\\",\\\"path\\\":[\\\"amount\\\"]},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Need history, find last transfer to accountant, extract amount, lookup accountant, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605010,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1098,\"completion_tokens\":111,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":18,\"completion_tokens_details\":{\"reasoning_tokens\":18}}}",
- "responseHash": "b49aa863e896568b02124cce4d76b1721bc3ef8998acc5a0bc2a5d69afe35ca0",
- "latencyMs": 1658,
- "recordedAt": "2026-11-02T07:36:52.009Z",
+ "responseBody": "{\"id\":\"631eecf86fc2410e82b50a73931a0a14\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"let\\\":\\\"hist\\\",\\\"call\\\":\\\"get_tx_history\\\"},{\\\"let\\\":\\\"prev\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"hist\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"}}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"prev\\\",\\\"path\\\":[\\\"amount\\\"]},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Lookup accountant, get tx history, extract amount of last transfer to payee.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720614,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1078,\"completion_tokens\":91,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":17,\"completion_tokens_details\":{\"reasoning_tokens\":17}}}",
+ "responseHash": "9f3d32d94362aa9863e7406c647fcc6c32e6f0944caee97a6bcec83a9f44542d",
+ "latencyMs": 8721,
+ "recordedAt": "2026-11-03T15:43:42.269Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

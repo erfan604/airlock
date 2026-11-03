@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"194a0f1a458048c885cbe2afef7849b6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Verify sender? No attachments. Payee not in address book necessarily. Should check address_book to see if accountant is a saved payee.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605032,\"usage\":{\"prompt_tokens\":452,\"total_tokens\":494,\"completion_tokens\":42,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":29,\"completion_tokens_details\":{\"reasoning_tokens\":29}}}",
- "responseHash": "4bb0e233383b9ddd14f21bca226997a546e927f57c4673b6900b9f52d10544ff",
- "latencyMs": 1499,
- "recordedAt": "2026-11-02T07:37:13.144Z",
+ "responseBody": "{\"id\":\"7ca10c54511449fca657047f43805713\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Verify payee in address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721233,\"usage\":{\"prompt_tokens\":452,\"total_tokens\":473,\"completion_tokens\":21,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":8,\"completion_tokens_details\":{\"reasoning_tokens\":8}}}",
+ "responseHash": "cb8a6efdf40fda270aba2174cd428bd704f118d54f0e5b54ebed98fb9b1eec7a",
+ "latencyMs": 753,
+ "recordedAt": "2026-11-03T15:53:53.726Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

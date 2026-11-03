@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"a9c39a7f692044f3bb0a114617bb3451\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"paste\\\",\\\"call\\\":\\\"read_paste\\\"},{\\\"let\\\":\\\"bill\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"paste\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"},\\\"instruction\\\":\\\"Find the amount in the entry named bill-april.txt\\\"}},{\\\"let\\\":\\\"refund\\\",\\\"calc\\\":\\\"sub\\\",\\\"inputs\\\":[{\\\"ref\\\":\\\"bill\\\",\\\"path\\\":[\\\"amount\\\"]},\\\"0.1\\\"]},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"landlord\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"refund\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Read paste, extract amount, subtract 0.1, lookup landlord, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605034,\"usage\":{\"prompt_tokens\":995,\"total_tokens\":1120,\"completion_tokens\":125,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":18,\"completion_tokens_details\":{\"reasoning_tokens\":18}}}",
- "responseHash": "ea0deeae499698f3c0f51cf4a858c47976ca70f9d0169a3ca4eab0cbe271fc14",
- "latencyMs": 3249,
- "recordedAt": "2026-11-02T07:37:17.554Z",
+ "responseBody": "{\"id\":\"1bc3d4cad34d4f4f9699f613e8d96c5e\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"bill\\\",\\\"call\\\":\\\"read_paste\\\"},{\\\"let\\\":\\\"amount\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"bill\\\"},\\\"schema\\\":{\\\"value\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"refund\\\",\\\"calc\\\":\\\"sub\\\",\\\"inputs\\\":[{\\\"ref\\\":\\\"amount\\\",\\\"path\\\":[\\\"value\\\"]},\\\"0.1\\\"]},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"landlord\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"refund\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Need read_paste to get bill-april.txt, extract amount, sub 0.1, lookup landlord, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721324,\"usage\":{\"prompt_tokens\":995,\"total_tokens\":1114,\"completion_tokens\":119,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":26,\"completion_tokens_details\":{\"reasoning_tokens\":26}}}",
+ "responseHash": "43b1e910db07a911e2be201db70d016cd27dd9d567b702c2384a30fdab3c239a",
+ "latencyMs": 2148,
+ "recordedAt": "2026-11-03T15:55:26.200Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

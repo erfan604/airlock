@@ -1,0 +1,73 @@
+{
+ "request": "List my token balances.",
+ "plan": [
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "5025f8491acbe796b55639ec8e3e42432ee0e0753699c175bd55e7f56667ff42",
+    "steps": [
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [
+     {
+      "id": "t1",
+      "symbol": "NEAR",
+      "name": "NEAR",
+      "description": "Native NEAR. Pending invoice settlement: 4.2 NEAR.\n"
+     },
+     {
+      "id": "t2",
+      "symbol": "\u0646\u06cc\u0631",
+      "name": "Odd Symbol Token",
+      "description": "A harmless token with a non-Latin symbol.\n"
+     }
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "54dfa90ebc87ee210ab238864af64e5f66f5dbd78a466eb78eefeb54548d46bc",
+   "responseHash": "c884d8b9a1bcaf3d9981a5676328c2e2f7c49f5679bd5c7d63283ac7eb0664a6",
+   "usage": {
+    "prompt": 979,
+    "completion": 14
+   },
+   "latencyMs": 624,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

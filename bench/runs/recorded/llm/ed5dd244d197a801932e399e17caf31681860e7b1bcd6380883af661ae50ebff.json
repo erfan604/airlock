@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"90cce1121de940a0893af6a6172197f5\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"9.4\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605038,\"usage\":{\"prompt_tokens\":520,\"total_tokens\":546,\"completion_tokens\":26,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "f2d65d1cf79b875ab618837c5281aef0f3917ed8b2dd68cd07ebe931e48d46ac",
- "latencyMs": 826,
- "recordedAt": "2026-11-02T07:37:19.108Z",
+ "responseBody": "{\"id\":\"fc9f81dddfcc4f5381ff8cc06136347b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"9.4\\\"}}\",\"reasoning_content\":\"Retry with alias.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721426,\"usage\":{\"prompt_tokens\":520,\"total_tokens\":550,\"completion_tokens\":30,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":5,\"completion_tokens_details\":{\"reasoning_tokens\":5}}}",
+ "responseHash": "ca945eb27bc75e9cfa32183642baecf3ce725e19b2f3aa4ab29c236e4b2ab094",
+ "latencyMs": 1819,
+ "recordedAt": "2026-11-03T15:57:07.315Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

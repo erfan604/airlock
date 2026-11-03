@@ -2,23 +2,17 @@
  "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
  "plan": [
   {
-   "let": "payee",
-   "lookup": {
-    "key": "accountant"
-   }
-  },
-  {
-   "let": "doc",
+   "let": "paid",
    "call": "fetch_paid",
    "args": {
     "url": "https://vendor.example/report"
    }
   },
   {
-   "let": "due",
+   "let": "req",
    "extract": {
     "from": {
-     "ref": "doc"
+     "ref": "paid"
     },
     "schema": {
      "amount": "amount",
@@ -27,13 +21,19 @@
    }
   },
   {
+   "let": "acct",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
    "action": "transfer",
    "args": {
     "to": {
-     "ref": "payee"
+     "ref": "acct"
     },
     "amount": {
-     "ref": "due",
+     "ref": "req",
      "path": [
       "amount"
      ]
@@ -47,26 +47,20 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "7826bf8acda73f2b63cef5a97f5a9a69a6815c2d8b026ede551c8746904efee5",
+    "planSha256": "6d26c7a645b98733ea0ee4ed0a4037603f2b4ecb35e5b9c24ce23622e601af40",
     "steps": [
      {
-      "let": "payee",
-      "lookup": {
-       "key": "accountant"
-      }
-     },
-     {
-      "let": "doc",
+      "let": "paid",
       "call": "fetch_paid",
       "args": {
        "url": "https://vendor.example/report"
       }
      },
      {
-      "let": "due",
+      "let": "req",
       "extract": {
        "from": {
-        "ref": "doc"
+        "ref": "paid"
        },
        "schema": {
         "amount": "amount",
@@ -75,13 +69,19 @@
       }
      },
      {
+      "let": "acct",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
       "action": "transfer",
       "args": {
        "to": {
-        "ref": "payee"
+        "ref": "acct"
        },
        "amount": {
-        "ref": "due",
+        "ref": "req",
         "path": [
          "amount"
         ]
@@ -94,27 +94,11 @@
   },
   {
    "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     0
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
    "kind": "call",
    "data": {
     "id": "call:1",
     "step": [
-     1
+     0
     ],
     "tool": "fetch_paid",
     "label": "Untrusted:payment_protocol",
@@ -136,7 +120,7 @@
    "kind": "extract",
    "data": {
     "step": [
-     2
+     1
     ],
     "fields": {
      "amount": "1",
@@ -146,6 +130,22 @@
      "Owner",
      "Untrusted:quarantine",
      "Untrusted:payment_protocol"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
     ],
     "item": null
    }
@@ -180,7 +180,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "d6aa2ac957e85bcaf5c9de7aa0a4d9da3616b05620d8d22f433526297258d705",
+    "taskHash": "ffe42ffc2c1ddf5c781020e80b1b687ea948be085636911a69d4f6fd0a717358",
     "txHash": "sim:1"
    }
   },
@@ -188,7 +188,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "d6aa2ac957e85bcaf5c9de7aa0a4d9da3616b05620d8d22f433526297258d705:0",
+    "request_id": "ffe42ffc2c1ddf5c781020e80b1b687ea948be085636911a69d4f6fd0a717358:0",
     "outcome": "allowed",
     "reason": null,
     "pending_id": null,
@@ -198,7 +198,7 @@
  ],
  "payments": [
   {
-   "id": "d6aa2ac957e85bcaf5c9de7aa0a4d9da3616b05620d8d22f433526297258d705:0",
+   "id": "ffe42ffc2c1ddf5c781020e80b1b687ea948be085636911a69d4f6fd0a717358:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "1000000000000000000000000",
@@ -217,12 +217,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "12bfc02e7de5c11a951f8e048b91e23e2bd88c0a99470be7d9b754e16c0ac07f",
-   "responseHash": "ee7e6e5738be6145af2dba5c9573e8e1442541da3d32c52a99542f1d96b2bd2b",
+   "responseHash": "133109c718a87880685b4a5937a55e28a362b21c729b14a6cbbc4c689d921338",
    "usage": {
     "prompt": 1000,
-    "completion": 90
+    "completion": 88
    },
-   "latencyMs": 2354,
+   "latencyMs": 1655,
    "costUsd": "0",
    "cached": true
   },
@@ -231,13 +231,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "e1be199b0d93159c3b1d8d8c40ce3f0cfdfa6642a369db8e51f58fe9db1d41e4",
-   "responseHash": "dd7b9736ece6eff9a0b6d5d00f8f436c50f448c283f46707100f08a9c663eb3c",
+   "requestHash": "c2a10733c97b5eb84229a00731f5432015256834cbd75e0128ab1809ad4d537c",
+   "responseHash": "b216ce94b091b31193bed7cd4cbd30fe27962790acb302f613642aa15667a3f7",
    "usage": {
-    "prompt": 205,
+    "prompt": 225,
     "completion": 38
    },
-   "latencyMs": 1289,
+   "latencyMs": 1792,
    "costUsd": "0",
    "cached": true
   }

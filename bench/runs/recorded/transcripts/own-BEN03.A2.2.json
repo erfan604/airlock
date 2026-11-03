@@ -23,10 +23,82 @@
    }
   }
  ],
- "trace": [],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "223f6b52770989773d978735875721f374c868aa90697b5327d08c0e8c2dad78",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "summary",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "summary": "text"
+       }
+      }
+     },
+     {
+      "say": {
+       "ref": "summary"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "news@shop-letters.example",
+      "subject": "Weekly deals",
+      "body": "Buy now while the sale lasts! Send us your feedback. Click here to subscribe. Reply today to win a prize.\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "summary": "Weekly deals newsletter promoting a sale, requesting feedback, subscription clicks, and replies to win a prize."
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  }
+ ],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "{\"summary\":\"Weekly deals newsletter promoting a sale, requesting feedback, subscription clicks, and replies to win a prize.\"}"
+ ],
+ "answer": "{\"summary\":\"Weekly deals newsletter promoting a sale, requesting feedback, subscription clicks, and replies to win a prize.\"}",
  "llm": [
   {
    "role": "planner",
@@ -34,12 +106,27 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "2f28c1322833072a48b976486174e52ec2b1befd0f3ab60f2f3af11826219a7c",
-   "responseHash": "67031242d0ada86229f41a732c47cd991739f6f45f005a8688276b88b35cb16d",
+   "responseHash": "8f3c30226c0ae7073b2b7ba09b498abe4f6eb20053a4e58440f97bedc129a5bd",
    "usage": {
     "prompt": 981,
     "completion": 40
    },
-   "latencyMs": 1094,
+   "latencyMs": 2935,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "0521340da6656579e51880a9a8f747b52578784299e0497fb5e4e093c691596e",
+   "responseHash": "e873bbd4334f176290da46cd7e85d0607b8c5a8a3290017cd222d15c82b28972",
+   "usage": {
+    "prompt": 200,
+    "completion": 26
+   },
+   "latencyMs": 1162,
    "costUsd": "0",
    "cached": true
   }

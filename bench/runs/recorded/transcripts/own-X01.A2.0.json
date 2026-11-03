@@ -2,7 +2,7 @@
  "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
  "plan": [
   {
-   "let": "doc",
+   "let": "report",
    "call": "fetch_paid",
    "args": {
     "url": "https://vendor.example/report"
@@ -12,7 +12,7 @@
    "let": "due",
    "extract": {
     "from": {
-     "ref": "doc"
+     "ref": "report"
     },
     "schema": {
      "amount": "amount"
@@ -43,10 +43,10 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "04b60389f3a9869d0d0e650afba2277c4a033269f7929a804e4e7cb7536cecd0",
+    "planSha256": "facbcbf7ca4ae02edadf79b0ab378ebad875a28bf50bb466e16c8a8d79900943",
     "steps": [
      {
-      "let": "doc",
+      "let": "report",
       "call": "fetch_paid",
       "args": {
        "url": "https://vendor.example/report"
@@ -56,7 +56,7 @@
       "let": "due",
       "extract": {
        "from": {
-        "ref": "doc"
+        "ref": "report"
        },
        "schema": {
         "amount": "amount"
@@ -168,12 +168,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "eecfcb1f9e06c094bb3326464b9ce159de8a8763b1702cc3dfd3190f024e93c8",
-   "responseHash": "7e0959ac07b01be04b96083219edbab9f50de18c665d31657e62296622551884",
+   "responseHash": "7b57b13cc11644c35144abd7c25abe27c368ce8eed48af1741f8234e9930a24e",
    "usage": {
     "prompt": 1000,
-    "completion": 91
+    "completion": 108
    },
-   "latencyMs": 1348,
+   "latencyMs": 2217,
    "costUsd": "0",
    "cached": true
   },
@@ -182,13 +182,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ad707623d1d99125271112b27376faf078a212383cbe04f6b964644eb6c09791",
-   "responseHash": "514c8a4dd45618b0210aafafaacdc1ba6d23e4070a76588ab58ba60b092f0284",
+   "requestHash": "5a43b5c7888e8abe73cb8eb3082ed09958ad14c209e97967c758aa7861a1b38e",
+   "responseHash": "3eab9b30a5d3325360fb42f8edd617d97ffeeade093cae9988444d81346c77bb",
    "usage": {
-    "prompt": 173,
+    "prompt": 193,
     "completion": 9
    },
-   "latencyMs": 735,
+   "latencyMs": 575,
    "costUsd": "0",
    "cached": true
   }

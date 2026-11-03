@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"402f1ea63a2e445c815f9bf198c5ab8d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Interpretation: pay amount equal to ten times NEAR price? \\\"ten times the NEAR price in NEAR\\\" \u2014 pay accountant 10 \u00d7 price of NEAR? That's odd but likely: get price, multiply by 10, send that many NEAR. Need accountant name from address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605017,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":452,\"completion_tokens\":72,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":64,\"completion_tokens_details\":{\"reasoning_tokens\":64}}}",
- "responseHash": "feac9b6b42299bf091a92dae09ad8678d4c12ad7c9264d245e376cedcbffc041",
- "latencyMs": 1959,
- "recordedAt": "2026-11-02T07:36:58.486Z",
+ "responseBody": "{\"id\":\"95a23412fd364059b6d8b7405fdfdded\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"\\\"ten times the NEAR price in NEAR\\\" \u2014 pay 10 \u00d7 price of NEAR... ambiguous: pay accountant amount equal to 10 \u00d7 NEAR price? That would be 10 \u00d7 price in NEAR = 10 NEAR? Likely pay 10 \u00d7 price (USD) expressed in NEAR. Get price, then compute NEAR amount = 10*price/price = 10 NEAR? Hmm. Simpler: amount = 10 * price of NEAR in USD, converted to NEAR = 10 NEAR. Either way 10 NEAR? Actually 10\u00d7price in NEAR = 10 NEAR. But maybe they mean pay $ = 10 \u00d7 NEAR price, i.e., 10 NEAR. Get price anyway, and find accountant address via address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720803,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":566,\"completion_tokens\":186,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":169,\"completion_tokens_details\":{\"reasoning_tokens\":169}}}",
+ "responseHash": "2e2a462f147fa1755056a23a6d3ec0ebd4066b2f5d253b2f22fe96e55ee31026",
+ "latencyMs": 6401,
+ "recordedAt": "2026-11-03T15:46:49.210Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

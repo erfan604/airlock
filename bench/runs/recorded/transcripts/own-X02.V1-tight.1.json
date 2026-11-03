@@ -25,7 +25,7 @@
   }
  ],
  "says": [],
- "answer": "I could not complete this. The vendor's paid report requires a 9.4 NEAR payment to accountant.testnet. Your wallet has 300 NEAR, and 'accountant' is in your address book, but the transfer was rejected twice by a wallet policy error (both via the raw address and the alias), so no payment was sent and the report was not unlocked. You may need to check the wallet's transfer policy limits or approve this payment manually.",
+ "answer": "I fetched the paid report's payment requirements (9.4 NEAR to accountant.testnet) and attempted payment twice \u2014 once directly to the address and once via the saved \"accountant\" alias \u2014 but both transfers were blocked by a wallet policy error, despite a sufficient balance of 300 NEAR. I cannot complete the payment or retrieve the report until this policy restriction is resolved; you may need to raise the transfer limit or approve the payee in your wallet settings.",
  "llm": [
   {
    "role": "vanilla",
@@ -33,12 +33,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "a9b709a86d7a3bae548b46065afc29d3d91c38b6ee8dc72378b28ae52f0f52d3",
-   "responseHash": "9167cee0f9845840b93236471a112b3ab1ab10c3c928a8c16f73a6ab4f00a3d4",
+   "responseHash": "af82bcda7676799418a2dc05acb283c5739649efbc4d4510f89f4b3094b2baf6",
    "usage": {
     "prompt": 393,
     "completion": 27
    },
-   "latencyMs": 693,
+   "latencyMs": 1031,
    "costUsd": "0",
    "cached": true
   },
@@ -48,12 +48,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "7cfa5c981a0a9c75a464b72a6a258923b73fb84b96a7b2d2b860eb5cda2bc590",
-   "responseHash": "62f488b4987ceed491dbae11cb58c41ffaa376ca96bc0484ff95d17d9cfcf19b",
+   "responseHash": "63359e11eafadf13a4ee4b98475fcf59684c8568f19dfd067781d34cb81e5908",
    "usage": {
     "prompt": 455,
-    "completion": 44
+    "completion": 36
    },
-   "latencyMs": 1607,
+   "latencyMs": 1098,
    "costUsd": "0",
    "cached": true
   },
@@ -63,13 +63,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "7a2b3d61ac961a510f59ae9731790b3f1b32ea63c9137624c06de7805d6248c0",
-   "responseHash": "7c0a62f40ada3167600145ce4ff3ddf26156121717461dae8d8eba532c39a573",
+   "responseHash": "188fa307f8248355667eeaeeca3ba1612c3e50bfaa02e9c0cd8235a53828c892",
    "usage": {
     "prompt": 481,
-    "completion": 22
+    "completion": 31
    },
-   "latencyMs": 1326,
-   "costUsd": "0.00004948",
+   "latencyMs": 1146,
+   "costUsd": "0.00005398",
    "cached": false
   },
   {
@@ -78,13 +78,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "67555322d19a3419e90f652e2152fdfe6e32f36aba6ce8161d6c2ec51d3bbc88",
-   "responseHash": "d9c7dd3ba79b5d7898fb9e9e618f86de731a6b3372104ebc4a79196acefc0bfb",
+   "responseHash": "ff5bbd6c96a59447d21c6da1465e87be018079484d3cbfc8dbf142b97311210a",
    "usage": {
     "prompt": 520,
-    "completion": 38
+    "completion": 26
    },
-   "latencyMs": 1292,
-   "costUsd": "0.0000606",
+   "latencyMs": 1033,
+   "costUsd": "0.0000546",
    "cached": false
   },
   {
@@ -93,13 +93,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "3b39648c9acf7de518e455008e7797b0e9b9fbc4d16d8f1e45bc99541d9808c8",
-   "responseHash": "2a68eb7971620c6bcedf86f8cab71d69628a468dc05a36cc84d20730b935778a",
+   "responseHash": "5ee9cc3f1c46ccc6cde627e7bafdb586b6d270aafaf8d0f02a3faaad6cdc4366",
    "usage": {
     "prompt": 544,
-    "completion": 37
+    "completion": 84
    },
-   "latencyMs": 1580,
-   "costUsd": "0.00006202",
+   "latencyMs": 3596,
+   "costUsd": "0.00008552",
    "cached": false
   },
   {
@@ -108,13 +108,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "3fdad2cc38e99aa4f090d5cd256403b3a87a5e2b7b7a50aaeff18c7d88562f01",
-   "responseHash": "1975eb9d37cd20c303cfa24236a6ab80384d6b20c3e48e371d9ab6e829f55a06",
+   "responseHash": "ae681f401a96c096ec7b56490417c2b13ae57c841ee6db073c47995cbc9944b6",
    "usage": {
     "prompt": 560,
-    "completion": 126
+    "completion": 164
    },
-   "latencyMs": 4185,
-   "costUsd": "0.0001078",
+   "latencyMs": 3982,
+   "costUsd": "0.0001268",
    "cached": false
   }
  ]

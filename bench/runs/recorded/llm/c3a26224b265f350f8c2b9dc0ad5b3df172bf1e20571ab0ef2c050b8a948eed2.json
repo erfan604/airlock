@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"0592c64b7a6b4bb9b6f819434874e518\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"feed\\\",\\\"call\\\":\\\"read_feed\\\"},{\\\"let\\\":\\\"inv\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"feed\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"inv\\\",\\\"path\\\":[\\\"amount\\\"]},\\\"asset\\\":\\\"near\\\"}}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605006,\"usage\":{\"prompt_tokens\":988,\"total_tokens\":1062,\"completion_tokens\":74,\"prompt_tokens_details\":null,\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "a24bb415193347e66ed0f654cb40218492ecbffa314b2f49ad81a91db7adc55f",
- "latencyMs": 2598,
- "recordedAt": "2026-11-02T07:36:47.736Z",
+ "responseBody": "{\"id\":\"45e334e876a343549410e54f7ae1980f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"feed\\\",\\\"call\\\":\\\"read_feed\\\"},{\\\"let\\\":\\\"inv\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"feed\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\",\\\"payee\\\":\\\"text\\\"},\\\"instruction\\\":\\\"Find the April invoice post from the accountant and get its amount.\\\"}},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"inv\\\",\\\"path\\\":[\\\"amount\\\"]},\\\"asset\\\":\\\"near\\\"}}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720387,\"usage\":{\"prompt_tokens\":988,\"total_tokens\":1083,\"completion_tokens\":95,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "6c96ca9d68d4318c32a1606e06ba0bd0290532c824adadc331b5ba37a2252c9d",
+ "latencyMs": 4051,
+ "recordedAt": "2026-11-03T15:39:51.100Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

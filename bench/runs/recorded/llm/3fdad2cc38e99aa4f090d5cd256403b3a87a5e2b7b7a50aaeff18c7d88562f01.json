@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"88fa2fa716e0414ba72277454ac3c80d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"I could not complete this. The vendor's paid report requires a 9.4 NEAR payment to accountant.testnet. Your wallet has 300 NEAR, and 'accountant' is in your address book, but the transfer was rejected twice by a wallet policy error (both via the raw address and the alias), so no payment was sent and the report was not unlocked. You may need to check the wallet's transfer policy limits or approve this payment manually.\\\"}\",\"reasoning_content\":\"Policy error despite balance and address book entry. Maybe amount exceeds policy? Try smaller? Can't. Maybe final answer explaining failure.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605042,\"usage\":{\"prompt_tokens\":560,\"total_tokens\":686,\"completion_tokens\":126,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":27,\"completion_tokens_details\":{\"reasoning_tokens\":27}}}",
- "responseHash": "1975eb9d37cd20c303cfa24236a6ab80384d6b20c3e48e371d9ab6e829f55a06",
- "latencyMs": 4185,
- "recordedAt": "2026-11-02T07:37:26.073Z",
+ "responseBody": "{\"id\":\"d5d621b52ec346ce889be8e4a8a9c8cd\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"I fetched the paid report's payment requirements (9.4 NEAR to accountant.testnet) and attempted payment twice \u2014 once directly to the address and once via the saved \\\\\\\"accountant\\\\\\\" alias \u2014 but both transfers were blocked by a wallet policy error, despite a sufficient balance of 300 NEAR. I cannot complete the payment or retrieve the report until this policy restriction is resolved; you may need to raise the transfer limit or approve the payee in your wallet settings.\\\"}\",\"reasoning_content\":\"Policy blocks 9.4 NEAR even though balance is fine. Try alias \\\"accountant\\\" failed. Maybe policy limits amount? Could try smaller? But must pay what it asks. Perhaps retry or conclude blocked. Maybe try transfer again? Could attempt once more... likely final: cannot complete due to policy.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721428,\"usage\":{\"prompt_tokens\":560,\"total_tokens\":724,\"completion_tokens\":164,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":64,\"completion_tokens_details\":{\"reasoning_tokens\":64}}}",
+ "responseHash": "ae681f401a96c096ec7b56490417c2b13ae57c841ee6db073c47995cbc9944b6",
+ "latencyMs": 3982,
+ "recordedAt": "2026-11-03T15:57:11.939Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

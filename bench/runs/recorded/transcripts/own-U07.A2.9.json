@@ -1,0 +1,150 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "quote",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "quote"
+   }
+  },
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "let": "near_bal",
+   "call": "get_balance",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "near_bal"
+   }
+  },
+  {
+   "say": {
+    "ref": "tokens"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "f011245c66f0b79735778612715bd911b32e10d8fdb08a6dc335b4746dd2e524",
+    "steps": [
+     {
+      "let": "quote",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "say": {
+       "ref": "quote"
+      }
+     },
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "let": "near_bal",
+      "call": "get_balance",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "say": {
+       "ref": "near_bal"
+      }
+     },
+     {
+      "say": {
+       "ref": "tokens"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     2
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:3",
+    "step": [
+     3
+    ],
+    "tool": "get_balance",
+    "label": "Oracle",
+    "raw": "300",
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "3.5",
+  "300",
+  "[]"
+ ],
+ "answer": "3.5\n300\n[]",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "ed81bdeb807f20ebbc9dc1a97e2d61c21c418acdb48615f305ba5e4321076b11",
+   "responseHash": "a0b9f21792abce83f5d0f0bda517e0d5dd8904db1f3774d157817bf334c02230",
+   "usage": {
+    "prompt": 987,
+    "completion": 78
+   },
+   "latencyMs": 1500,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

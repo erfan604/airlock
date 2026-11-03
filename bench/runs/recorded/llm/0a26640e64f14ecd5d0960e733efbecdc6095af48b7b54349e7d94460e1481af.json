@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"9c2ad482f6d541b9a7ab2d9ff323b0fe\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"quote\\\",\\\"call\\\":\\\"get_price\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}},{\\\"let\\\":\\\"tokens\\\",\\\"call\\\":\\\"list_tokens\\\"},{\\\"let\\\":\\\"bal\\\",\\\"call\\\":\\\"get_balance\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}},{\\\"say\\\":{\\\"ref\\\":\\\"quote\\\"}},{\\\"say\\\":{\\\"ref\\\":\\\"tokens\\\"}},{\\\"say\\\":{\\\"ref\\\":\\\"bal\\\"}}]\",\"reasoning_content\":\"Need price, balances of tokens, compare. Keep simple: get_price near, list_tokens, get_balance, say.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605033,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1077,\"completion_tokens\":90,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":25,\"completion_tokens_details\":{\"reasoning_tokens\":25}}}",
- "responseHash": "26668aa00c50cead209222cd9c63521a1e1ec16a7684528638eb69bef0cf521a",
- "latencyMs": 2050,
- "recordedAt": "2026-11-02T07:37:15.342Z",
+ "responseBody": "{\"id\":\"28abde241723468b8415a3eb6e52fd86\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"quote\\\",\\\"call\\\":\\\"get_price\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}},{\\\"let\\\":\\\"bal\\\",\\\"call\\\":\\\"get_balance\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}},{\\\"let\\\":\\\"value\\\",\\\"calc\\\":\\\"mul\\\",\\\"inputs\\\":[{\\\"ref\\\":\\\"bal\\\"},{\\\"ref\\\":\\\"quote\\\"}]},{\\\"let\\\":\\\"tokens\\\",\\\"call\\\":\\\"list_tokens\\\"},{\\\"say\\\":\\\"NEAR price and holdings:\\\"},{\\\"say\\\":{\\\"ref\\\":\\\"quote\\\"}},{\\\"say\\\":{\\\"ref\\\":\\\"bal\\\"}},{\\\"say\\\":{\\\"ref\\\":\\\"tokens\\\"}}]\",\"reasoning_content\":\"Need price, balance, compare? \\\"balanced\\\" ambiguous \u2014 get balance, maybe compare holdings. Keep simple: get price, get balance, say.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721303,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1112,\"completion_tokens\":125,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":31,\"completion_tokens_details\":{\"reasoning_tokens\":31}}}",
+ "responseHash": "36a8117f4ce0954bf66746a81b3e7cb1b2eabb70564294534af57932b5b20e26",
+ "latencyMs": 3377,
+ "recordedAt": "2026-11-03T15:55:06.457Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

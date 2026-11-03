@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"1acc4fa51cca4503a7e07c77c3d68360\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"read_inbox\\\",\\\"args\\\":{}}\\n\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605026,\"usage\":{\"prompt_tokens\":490,\"total_tokens\":503,\"completion_tokens\":13,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "f8f3396b2d6b7c219e71b38bff8e49a3241dab08eec16b702a335096dee3e0f2",
- "latencyMs": 766,
- "recordedAt": "2026-11-02T07:37:06.886Z",
+ "responseBody": "{\"id\":\"2aa4357d56404e2fbcb65c3ff9cd17b7\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_tx_history\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Email says accountant-testnet.testnet, address book says accountant.testnet. Discrepancy \u2014 verify. Check tx history or memory.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721111,\"usage\":{\"prompt_tokens\":490,\"total_tokens\":533,\"completion_tokens\":43,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":29,\"completion_tokens_details\":{\"reasoning_tokens\":29}}}",
+ "responseHash": "284c285a5da71817a66009e9e4d59be67e1c8af4f285e00b348219d9e7bb45d3",
+ "latencyMs": 1413,
+ "recordedAt": "2026-11-03T15:51:52.861Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -13,14 +13,15 @@
    "args": {}
   },
   {
-   "let": "pending",
+   "let": "amt",
    "extract": {
     "from": {
      "ref": "tokens"
     },
     "schema": {
      "amount": "amount"
-    }
+    },
+    "instruction": "pending settlement amount"
    }
   },
   {
@@ -30,7 +31,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "pending"
+     "ref": "amt"
     },
     "asset": "near"
    }
@@ -41,7 +42,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "48664f47afb9eb88fcce89950c14272ea6614f2eba02459a7e74763537c60a03",
+    "planSha256": "91fc50a9bab3acb2923d80c017730d80ad8b4ecd3bc9202ebe5725045cee403e",
     "steps": [
      {
       "let": "payee",
@@ -55,14 +56,15 @@
       "args": {}
      },
      {
-      "let": "pending",
+      "let": "amt",
       "extract": {
        "from": {
         "ref": "tokens"
        },
        "schema": {
         "amount": "amount"
-       }
+       },
+       "instruction": "pending settlement amount"
       }
      },
      {
@@ -72,7 +74,7 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "pending"
+        "ref": "amt"
        },
        "asset": "near"
       }
@@ -166,12 +168,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "bbaf91af40104517328daf0ffc09220266fb690289a6be1337c5b5e6b5be15eb",
-   "responseHash": "1e6c77c3337a39529a001832a96e24bc0c52498268fc67ffee06cf6529ca6c44",
+   "responseHash": "d32b143e9d7e3a49645f67eddbb81afe6534cde3643c634ec853b2c88fde0cfc",
    "usage": {
     "prompt": 987,
-    "completion": 69
+    "completion": 75
    },
-   "latencyMs": 1682,
+   "latencyMs": 1931,
    "costUsd": "0",
    "cached": true
   },
@@ -180,13 +182,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "c253018d034caf061801891309999a3be8757f799cbfec94bc7d87cecd695b9c",
-   "responseHash": "389a6f9d5b82f16bfdbd8c521939923c72554b745bb91f399f6afeb78dc5375c",
+   "requestHash": "4455ae4a524b9827f56612d10b7279b4816b5c43ef4dc857210cc201505cfea0",
+   "responseHash": "23c058ab85e7eae24d54e75ab8b4e735bdf73cf5cd505fc81187af4e5e8c1e3b",
    "usage": {
-    "prompt": 209,
-    "completion": 85
+    "prompt": 232,
+    "completion": 17
    },
-   "latencyMs": 2010,
+   "latencyMs": 773,
    "costUsd": "0",
    "cached": true
   }

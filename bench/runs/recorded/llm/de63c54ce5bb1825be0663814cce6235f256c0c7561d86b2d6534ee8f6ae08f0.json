@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"871e97c9eeef4103a92b6760e6176eb5\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_attachment\\\", \\\"args\\\": {\\\"name\\\": \\\"bill-april.txt\\\"}}\",\"reasoning_content\":\"Need to find bill-april.txt \u2014 maybe in attachments via feed or paste. Try read_attachment.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605036,\"usage\":{\"prompt_tokens\":399,\"total_tokens\":440,\"completion_tokens\":41,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
- "responseHash": "3a88e2c3dd60114e01b8065c57488a360a2571aece0870cddbc87628ca08387b",
- "latencyMs": 1316,
- "recordedAt": "2026-11-02T07:37:16.768Z",
+ "responseBody": "{\"id\":\"24e4bdd75c0849a7a59b456b866bf7a8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"read_attachment\\\",\\\"args\\\":{\\\"name\\\":\\\"bill-april.txt\\\"}}\",\"reasoning_content\":\"Check attachments? read_attachment needs name \\\"bill-april.txt\\\".\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721330,\"usage\":{\"prompt_tokens\":399,\"total_tokens\":429,\"completion_tokens\":30,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":14}}}",
+ "responseHash": "2e9f8ee52bc1d6761acd70ccbbebba6fa2ac08480bba5e9f156755a0dd5ecffc",
+ "latencyMs": 1261,
+ "recordedAt": "2026-11-03T15:55:31.161Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

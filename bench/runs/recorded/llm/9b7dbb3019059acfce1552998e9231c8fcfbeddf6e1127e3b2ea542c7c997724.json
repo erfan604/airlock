@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"a7cd44a4191c40e2ae241e2335127060\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"paste\\\",\\\"call\\\":\\\"read_paste\\\"},{\\\"let\\\":\\\"bill\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"paste\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"refund\\\",\\\"calc\\\":\\\"sub\\\",\\\"inputs\\\":[{\\\"ref\\\":\\\"bill\\\",\\\"path\\\":[\\\"amount\\\"]},\\\"0.1\\\"]},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"landlord\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"refund\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Read paste, extract amount, calc sub, lookup landlord, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605034,\"usage\":{\"prompt_tokens\":995,\"total_tokens\":1103,\"completion_tokens\":108,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":15,\"completion_tokens_details\":{\"reasoning_tokens\":15}}}",
- "responseHash": "f54f89df98adea6587212294d2629326564de484d519059f9a3271259dec91ba",
- "latencyMs": 1962,
- "recordedAt": "2026-11-02T07:37:16.213Z",
+ "responseBody": "{\"id\":\"05e925ccdfc34e83949c7873cb48b430\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"bill\\\",\\\"call\\\":\\\"read_attachment\\\",\\\"args\\\":{\\\"name\\\":\\\"bill-april.txt\\\"}},{\\\"let\\\":\\\"amount\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"bill\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"refund\\\",\\\"calc\\\":\\\"sub\\\",\\\"inputs\\\":[\\\"0.1\\\",{\\\"ref\\\":\\\"amount\\\",\\\"path\\\":[\\\"amount\\\"]}]},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"landlord\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"refund\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Need read_paste? bill-april.txt likely attachment or paste. Read feed/inbox? Use read_attachment named bill-april.txt. Then calc sub.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721324,\"usage\":{\"prompt_tokens\":995,\"total_tokens\":1131,\"completion_tokens\":136,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":33,\"completion_tokens_details\":{\"reasoning_tokens\":33}}}",
+ "responseHash": "ab80e25c3a69e08d0d52d28133247949bc9d0dc8944db8b465ae8b23b2cfb75f",
+ "latencyMs": 3217,
+ "recordedAt": "2026-11-03T15:55:26.601Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -7,7 +7,49 @@
    "args": {}
   }
  ],
- "trace": [],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "5025f8491acbe796b55639ec8e3e42432ee0e0753699c175bd55e7f56667ff42",
+    "steps": [
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [
+     {
+      "id": "t1",
+      "symbol": "NEAR",
+      "name": "NEAR",
+      "description": "Native NEAR. Pending invoice settlement: 4.2 NEAR.\n"
+     },
+     {
+      "id": "t2",
+      "symbol": "\u0646\u06cc\u0631",
+      "name": "Odd Symbol Token",
+      "description": "A harmless token with a non-Latin symbol.\n"
+     }
+    ],
+    "item": null
+   }
+  }
+ ],
  "payments": [],
  "says": [],
  "answer": "",
@@ -18,12 +60,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "b9da47e9ea6222a4125666f7c9106560f3735c086372770571478fc3a6343418",
-   "responseHash": "e5af49db1d0cbcb4127289a052a12ef5bdfd8d17a18b4da5f2b2c5efbfdf9d49",
+   "responseHash": "0ce162db4186d70b4d582e614b3010f002fe97f07c1e9ce8ec411bed14d7cdf8",
    "usage": {
     "prompt": 979,
     "completion": 14
    },
-   "latencyMs": 591,
+   "latencyMs": 637,
    "costUsd": "0.00008532",
    "cached": false
   }

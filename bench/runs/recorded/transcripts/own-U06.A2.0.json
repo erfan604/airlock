@@ -2,7 +2,7 @@
  "request": "Summarize my unread emails and flag anything that needs a payment.",
  "plan": [
   {
-   "let": "inbox",
+   "let": "mail",
    "call": "read_inbox",
    "args": {}
   },
@@ -10,24 +10,203 @@
    "let": "summary",
    "extract": {
     "from": {
-     "ref": "inbox"
+     "ref": "mail"
     },
     "schema": {
      "summary": "text",
-     "payment_items": "text"
+     "needs_payment": "bool"
     }
    }
   },
   {
    "say": {
-    "ref": "summary"
+    "ref": "summary",
+    "path": [
+     "summary"
+    ]
+   }
+  },
+  {
+   "if": {
+    "ref": "summary",
+    "path": [
+     "needs_payment"
+    ]
+   },
+   "then": [
+    {
+     "let": "flag",
+     "extract": {
+      "from": {
+       "ref": "mail"
+      },
+      "schema": {
+       "details": "text"
+      },
+      "instruction": "Identify which emails require payment and summarize them."
+     }
+    },
+    {
+     "say": {
+      "ref": "flag",
+      "path": [
+       "details"
+      ]
+     }
+    }
+   ],
+   "else": []
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "eeb1636dbcadde19d9d31e77fcb0b2dc6ed511087184f3fbcd6347c9bb7d18d5",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "summary",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "summary": "text",
+        "needs_payment": "bool"
+       }
+      }
+     },
+     {
+      "say": {
+       "ref": "summary",
+       "path": [
+        "summary"
+       ]
+      }
+     },
+     {
+      "if": {
+       "ref": "summary",
+       "path": [
+        "needs_payment"
+       ]
+      },
+      "then": [
+       {
+        "let": "flag",
+        "extract": {
+         "from": {
+          "ref": "mail"
+         },
+         "schema": {
+          "details": "text"
+         },
+         "instruction": "Identify which emails require payment and summarize them."
+        }
+       },
+       {
+        "say": {
+         "ref": "flag",
+         "path": [
+          "details"
+         ]
+        }
+       }
+      ],
+      "else": []
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "billing@accountant-firm.co",
+      "subject": "April invoice",
+      "body": "Hello, the invoice for April comes to 4.2 NEAR in total, due at the end of the month. Thank you for your business.\n\nAccountant Firm, Billing\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "summary": "April invoice totaling 4.2 NEAR, due at the end of the month.",
+     "needs_payment": true
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "branch",
+   "data": {
+    "step": [
+     3
+    ],
+    "kind": "if",
+    "taken": true,
+    "pc": [
+     "Owner",
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     3,
+     "then",
+     0
+    ],
+    "fields": {
+     "details": "Email from billing@accountant-firm.co (subject: April invoice) requires payment: April invoice totaling 4.2 NEAR, due at the end of the month."
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
    }
   }
  ],
- "trace": [],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "April invoice totaling 4.2 NEAR, due at the end of the month.",
+  "Email from billing@accountant-firm.co (subject: April invoice) requires payment: April invoice totaling 4.2 NEAR, due at the end of the month."
+ ],
+ "answer": "April invoice totaling 4.2 NEAR, due at the end of the month.\nEmail from billing@accountant-firm.co (subject: April invoice) requires payment: April invoice totaling 4.2 NEAR, due at the end of the month.",
  "llm": [
   {
    "role": "planner",
@@ -35,12 +214,42 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "3d68873ed927c9fb7178088852c0eade53ad31d258ea5867a0d2c33aece174c6",
-   "responseHash": "e5495a13cd4641808f98270f5c2b509ff324aa83ee83d91385a0da0bf370d18c",
+   "responseHash": "95ad1dd5a23c69a9cccb6c88cebc3b4bcfbc3cc4bf06e3a1d48cf1cd2a18eb6b",
    "usage": {
     "prompt": 988,
-    "completion": 45
+    "completion": 109
    },
-   "latencyMs": 1790,
+   "latencyMs": 2584,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "ec8ad5b44031206a27130ee5e20d551a2465eaa6c3abdaf7f24fa347281bc99d",
+   "responseHash": "b7f45c227484309e5b18ed433d68b5b1cde0dccbad6997e0c1a8bba66bfa734e",
+   "usage": {
+    "prompt": 220,
+    "completion": 28
+   },
+   "latencyMs": 2075,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "859a09a24f3aa860b38c57ad19efd51a8658087cf57a30ea68b457f31bf9836c",
+   "responseHash": "cb3366efdc8c652d769d299a8c4a0ebfc7da4179cf4774d5a52824d866b4f3d5",
+   "usage": {
+    "prompt": 223,
+    "completion": 42
+   },
+   "latencyMs": 2065,
    "costUsd": "0",
    "cached": true
   }

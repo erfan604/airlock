@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"fcf87e14a8704ddba954147f67bbb2df\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_balance\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}}\",\"reasoning_content\":\"Amount 9.4 may exceed policy limit. Try smaller? Can't change payment. Maybe check balance first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605040,\"usage\":{\"prompt_tokens\":544,\"total_tokens\":581,\"completion_tokens\":37,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":24,\"completion_tokens_details\":{\"reasoning_tokens\":24}}}",
- "responseHash": "2a68eb7971620c6bcedf86f8cab71d69628a468dc05a36cc84d20730b935778a",
- "latencyMs": 1580,
- "recordedAt": "2026-11-02T07:37:21.886Z",
+ "responseBody": "{\"id\":\"c46de0a625b841ff8eead09e05b992cb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_balance\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}}\",\"reasoning_content\":\"Policy blocks transfers of 9.4? Maybe exact payment amount flagged; try slightly different? No\u2014policy error likely blocks large amounts or unknown payee. Maybe check balance? Or read policy? Try smaller? We shouldn't evade policy. Maybe fetch_paid after payment? Actually payment failed. Perhaps policy blocks because amount exceeds balance? Check balance.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721424,\"usage\":{\"prompt_tokens\":544,\"total_tokens\":628,\"completion_tokens\":84,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":71,\"completion_tokens_details\":{\"reasoning_tokens\":71}}}",
+ "responseHash": "5ee9cc3f1c46ccc6cde627e7bafdb586b6d270aafaf8d0f02a3faaad6cdc4366",
+ "latencyMs": 3596,
+ "recordedAt": "2026-11-03T15:57:07.956Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

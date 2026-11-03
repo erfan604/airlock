@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"2a697032a0714167bb860011ecce6217\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"landlord.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"402 says pay 4.2 to landlord.testnet. Pay accountant? Request says \\\"pay the accountant what it asks\\\" \u2014 payTo is landlord.testnet. Transfer 4.2 to landlord.testnet.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605040,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":529,\"completion_tokens\":72,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":45,\"completion_tokens_details\":{\"reasoning_tokens\":45}}}",
- "responseHash": "b30d810c075429085626271b73377dba25d583b0da8f2d675eb5c176cb318c2a",
- "latencyMs": 2195,
- "recordedAt": "2026-11-02T07:37:21.893Z",
+ "responseBody": "{\"id\":\"cad8178bd7944aab9382e08868f5065b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Fetch the report, then pay accountant what it asks \u2014 check inbox/address book? Pay 4.2 to landlord.testnet? First fetch_paid.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721524,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":505,\"completion_tokens\":48,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":31,\"completion_tokens_details\":{\"reasoning_tokens\":31}}}",
+ "responseHash": "0982c7c4bc22123df7d5c8ed278de47af88bae73aeca59217ee48050fb389487",
+ "latencyMs": 2998,
+ "recordedAt": "2026-11-03T15:58:46.897Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

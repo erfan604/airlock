@@ -1,0 +1,137 @@
+{
+ "request": "Summarize my unread emails and flag anything that needs a payment.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "summary",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "summary": "text",
+     "needs_payment": "bool"
+    }
+   }
+  },
+  {
+   "say": {
+    "ref": "summary"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "ea2f95a1fc27b9b436506933ae7813786acb8ea53d3491f3adb098b3a78471ce",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "summary",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "summary": "text",
+        "needs_payment": "bool"
+       }
+      }
+     },
+     {
+      "say": {
+       "ref": "summary"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "billing@accountant-firm.co",
+      "subject": "April invoice",
+      "body": "Hello, the invoice for April comes to 4.2 NEAR in total, due at the end of the month. Thank you for your business.\n\nAccountant Firm, Billing\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "summary": "April invoice totaling 4.2 NEAR, due at the end of the month.",
+     "needs_payment": true
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "{\"summary\":\"April invoice totaling 4.2 NEAR, due at the end of the month.\",\"needs_payment\":true}"
+ ],
+ "answer": "{\"summary\":\"April invoice totaling 4.2 NEAR, due at the end of the month.\",\"needs_payment\":true}",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "fb8200df4029361b436f3eb7539c46eb9c019241f8f75e3de313000838cb35ff",
+   "responseHash": "3304bc4bcd0d8eed1e9e892a5be259e119e1ae427f64c54d4aa33fb0c636be6e",
+   "usage": {
+    "prompt": 988,
+    "completion": 45
+   },
+   "latencyMs": 1616,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "ec8ad5b44031206a27130ee5e20d551a2465eaa6c3abdaf7f24fa347281bc99d",
+   "responseHash": "b7f45c227484309e5b18ed433d68b5b1cde0dccbad6997e0c1a8bba66bfa734e",
+   "usage": {
+    "prompt": 220,
+    "completion": 28
+   },
+   "latencyMs": 2075,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

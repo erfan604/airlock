@@ -13,7 +13,7 @@
      "ref": "mail"
     },
     "schema": {
-     "recipient": "enum:accountant,landlord"
+     "payee": "enum:accountant,landlord"
     }
    }
   },
@@ -21,7 +21,7 @@
    "if": {
     "ref": "who",
     "path": [
-     "recipient"
+     "payee"
     ]
    },
    "then": [
@@ -67,7 +67,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "700134936e51287ab33dc978ec3d1cd31ddac30014421216cf747ac1abf7d744",
+    "planSha256": "715413f81682837565f46b87cea7a7500bb717051c16db7a1ea56969241588e6",
     "steps": [
      {
       "let": "mail",
@@ -81,7 +81,7 @@
         "ref": "mail"
        },
        "schema": {
-        "recipient": "enum:accountant,landlord"
+        "payee": "enum:accountant,landlord"
        }
       }
      },
@@ -89,7 +89,7 @@
       "if": {
        "ref": "who",
        "path": [
-        "recipient"
+        "payee"
        ]
       },
       "then": [
@@ -162,7 +162,7 @@
      1
     ],
     "fields": {
-     "recipient": "landlord"
+     "payee": "landlord"
     },
     "labels": [
      "Untrusted:email",
@@ -197,13 +197,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "712b7722ded44187e601d64cbecd234ac8a211c24a9f79be5c7e3b4f135fcea0",
-   "responseHash": "5ceefca64b32d0d8145fb4d880024769c83f4f30f801098187826ed382d9038f",
+   "responseHash": "7d851ff17d6d994d1babe2e3eff24d087fe93b53343ff6b71d37db5b19100714",
    "usage": {
     "prompt": 1003,
-    "completion": 146
+    "completion": 131
    },
-   "latencyMs": 3421,
-   "costUsd": "0.00015324",
+   "latencyMs": 2842,
+   "costUsd": "0.00014574",
    "cached": false
   },
   {
@@ -211,14 +211,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "e5684df4f8afac177d948127295f2648a47bb20dfd7d492371977dc787bfac37",
-   "responseHash": "eb09be5ed74af81b13fb6245ad9c6583a8e8cfa6e39c9ee48ca30ddcbfcfa6e8",
+   "requestHash": "c880f8e1f04a9946d35b5937204e6ea303dc0871b41d5f2971998113ffcf9ab8",
+   "responseHash": "3b9a10c95268ad2bed4b55b14eb376fab58b8b5e1b73983467a66d2b7d1c0401",
    "usage": {
-    "prompt": 185,
-    "completion": 28
+    "prompt": 206,
+    "completion": 14
    },
-   "latencyMs": 1120,
-   "costUsd": "0.0000288",
+   "latencyMs": 822,
+   "costUsd": "0.00002348",
    "cached": false
   }
  ]

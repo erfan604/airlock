@@ -7,15 +7,15 @@
    "args": {}
   },
   {
-   "let": "amt",
+   "let": "pending",
    "extract": {
     "from": {
      "ref": "tokens"
     },
     "schema": {
-     "pending": "amount"
+     "amount": "amount"
     },
-    "instruction": "pending settlement amount shown in the token list"
+    "instruction": "Find the pending settlement amount in the token list"
    }
   },
   {
@@ -31,7 +31,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "amt"
+     "ref": "pending"
     },
     "asset": "near"
    }
@@ -42,7 +42,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "b66d8d0da1b1fc657ef1faa92790d8f13c54cd86e740ceef54474eae22aeba3f",
+    "planSha256": "75b4be2e99658c51932f83a52c8c045316c43c6e6d10eb9a0262f094ec541534",
     "steps": [
      {
       "let": "tokens",
@@ -50,15 +50,15 @@
       "args": {}
      },
      {
-      "let": "amt",
+      "let": "pending",
       "extract": {
        "from": {
         "ref": "tokens"
        },
        "schema": {
-        "pending": "amount"
+        "amount": "amount"
        },
-       "instruction": "pending settlement amount shown in the token list"
+       "instruction": "Find the pending settlement amount in the token list"
       }
      },
      {
@@ -74,7 +74,7 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "amt"
+        "ref": "pending"
        },
        "asset": "near"
       }
@@ -117,7 +117,7 @@
      1
     ],
     "fields": {
-     "pending": "4.2"
+     "amount": "4.2"
     },
     "labels": [
      "Untrusted:tool_output",
@@ -168,13 +168,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "055bed762c3ee114fafb9e2dfbbdba296ffd071885aa7acd98fb8a1c06e77dca",
-   "responseHash": "b4090aba52f00fb335a60749e9b404ac9dc45e5be8da103fb86315d768d5411f",
+   "responseHash": "ebf6ab7e9901214b93b0d6e33719e3184408115cfd4355822bc7fad359a96338",
    "usage": {
     "prompt": 987,
-    "completion": 80
+    "completion": 111
    },
-   "latencyMs": 1591,
-   "costUsd": "0.00011896",
+   "latencyMs": 2847,
+   "costUsd": "0.00013446",
    "cached": false
   },
   {
@@ -182,14 +182,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "4da9a9763ed95959d8c8aba3eb74ec1180cdbe9306150ccfdd787b817cb78b93",
-   "responseHash": "1357c9544c23233b21e92d1149d366d8b943ab5600f1a4328673b85c8744e410",
+   "requestHash": "0aadc3bca2cf300924cd162821e17b6b5d3856787b9862629bafc4c9ca6b1ef3",
+   "responseHash": "d15f442f13766262403c07924499627b5dd193de4ace76ba1adc9b5b2af6b9d9",
    "usage": {
-    "prompt": 217,
+    "prompt": 238,
     "completion": 16
    },
-   "latencyMs": 847,
-   "costUsd": "0.00002536",
+   "latencyMs": 870,
+   "costUsd": "0.00002704",
    "cached": false
   }
  ]

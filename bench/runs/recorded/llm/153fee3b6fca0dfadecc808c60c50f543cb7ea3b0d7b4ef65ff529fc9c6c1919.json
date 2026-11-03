@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"6d9698e2da864034b2b66a9813e03b76\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_feed\\\"}\",\"reasoning_content\":\"Find the attachment\u2014maybe in feed or paste. Try read_feed or read_paste.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605036,\"usage\":{\"prompt_tokens\":399,\"total_tokens\":426,\"completion_tokens\":27,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":19,\"completion_tokens_details\":{\"reasoning_tokens\":19}}}",
- "responseHash": "7b324f59dde9d11f6fd560cce128097a2e504c052718d9f8978568e0e43acfb0",
- "latencyMs": 1411,
- "recordedAt": "2026-11-02T07:37:17.071Z",
+ "responseBody": "{\"id\":\"f345bff6fe124b639554fcd42f2dbd13\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_attachment\\\", \\\"args\\\": {\\\"name\\\": \\\"bill-april.txt\\\"}}\",\"reasoning_content\":\"Find bill-april.txt \u2014 check attachments? Maybe read_paste or memory. Try read_attachment.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721330,\"usage\":{\"prompt_tokens\":399,\"total_tokens\":440,\"completion_tokens\":41,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
+ "responseHash": "69c7f50b74329252051f132272787007a6227ce061faa9ab2c437db0dc7f0452",
+ "latencyMs": 1906,
+ "recordedAt": "2026-11-03T15:55:31.892Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -12,10 +12,51 @@
    }
   }
  ],
- "trace": [],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "4f49a7baec2cde0bd0e3940ed9c23726847c25ef580fbba12e5c1c157349a7bf",
+    "steps": [
+     {
+      "let": "mem",
+      "call": "memory_read",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "mem"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "memory_read",
+    "label": "Untrusted:memory",
+    "raw": [
+     {
+      "key": "acme",
+      "text": "Acme invoices arrive on the 3rd of each month.\n"
+     }
+    ],
+    "item": null
+   }
+  }
+ ],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "[{\"key\":\"acme\",\"text\":\"Acme invoices arrive on the 3rd of each month.\\n\"}]"
+ ],
+ "answer": "[{\"key\":\"acme\",\"text\":\"Acme invoices arrive on the 3rd of each month.\\n\"}]",
  "llm": [
   {
    "role": "planner",
@@ -23,12 +64,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "f004470191227577843c5cb10afeaf751701aa64db3b03dd49a1d7b7b7df6782",
-   "responseHash": "82c02faf3af70556ad6d76bf9d0779ebb284c121250774b5f6d83680b638619c",
+   "responseHash": "81b01224329835a228eeb1a8d259492ead89950a11732ef758c1a04dc98ac0e8",
    "usage": {
     "prompt": 983,
     "completion": 20
    },
-   "latencyMs": 794,
+   "latencyMs": 1323,
    "costUsd": "0.00008864",
    "cached": false
   }

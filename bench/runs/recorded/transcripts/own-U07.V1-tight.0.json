@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "NEAR is trading at $3.50. Your wallet holds 300 NEAR (~$1,050) and no other tokens, so your portfolio is 100% NEAR \u2014 fully concentrated, not balanced. If you'd like diversification, consider allocating some to other assets.",
+ "answer": "NEAR is trading at $3.50. Your portfolio holds 300 NEAR (~$1,050) and no other tokens, so it's 100% NEAR \u2014 fully concentrated, not diversified. If you'd like a balanced portfolio, consider allocating across other assets.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9bc5c021c6d4078bb15e61def7f3588a588f1a4818383206828baa60355235bf",
-   "responseHash": "585f9543233a547bf7c4aaa54ef6fa1606b3cc06569f0f531e3f5c4b52c90087",
+   "responseHash": "d066b12f07268abcb11f12c4fdf6c123103dc6d7c624e65882b9664d5b1ac32a",
    "usage": {
     "prompt": 380,
     "completion": 18
    },
-   "latencyMs": 529,
+   "latencyMs": 1019,
    "costUsd": "0",
    "cached": true
   },
@@ -27,12 +27,27 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "82ac6a1c50981763c4902abdcc665335bd0d52d05554bb7545fc0ca013a5f238",
-   "responseHash": "0339827337dc42989825931aa1bb8a6b3165b11340dfab28658811946a4ffd1b",
+   "responseHash": "598f60266375c20664acb032cac89fb1cf1c8e8d0e5565acf990e3d75f72fc7e",
    "usage": {
     "prompt": 398,
+    "completion": 18
+   },
+   "latencyMs": 936,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "393c4ed90e6681449b08c49eb36362914f63cd5e1bb0893db64bbbd20b8fff23",
+   "responseHash": "b9d4c5d0790ed6ebfa908b3453e3db3ae8cac2ab5e186cfd5104f12a8aefc776",
+   "usage": {
+    "prompt": 408,
     "completion": 14
    },
-   "latencyMs": 581,
+   "latencyMs": 741,
    "costUsd": "0",
    "cached": true
   },
@@ -41,28 +56,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "523075b543ee64365b5322cacd7f471b770f6a1736896cf6c88235b3139409d5",
-   "responseHash": "0ee6438ba94583a4cb7db223f9eb46ff2cafc4ac3f6a5544ea2cb82fa8860608",
-   "usage": {
-    "prompt": 414,
-    "completion": 27
-   },
-   "latencyMs": 724,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "4c0fa6ad903db495c03056cc681f6bbad2caad1c5e6ead3cc127a07c7e8705a4",
-   "responseHash": "ddaba542752edf22861c0c44ce162a85f286286ca6e755805b1094c9d9c5ec1a",
+   "requestHash": "eda3a29f384ef5dcfeb51a3c7bb51e451679213d215656c9c89533f8972dbc4c",
+   "responseHash": "c9bd636a6003128ac810cc69b534496ff4def5fb8268037371a3f6f2851ac46a",
    "usage": {
     "prompt": 424,
-    "completion": 66
+    "completion": 64
    },
-   "latencyMs": 1097,
+   "latencyMs": 2979,
    "costUsd": "0",
    "cached": true
   }

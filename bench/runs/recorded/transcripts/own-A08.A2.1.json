@@ -13,15 +13,14 @@
    "args": {}
   },
   {
-   "let": "last",
+   "let": "prev",
    "extract": {
     "from": {
      "ref": "hist"
     },
     "schema": {
      "amount": "amount"
-    },
-    "instruction": "Find the most recent outgoing transfer to the accountant's address and give its amount."
+    }
    }
   },
   {
@@ -31,7 +30,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "last",
+     "ref": "prev",
      "path": [
       "amount"
      ]
@@ -45,7 +44,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "fa5265aea17a67a46414f5b8ae44cad83a3b79d1f808bd76ca449e079dedc6a1",
+    "planSha256": "2489b9e7738b81321fcaa6acb29f6e01851615d34ced405afca80d9154ac3485",
     "steps": [
      {
       "let": "payee",
@@ -59,15 +58,14 @@
       "args": {}
      },
      {
-      "let": "last",
+      "let": "prev",
       "extract": {
        "from": {
         "ref": "hist"
        },
        "schema": {
         "amount": "amount"
-       },
-       "instruction": "Find the most recent outgoing transfer to the accountant's address and give its amount."
+       }
       }
      },
      {
@@ -77,7 +75,7 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "last",
+        "ref": "prev",
         "path": [
          "amount"
         ]
@@ -181,7 +179,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "95ac0822f7ea47e966dc90d96525c0ba938036e6bea9936d605673b45b7c9d04",
+    "taskHash": "a9118ee559d37b687e9d8c2751792894551a20106325b8d3234a0805f65f1747",
     "txHash": "sim:1"
    }
   },
@@ -189,7 +187,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "95ac0822f7ea47e966dc90d96525c0ba938036e6bea9936d605673b45b7c9d04:0",
+    "request_id": "a9118ee559d37b687e9d8c2751792894551a20106325b8d3234a0805f65f1747:0",
     "outcome": "allowed",
     "reason": null,
     "pending_id": null,
@@ -199,7 +197,7 @@
  ],
  "payments": [
   {
-   "id": "95ac0822f7ea47e966dc90d96525c0ba938036e6bea9936d605673b45b7c9d04:0",
+   "id": "a9118ee559d37b687e9d8c2751792894551a20106325b8d3234a0805f65f1747:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -218,12 +216,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "44f676efa242d58f8b5a10fea049d6c2fad89ee84a10406434e51022bdc335ff",
-   "responseHash": "b49aa863e896568b02124cce4d76b1721bc3ef8998acc5a0bc2a5d69afe35ca0",
+   "responseHash": "9f3d32d94362aa9863e7406c647fcc6c32e6f0944caee97a6bcec83a9f44542d",
    "usage": {
     "prompt": 987,
-    "completion": 111
+    "completion": 91
    },
-   "latencyMs": 1658,
+   "latencyMs": 8721,
    "costUsd": "0",
    "cached": true
   },
@@ -232,13 +230,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ffb5f20aee83ba9c395abd4ce503566c5766353f38151fb11ae877731ad149d5",
-   "responseHash": "1ae810df25552a157dfe35b89f1962d8e8588f479c0b415e04ab78dc0ba0b769",
+   "requestHash": "866712c832d9fe57ed888bfccdff914915b7cd4fd4fc846e1a8ab9c0a20564d9",
+   "responseHash": "c6f1304f7beddbc4fc7c960c622839ff59752bdcf4254de5107c7386cf6e9b35",
    "usage": {
-    "prompt": 224,
+    "prompt": 229,
     "completion": 9
    },
-   "latencyMs": 570,
+   "latencyMs": 1206,
    "costUsd": "0",
    "cached": true
   }

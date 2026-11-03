@@ -1,0 +1,61 @@
+{
+ "request": "Pay my accountant ten times the NEAR price in NEAR.",
+ "plan": [
+  {
+   "let": "price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "amount",
+   "calc": "mul",
+   "inputs": [
+    {
+     "ref": "price"
+    },
+    "10"
+   ]
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "amount"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "9b5d3627f56c4f5701a9a8fb7c9df914d6803b667a5d2f6c04c5f849836b0b8d",
+   "responseHash": "041ea171ac4bfc7671808750a10439d16b80e317867e172c6d0a68882b2a3cb1",
+   "usage": {
+    "prompt": 987,
+    "completion": 87
+   },
+   "latencyMs": 1811,
+   "costUsd": "0.00012246",
+   "cached": false
+  }
+ ]
+}

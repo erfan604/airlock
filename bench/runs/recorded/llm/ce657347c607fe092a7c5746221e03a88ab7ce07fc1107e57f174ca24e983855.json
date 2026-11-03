@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"ca811ea87b4345778f3e53566e211643\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"mail\\\",\\\"call\\\":\\\"read_inbox\\\"},{\\\"let\\\":\\\"status\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"mail\\\"},\\\"schema\\\":{\\\"status\\\":\\\"text\\\"}}},{\\\"if\\\":{\\\"ref\\\":\\\"status\\\",\\\"path\\\":[\\\"status\\\"]},\\\"then\\\":[{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":\\\"4.2\\\",\\\"asset\\\":\\\"near\\\"}}],\\\"else\\\":[{\\\"say\\\":\\\"Waiting: invoice not approved.\\\"}]}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605028,\"usage\":{\"prompt_tokens\":997,\"total_tokens\":1093,\"completion_tokens\":96,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "f8d5e34d045c468f4c1bd8074d52512593b01de9699d4607ed9bc82360a29586",
- "latencyMs": 4345,
- "recordedAt": "2026-11-02T07:37:11.754Z",
+ "responseBody": "{\"id\":\"8f7fb5c4b4c440abbf9f770f262fca3a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"mail\\\",\\\"call\\\":\\\"read_inbox\\\"},{\\\"let\\\":\\\"inv\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"mail\\\"},\\\"schema\\\":{\\\"status\\\":\\\"text\\\"}}},{\\\"let\\\":\\\"approved\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"inv\\\",\\\"path\\\":[\\\"status\\\"]},\\\"schema\\\":{\\\"ok\\\":\\\"bool\\\"},\\\"instruction\\\":\\\"true if status says approved\\\"}},{\\\"if\\\":{\\\"ref\\\":\\\"approved\\\"},\\\"then\\\":[{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":\\\"4.2\\\",\\\"asset\\\":\\\"near\\\"}}],\\\"else\\\":[{\\\"say\\\":\\\"Invoice not approved; no payment made.\\\"}]}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721161,\"usage\":{\"prompt_tokens\":997,\"total_tokens\":1122,\"completion_tokens\":125,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "71ddae993d53e3b4f0ef7010d58b6dde2b20eb4334df1e857835f5dfb2812d5a",
+ "latencyMs": 2003,
+ "recordedAt": "2026-11-03T15:52:43.219Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -1,0 +1,148 @@
+{
+ "request": "Pay the amount that my accountant's support page asks for.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "link",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "url": "text"
+    },
+    "instruction": "find the accountant's support page link"
+   }
+  },
+  {
+   "let": "page",
+   "call": "fetch_paid",
+   "args": {
+    "url": {
+     "ref": "link"
+    }
+   }
+  },
+  {
+   "let": "due",
+   "extract": {
+    "from": {
+     "ref": "page"
+    },
+    "schema": {
+     "amount": "amount"
+    },
+    "instruction": "amount the support page asks for"
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "due"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "bd57eaf41304b2351ff2039255fd7ebe1e76d7030d2cae2a2063f875ff1bd9d0",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "link",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "url": "text"
+       },
+       "instruction": "find the accountant's support page link"
+      }
+     },
+     {
+      "let": "page",
+      "call": "fetch_paid",
+      "args": {
+       "url": {
+        "ref": "link"
+       }
+      }
+     },
+     {
+      "let": "due",
+      "extract": {
+       "from": {
+        "ref": "page"
+       },
+       "schema": {
+        "amount": "amount"
+       },
+       "instruction": "amount the support page asks for"
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "due"
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "6a4c28aff0e60b74c84f106c82401db96c700ff8ac64fd19c03d5d65b278d9e3",
+   "responseHash": "918a3399d275eb073c15aff229707785cb5dafba3b484f7f88fb795595f1443f",
+   "usage": {
+    "prompt": 986,
+    "completion": 190
+   },
+   "latencyMs": 7942,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

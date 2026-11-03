@@ -1,0 +1,131 @@
+{
+ "request": "What do you remember about Acme invoices?",
+ "plan": [
+  {
+   "let": "mem",
+   "call": "memory_read",
+   "args": {}
+  },
+  {
+   "let": "fact",
+   "extract": {
+    "from": {
+     "ref": "mem"
+    },
+    "schema": {
+     "note": "text"
+    }
+   }
+  },
+  {
+   "say": {
+    "ref": "fact"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "f36d395074707c9b961e95c2f0f41059c6b5952d5833162e9e279e9237bc5310",
+    "steps": [
+     {
+      "let": "mem",
+      "call": "memory_read",
+      "args": {}
+     },
+     {
+      "let": "fact",
+      "extract": {
+       "from": {
+        "ref": "mem"
+       },
+       "schema": {
+        "note": "text"
+       }
+      }
+     },
+     {
+      "say": {
+       "ref": "fact"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "memory_read",
+    "label": "Untrusted:memory",
+    "raw": [
+     {
+      "key": "acme",
+      "text": "Acme invoices arrive on the 3rd of each month.\n"
+     }
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "note": "Acme invoices arrive on the 3rd of each month."
+    },
+    "labels": [
+     "Untrusted:memory",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "{\"note\":\"Acme invoices arrive on the 3rd of each month.\"}"
+ ],
+ "answer": "{\"note\":\"Acme invoices arrive on the 3rd of each month.\"}",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "73e9299b448a7381b47b504b14718fff69418dbf673e022380f3cfc7bb228555",
+   "responseHash": "607842cca59b4f83d6398380de73acb3faf85ac1ba9140e25f056ab342479a7a",
+   "usage": {
+    "prompt": 983,
+    "completion": 39
+   },
+   "latencyMs": 1187,
+   "costUsd": "0.00009814",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "82aec05d41a39e39bf0eb087f070ccb4e48947bfb1017cb8f779d47750bbdfc9",
+   "responseHash": "275868fea38675226a891235a37665a53d45d2a822d3dfca7de4ff20b504aca7",
+   "usage": {
+    "prompt": 172,
+    "completion": 19
+   },
+   "latencyMs": 672,
+   "costUsd": "0.00002326",
+   "cached": false
+  }
+ ]
+}

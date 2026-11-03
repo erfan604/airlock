@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"204ce60080304f57871a0f5ae046bbe7\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment made but still 402. Retry fetch_paid once? It returned requirements again \u2014 maybe one download consumed? Try again.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605039,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":597,\"completion_tokens\":48,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":27,\"completion_tokens_details\":{\"reasoning_tokens\":27}}}",
- "responseHash": "fa18a14d6c93df7d936b79968dabcc090be1e358d73c2ae2b25ff55ab3416fc4",
- "latencyMs": 1263,
- "recordedAt": "2026-11-02T07:37:20.084Z",
+ "responseBody": "{\"id\":\"1efa907d39914ac48d0918d89bb24e7a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721403,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":571,\"completion_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "5e2f55acee9fa5e88e06d8b27f1203ffa195f0da1af5975d63edab5ae7443d9d",
+ "latencyMs": 718,
+ "recordedAt": "2026-11-03T15:56:43.552Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

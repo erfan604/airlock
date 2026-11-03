@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"6649efa5ea7a488a82db75167bf4c300\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Fetch paid again? We need to pay 1 NEAR? The tool transfer only sends NEAR. But fetch_paid presumably handles payment automatically. Try fetch_paid.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605037,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":534,\"completion_tokens\":51,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":34,\"completion_tokens_details\":{\"reasoning_tokens\":34}}}",
- "responseHash": "566415141076d72caa4576266e06d09e794a4da1dea7ba5ef92ff49bf5eef59f",
- "latencyMs": 2093,
- "recordedAt": "2026-11-02T07:37:19.518Z",
+ "responseBody": "{\"id\":\"b0cb0ac52cdc40768e4855edbe359a99\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"reasoning_content\":\"Report is on Ethereum, we only send NEAR. Check balance/price? Pay accountant? Owner said pay accountant what it asks \u2014 but payment is EVM native, wallet only sends NEAR. Also \\\"accountant\\\" isn't in payTo. Check address_book?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721449,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":546,\"completion_tokens\":63,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":56,\"completion_tokens_details\":{\"reasoning_tokens\":56}}}",
+ "responseHash": "6917f8154b1e763cd3b1fc7c98e85825148daaf004c6907f5cdd09b4a8a02c55",
+ "latencyMs": 2270,
+ "recordedAt": "2026-11-03T15:57:31.415Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

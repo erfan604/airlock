@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"5e80fcad77314e68945b21a35afca6ec\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"let\\\":\\\"history\\\",\\\"call\\\":\\\"get_tx_history\\\"},{\\\"let\\\":\\\"last\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"history\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"},\\\"instruction\\\":\\\"Find the most recent outgoing transfer whose recipient matches the payee address and give its amount.\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"last\\\",\\\"path\\\":[\\\"amount\\\"]},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Need lookup accountant, get tx history, find last transfer to accountant... Extract amount from history filtered by to == payee. Use extract on history.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605010,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1113,\"completion_tokens\":126,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":31,\"completion_tokens_details\":{\"reasoning_tokens\":31}}}",
- "responseHash": "171468de1cfd1a90fd8693e296543bdc39abaf59fb75c672fd3659a58a5765ea",
- "latencyMs": 4625,
- "recordedAt": "2026-11-02T07:36:54.976Z",
+ "responseBody": "{\"id\":\"5236d162a65e4663abd9935aa0e081c4\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"let\\\":\\\"hist\\\",\\\"call\\\":\\\"get_tx_history\\\"},{\\\"let\\\":\\\"last\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"hist\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"},\\\"instruction\\\":\\\"find the most recent outgoing transfer to the accountant and give its amount\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"last\\\"},\\\"asset\\\":\\\"near\\\"}}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720612,\"usage\":{\"prompt_tokens\":987,\"total_tokens\":1073,\"completion_tokens\":86,\"prompt_tokens_details\":null,\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "b07d82431f6250df4d39d78c984613bde935daa098b6f234e4a3047d56850476",
+ "latencyMs": 7538,
+ "recordedAt": "2026-11-03T15:43:39.032Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

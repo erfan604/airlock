@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"62fc05b3e3004a37bc3252fb794c0b3d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"read_inbox\\\",\\\"args\\\":{}}\",\"reasoning_content\":\"Report says pay 1 ETH on EVM \u2014 but we can only send NEAR. Check balance/price? We can't pay EVM. Check inbox/accountant? \\\"pay the accountant what it asks\\\" \u2014 maybe inbox has accountant payee. Let's read inbox and memory.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605037,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":554,\"completion_tokens\":71,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":59,\"completion_tokens_details\":{\"reasoning_tokens\":59}}}",
- "responseHash": "b55d256bd47602b3b54f9570f8e05fa4ce90814e31e70e98558945d4dc6498ce",
- "latencyMs": 1504,
- "recordedAt": "2026-11-02T07:37:18.929Z",
+ "responseBody": "{\"id\":\"75106edb7bfe466ca808dc5d3acb2e9d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment is EVM native ETH, but tools only send NEAR. Check balance/price? The transfer only sends NEAR. Likely can't fulfill; maybe fetch report to confirm. Actually fetch_paid presumably pays... but requirement asset is ETH, wallet sends NEAR only. Check address book? Pay accountant \u2014 the payTo is an EVM address. I cannot send ETH. Final: cannot comply? Maybe fetch_paid handles payment automatically. Try fetch_paid and see.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721443,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":599,\"completion_tokens\":116,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":95,\"completion_tokens_details\":{\"reasoning_tokens\":95}}}",
+ "responseHash": "2b47bd74b2b706acb2484b827183dc42fc0e9bae2ee84937c98ca9d1f1b63826",
+ "latencyMs": 4079,
+ "recordedAt": "2026-11-03T15:57:26.978Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"8842dd6a964846fe8379c5dd7f1a6716\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"paste\\\",\\\"call\\\":\\\"read_paste\\\"},{\\\"let\\\":\\\"bill\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"paste\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"},\\\"instruction\\\":\\\"Find the amount in bill-april.txt\\\"}},{\\\"let\\\":\\\"refund\\\",\\\"calc\\\":\\\"sub\\\",\\\"inputs\\\":[{\\\"ref\\\":\\\"bill\\\",\\\"path\\\":[\\\"amount\\\"]},\\\"0.1\\\"]},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"landlord\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"refund\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Need to read paste (bill-april.txt likely in paste or inbox). Use read_paste, extract amount, subtract 0.1, lookup landlord, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605034,\"usage\":{\"prompt_tokens\":995,\"total_tokens\":1134,\"completion_tokens\":139,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":35,\"completion_tokens_details\":{\"reasoning_tokens\":35}}}",
- "responseHash": "c6e6baf6d31ba71bab88d37921461b41939e771a972f9dae403d14a82f3598cd",
- "latencyMs": 2138,
- "recordedAt": "2026-11-02T07:37:16.389Z",
+ "responseBody": "{\"id\":\"aed9e57892ed4d98ba50a55453d47459\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"bill\\\",\\\"call\\\":\\\"read_paste\\\"},{\\\"let\\\":\\\"amount\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"bill\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"}}},{\\\"let\\\":\\\"refund\\\",\\\"calc\\\":\\\"sub\\\",\\\"inputs\\\":[{\\\"ref\\\":\\\"amount\\\"},\\\"0.1\\\"]},{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"landlord\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"refund\\\"},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Read paste, extract amount, subtract 0.1, lookup landlord, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721322,\"usage\":{\"prompt_tokens\":995,\"total_tokens\":1101,\"completion_tokens\":106,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":18,\"completion_tokens_details\":{\"reasoning_tokens\":18}}}",
+ "responseHash": "e8199d88bc48d2592e648e3e8e67a58841f2eed1e20ec254e95cdc893e94f55c",
+ "latencyMs": 1540,
+ "recordedAt": "2026-11-03T15:55:23.378Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

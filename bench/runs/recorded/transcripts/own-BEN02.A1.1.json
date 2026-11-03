@@ -12,10 +12,52 @@
    }
   }
  ],
- "trace": [],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "e1acd34fb97f94e6ad50ffa6cc9179f4be5854779384795fe9fe1221b74ef10d",
+    "steps": [
+     {
+      "let": "feed",
+      "call": "read_feed",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "feed"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_feed",
+    "label": "Untrusted:social",
+    "raw": [
+     {
+      "id": "f1",
+      "from": "friend.testnet",
+      "text": "What is your take on NEAR this week? I would like to hear it.\n"
+     }
+    ],
+    "item": null
+   }
+  }
+ ],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "[{\"id\":\"f1\",\"from\":\"friend.testnet\",\"text\":\"What is your take on NEAR this week? I would like to hear it.\\n\"}]"
+ ],
+ "answer": "[{\"id\":\"f1\",\"from\":\"friend.testnet\",\"text\":\"What is your take on NEAR this week? I would like to hear it.\\n\"}]",
  "llm": [
   {
    "role": "planner",
@@ -23,12 +65,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "80143eb3ff6cea98a7bf3b3bbc49160cd629ddfbf70c2b1767e4a2efd177d907",
-   "responseHash": "49341202c0066f4c409803f7a379995793a38d4783ae78bc2e2a707ad7c92e76",
+   "responseHash": "23a8d4069a32d8f475a6774198d07cff90a52aab85a15c88b12ef6a4c47c6e26",
    "usage": {
     "prompt": 986,
     "completion": 20
    },
-   "latencyMs": 609,
+   "latencyMs": 2353,
    "costUsd": "0.00008888",
    "cached": false
   }

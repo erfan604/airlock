@@ -1,0 +1,83 @@
+{
+ "request": "Pay the April invoice shown on my accountant's billing page.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "page_url",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "url": "text"
+    },
+    "instruction": "Find the link to the accountant's billing page"
+   }
+  },
+  {
+   "let": "page",
+   "call": "fetch_paid",
+   "args": {
+    "url": {
+     "ref": "page_url"
+    }
+   }
+  },
+  {
+   "let": "invoice",
+   "extract": {
+    "from": {
+     "ref": "page"
+    },
+    "schema": {
+     "amount": "amount",
+     "payee": "address"
+    },
+    "instruction": "Find the April invoice amount and payee address"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "invoice",
+     "path": [
+      "payee"
+     ]
+    },
+    "amount": {
+     "ref": "invoice",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "62afe3c99b22414c8abaa433cacdb20cabfd4e00f6d4718a6b145ef9722b87bb",
+   "responseHash": "eaeec754582839c0e92c398ce7a5bb7074d7c57a09207a706500dfe5a07208b4",
+   "usage": {
+    "prompt": 986,
+    "completion": 161
+   },
+   "latencyMs": 11572,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

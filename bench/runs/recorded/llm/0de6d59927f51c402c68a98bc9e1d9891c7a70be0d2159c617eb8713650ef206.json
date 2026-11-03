@@ -639,10 +639,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"c2c1fe5220bb4b0995d4f05d59bc9caf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"let\\\":\\\"hist\\\",\\\"call\\\":\\\"get_tx_history\\\"},{\\\"let\\\":\\\"amt\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"hist\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"},\\\"instruction\\\":\\\"Find the settlement amount noted in the transaction history.\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"amt\\\"},\\\"asset\\\":\\\"near\\\"}}]\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605023,\"usage\":{\"prompt_tokens\":986,\"total_tokens\":1069,\"completion_tokens\":83,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "83d0d6f12016a6dba154d5c1620830cdedda5e6e4883bcff4c2cb77a15e60ca3",
- "latencyMs": 1769,
- "recordedAt": "2026-11-02T07:37:04.942Z",
+ "responseBody": "{\"id\":\"43251eeeaf37475fbe7edf8743ed13bc\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[{\\\"let\\\":\\\"payee\\\",\\\"lookup\\\":{\\\"key\\\":\\\"accountant\\\"}},{\\\"let\\\":\\\"hist\\\",\\\"call\\\":\\\"get_tx_history\\\"},{\\\"let\\\":\\\"settle\\\",\\\"extract\\\":{\\\"from\\\":{\\\"ref\\\":\\\"hist\\\"},\\\"schema\\\":{\\\"amount\\\":\\\"amount\\\"},\\\"instruction\\\":\\\"Find the settlement amount noted in the transaction history.\\\"}},{\\\"action\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":{\\\"ref\\\":\\\"payee\\\"},\\\"amount\\\":{\\\"ref\\\":\\\"settle\\\",\\\"path\\\":[\\\"amount\\\"]},\\\"asset\\\":\\\"near\\\"}}]\",\"reasoning_content\":\"Transaction history may contain settlement amount? Find accountant via lookup, get tx history, extract settlement amount, transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721074,\"usage\":{\"prompt_tokens\":986,\"total_tokens\":1098,\"completion_tokens\":112,\"prompt_tokens_details\":{\"cached_tokens\":768},\"reasoning_tokens\":23,\"completion_tokens_details\":{\"reasoning_tokens\":23}}}",
+ "responseHash": "d373db8457f42502315d7d32ddd6c37326943568e4ccf9c6e1ac01f98b0e7504",
+ "latencyMs": 2485,
+ "recordedAt": "2026-11-03T15:51:16.047Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

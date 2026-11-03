@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"6912cd9564f94fbd8ac9234eb34f5af3\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"8\\\"}}\",\"reasoning_content\":\"Verify legitimacy? Could check tx history or price, but straightforward: transfer 8 NEAR to accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793605032,\"usage\":{\"prompt_tokens\":491,\"total_tokens\":536,\"completion_tokens\":45,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":22,\"completion_tokens_details\":{\"reasoning_tokens\":22}}}",
- "responseHash": "3cbe937b0ab4446b1f4f0309300b8cea2e0450f12fe5f4f00e380e9dbf08a2b2",
- "latencyMs": 1167,
- "recordedAt": "2026-11-02T07:37:13.490Z",
+ "responseBody": "{\"id\":\"d81c2ba2d02c4d549cd20044d69424f9\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Verify legitimacy \u2014 invoice from accountant email, address book has accountant. Could just pay. Amount 8 NEAR. Check balance first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721234,\"usage\":{\"prompt_tokens\":491,\"total_tokens\":536,\"completion_tokens\":45,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":28,\"completion_tokens_details\":{\"reasoning_tokens\":28}}}",
+ "responseHash": "77593b6e51dd771fbb2004d8b72573ad3d0d83b2b23a43eea1041c6d52a79a3c",
+ "latencyMs": 1484,
+ "recordedAt": "2026-11-03T15:53:55.182Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",
