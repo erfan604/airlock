@@ -1,0 +1,24 @@
+# The cheap tier a judge can run with only Node and pnpm (docs/VERIFY.md): the replay demo, the node tier of the claims and the
+# committed proof transcripts. The full gate (Kani, Lean, NEAR sandbox, about 41 minutes) stays local: scripts/check.sh full and
+# scripts/fresh-clone-check.sh.
+name: quick-tier
+on:
+  push:
+    branches: [main, ci-trial]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  node-tier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: pnpm i --frozen-lockfile
+      - run: pnpm demo --no-open --exit-when-ready
+      - run: scripts/claims-run.sh --tier node
+      - run: pnpm proven:transcripts
