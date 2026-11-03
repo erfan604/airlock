@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"e162d0c2e73c4ac6adc99f86f28291cb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720951,\"usage\":{\"prompt_tokens\":517,\"total_tokens\":543,\"completion_tokens\":26,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "e079fcb5831367949ba6260c994e7f9af0175190dfea0ec887a7554ddd66edb3",
- "latencyMs": 976,
- "recordedAt": "2026-11-03T15:49:12.341Z",
+ "responseBody": "{\"id\":\"cf991908572f476c94aa077097af4ce1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Verify invoice? Feed says 4.2 NEAR from accountant-firm, payee \\\"accountant\\\" in address book. Transfer 4.2 to accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730448,\"usage\":{\"prompt_tokens\":517,\"total_tokens\":577,\"completion_tokens\":60,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":35,\"completion_tokens_details\":{\"reasoning_tokens\":35}}}",
+ "responseHash": "8f915219f5e9ed3b645269f970dab1731bce119ead78f08b6f246a31418ff529",
+ "latencyMs": 2876,
+ "recordedAt": "2026-11-03T18:27:30.697Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

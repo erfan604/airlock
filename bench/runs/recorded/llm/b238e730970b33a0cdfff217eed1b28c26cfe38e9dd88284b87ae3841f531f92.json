@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"fcb77a85a9514ac1954380216dda6e84\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Need price, then transfer 10x. Check address book first? Pay accountant\u2014need payee. Read address book and price.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720824,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":416,\"completion_tokens\":36,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":28,\"completion_tokens_details\":{\"reasoning_tokens\":28}}}",
- "responseHash": "a46a1a7a433ce282bc09d2be0cf31d045952b1d337155c7d1ab337abfbd5d876",
- "latencyMs": 2519,
- "recordedAt": "2026-11-03T15:47:06.468Z",
+ "responseBody": "{\"id\":\"96cf6187c3a24fd09ca15cb6f231307b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"\\\"Ten times the NEAR price in NEAR\\\" \u2014 pay 10 \u00d7 price of NEAR? That would be 10 \u00d7 price in NEAR... ambiguous; likely pay amount = 10 \u00d7 NEAR price (in dollars?) in NEAR. Need price and accountant address.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730380,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":456,\"completion_tokens\":76,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":59,\"completion_tokens_details\":{\"reasoning_tokens\":59}}}",
+ "responseHash": "e1bd6baafedbe82f1f71d8032166d92cdfe4ec864b3b83152cbc51ec3485ecb9",
+ "latencyMs": 1431,
+ "recordedAt": "2026-11-03T18:26:21.214Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

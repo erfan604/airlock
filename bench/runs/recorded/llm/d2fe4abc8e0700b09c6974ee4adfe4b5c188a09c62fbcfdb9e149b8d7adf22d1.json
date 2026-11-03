@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"2d6bed5af91d4286b15f7b25f6415e0f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Fetch report after payment? fetch_paid likely handles payment. Pay accountant \u2014 address book? Requirement says pay accountant what it asks \u2014 ambiguous. Fetch paid first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721524,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":506,\"completion_tokens\":49,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":32,\"completion_tokens_details\":{\"reasoning_tokens\":32}}}",
- "responseHash": "08bf94f506e814643d4834ba4fcc12dccd99c6537b97c60e9500d672bcdb5df8",
- "latencyMs": 3003,
- "recordedAt": "2026-11-03T15:58:46.902Z",
+ "responseBody": "{\"id\":\"b261150c210b44b0ac3f24632d05f391\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"landlord.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Fetch report? We need to pay then fetch. Pay landlord.testnet 4.2? \\\"pay the accountant what it asks\\\" \u2014 payTo is landlord.testnet. Transfer, then fetch_paid.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730979,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":526,\"completion_tokens\":69,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":42,\"completion_tokens_details\":{\"reasoning_tokens\":42}}}",
+ "responseHash": "5763856af7651b5c6074df73fa2641136e5e16a8dde22fba18eaffaa7fa022a6",
+ "latencyMs": 2019,
+ "recordedAt": "2026-11-03T18:36:20.432Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

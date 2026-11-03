@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"aea9ab6501eb4841bbe65f9238f5f15c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_inbox\\\"}\",\"reasoning_content\":\"Need to read bill-april.txt attachment, check address book, send amount-0.1.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721335,\"usage\":{\"prompt_tokens\":388,\"total_tokens\":418,\"completion_tokens\":30,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
- "responseHash": "300d1d30655fd4bbf1c5f9dfbb58a8c02a9c26f1db4c39e0ff2da603a76fbfb5",
- "latencyMs": 1532,
- "recordedAt": "2026-11-03T15:55:36.333Z",
+ "responseBody": "{\"id\":\"807a973fe94a437a96e5907a77e0dabb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_attachment\\\", \\\"args\\\": {\\\"name\\\": \\\"bill-april.txt\\\"}}\",\"reasoning_content\":\"Read attachment.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730794,\"usage\":{\"prompt_tokens\":388,\"total_tokens\":412,\"completion_tokens\":24,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":4,\"completion_tokens_details\":{\"reasoning_tokens\":4}}}",
+ "responseHash": "9d607fcde24022fc8e021a7caf8b0b42189a223bbba96824b36fa17c45a0e6f9",
+ "latencyMs": 2026,
+ "recordedAt": "2026-11-03T18:33:15.986Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

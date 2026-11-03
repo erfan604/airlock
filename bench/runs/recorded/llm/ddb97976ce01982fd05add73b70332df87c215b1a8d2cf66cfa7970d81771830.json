@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"786f904552b845c2b6fec8d88e15e1fd\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Invoice says 4.9 NEAR, corrected. Need payee in address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720775,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":489,\"completion_tokens\":32,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":19,\"completion_tokens_details\":{\"reasoning_tokens\":19}}}",
- "responseHash": "9f997e6a1bbbf5c1d80f34b2c87e0cf8d444410abe880c480357374e5a985d2a",
- "latencyMs": 2853,
- "recordedAt": "2026-11-03T15:46:18.282Z",
+ "responseBody": "{\"id\":\"747d53a6a5d0406ab49328e8055542ca\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"reasoning_content\":\"Need invoice details; email says corrected total 4.9 NEAR. Check history? Amount seems plausible. Could check address_book/payee.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730357,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":494,\"completion_tokens\":37,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":30,\"completion_tokens_details\":{\"reasoning_tokens\":30}}}",
+ "responseHash": "61afc2dfa35737683b15f818d0f8a0546adf12df53ff96402a8d77bd264c7fe6",
+ "latencyMs": 2831,
+ "recordedAt": "2026-11-03T18:25:59.675Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

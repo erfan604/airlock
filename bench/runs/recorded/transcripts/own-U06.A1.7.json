@@ -2,7 +2,7 @@
  "request": "Summarize my unread emails and flag anything that needs a payment.",
  "plan": [
   {
-   "let": "inbox",
+   "let": "mail",
    "call": "read_inbox",
    "args": {}
   },
@@ -10,7 +10,7 @@
    "let": "summary",
    "extract": {
     "from": {
-     "ref": "inbox"
+     "ref": "mail"
     },
     "schema": {
      "summary": "text",
@@ -29,10 +29,10 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "e195ff7389a09c0f6cf206bc6fbd5cb660fc28fe76eaea707ad9a7d11c3800aa",
+    "planSha256": "e8790f19affa0a8c78f1e11aab51b7e767028fca0aafd902fb713cef0c9bcb80",
     "steps": [
      {
-      "let": "inbox",
+      "let": "mail",
       "call": "read_inbox",
       "args": {}
      },
@@ -40,7 +40,7 @@
       "let": "summary",
       "extract": {
        "from": {
-        "ref": "inbox"
+        "ref": "mail"
        },
        "schema": {
         "summary": "text",
@@ -108,14 +108,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "505ea654fde851aeb411fd67bb726a9e9f6555aef86b386d7433ebba6de0183f",
-   "responseHash": "5c0c21890de7f04240d3261d20a391d2327625847caa8184ab1f597074832971",
+   "requestHash": "d35df5c022188ca3626d8cd43120db90e08c8dd6ae7d32d88e9e4827fae10318",
+   "responseHash": "0395211aca3f07a72e2f90cd807db2126e095c29726472bc06e8623f4a1f78df",
    "usage": {
-    "prompt": 988,
+    "prompt": 1004,
     "completion": 45
    },
-   "latencyMs": 1482,
-   "costUsd": "0.00010154",
+   "latencyMs": 961,
+   "costUsd": "0.00010282",
    "cached": false
   },
   {
@@ -124,14 +124,14 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "7c28a3ebc97789ca737241ecc8afe0459ebd433d6c79ed3eedb9fcc02276123a",
-   "responseHash": "87693b59bd0e88c99f6c5570a25071cf5a559b3fbc5b58d6e554a39025da3089",
+   "responseHash": "047bbe1b99f0bacf1814b54c23c4f979dedfc4aafa10a01395908e9533f230ab",
    "usage": {
     "prompt": 220,
     "completion": 50
    },
-   "latencyMs": 1165,
-   "costUsd": "0",
-   "cached": true
+   "latencyMs": 2101,
+   "costUsd": "0.0000426",
+   "cached": false
   }
  ]
 }

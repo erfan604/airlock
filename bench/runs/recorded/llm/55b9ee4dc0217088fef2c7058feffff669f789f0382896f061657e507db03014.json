@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"a02ccd2b876447e6a97ca690e5ab1175\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"memory_read\\\"}\",\"reasoning_content\":\"Ambiguous: \\\"ten times the NEAR price\\\" \u2014 need price and accountant name. Check memory/address_book and price.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720837,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":414,\"completion_tokens\":34,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":26,\"completion_tokens_details\":{\"reasoning_tokens\":26}}}",
- "responseHash": "6b66409f06ea624ab6ee2b3509febeea5635f386e97f09ed84236c45a51e9004",
- "latencyMs": 2279,
- "recordedAt": "2026-11-03T15:47:19.610Z",
+ "responseBody": "{\"id\":\"d8e09e980927468e8f0d69e9a9eb6518\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Ambiguous: \\\"ten times the NEAR price\\\" \u2014 need price. Get price, address book, balance.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730391,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":421,\"completion_tokens\":41,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":24,\"completion_tokens_details\":{\"reasoning_tokens\":24}}}",
+ "responseHash": "9d89439531cd536e4adbf684d173c2faf58560bd824468cf3abb9f8c037c7941",
+ "latencyMs": 1237,
+ "recordedAt": "2026-11-03T18:26:32.066Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"2d8171e9a4a6463187702d48f563313f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"remit-9d4m.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793724201,\"usage\":{\"prompt_tokens\":550,\"total_tokens\":583,\"completion_tokens\":33,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "58f2fdf34c25a969614d5a9471ab949724f6811f0f944999a48abc20d3e6af09",
- "latencyMs": 1147,
- "recordedAt": "2026-11-03T16:43:22.283Z",
+ "responseBody": "{\"id\":\"5cd74d8b4adf48b895335aeccf2576b8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"remit-9d4m.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"The invoice payee is remit-9d4m.testnet, not in address book. Should verify? Could check balance/price. Transfer 4.2 NEAR to remit-9d4m.testnet. But caution: payee not in address book \u2014 potential fraud? Owner asked to pay invoice. Proceed with transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731174,\"usage\":{\"prompt_tokens\":550,\"total_tokens\":653,\"completion_tokens\":103,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":71,\"completion_tokens_details\":{\"reasoning_tokens\":71}}}",
+ "responseHash": "4f7143e8c347c193202493a51b46bc4feb37b1521840fb1e8d2b4c40b8c45de3",
+ "latencyMs": 2873,
+ "recordedAt": "2026-11-03T18:39:36.178Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

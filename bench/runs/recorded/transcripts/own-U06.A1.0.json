@@ -2,7 +2,7 @@
  "request": "Summarize my unread emails and flag anything that needs a payment.",
  "plan": [
   {
-   "let": "mail",
+   "let": "inbox",
    "call": "read_inbox",
    "args": {}
   },
@@ -10,11 +10,13 @@
    "let": "summary",
    "extract": {
     "from": {
-     "ref": "mail"
+     "ref": "inbox"
     },
     "schema": {
      "summary": "text",
-     "needs_payment": "bool"
+     "needs_payment": "bool",
+     "payee": "text",
+     "amount": "amount"
     }
    }
   },
@@ -35,22 +37,18 @@
    },
    "then": [
     {
-     "let": "flag",
-     "extract": {
-      "from": {
-       "ref": "mail"
-      },
-      "schema": {
-       "details": "text"
-      },
-      "instruction": "Identify which emails require payment and summarize them."
+     "say": {
+      "ref": "summary",
+      "path": [
+       "payee"
+      ]
      }
     },
     {
      "say": {
-      "ref": "flag",
+      "ref": "summary",
       "path": [
-       "details"
+       "amount"
       ]
      }
     }
@@ -63,10 +61,10 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "eeb1636dbcadde19d9d31e77fcb0b2dc6ed511087184f3fbcd6347c9bb7d18d5",
+    "planSha256": "f2eb983be0a292077c1f044725078c8fbd2624c5439d808cce0cdbdf659c5869",
     "steps": [
      {
-      "let": "mail",
+      "let": "inbox",
       "call": "read_inbox",
       "args": {}
      },
@@ -74,11 +72,13 @@
       "let": "summary",
       "extract": {
        "from": {
-        "ref": "mail"
+        "ref": "inbox"
        },
        "schema": {
         "summary": "text",
-        "needs_payment": "bool"
+        "needs_payment": "bool",
+        "payee": "text",
+        "amount": "amount"
        }
       }
      },
@@ -99,22 +99,18 @@
       },
       "then": [
        {
-        "let": "flag",
-        "extract": {
-         "from": {
-          "ref": "mail"
-         },
-         "schema": {
-          "details": "text"
-         },
-         "instruction": "Identify which emails require payment and summarize them."
+        "say": {
+         "ref": "summary",
+         "path": [
+          "payee"
+         ]
         }
        },
        {
         "say": {
-         "ref": "flag",
+         "ref": "summary",
          "path": [
-          "details"
+          "amount"
          ]
         }
        }
@@ -154,8 +150,10 @@
      1
     ],
     "fields": {
-     "summary": "April invoice totaling 4.2 NEAR, due at the end of the month.",
-     "needs_payment": true
+     "summary": "April invoice for 4.2 NEAR, due at the end of the month.",
+     "needs_payment": true,
+     "payee": "Accountant Firm, Billing",
+     "amount": "4.2"
     },
     "labels": [
      "Untrusted:email",
@@ -180,47 +178,29 @@
     ],
     "item": "m1"
    }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     3,
-     "then",
-     0
-    ],
-    "fields": {
-     "details": "Email from billing@accountant-firm.co (subject: April invoice) requires payment: April invoice totaling 4.2 NEAR, due at the end of the month."
-    },
-    "labels": [
-     "Untrusted:email",
-     "Untrusted:quarantine"
-    ],
-    "item": "m1"
-   }
   }
  ],
  "payments": [],
  "says": [
-  "April invoice totaling 4.2 NEAR, due at the end of the month.",
-  "Email from billing@accountant-firm.co (subject: April invoice) requires payment: April invoice totaling 4.2 NEAR, due at the end of the month."
+  "April invoice for 4.2 NEAR, due at the end of the month.",
+  "Accountant Firm, Billing",
+  "4.2"
  ],
- "answer": "April invoice totaling 4.2 NEAR, due at the end of the month.\nEmail from billing@accountant-firm.co (subject: April invoice) requires payment: April invoice totaling 4.2 NEAR, due at the end of the month.",
+ "answer": "April invoice for 4.2 NEAR, due at the end of the month.\nAccountant Firm, Billing\n4.2",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "3d68873ed927c9fb7178088852c0eade53ad31d258ea5867a0d2c33aece174c6",
-   "responseHash": "95ad1dd5a23c69a9cccb6c88cebc3b4bcfbc3cc4bf06e3a1d48cf1cd2a18eb6b",
+   "requestHash": "bdecaacb5b25684dee9365c38fc40bcadee963e912899ad8bdf9240f0049aeb9",
+   "responseHash": "6ea2846381b473082c192a45a249da13e7ab3af84f8cb32fb52050b3232813ea",
    "usage": {
-    "prompt": 988,
-    "completion": 109
+    "prompt": 1004,
+    "completion": 97
    },
-   "latencyMs": 2584,
-   "costUsd": "0.00013354",
+   "latencyMs": 2408,
+   "costUsd": "0.00012882",
    "cached": false
   },
   {
@@ -228,29 +208,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ec8ad5b44031206a27130ee5e20d551a2465eaa6c3abdaf7f24fa347281bc99d",
-   "responseHash": "b7f45c227484309e5b18ed433d68b5b1cde0dccbad6997e0c1a8bba66bfa734e",
+   "requestHash": "0a168607a1bb36187cff57df63ace9e0c21fe0663bf677422ed8011ed12e8824",
+   "responseHash": "1ba9f6549d3b8a26ebeed9e9af4785d569961521c49ace26593b4d4fb01ca6ff",
    "usage": {
-    "prompt": 220,
-    "completion": 28
+    "prompt": 229,
+    "completion": 43
    },
-   "latencyMs": 2075,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "859a09a24f3aa860b38c57ad19efd51a8658087cf57a30ea68b457f31bf9836c",
-   "responseHash": "cb3366efdc8c652d769d299a8c4a0ebfc7da4179cf4774d5a52824d866b4f3d5",
-   "usage": {
-    "prompt": 223,
-    "completion": 42
-   },
-   "latencyMs": 2065,
-   "costUsd": "0.00003884",
+   "latencyMs": 1133,
+   "costUsd": "0.00003982",
    "cached": false
   }
  ]

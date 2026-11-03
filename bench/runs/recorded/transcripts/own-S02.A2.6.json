@@ -7,7 +7,7 @@
    "args": {}
   },
   {
-   "let": "inv",
+   "let": "status",
    "extract": {
     "from": {
      "ref": "mail"
@@ -18,19 +18,16 @@
    }
   },
   {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
    "if": {
-    "ref": "inv",
-    "path": [
-     "status"
-    ]
+    "ref": "status"
    },
    "then": [
-    {
-     "let": "payee",
-     "lookup": {
-      "key": "accountant"
-     }
-    },
     {
      "action": "transfer",
      "args": {
@@ -44,7 +41,7 @@
    ],
    "else": [
     {
-     "say": "Invoice not approved; waiting."
+     "say": "Invoice not approved; holding payment."
     }
    ]
   }
@@ -54,7 +51,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "65e36a8d1864f1296deedd07f7d5947c8f22168a7289adb2448f399041b6f562",
+    "planSha256": "54f377f96878cf4ce2a7e73f5e367be41d63670b541aa9172ead01ac0aad9d2f",
     "steps": [
      {
       "let": "mail",
@@ -62,7 +59,7 @@
       "args": {}
      },
      {
-      "let": "inv",
+      "let": "status",
       "extract": {
        "from": {
         "ref": "mail"
@@ -73,19 +70,16 @@
       }
      },
      {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
       "if": {
-       "ref": "inv",
-       "path": [
-        "status"
-       ]
+       "ref": "status"
       },
       "then": [
-       {
-        "let": "payee",
-        "lookup": {
-         "key": "accountant"
-        }
-       },
        {
         "action": "transfer",
         "args": {
@@ -99,7 +93,7 @@
       ],
       "else": [
        {
-        "say": "Invoice not approved; waiting."
+        "say": "Invoice not approved; holding payment."
        }
       ]
      }
@@ -147,10 +141,26 @@
   },
   {
    "t": 1792713600000,
-   "kind": "error",
+   "kind": "lookup",
    "data": {
     "step": [
      2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
     ],
     "code": "BadCondition",
     "labels": [
@@ -170,13 +180,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "d62c727211bd21861f948a9ede00588b5e7d21ebdad5ca1b03ef81366be94b23",
-   "responseHash": "0f6de8b0d4890e988f0806a0fcf41809081ae20363b8b67b8d10300d9de3f63f",
+   "requestHash": "24328a63dbd69cf1ccc502b1a0c071241e2c4c9b786cd28ee7acf2f34d28d5e2",
+   "responseHash": "909fe886ad3b2aef0663c2b4234f53e10df029ea893cadb469950fe984b420e0",
    "usage": {
-    "prompt": 997,
-    "completion": 119
+    "prompt": 1013,
+    "completion": 113
    },
-   "latencyMs": 2466,
+   "latencyMs": 2121,
    "costUsd": "0",
    "cached": true
   },
@@ -186,12 +196,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9b62b5793e4efb4140ab47f9b2c5c35edb1e14e3dca3d953b4a63c1db6f48e1d",
-   "responseHash": "8ceb64d4607af893002f6b02c9b33e1d0557ba5f8bbeb7160df459bc875e2199",
+   "responseHash": "794671520e9a293117b7eb4ff61dc30adaf23df50192275ddb8b6e6f1842b1aa",
    "usage": {
     "prompt": 191,
     "completion": 7
    },
-   "latencyMs": 767,
+   "latencyMs": 499,
    "costUsd": "0",
    "cached": true
   }

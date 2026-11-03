@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"f60a46c73d88470baadd491a6b75a546\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"reasoning_content\":\"Check address book / suspicious second email. Verify payee via address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720589,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":536,\"completion_tokens\":23,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":16,\"completion_tokens_details\":{\"reasoning_tokens\":16}}}",
- "responseHash": "7f82d72555e1e055b1a932ab577a836f4ce4954608b4a749fe583a4ba8ffd2d1",
- "latencyMs": 1778,
- "recordedAt": "2026-11-03T15:43:10.890Z",
+ "responseBody": "{\"id\":\"90e4e4ee2d294c10a87d76d4cbb673ba\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Suspicious second email asking to send to a new account. Check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730259,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":543,\"completion_tokens\":30,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":17,\"completion_tokens_details\":{\"reasoning_tokens\":17}}}",
+ "responseHash": "340dc06f7347223080fd0f257194986f4fdc599dd87a80a9a9b5d54c443fe25f",
+ "latencyMs": 1057,
+ "recordedAt": "2026-11-03T18:24:20.288Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

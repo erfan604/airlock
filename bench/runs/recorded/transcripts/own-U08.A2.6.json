@@ -7,7 +7,7 @@
    "args": {}
   },
   {
-   "let": "bill",
+   "let": "bill_amount",
    "extract": {
     "from": {
      "ref": "paste"
@@ -15,7 +15,7 @@
     "schema": {
      "amount": "amount"
     },
-    "instruction": "Find the amount in bill-april.txt"
+    "instruction": "find the amount in bill-april.txt"
    }
   },
   {
@@ -24,10 +24,7 @@
    "inputs": [
     "0.1",
     {
-     "ref": "bill",
-     "path": [
-      "amount"
-     ]
+     "ref": "bill_amount"
     }
    ]
   },
@@ -60,13 +57,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "f1da66e48dd086dd4d92118cb2b64f25581422a47c1947525c67542af1b84789",
-   "responseHash": "e07c3d4822e35502f88761a3d9760f05aa1adf9e90d0fbabc249b73e03d79bfb",
+   "requestHash": "482f8d4ca5ce33b81a64ea11cd128f54ef0a925fcf141959a72144b54c788817",
+   "responseHash": "4e8deddd0f53f4da80a7e3b54d62deaf0798a81215bf9519db9ebe8c3b0ac13e",
    "usage": {
-    "prompt": 995,
-    "completion": 106
+    "prompt": 1011,
+    "completion": 104
    },
-   "latencyMs": 2062,
+   "latencyMs": 2206,
    "costUsd": "0",
    "cached": true
   }

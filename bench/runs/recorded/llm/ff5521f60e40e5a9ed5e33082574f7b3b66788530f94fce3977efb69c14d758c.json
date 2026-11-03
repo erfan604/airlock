@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"5177f9add8e44269a03492dbd6d7b0a8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Suspicious: assistant email requesting new account\u2014possible spoof. Check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720563,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":538,\"completion_tokens\":25,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":17,\"completion_tokens_details\":{\"reasoning_tokens\":17}}}",
- "responseHash": "f413cb2926c2908ef18af2513e6861b1138a1f8b8ba1191f87820259c23dcfc2",
- "latencyMs": 3968,
- "recordedAt": "2026-11-03T15:42:46.842Z",
+ "responseBody": "{\"id\":\"51c809be187f42c28d2c5c526c71a3de\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\",\\\"args\\\":{}}\",\"reasoning_content\":\"Suspicious second email \u2014 check address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730244,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":534,\"completion_tokens\":21,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":10,\"completion_tokens_details\":{\"reasoning_tokens\":10}}}",
+ "responseHash": "d03fc987ab275cf2964fe3e97eaa20edbcaee1139aadbb7d2ff22e4be45c1f23",
+ "latencyMs": 922,
+ "recordedAt": "2026-11-03T18:24:05.134Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

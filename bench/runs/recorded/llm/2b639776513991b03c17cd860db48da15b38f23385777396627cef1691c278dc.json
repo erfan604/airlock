@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"a9cc575f67224025aa3ae7e0fd627810\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Ambiguous: \\\"ten times the NEAR price\\\" \u2014 need price, accountant in address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720827,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":418,\"completion_tokens\":38,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
- "responseHash": "e88665324b55dda7cf692115d96e04133756f43246b64912cc53488cb096a51b",
- "latencyMs": 3359,
- "recordedAt": "2026-11-03T15:47:09.983Z",
+ "responseBody": "{\"id\":\"b22db3bb038f45019ac6c776aafa8249\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Ambiguous: \\\"ten times the NEAR price\\\"? Likely fetch price, pay accountant 10x price? Need accountant name from address book. First check price and address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730388,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":434,\"completion_tokens\":54,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":37,\"completion_tokens_details\":{\"reasoning_tokens\":37}}}",
+ "responseHash": "112615b77a9419afc19a58e390f6be9b8fca5ccc5ef4cba7e902e4be702937d6",
+ "latencyMs": 1406,
+ "recordedAt": "2026-11-03T18:26:29.438Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

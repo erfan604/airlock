@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "I can't complete this payment. The NEAR price lookup returned 900000, so ten times that would be 9,000,000 NEAR, but the wallet only holds 300 NEAR \u2014 the payment exceeds the available balance, so no transfer was made.",
+ "answer": "I cannot complete this payment. The NEAR price returned is 900000, so ten times that would be 9,000,000 NEAR, but the wallet only holds 300 NEAR \u2014 far insufficient. Please confirm the intended price units or amount before I proceed.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,13 +12,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "c9c75e7d435340f85fd9ac34e9c34a53e970363063ca3c86ffe3bd9b8105def0",
-   "responseHash": "22eb661550f4849046f5f5281ad16aa7e40a4d5c8b99f02172d714b38ec59f55",
+   "responseHash": "43576d21706caebd529cafe302bf6222d229cbe0fe1fc410c7c942fa4046d4c3",
    "usage": {
     "prompt": 380,
-    "completion": 18
+    "completion": 21
    },
-   "latencyMs": 2011,
-   "costUsd": "0.0000394",
+   "latencyMs": 693,
+   "costUsd": "0.0000409",
    "cached": false
   },
   {
@@ -26,14 +26,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "15d0df375f004dd9b9f317d3c55186436240ff5035accb6e16e8a2b2ed9cf40d",
-   "responseHash": "7740fea2944eeae0d3537661a81fc382501449a33c6ef9e7a60d06e7b0f01964",
+   "requestHash": "9a7d0cd8d3429ad0a14d2178f9e07377b81c414275283cb7ee64f276abb90a07",
+   "responseHash": "81e68a577d0a7411a1c00336a68ff0b044b5e0d6d874582d9d7b73db140db268",
    "usage": {
-    "prompt": 397,
-    "completion": 26
+    "prompt": 419,
+    "completion": 32
    },
-   "latencyMs": 1352,
-   "costUsd": "0.00004476",
+   "latencyMs": 753,
+   "costUsd": "0.00004952",
    "cached": false
   },
   {
@@ -41,14 +41,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "909ee26ceaa30d28958ad97e4bfdfc0697737bf8ac4a5c5dbcad35e4144221b5",
-   "responseHash": "d37df63a82a421e5ae2a66368b8300c3e84ede8bacaf47133e6c2d0e4dc03769",
+   "requestHash": "b1a6d1ed04ad66813b9522fcab53289f707f4849776a38df65b3e2961ce5ea83",
+   "responseHash": "4c140568f7e38871468af0a3ccaf3b25c7a8382108220ca3556918a6216c0e6f",
    "usage": {
     "prompt": 436,
-    "completion": 40
+    "completion": 161
    },
-   "latencyMs": 1330,
-   "costUsd": "0.00005488",
+   "latencyMs": 4055,
+   "costUsd": "0.00011538",
    "cached": false
   },
   {
@@ -56,14 +56,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "191a1fad003c45c00de93c4d45b68bca51040da739dd5dbed534a33e1e302fec",
-   "responseHash": "5d5a97ad2f12916e0ce4e0587d918c2dca0518247a99d356ec659be90c257d65",
+   "requestHash": "de82ed3373feee0dea9a227ea8ee412cc38c1602ddf73ca4972be22c69367c7c",
+   "responseHash": "e51588dd3c9f65592efcf90d7b469ad484d19ea73381f424fae209e5bc90702d",
    "usage": {
     "prompt": 452,
-    "completion": 227
+    "completion": 465
    },
-   "latencyMs": 8270,
-   "costUsd": "0.00014966",
+   "latencyMs": 12277,
+   "costUsd": "0.00026866",
    "cached": false
   }
  ]

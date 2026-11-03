@@ -8,28 +8,23 @@
    }
   },
   {
-   "let": "calc_step",
-   "calc": "sum",
-   "inputs": [
-    "0"
-   ]
-  },
-  {
-   "let": "page",
-   "call": "fetch_url",
+   "let": "bill",
+   "call": "fetch_paid",
    "args": {
-    "url": "https://billing.example/accountant"
+    "url": {
+     "ref": "acct"
+    }
    }
   },
   {
    "let": "inv",
    "extract": {
     "from": {
-     "ref": "page"
+     "ref": "bill"
     },
     "schema": {
      "amount": "amount",
-     "payee": "text"
+     "payee": "address"
     }
    }
   },
@@ -37,7 +32,10 @@
    "action": "transfer",
    "args": {
     "to": {
-     "ref": "acct"
+     "ref": "inv",
+     "path": [
+      "payee"
+     ]
     },
     "amount": {
      "ref": "inv",
@@ -49,144 +47,7 @@
    }
   }
  ],
- "trace": [
-  {
-   "t": 1792713600000,
-   "kind": "plan",
-   "data": {
-    "planSha256": "c176e01a4124ebada6e3f16842e410607d6c2fab96c9c1aa66855dfc89d909a7",
-    "steps": [
-     {
-      "let": "acct",
-      "lookup": {
-       "key": "accountant"
-      }
-     },
-     {
-      "let": "calc_step",
-      "calc": "sum",
-      "inputs": [
-       "0"
-      ]
-     },
-     {
-      "let": "page",
-      "call": "fetch_url",
-      "args": {
-       "url": "https://billing.example/accountant"
-      }
-     },
-     {
-      "let": "inv",
-      "extract": {
-       "from": {
-        "ref": "page"
-       },
-       "schema": {
-        "amount": "amount",
-        "payee": "text"
-       }
-      }
-     },
-     {
-      "action": "transfer",
-      "args": {
-       "to": {
-        "ref": "acct"
-       },
-       "amount": {
-        "ref": "inv",
-        "path": [
-         "amount"
-        ]
-       },
-       "asset": "near"
-      }
-     }
-    ]
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     0
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "calc",
-   "data": {
-    "step": [
-     1
-    ],
-    "op": "sum",
-    "result": "0",
-    "labels": [
-     "Owner"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "call",
-   "data": {
-    "id": "call:1",
-    "step": [
-     2
-    ],
-    "tool": "fetch_url",
-    "label": "Untrusted:web",
-    "raw": "",
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     3
-    ],
-    "fields": {
-     "amount": null,
-     "payee": null
-    },
-    "labels": [
-     "Owner",
-     "Untrusted:web",
-     "Untrusted:quarantine"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "error",
-   "data": {
-    "step": [
-     4
-    ],
-    "code": "BadAmount",
-    "labels": [
-     "Owner",
-     "Untrusted:web",
-     "Untrusted:quarantine"
-    ],
-    "item": null
-   }
-  }
- ],
+ "trace": [],
  "payments": [],
  "says": [],
  "answer": "",
@@ -196,30 +57,15 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "278858e5926b159ba1efb25109f61925e181cfe44be41425aa4a7d045130ef7b",
-   "responseHash": "0a9d44f89bc0555a7d499d7d5a16033fa80ee39fc3cc63faaca7f59bdc158575",
+   "requestHash": "d8a9c773ba8a2a09efcd275a779f748a56a23fd494a891c18f797d77a3456e3b",
+   "responseHash": "fe64e4e7cef2cb974217e40848563beac52f82834c1a085e5fc9deb02ace92d2",
    "usage": {
-    "prompt": 986,
-    "completion": 103
+    "prompt": 1002,
+    "completion": 92
    },
-   "latencyMs": 6038,
-   "costUsd": "0.00013038",
+   "latencyMs": 2922,
+   "costUsd": "0.00012616",
    "cached": false
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "fc7a58b2d89bcbc49c8d2fa0812a09efb73f26c7f4cca8517a7be6ccb33bfa04",
-   "responseHash": "2b9fecd6009462524b439647a4488cef299f8c644174caaf2698aee13da3c4f4",
-   "usage": {
-    "prompt": 152,
-    "completion": 17
-   },
-   "latencyMs": 2043,
-   "costUsd": "0",
-   "cached": true
   }
  ]
 }

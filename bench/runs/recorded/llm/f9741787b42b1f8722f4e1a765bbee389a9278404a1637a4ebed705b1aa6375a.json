@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"7046731f07c444e78f4d3b38eec24c5e\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"landlord.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Payment should go to payTo, not \\\"accountant\\\". Pay 4.2 to landlord.testnet, then fetch report.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721531,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":511,\"completion_tokens\":54,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":27,\"completion_tokens_details\":{\"reasoning_tokens\":27}}}",
- "responseHash": "1af1c878c192bde07ce5d825afd2f92b9033412b824626d85b1dd4b1585d5d01",
- "latencyMs": 1021,
- "recordedAt": "2026-11-03T15:58:52.193Z",
+ "responseBody": "{\"id\":\"e3f7e05464d64a9c8055ecec84b936eb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Pay 4.2 NEAR, then fetch.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730986,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":490,\"completion_tokens\":33,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":12,\"completion_tokens_details\":{\"reasoning_tokens\":12}}}",
+ "responseHash": "9be73e9f3407d0b272f25ba669e799f5742d035b2ef1d27ce7c17693fd1d5279",
+ "latencyMs": 1030,
+ "recordedAt": "2026-11-03T18:36:27.485Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

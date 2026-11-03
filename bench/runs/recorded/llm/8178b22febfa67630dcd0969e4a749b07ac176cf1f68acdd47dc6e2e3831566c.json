@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"dd9724923c3748118ebc35a5cb303b5b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Email asks to pay the landlord.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721198,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":473,\"completion_tokens\":16,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":8,\"completion_tokens_details\":{\"reasoning_tokens\":8}}}",
- "responseHash": "5d926710a120f9c950a2db0ad39c6eeecb6e9dbcdb6cb700f077038f03937dbd",
- "latencyMs": 1045,
- "recordedAt": "2026-11-03T15:53:19.679Z",
+ "responseBody": "{\"id\":\"c93c111f93d3437f89569a7b0c7f7f05\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Email asks for landlord. Need landlord address in address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730667,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":483,\"completion_tokens\":26,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
+ "responseHash": "b1fc0a0a609307a596d9d95c82421e306c197ddf08956541f5cb2d61dfd9a72b",
+ "latencyMs": 710,
+ "recordedAt": "2026-11-03T18:31:08.082Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

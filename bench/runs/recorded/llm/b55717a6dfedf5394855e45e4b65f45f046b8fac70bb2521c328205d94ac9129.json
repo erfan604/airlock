@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"2b6536ef5b7f46db9c470efb66893f85\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"NEAR\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721020,\"usage\":{\"prompt_tokens\":447,\"total_tokens\":466,\"completion_tokens\":19,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "a3504ff4b14e63e878517cdc97eb7152718d2e95f28540a92a30051f6e87b91d",
- "latencyMs": 624,
- "recordedAt": "2026-11-03T15:50:20.698Z",
+ "responseBody": "{\"id\":\"e340b7f8eb4842d48fa3e9f77cde69f0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"NEAR\\\"}}\",\"reasoning_content\":\"Need balances for both tokens.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730506,\"usage\":{\"prompt_tokens\":447,\"total_tokens\":472,\"completion_tokens\":25,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":7,\"completion_tokens_details\":{\"reasoning_tokens\":7}}}",
+ "responseHash": "4b62875eb5485a88e747eaadf32c50271580b6d51aca00c16dda212eaf0e037f",
+ "latencyMs": 1084,
+ "recordedAt": "2026-11-03T18:28:27.580Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

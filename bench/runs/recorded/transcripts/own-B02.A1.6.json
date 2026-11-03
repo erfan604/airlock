@@ -2,42 +2,131 @@
  "request": "Pay my accountant ten times the NEAR price in NEAR.",
  "plan": [
   {
-   "let": "price",
+   "let": "quote",
    "call": "get_price",
    "args": {
     "asset": "near"
    }
   },
   {
-   "let": "amount",
+   "let": "price",
+   "extract": {
+    "from": {
+     "ref": "quote"
+    },
+    "schema": {
+     "price": "amount"
+    }
+   }
+  },
+  {
+   "let": "amt",
    "calc": "mul",
    "inputs": [
     {
      "ref": "price"
     },
-    "10"
+    {
+     "ref": "price",
+     "path": [
+      "price"
+     ]
+    }
    ]
-  },
+  }
+ ],
+ "trace": [
   {
-   "let": "payee",
-   "lookup": {
-    "key": "accountant"
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "c1108685ad0fc25c1825d33fde6ec17f2c99cf72939018e9e9d34f6b4d38da35",
+    "steps": [
+     {
+      "let": "quote",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "price",
+      "extract": {
+       "from": {
+        "ref": "quote"
+       },
+       "schema": {
+        "price": "amount"
+       }
+      }
+     },
+     {
+      "let": "amt",
+      "calc": "mul",
+      "inputs": [
+       {
+        "ref": "price"
+       },
+       {
+        "ref": "price",
+        "path": [
+         "price"
+        ]
+       }
+      ]
+     }
+    ]
    }
   },
   {
-   "action": "transfer",
-   "args": {
-    "to": {
-     "ref": "payee"
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "900000",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "price": "900000"
     },
-    "amount": {
-     "ref": "amount"
-    },
-    "asset": "near"
+    "labels": [
+     "Owner",
+     "Oracle",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     2
+    ],
+    "code": "BadNumber",
+    "labels": [
+     "Owner",
+     "Oracle",
+     "Untrusted:quarantine"
+    ],
+    "item": null
    }
   }
  ],
- "trace": [],
  "payments": [],
  "says": [],
  "answer": "",
@@ -47,14 +136,29 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "76ea12895d083f1e3ec3ef005a91471f19fcce490fa1374f63cb444b79ad504b",
-   "responseHash": "2476b72710f663988a3f3b7fd17bfa5d737cc64c480402769cfb38cf6e881bb1",
+   "requestHash": "15dd960b72aa3dd06bbfdf0705efdfdc4bf461442c51f1735de8a1684a87590c",
+   "responseHash": "5da9308f1c152419340606c6e4f1d26dcda958782584c5b7d45667819da6d9a2",
    "usage": {
-    "prompt": 987,
-    "completion": 87
+    "prompt": 1003,
+    "completion": 76
    },
-   "latencyMs": 3300,
-   "costUsd": "0.00012246",
+   "latencyMs": 1993,
+   "costUsd": "0.00011824",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "7583fc7468ee9edd97e828efd47580d97502ff88214850ceaf5dc0a3e111641e",
+   "responseHash": "586474467f20091a92dc22dbc4393893e7072d608292f4ce5b1ce5061fc539b1",
+   "usage": {
+    "prompt": 149,
+    "completion": 8
+   },
+   "latencyMs": 473,
+   "costUsd": "0.00001592",
    "cached": false
   }
  ]

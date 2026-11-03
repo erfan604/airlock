@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"f1bfd6415e5e45a285885648e62a9cab\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment sent but still 402; maybe retry or conclude. Could try fetch_paid once more? It seems payment not registering. Try once more.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721514,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":597,\"completion_tokens\":48,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":31,\"completion_tokens_details\":{\"reasoning_tokens\":31}}}",
- "responseHash": "ec0e8afc07b8abd9cca60d86641d31b7f203e49dd6cb37511904dd280a4bdf83",
- "latencyMs": 3962,
- "recordedAt": "2026-11-03T15:58:37.744Z",
+ "responseBody": "{\"id\":\"85bf70e5d1e942d9aa5bdd38330ad847\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"The paid fetch keeps returning 402 requirements \u2014 maybe payment not recognized. Try once more? It returned same requirements again. Could fetch again to get content.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730973,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":599,\"completion_tokens\":50,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":33,\"completion_tokens_details\":{\"reasoning_tokens\":33}}}",
+ "responseHash": "a06dbe3d1a26132a3debb1c4bc35cbd953f342f3253ad04c79aa8efd2d8fdfd6",
+ "latencyMs": 3552,
+ "recordedAt": "2026-11-03T18:36:15.703Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

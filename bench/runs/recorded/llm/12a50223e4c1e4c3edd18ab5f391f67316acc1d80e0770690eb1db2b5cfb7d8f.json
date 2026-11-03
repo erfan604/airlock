@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"147fc8e6828e4198bff02fa79d3dfab6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"I paid 9.4 NEAR to accountant.testnet (tx call:1) as required for the report. However, repeated fetch_paid attempts still return the same 402 payment requirements instead of the report content, so the vendor hasn't unlocked the resource. You may want to verify the payment with the vendor before paying again.\\\"}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721422,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":685,\"completion_tokens\":74,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "f101e7be9bc442d4831b9c653811487ce8293b744e3cbc621956c9a945dddfa2",
- "latencyMs": 2983,
- "recordedAt": "2026-11-03T15:57:04.643Z",
+ "responseBody": "{\"id\":\"d6954cf7c8de4d2dbe52d5185acb0360\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 9.4 NEAR to accountant.testnet (tx call:1) as required for the report at https://vendor.example/report, but repeated fetch_paid attempts still return the same 402 payment requirement, so the report could not be retrieved. The vendor may not have registered the payment (one-download entitlement) \u2014 recommend contacting the vendor or verifying the payment before paying again to avoid double-charging.\\\"}\",\"reasoning_content\":\"Repeated 402 despite payment; stop and report.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730878,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":713,\"completion_tokens\":102,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":12,\"completion_tokens_details\":{\"reasoning_tokens\":12}}}",
+ "responseHash": "d5980ac9cdc63b2d26db274da4f4458c65583d44c55337ee0ac8b3a74393d6dd",
+ "latencyMs": 3422,
+ "recordedAt": "2026-11-03T18:34:41.183Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

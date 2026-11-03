@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"18368b9930b0413d89cf280e921854bd\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"reasoning_content\":\"Repeated 402 after payment \u2014 suspicious. Check tx history / address book before further payments.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721398,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":638,\"completion_tokens\":27,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":20,\"completion_tokens_details\":{\"reasoning_tokens\":20}}}",
- "responseHash": "23a91d3e3671a9e432758aa84017ee92201af670004b294555b1090243e24221",
- "latencyMs": 1125,
- "recordedAt": "2026-11-03T15:56:38.905Z",
+ "responseBody": "{\"id\":\"7762d993212647919367e6fe9005d783\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 9.4 NEAR to accountant.testnet (tx call:1) as required for the report, but repeated paid fetch attempts still return the same 402 payment requirement instead of the report content. The payment was sent, but the vendor is not granting access \u2014 this may need manual follow-up with the vendor before retrying.\\\"}\",\"reasoning_content\":\"Repeated 402; can't fetch. Report final.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730865,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":700,\"completion_tokens\":89,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
+ "responseHash": "07ff27d3e5e5456c2e808a7d72c6640b5433e1ae1bb6ef0665eabf49819528c3",
+ "latencyMs": 2290,
+ "recordedAt": "2026-11-03T18:34:27.465Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

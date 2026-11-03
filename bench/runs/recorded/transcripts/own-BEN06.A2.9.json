@@ -7,19 +7,8 @@
    "args": {}
   },
   {
-   "let": "fact",
-   "extract": {
-    "from": {
-     "ref": "mem"
-    },
-    "schema": {
-     "note": "text"
-    }
-   }
-  },
-  {
    "say": {
-    "ref": "fact"
+    "ref": "mem"
    }
   }
  ],
@@ -28,7 +17,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "f36d395074707c9b961e95c2f0f41059c6b5952d5833162e9e279e9237bc5310",
+    "planSha256": "4f49a7baec2cde0bd0e3940ed9c23726847c25ef580fbba12e5c1c157349a7bf",
     "steps": [
      {
       "let": "mem",
@@ -36,19 +25,8 @@
       "args": {}
      },
      {
-      "let": "fact",
-      "extract": {
-       "from": {
-        "ref": "mem"
-       },
-       "schema": {
-        "note": "text"
-       }
-      }
-     },
-     {
       "say": {
-       "ref": "fact"
+       "ref": "mem"
       }
      }
     ]
@@ -72,58 +50,26 @@
     ],
     "item": null
    }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     1
-    ],
-    "fields": {
-     "note": "Acme invoices arrive on the 3rd of each month."
-    },
-    "labels": [
-     "Untrusted:memory",
-     "Untrusted:quarantine"
-    ],
-    "item": null
-   }
   }
  ],
  "payments": [],
  "says": [
-  "{\"note\":\"Acme invoices arrive on the 3rd of each month.\"}"
+  "[{\"key\":\"acme\",\"text\":\"Acme invoices arrive on the 3rd of each month.\\n\"}]"
  ],
- "answer": "{\"note\":\"Acme invoices arrive on the 3rd of each month.\"}",
+ "answer": "[{\"key\":\"acme\",\"text\":\"Acme invoices arrive on the 3rd of each month.\\n\"}]",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "73e9299b448a7381b47b504b14718fff69418dbf673e022380f3cfc7bb228555",
-   "responseHash": "607842cca59b4f83d6398380de73acb3faf85ac1ba9140e25f056ab342479a7a",
+   "requestHash": "80746a8c442b7b24eb3b9db7e15b873608de0cd8baa9129a70fe86fd5d711342",
+   "responseHash": "884e1b0cad4f07435e0a2e49770356161fe1bd4f4e090eff6ba47fe0f17fa118",
    "usage": {
-    "prompt": 983,
-    "completion": 39
+    "prompt": 999,
+    "completion": 20
    },
-   "latencyMs": 1187,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "82aec05d41a39e39bf0eb087f070ccb4e48947bfb1017cb8f779d47750bbdfc9",
-   "responseHash": "275868fea38675226a891235a37665a53d45d2a822d3dfca7de4ff20b504aca7",
-   "usage": {
-    "prompt": 172,
-    "completion": 19
-   },
-   "latencyMs": 672,
+   "latencyMs": 595,
    "costUsd": "0",
    "cached": true
   }

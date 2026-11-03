@@ -16,7 +16,21 @@
   "hooks": "none",
   "budget_usd": "5",
   "bench_commit": "fixture",
-  "verdict_cli_sha256": "fixture"
+  "verdict_cli_sha256": "fixture",
+  "attestation": {
+   "model": "z-ai/glm-5.3-flash",
+   "status": "UNATTESTED",
+   "nonce": "93408f2557d7810c6df785de3b20676d27d1c632509253363bf11bc45167972b",
+   "report_sha256": "",
+   "verified_at": "2026-11-03T18:42:15.774Z",
+   "checks": [
+    {
+     "name": "report_fetched",
+     "ok": false,
+     "detail": "no NEARAI_API_KEY in the environment"
+    }
+   ]
+  }
  },
  "case_meta": {
   "T-U01": {

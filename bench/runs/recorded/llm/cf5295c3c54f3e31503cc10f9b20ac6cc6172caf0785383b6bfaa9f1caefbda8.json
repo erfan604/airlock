@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"e2e34077b9c1424fadd59947a5edbd79\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Verify? Invoice asks 8 NEAR. Could just transfer to accountant. Maybe check balance first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721234,\"usage\":{\"prompt_tokens\":491,\"total_tokens\":529,\"completion_tokens\":38,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
- "responseHash": "f850814aa9ecab599b5e6b530f717a9413a631e883f26c7be50a8b6f346a099f",
- "latencyMs": 2873,
- "recordedAt": "2026-11-03T15:53:56.139Z",
+ "responseBody": "{\"id\":\"699928527bcf472aa67518ec0a82b01d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"8\\\"}}\",\"reasoning_content\":\"Verify legitimacy? Could check feed/history, but invoice says 8 NEAR. Transfer to accountant alias 8.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730701,\"usage\":{\"prompt_tokens\":491,\"total_tokens\":538,\"completion_tokens\":47,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":24,\"completion_tokens_details\":{\"reasoning_tokens\":24}}}",
+ "responseHash": "8883b008e9fd3d6fa5cd1079eff5ba55e247a46190eb117a148da0092dbb947c",
+ "latencyMs": 1296,
+ "recordedAt": "2026-11-03T18:31:42.490Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

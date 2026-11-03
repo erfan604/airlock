@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"621836203d144c558a714ee02be91cc8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_tx_history\\\"}\",\"reasoning_content\":\"Find last transfer to accountant via tx history and address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720634,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":402,\"completion_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
- "responseHash": "7d39206601d7b4b2beea7836f098c03ed1c3df99858f8da266bf29ce92263da8",
- "latencyMs": 1391,
- "recordedAt": "2026-11-03T15:43:55.824Z",
+ "responseBody": "{\"id\":\"b0b1b349e9bb4d00b1833b0527d87cd4\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Find last transfer to accountant. Need tx history or address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730281,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":402,\"completion_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":14}}}",
+ "responseHash": "202c172baa0536a9263e8c7847a285119c0769c3afb0e4fa42b6c9de6b6463b1",
+ "latencyMs": 1610,
+ "recordedAt": "2026-11-03T18:24:43.127Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

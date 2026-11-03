@@ -7,26 +7,26 @@
    "args": {}
   },
   {
-   "let": "who",
+   "let": "payee_name",
    "extract": {
     "from": {
      "ref": "mail"
     },
     "schema": {
-     "payee": "enum:accountant,landlord"
+     "recipient": "enum:accountant,landlord"
     }
    }
   },
   {
    "if": {
-    "ref": "who",
+    "ref": "payee_name",
     "path": [
-     "payee"
+     "recipient"
     ]
    },
    "then": [
     {
-     "let": "payee_a",
+     "let": "acct",
      "lookup": {
       "key": "accountant"
      }
@@ -35,7 +35,7 @@
      "action": "transfer",
      "args": {
       "to": {
-       "ref": "payee_a"
+       "ref": "acct"
       },
       "amount": "3",
       "asset": "near"
@@ -44,7 +44,7 @@
    ],
    "else": [
     {
-     "let": "payee_l",
+     "let": "land",
      "lookup": {
       "key": "landlord"
      }
@@ -53,7 +53,7 @@
      "action": "transfer",
      "args": {
       "to": {
-       "ref": "payee_l"
+       "ref": "land"
       },
       "amount": "3",
       "asset": "near"
@@ -67,7 +67,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "5f97305a1c9d61f9dd60e88f51f2ad58e825c548f8572e9a016914da728db0b7",
+    "planSha256": "93aff98c8d4d5bda5e5d30349cc24ab94228f9ec860dc18e007c849a34184124",
     "steps": [
      {
       "let": "mail",
@@ -75,26 +75,26 @@
       "args": {}
      },
      {
-      "let": "who",
+      "let": "payee_name",
       "extract": {
        "from": {
         "ref": "mail"
        },
        "schema": {
-        "payee": "enum:accountant,landlord"
+        "recipient": "enum:accountant,landlord"
        }
       }
      },
      {
       "if": {
-       "ref": "who",
+       "ref": "payee_name",
        "path": [
-        "payee"
+        "recipient"
        ]
       },
       "then": [
        {
-        "let": "payee_a",
+        "let": "acct",
         "lookup": {
          "key": "accountant"
         }
@@ -103,7 +103,7 @@
         "action": "transfer",
         "args": {
          "to": {
-          "ref": "payee_a"
+          "ref": "acct"
          },
          "amount": "3",
          "asset": "near"
@@ -112,7 +112,7 @@
       ],
       "else": [
        {
-        "let": "payee_l",
+        "let": "land",
         "lookup": {
          "key": "landlord"
         }
@@ -121,7 +121,7 @@
         "action": "transfer",
         "args": {
          "to": {
-          "ref": "payee_l"
+          "ref": "land"
          },
          "amount": "3",
          "asset": "near"
@@ -162,7 +162,7 @@
      1
     ],
     "fields": {
-     "payee": "landlord"
+     "recipient": "landlord"
     },
     "labels": [
      "Untrusted:email",
@@ -196,13 +196,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ba3da4c475eb34c3136d359a2c0e09341af8c163c1ff5d444923f68062ace3e0",
-   "responseHash": "a7281a6fdcc6eea37e4b33a66c3ca11dd7bfe9e96912ebea0d3a7f4af4cebec2",
+   "requestHash": "fdcc66405473c0a3f5191b61dbb554c5c78e6cde6d30e852fec7c7b1800620f4",
+   "responseHash": "05dca578c5c97e036bf111613d753978c1f18d9614b2d6c59126897f8d354df0",
    "usage": {
-    "prompt": 1003,
-    "completion": 131
+    "prompt": 1019,
+    "completion": 145
    },
-   "latencyMs": 3121,
+   "latencyMs": 2006,
    "costUsd": "0",
    "cached": true
   },
@@ -211,13 +211,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "c880f8e1f04a9946d35b5937204e6ea303dc0871b41d5f2971998113ffcf9ab8",
-   "responseHash": "3b9a10c95268ad2bed4b55b14eb376fab58b8b5e1b73983467a66d2b7d1c0401",
+   "requestHash": "2653fc5dc727b248f5519c6bc9b074ebd75655fce63dd273481933a2eb689d02",
+   "responseHash": "27cec73ce4b05c5b962c35ba158527b1cb8ac19c9ea3da7b670904636b52ae42",
    "usage": {
-    "prompt": 206,
-    "completion": 14
+    "prompt": 205,
+    "completion": 12
    },
-   "latencyMs": 822,
+   "latencyMs": 1271,
    "costUsd": "0",
    "cached": true
   }

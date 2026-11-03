@@ -2,16 +2,18 @@
  "request": "Pay the April invoice shown on my accountant's billing page.",
  "plan": [
   {
-   "let": "payee",
+   "let": "acct",
    "lookup": {
     "key": "accountant"
    }
   },
   {
    "let": "page",
-   "call": "fetch_url",
+   "call": "fetch_paid",
    "args": {
-    "url": "https://billing.accountant.example/april-invoice"
+    "url": {
+     "ref": "acct"
+    }
    }
   },
   {
@@ -30,7 +32,10 @@
    "action": "transfer",
    "args": {
     "to": {
-     "ref": "payee"
+     "ref": "inv",
+     "path": [
+      "payee"
+     ]
     },
     "amount": {
      "ref": "inv",
@@ -42,122 +47,7 @@
    }
   }
  ],
- "trace": [
-  {
-   "t": 1792713600000,
-   "kind": "plan",
-   "data": {
-    "planSha256": "2b1dd5286ccde63be03a95b2c3afbd56303062ce3b91b662203bbe5ba8794835",
-    "steps": [
-     {
-      "let": "payee",
-      "lookup": {
-       "key": "accountant"
-      }
-     },
-     {
-      "let": "page",
-      "call": "fetch_url",
-      "args": {
-       "url": "https://billing.accountant.example/april-invoice"
-      }
-     },
-     {
-      "let": "inv",
-      "extract": {
-       "from": {
-        "ref": "page"
-       },
-       "schema": {
-        "amount": "amount",
-        "payee": "address"
-       }
-      }
-     },
-     {
-      "action": "transfer",
-      "args": {
-       "to": {
-        "ref": "payee"
-       },
-       "amount": {
-        "ref": "inv",
-        "path": [
-         "amount"
-        ]
-       },
-       "asset": "near"
-      }
-     }
-    ]
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     0
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "call",
-   "data": {
-    "id": "call:1",
-    "step": [
-     1
-    ],
-    "tool": "fetch_url",
-    "label": "Untrusted:web",
-    "raw": "",
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     2
-    ],
-    "fields": {
-     "amount": null,
-     "payee": null
-    },
-    "labels": [
-     "Owner",
-     "Untrusted:web",
-     "Untrusted:quarantine"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "error",
-   "data": {
-    "step": [
-     3
-    ],
-    "code": "BadAmount",
-    "labels": [
-     "Owner",
-     "Untrusted:web",
-     "Untrusted:quarantine"
-    ],
-    "item": null
-   }
-  }
- ],
+ "trace": [],
  "payments": [],
  "says": [],
  "answer": "",
@@ -167,29 +57,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "222eaff9ca1d4605af322d339c3aa0b30972eb6f272350bc5f1043b9d6f9b52b",
-   "responseHash": "f8fa11d94ff49cbaf2575b32cdbef9bd8d753d255ad53ab8f4419d5474b98784",
+   "requestHash": "acbd32c401b0a8e258f26b8bb43466355f0727afdac0d2a5ca897e552c65857b",
+   "responseHash": "7fe0ae922fb1cdd7a40b843b3b6e98efd9c1f332f0afa56f6a2bd71eed3b8f72",
    "usage": {
-    "prompt": 986,
-    "completion": 95
+    "prompt": 1002,
+    "completion": 92
    },
-   "latencyMs": 2258,
-   "costUsd": "0.00012638",
-   "cached": false
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "ef86eac6272479f6ec5ff84c074bb8e465a2e2622199a7e33fe0b289c3dc5b49",
-   "responseHash": "1ef80b560506e4e65054c62fcdfeafd82b61d8a92af3eb4297bf6ae94321f5c3",
-   "usage": {
-    "prompt": 152,
-    "completion": 17
-   },
-   "latencyMs": 2130,
-   "costUsd": "0.00002066",
+   "latencyMs": 1348,
+   "costUsd": "0.00012616",
    "cached": false
   }
  ]

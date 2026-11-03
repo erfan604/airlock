@@ -7,33 +7,13 @@
    "args": {}
   },
   {
-   "let": "page_url",
+   "let": "url",
    "extract": {
     "from": {
      "ref": "mail"
     },
     "schema": {
-     "url": "text"
-    }
-   }
-  },
-  {
-   "let": "page",
-   "call": "fetch_url",
-   "args": {
-    "url": {
-     "ref": "page_url"
-    }
-   }
-  },
-  {
-   "let": "bill",
-   "extract": {
-    "from": {
-     "ref": "page"
-    },
-    "schema": {
-     "amount": "amount"
+     "link": "text"
     }
    }
   },
@@ -44,16 +24,36 @@
    }
   },
   {
+   "let": "page",
+   "call": "fetch_paid",
+   "args": {
+    "url": {
+     "ref": "url"
+    },
+    "expect_payee": {
+     "ref": "payee"
+    }
+   }
+  },
+  {
+   "let": "due",
+   "extract": {
+    "from": {
+     "ref": "page"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
    "action": "transfer",
    "args": {
     "to": {
      "ref": "payee"
     },
     "amount": {
-     "ref": "bill",
-     "path": [
-      "amount"
-     ]
+     "ref": "due"
     },
     "asset": "near"
    }
@@ -64,7 +64,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "58d12c4bf6353a81ff947ab8891a741dc7bc76fcf4eebbd9d43c666a21d70ce1",
+    "planSha256": "baa07345a6a2fe25b0ef6865deb2f2a80d120f4d84dee98f1a91644e3fd49621",
     "steps": [
      {
       "let": "mail",
@@ -72,33 +72,13 @@
       "args": {}
      },
      {
-      "let": "page_url",
+      "let": "url",
       "extract": {
        "from": {
         "ref": "mail"
        },
        "schema": {
-        "url": "text"
-       }
-      }
-     },
-     {
-      "let": "page",
-      "call": "fetch_url",
-      "args": {
-       "url": {
-        "ref": "page_url"
-       }
-      }
-     },
-     {
-      "let": "bill",
-      "extract": {
-       "from": {
-        "ref": "page"
-       },
-       "schema": {
-        "amount": "amount"
+        "link": "text"
        }
       }
      },
@@ -109,16 +89,36 @@
       }
      },
      {
+      "let": "page",
+      "call": "fetch_paid",
+      "args": {
+       "url": {
+        "ref": "url"
+       },
+       "expect_payee": {
+        "ref": "payee"
+       }
+      }
+     },
+     {
+      "let": "due",
+      "extract": {
+       "from": {
+        "ref": "page"
+       },
+       "schema": {
+        "amount": "amount"
+       }
+      }
+     },
+     {
       "action": "transfer",
       "args": {
        "to": {
         "ref": "payee"
        },
        "amount": {
-        "ref": "bill",
-        "path": [
-         "amount"
-        ]
+        "ref": "due"
        },
        "asset": "near"
       }
@@ -136,13 +136,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9123352c2d25834838350f325d56a1e67e3dcba2769413c9eab32b3a6445f5f7",
-   "responseHash": "65c15a76d0b086be3a583ffb784cc145f777e5d0486dba38676da7c7de5a1b3f",
+   "requestHash": "3e34029a5a95cbf7d86e6f987d99c1ba0b036cbc6231ed8afecdac7290fef077",
+   "responseHash": "b7de36d9dcd7ca1d0ea39bd1d65894ad2efe159c146d849805c17217501f15ad",
    "usage": {
-    "prompt": 986,
-    "completion": 158
+    "prompt": 1002,
+    "completion": 168
    },
-   "latencyMs": 9124,
+   "latencyMs": 3623,
    "costUsd": "0",
    "cached": true
   }

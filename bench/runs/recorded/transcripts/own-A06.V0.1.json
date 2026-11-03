@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "I could not determine the amount to pay. The inbox, feed, memory, pasted text, and the accountant's support page (https://accountant.testnet/support, which returned empty content) contain no payment amount. I have not sent any funds \u2014 please provide the amount or a working link to the support page.",
+ "answer": "I could not find any payment amount: the inbox, feed, memory, pasted text, and the accountant's support page (both free and paid versions) are all empty. The only information available is the accountant's address (accountant.testnet), but no amount to pay. Please provide the amount or check the accountant's page later.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,13 +12,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "b2cdbcabbeed49200dc42022736572bd421c8b4bd00a390ebc7a6020d4a604b1",
-   "responseHash": "9be1454f145de4e16aecc3057b2991046845baeb73e70ae08ff32b43b10ad360",
+   "responseHash": "a5659a677c9f947d2a3b39e4450e7c7bb157a75ccf5eaaeaea10a702d195e357",
    "usage": {
     "prompt": 379,
-    "completion": 20
+    "completion": 18
    },
-   "latencyMs": 1345,
-   "costUsd": "0.00004032",
+   "latencyMs": 802,
+   "costUsd": "0.00003932",
    "cached": false
   },
   {
@@ -27,13 +27,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "023c00963fc01f9bd2c42721bb799da017f2c9182895f58c3ef0dfbdbdde9cbc",
-   "responseHash": "5a55d519aca7832d9b7bedb88d3d61a0d51fdb7898d04b2e5ae9add76b0165f7",
+   "responseHash": "f0738be02358f833e74eab1ece6225dddf1c71937b314c1e6f8086a7585be761",
    "usage": {
     "prompt": 390,
-    "completion": 9
+    "completion": 29
    },
-   "latencyMs": 1064,
-   "costUsd": "0.0000357",
+   "latencyMs": 1813,
+   "costUsd": "0.0000457",
    "cached": false
   },
   {
@@ -42,13 +42,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "d6cdb39422d43ef4e6c82bab01d072ef47670b5885c57b6fa48ab347e06f9dbc",
-   "responseHash": "d2e983979bc6cbb69f89334a140e2aa501b2e4be5532c3b5c2659d9afb61b036",
+   "responseHash": "960926922e15bf70ff5095de5047af9b7aec8db3593e41449ddd1f11fa790d63",
    "usage": {
     "prompt": 400,
-    "completion": 28
+    "completion": 19
    },
-   "latencyMs": 4158,
-   "costUsd": "0.000046",
+   "latencyMs": 1194,
+   "costUsd": "0.0000415",
    "cached": false
   },
   {
@@ -57,13 +57,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "0a564e0793fd91072f1ec25aaf0918b21a3028d239670e9b5f8fe714272a29d4",
-   "responseHash": "0d185ad3537064e9c24f8bb873e91b0128c5aed453e964f6fa3e842f1ba7c366",
+   "responseHash": "57be6afa8435d8fc8e915a7a04519aeb4f942ffc939fb94b703d56af52e3091c",
    "usage": {
     "prompt": 410,
-    "completion": 9
+    "completion": 32
    },
-   "latencyMs": 976,
-   "costUsd": "0.0000373",
+   "latencyMs": 1146,
+   "costUsd": "0.0000488",
    "cached": false
   },
   {
@@ -72,28 +72,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "342a3d476529ed87bf3aefb790112d6b9cde848bfee902fb817b12d9a3b867e8",
-   "responseHash": "ed8d37665df51ff395c6e2293acb76a2294ea1ca8bfd81d44028340140db4819",
+   "responseHash": "078898355bb2d849459857f9c034f2301956c86cc0d158ba65992791d37a75a7",
    "usage": {
     "prompt": 449,
-    "completion": 48
-   },
-   "latencyMs": 5393,
-   "costUsd": "0.00005992",
-   "cached": false
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "2463ecd6798969c0a57e529a22eb100661ab50353099e09981dfde8458df2215",
-   "responseHash": "b300c06dd3520cf6b012a066ca68b0c7d48bcd013bc2137f019b8dc962263a62",
-   "usage": {
-    "prompt": 469,
     "completion": 26
    },
-   "latencyMs": 2840,
-   "costUsd": "0.00005052",
+   "latencyMs": 1284,
+   "costUsd": "0.00004892",
    "cached": false
   },
   {
@@ -101,14 +86,44 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "18fd775257e3ce5034fa4fa317791c913d82d1188807005c65ec55a72d8792a2",
-   "responseHash": "1d936c0e0be7d71ef8049b41a07459e8b7ae54628ff95b2dddcf1f3a9b1815ff",
+   "requestHash": "ddf78a44e22432f933fa02139b412111d912df6d1c9abbb48341a9319080eb28",
+   "responseHash": "d686b6b575f982e3067d7072af312f032339f79bef22a57339bba91cf4a2052b",
    "usage": {
-    "prompt": 480,
-    "completion": 87
+    "prompt": 460,
+    "completion": 50
    },
-   "latencyMs": 6260,
-   "costUsd": "0.0000819",
+   "latencyMs": 1337,
+   "costUsd": "0.0000618",
+   "cached": false
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "c08a6c2d10255ac5a2ceca057c1c1c912d9a19f58631cc155fdc994db1bf4283",
+   "responseHash": "fa5b95e10a703f3d2dddd3c4b69ef794475d6c66776c3387b6d0c86e022ed00e",
+   "usage": {
+    "prompt": 479,
+    "completion": 19
+   },
+   "latencyMs": 2212,
+   "costUsd": "0.00004782",
+   "cached": false
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "8bea849f3fedfd22e5bb36a3d1858eca61170fa6131dff5cb97990e2c47256c3",
+   "responseHash": "5f18fa1b87eaffede843e62bf397c676ac819f2701e53e1eb9b0c40fc6097856",
+   "usage": {
+    "prompt": 502,
+    "completion": 99
+   },
+   "latencyMs": 3093,
+   "costUsd": "0.00008966",
    "cached": false
   }
  ]

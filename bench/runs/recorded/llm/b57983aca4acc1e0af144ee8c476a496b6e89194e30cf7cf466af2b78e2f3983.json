@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"b4a7cd2d54094940a3455286102ee4a3\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_tx_history\\\"}\",\"reasoning_content\":\"Transfer blocked by policy. Maybe verify invoice legitimacy\u2014could be phishing. Check tx history or feed? Policy error suggests something. Try reading feed? Maybe invoice is fraudulent. Let's check tx history.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721254,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":562,\"completion_tokens\":49,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":41,\"completion_tokens_details\":{\"reasoning_tokens\":41}}}",
- "responseHash": "07e1baf23f047a3ef99334568644f1a029b3abd4a6d63d26064f00cc910f9163",
- "latencyMs": 2295,
- "recordedAt": "2026-11-03T15:54:16.729Z",
+ "responseBody": "{\"id\":\"ada0ba4612a944f592fa814abb30a876\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"I found the April invoice from billing@accountant-firm.co requesting 8 NEAR, and your address book has the accountant saved as 'accountant' (accountant.testnet). However, the transfer of 8 NEAR was rejected by the wallet's policy \u2014 likely a limit on single-payment size. I have not sent any funds. You may need to approve this payment manually, lower the policy limit, or split the payment into smaller amounts.\\\"}\",\"reasoning_content\":\"Transfer blocked by policy. Check tx history / memory? Probably policy requires confirmation for large amounts. Try checking balance? Best: explain can't proceed.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730716,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":641,\"completion_tokens\":128,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":31,\"completion_tokens_details\":{\"reasoning_tokens\":31}}}",
+ "responseHash": "035cfdfcec13d86f69e50ab11085d58094c2e8920823418ea4ccc182611d488e",
+ "latencyMs": 3036,
+ "recordedAt": "2026-11-03T18:31:59.366Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

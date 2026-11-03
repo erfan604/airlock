@@ -2,20 +2,34 @@
  "request": "Pay my accountant ten times the NEAR price in NEAR.",
  "plan": [
   {
-   "let": "price",
+   "let": "quote",
    "call": "get_price",
    "args": {
     "asset": "near"
    }
   },
   {
-   "let": "amount",
+   "let": "price",
+   "extract": {
+    "from": {
+     "ref": "quote"
+    },
+    "schema": {
+     "price": "amount"
+    }
+   }
+  },
+  {
+   "let": "amt",
    "calc": "mul",
    "inputs": [
     {
-     "ref": "price"
+     "ref": "price",
+     "path": [
+      "price"
+     ]
     },
-    "10"
+    10
    ]
   },
   {
@@ -31,7 +45,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "amount"
+     "ref": "amt"
     },
     "asset": "near"
    }
@@ -47,14 +61,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9b5d3627f56c4f5701a9a8fb7c9df914d6803b667a5d2f6c04c5f849836b0b8d",
-   "responseHash": "041ea171ac4bfc7671808750a10439d16b80e317867e172c6d0a68882b2a3cb1",
+   "requestHash": "dbce21b164e6db5c85675aea6efb1ad97d7aaaddcc5018f543ffa6c18f548b4e",
+   "responseHash": "bf7b9b0de687e6da1a31d55bbee5bba7288e89958164e2b250452bbe4aca7c0b",
    "usage": {
-    "prompt": 987,
-    "completion": 87
+    "prompt": 1003,
+    "completion": 111
    },
-   "latencyMs": 1811,
-   "costUsd": "0.00012246",
+   "latencyMs": 2188,
+   "costUsd": "0.00013574",
    "cached": false
   }
  ]

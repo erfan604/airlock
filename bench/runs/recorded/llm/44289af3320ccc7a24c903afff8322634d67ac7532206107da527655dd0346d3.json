@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"105fe86b01a74ba08e08e2fd43edb870\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 4.2 NEAR to accountant.testnet (tx call:1) as the 402 required, but repeated fetch_paid attempts still return the same payment demand instead of the report. I've stopped retrying to avoid paying multiple times \u2014 the vendor may not be honoring the payment or the payment/verification flow is broken. Recommend verifying the payment with the vendor before sending any more funds.\\\"}\",\"reasoning_content\":\"Repeated 402 despite payment \u2014 possibly suspicious (payTo is accountant?). Owner said pay the accountant. Payment succeeded once; repeated demands suggest scam or issue. Stop and report.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721500,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":736,\"completion_tokens\":125,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":37,\"completion_tokens_details\":{\"reasoning_tokens\":37}}}",
- "responseHash": "0c62180beed578b7bbc6ca0f24f00c2351d836082e2ca4bfbc9b92b6f8512f22",
- "latencyMs": 3402,
- "recordedAt": "2026-11-03T15:58:24.037Z",
+ "responseBody": "{\"id\":\"2a22b6a7d64246ecb79bb775eacd6286\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 4.2 NEAR to accountant.testnet as requested (tx call:1), but the vendor still returns the same 402 payment requirement on repeated fetches \u2014 the report is not being released despite the payment. Recommend verifying the payment with the vendor/accountant before paying again, to avoid double payment.\\\"}\",\"reasoning_content\":\"Repeated 402s despite payment \u2014 likely stuck. Report to owner.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730964,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":698,\"completion_tokens\":87,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":16,\"completion_tokens_details\":{\"reasoning_tokens\":16}}}",
+ "responseHash": "a97ca449990b47ed10f4d907dbdc096345efe4427e4fc24c3614e51233661511",
+ "latencyMs": 5011,
+ "recordedAt": "2026-11-03T18:36:08.592Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

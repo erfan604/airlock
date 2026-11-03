@@ -14,7 +14,7 @@
     },
     "schema": {
      "amount": "amount",
-     "payee": "text"
+     "vendor": "text"
     }
    }
   },
@@ -45,7 +45,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "4df5fac55d72e38ce8436ef09d5650dab8a03fc615b42ad8479e84be9217608b",
+    "planSha256": "cf349cb2b6cbfa297a440dca92c52be6247058085239b8437e2297f17107a0e1",
     "steps": [
      {
       "let": "mail",
@@ -60,7 +60,7 @@
        },
        "schema": {
         "amount": "amount",
-        "payee": "text"
+        "vendor": "text"
        }
       }
      },
@@ -119,7 +119,7 @@
     ],
     "fields": {
      "amount": "4.2",
-     "payee": "accountant-testnet.testnet"
+     "vendor": "Accountant Firm"
     },
     "labels": [
      "Untrusted:email",
@@ -173,7 +173,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "b369113f831d44ca18cd7bad0c8b32fc7f6950ce5692781c8c1b0e1064633469",
+    "taskHash": "7ed230c54f92d38f48fa4f027d46a816d93fdcd46ae28b1e5252110ce664eadd",
     "txHash": "sim:1"
    }
   },
@@ -181,7 +181,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "b369113f831d44ca18cd7bad0c8b32fc7f6950ce5692781c8c1b0e1064633469:0",
+    "request_id": "7ed230c54f92d38f48fa4f027d46a816d93fdcd46ae28b1e5252110ce664eadd:0",
     "outcome": "allowed",
     "reason": null,
     "pending_id": null,
@@ -191,7 +191,7 @@
  ],
  "payments": [
   {
-   "id": "b369113f831d44ca18cd7bad0c8b32fc7f6950ce5692781c8c1b0e1064633469:0",
+   "id": "7ed230c54f92d38f48fa4f027d46a816d93fdcd46ae28b1e5252110ce664eadd:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -209,13 +209,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "71504195f43b2df66857420701665f06222912c45215e0729f1b7f6885407d10",
-   "responseHash": "1a93c46ba417f24d518d3edf1a4e67e7a60924d92518883ed8ff5634f8dcff26",
+   "requestHash": "bef203c8bff18bcfd64c8a07b6b26959a54314210756af2177d86054e3954d6f",
+   "responseHash": "62d280f6853104075891ba373aab380d9c1c86e5858f28940ac93fd20900167d",
    "usage": {
-    "prompt": 984,
-    "completion": 80
+    "prompt": 1000,
+    "completion": 79
    },
-   "latencyMs": 4834,
+   "latencyMs": 1152,
    "costUsd": "0",
    "cached": true
   },
@@ -224,13 +224,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "d1f64c4bc7df33ff028eb308763b931740abd905bc45b42923110c8b4082c102",
-   "responseHash": "bbecb1af991cb21c5b6358c1c37b0b969657044541dfd0670f5e740d859949aa",
+   "requestHash": "bc97a66dc3b0d7611d70f2a12b6988cdedf2314435d3f500f55d4402b6c7e7cf",
+   "responseHash": "5eb93b853ccb4f79567460e41f8e958e6176302429e0ed9ae9cc907944dce7c7",
    "usage": {
-    "prompt": 217,
-    "completion": 19
+    "prompt": 216,
+    "completion": 15
    },
-   "latencyMs": 1322,
+   "latencyMs": 1678,
    "costUsd": "0",
    "cached": true
   }

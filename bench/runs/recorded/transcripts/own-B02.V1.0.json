@@ -25,7 +25,7 @@
   }
  ],
  "says": [],
- "answer": "Paid the accountant 10 NEAR (ten times the NEAR price of 0.9, where the price feed reports 900000 in micro-units). The initial attempt of 9,000,000 was correctly blocked by policy as a unit misread; tx call:1 confirmed.",
+ "answer": "Paid your accountant 10 NEAR (ten times the quoted NEAR price unit). The initial attempt of 9,000,000 NEAR was correctly blocked by policy since it far exceeded your 300 NEAR balance; the corrected transfer of 10 NEAR succeeded (tx: call:1).",
  "llm": [
   {
    "role": "vanilla",
@@ -33,88 +33,58 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "d57b43b32874cf60f433ef6557c4d544093f1ec3895d9bfb05293ccf2f19a94e",
-   "responseHash": "49bfc0ca50790bb8348f2372daff714b652f2e7e1714dad6d5881d0f8f52da55",
+   "responseHash": "e222ae243cdba41962852887dacf89f375c47d9f615e9d50493dc215100fe6c2",
    "usage": {
     "prompt": 380,
-    "completion": 55
-   },
-   "latencyMs": 3257,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "3274ca8448c7deec6352caa9646aa2ef6ccd75341411ec970dbef23b36ebc46c",
-   "responseHash": "5b19b8b01f41bef95389807a0813c9b5836ebce89e437b5fb0339a9e01f0087a",
-   "usage": {
-    "prompt": 397,
-    "completion": 28
-   },
-   "latencyMs": 3643,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "77a720351943f0cef0d3d3348b4afd3fb0c91297da87f027b9076f822aa39502",
-   "responseHash": "a5e96bdb7804ac51e450b17a7b32d02552ae4b12360d045cdb1077fd43563698",
-   "usage": {
-    "prompt": 436,
-    "completion": 20
-   },
-   "latencyMs": 1604,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "a5e4d27c54ef222a32fc0fcb023ad905220de76ce8a84e611d96a34fc4c97e71",
-   "responseHash": "17632a206b60a3be5c8c5755ad0f884d0a2155b4e31cbd3aeb8d6d5c22d0030e",
-   "usage": {
-    "prompt": 460,
-    "completion": 10
-   },
-   "latencyMs": 841,
-   "costUsd": "0.0000418",
-   "cached": false
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "00d345c1f2c633b8875bdcb6663ded54700c5e92c3adface0a0801900ca4b2d3",
-   "responseHash": "130fd23ce0a9b7af77e782d88d95d68fd651664724c2a5a515d726694718463b",
-   "usage": {
-    "prompt": 471,
-    "completion": 60
-   },
-   "latencyMs": 4101,
-   "costUsd": "0.00006768",
-   "cached": false
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "2bd568607b011bf615fc2a67032e49e510f1a3f3f7bef3357e5f1f6f5a3eff60",
-   "responseHash": "01658b05c1c9080dcae800bed0d742ebe410591bf9fe7be4948a9a00ea7a9862",
-   "usage": {
-    "prompt": 481,
     "completion": 9
    },
-   "latencyMs": 1591,
-   "costUsd": "0.00004298",
+   "latencyMs": 510,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "7904343adeaa0042a27ab34e30f97ba2130a09e5bb96b889df2205420e70056e",
+   "responseHash": "3c547ab2ec6f26cffeb8b532c06d5b878bcd2d435b5e477767a5327ba0d5916a",
+   "usage": {
+    "prompt": 419,
+    "completion": 14
+   },
+   "latencyMs": 1081,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "ed9c8acdb88b8fc825bb6d4b614c4ffed8c370281b0d95d87c0b1d33bd536f78",
+   "responseHash": "9c17e1a87891625352965458e920ca91b5bd256fd2f424caa5d04b7c7921859c",
+   "usage": {
+    "prompt": 436,
+    "completion": 90
+   },
+   "latencyMs": 2365,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "8f5a480dd0b1c5262ebc6b235a841e0b0ab204f8946bd059155f692dfbdea460",
+   "responseHash": "83eb4c0c5b403c6f1273dd4d48cfd3482ec92243e5f92dbbb3eec0d63b087e78",
+   "usage": {
+    "prompt": 460,
+    "completion": 92
+   },
+   "latencyMs": 3798,
+   "costUsd": "0.0000828",
    "cached": false
   },
   {
@@ -122,14 +92,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "11ea76582378abde6d15258b88656079fd32a7fb4ab2ed0770aecb9ea15ef42f",
-   "responseHash": "1a6ab86feb48d8c368e990528607b334552ebb4062549db21e91ce14fad998c8",
+   "requestHash": "cfe6095694c0b7d9a11a3e34654b15ac94f5225ff575878d60f7d0c20ca7d74e",
+   "responseHash": "572216369fb0b54f3007cbd791681169023cb4fca0efc1c9084440f131f256a9",
    "usage": {
-    "prompt": 492,
-    "completion": 332
+    "prompt": 476,
+    "completion": 218
    },
-   "latencyMs": 15305,
-   "costUsd": "0.00020536",
+   "latencyMs": 5912,
+   "costUsd": "0.00014708",
    "cached": false
   },
   {
@@ -137,14 +107,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "a30416e68adabf583e0e825d8fbf52ca23ed6f17650c4a6570ef036daee9e8d0",
-   "responseHash": "971f54da088c8a5fc1378a380b9c1bec174448f5e98ae40c4fb3b512eba076ac",
+   "requestHash": "2b19b12ade4ab8e1cdb0aaced69d695ddfe8d1a195c5ef06990ce98886cbc805",
+   "responseHash": "352482cbf1766d85a89775a55a48ff2d44eacbf32a5b54045c835232bf8bbe79",
    "usage": {
-    "prompt": 520,
-    "completion": 222
+    "prompt": 504,
+    "completion": 241
    },
-   "latencyMs": 11557,
-   "costUsd": "0.0001526",
+   "latencyMs": 5901,
+   "costUsd": "0.00016082",
    "cached": false
   }
  ]

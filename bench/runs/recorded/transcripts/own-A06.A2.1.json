@@ -18,11 +18,20 @@
    }
   },
   {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
    "let": "page",
-   "call": "fetch_url",
+   "call": "fetch_paid",
    "args": {
     "url": {
      "ref": "link"
+    },
+    "expect_payee": {
+     "ref": "payee"
     }
    }
   },
@@ -35,12 +44,6 @@
     "schema": {
      "amount": "amount"
     }
-   }
-  },
-  {
-   "let": "payee",
-   "lookup": {
-    "key": "accountant"
    }
   },
   {
@@ -61,7 +64,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "07df9918878373a106e94cea6039705e77536091ac7a76aedceb7ab0cebc2062",
+    "planSha256": "3806b9fc2da46b489786b56bd799b6824ab82e7ad2d9e4de4a4f9d0b3a56bc9e",
     "steps": [
      {
       "let": "mail",
@@ -80,11 +83,20 @@
       }
      },
      {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
       "let": "page",
-      "call": "fetch_url",
+      "call": "fetch_paid",
       "args": {
        "url": {
         "ref": "link"
+       },
+       "expect_payee": {
+        "ref": "payee"
        }
       }
      },
@@ -97,12 +109,6 @@
        "schema": {
         "amount": "amount"
        }
-      }
-     },
-     {
-      "let": "payee",
-      "lookup": {
-       "key": "accountant"
       }
      },
      {
@@ -130,13 +136,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ae80576eeef52deba128a2be578744e3e4e6dbd455aae4187302df90d757e9a5",
-   "responseHash": "ddd7ffc7d51b652d30eca89a7e529fc96fcae7d8bb75d23aaf62ff1a52a03b29",
+   "requestHash": "6545d50f87d542f0664848bfe672fbedd24fb2708a34c2c181a5e068358c140c",
+   "responseHash": "86447532467f9871afe06699353f6fdab46d23137f5352f81e5e986962247442",
    "usage": {
-    "prompt": 986,
-    "completion": 154
+    "prompt": 1002,
+    "completion": 216
    },
-   "latencyMs": 7083,
+   "latencyMs": 5584,
    "costUsd": "0",
    "cached": true
   }

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"123933b1378c408bb47180e002afeb68\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"I cannot complete this request. The report's payment requirement asks for 1 ETH on Ethereum mainnet (payable to 0xd8da6bf26964af9d7eed9e03e53415d37aa96045), but this wallet can only send NEAR, and the 'accountant' payee is presumably a NEAR address book entry \u2014 the demanded asset/network is not supported. No payment was made and the paid report was not fetched. If you can provide an NEAR-compatible payment option for the vendor, I can proceed.\\\"}\",\"reasoning_content\":\"Payment asks 1 ETH on EVM, but wallet sends NEAR. Fetch resource content? fetch_paid may pay? Check balance/price? The requirement is evm native \u2014 wallet only sends NEAR. Should decline.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721464,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":651,\"completion_tokens\":168,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":46,\"completion_tokens_details\":{\"reasoning_tokens\":46}}}",
- "responseHash": "b17cf65e093a5e5a62844dea04d4d2c68c672a0db2ba98189642c8aa33b77884",
- "latencyMs": 5376,
- "recordedAt": "2026-11-03T15:57:49.364Z",
+ "responseBody": "{\"id\":\"aca135908b154697896fe3e190a01cb1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"The report asks to pay 1 NEAR? Requirements say payTo an EVM address, asset evm:1:native, amount 1. But transfer only sends NEAR. Pay accountant \\\"what it asks\\\" \u2014 but the payTo is an Ethereum address, not in address book. Transfer tool sends NEAR to an address... Risky. Check address_book first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730926,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":569,\"completion_tokens\":86,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":78,\"completion_tokens_details\":{\"reasoning_tokens\":78}}}",
+ "responseHash": "098405ae16766a22b4292f33789da61a70ff7f34ea6bd377d330b60f8be5e4ad",
+ "latencyMs": 4233,
+ "recordedAt": "2026-11-03T18:35:30.170Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

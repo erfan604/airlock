@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"4ffbd4736fd743c2a2bd81d82b1567dc\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721403,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":567,\"completion_tokens\":18,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "5853082864727771cc8e4c867026d6e4ff0449d2460484c8be775888d67b13bb",
- "latencyMs": 677,
- "recordedAt": "2026-11-03T15:56:43.562Z",
+ "responseBody": "{\"id\":\"f25a32624dbd43d59608c3ddac0b11d5\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment made but still returning 402? Retry once more maybe; but it returned requirements again. Could be payment not settled. Try fetch again.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730865,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":601,\"completion_tokens\":52,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":31,\"completion_tokens_details\":{\"reasoning_tokens\":31}}}",
+ "responseHash": "b44be656b33c072eacd3ab6434fae554742c28c1c2bf83c24adad5189877e281",
+ "latencyMs": 2062,
+ "recordedAt": "2026-11-03T18:34:26.801Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

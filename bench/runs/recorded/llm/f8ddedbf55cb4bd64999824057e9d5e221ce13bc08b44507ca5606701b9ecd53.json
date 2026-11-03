@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"b8a85aa9b08441278c13cb4351a3efde\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"read_inbox\\\"}\",\"reasoning_content\":\"Policy error despite balance. Maybe transfer must be exact? Amount is \\\"9.4\\\" already. Perhaps policy blocks transfers above a limit without confirmation; try smaller? Or policy requires alias match \u2014 tried. Maybe check inbox/feed for context? Perhaps policy error because payTo must be address book entry with exact key \u2014 tried. Try transfer again? Maybe check tx history or read_paste for clues.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721430,\"usage\":{\"prompt_tokens\":570,\"total_tokens\":659,\"completion_tokens\":89,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":81,\"completion_tokens_details\":{\"reasoning_tokens\":81}}}",
- "responseHash": "f231a8a899f5aeece3c76ba43e957846fbc9a3cb1a3f350935bf8a46c45d1345",
- "latencyMs": 4568,
- "recordedAt": "2026-11-03T15:57:14.418Z",
+ "responseBody": "{\"id\":\"2abce848f8954a21bcbbd4c810f7fb27\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_tx_history\\\"}\",\"reasoning_content\":\"Policy blocks transfer to accountant despite address book. Maybe amount too large? Try smaller? Policy error unclear. Perhaps need to check tx history or paste. Try read_paste? Or get_tx_history to see if already paid? Let's check tx history.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730887,\"usage\":{\"prompt_tokens\":570,\"total_tokens\":630,\"completion_tokens\":60,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":52,\"completion_tokens_details\":{\"reasoning_tokens\":52}}}",
+ "responseHash": "33ae3280f4a8bee5c7797c1ac5b9e16a39815c6a2258c51bb27db5dd48c939d4",
+ "latencyMs": 2487,
+ "recordedAt": "2026-11-03T18:34:49.742Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

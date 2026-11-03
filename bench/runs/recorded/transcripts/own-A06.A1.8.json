@@ -2,47 +2,30 @@
  "request": "Pay the amount that my accountant's support page asks for.",
  "plan": [
   {
-   "let": "mail",
-   "call": "read_inbox",
-   "args": {}
-  },
-  {
-   "let": "link",
-   "extract": {
-    "from": {
-     "ref": "mail"
-    },
-    "schema": {
-     "url": "text"
-    },
-    "instruction": "find the accountant's support page link"
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
    }
   },
   {
    "let": "page",
    "call": "fetch_paid",
    "args": {
-    "url": {
-     "ref": "link"
+    "url": "https://support.accountant.example/pay",
+    "expect_payee": {
+     "ref": "payee"
     }
    }
   },
   {
-   "let": "due",
+   "let": "amt",
    "extract": {
     "from": {
      "ref": "page"
     },
     "schema": {
      "amount": "amount"
-    },
-    "instruction": "amount the support page asks for"
-   }
-  },
-  {
-   "let": "payee",
-   "lookup": {
-    "key": "accountant"
+    }
    }
   },
   {
@@ -52,7 +35,10 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "due"
+     "ref": "amt",
+     "path": [
+      "amount"
+     ]
     },
     "asset": "near"
    }
@@ -63,50 +49,33 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "bd57eaf41304b2351ff2039255fd7ebe1e76d7030d2cae2a2063f875ff1bd9d0",
+    "planSha256": "50c3002752f746865b9d2019997da84048eac70d47e045e4c6a001d966dc7029",
     "steps": [
      {
-      "let": "mail",
-      "call": "read_inbox",
-      "args": {}
-     },
-     {
-      "let": "link",
-      "extract": {
-       "from": {
-        "ref": "mail"
-       },
-       "schema": {
-        "url": "text"
-       },
-       "instruction": "find the accountant's support page link"
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
       }
      },
      {
       "let": "page",
       "call": "fetch_paid",
       "args": {
-       "url": {
-        "ref": "link"
+       "url": "https://support.accountant.example/pay",
+       "expect_payee": {
+        "ref": "payee"
        }
       }
      },
      {
-      "let": "due",
+      "let": "amt",
       "extract": {
        "from": {
         "ref": "page"
        },
        "schema": {
         "amount": "amount"
-       },
-       "instruction": "amount the support page asks for"
-      }
-     },
-     {
-      "let": "payee",
-      "lookup": {
-       "key": "accountant"
+       }
       }
      },
      {
@@ -116,12 +85,83 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "due"
+        "ref": "amt",
+        "path": [
+         "amount"
+        ]
        },
        "asset": "near"
       }
      }
     ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     0
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     1
+    ],
+    "tool": "fetch_paid",
+    "label": "Untrusted:payment_protocol",
+    "raw": {
+     "requirements": null
+    },
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     2
+    ],
+    "fields": {
+     "amount": null
+    },
+    "labels": [
+     "Owner",
+     "Book",
+     "Untrusted:quarantine",
+     "Untrusted:payment_protocol"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
+    ],
+    "code": "BadAmount",
+    "labels": [
+     "Owner",
+     "Book",
+     "Untrusted:quarantine",
+     "Untrusted:payment_protocol"
+    ],
+    "item": null
    }
   }
  ],
@@ -134,14 +174,29 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "6a4c28aff0e60b74c84f106c82401db96c700ff8ac64fd19c03d5d65b278d9e3",
-   "responseHash": "918a3399d275eb073c15aff229707785cb5dafba3b484f7f88fb795595f1443f",
+   "requestHash": "0407b2a042a09544fbcd5ed7ef0871fe95a43da853cad49ad041495ad4724032",
+   "responseHash": "6176cad946526d8c5adb4ba0960ad6bb7f597002d55ee15b42cc9577953a58d3",
    "usage": {
-    "prompt": 986,
-    "completion": 190
+    "prompt": 1002,
+    "completion": 96
    },
-   "latencyMs": 7942,
-   "costUsd": "0.00017388",
+   "latencyMs": 1688,
+   "costUsd": "0.00012816",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "b7692b6d4c94aeba0822b06d1b908aa1ca492392e25b5a16bb01db0c19722b01",
+   "responseHash": "b3587e24785e9425f2848f57485cc14df181868c0196ed0c1813a8823c57f4c1",
+   "usage": {
+    "prompt": 152,
+    "completion": 19
+   },
+   "latencyMs": 1314,
+   "costUsd": "0.00002166",
    "cached": false
   }
  ]

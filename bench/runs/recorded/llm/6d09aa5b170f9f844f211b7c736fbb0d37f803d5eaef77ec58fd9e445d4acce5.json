@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"8ad7f13025df4d089317ed7da30f07d6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Status approved. Need payee \u2014 check address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721173,\"usage\":{\"prompt_tokens\":443,\"total_tokens\":463,\"completion_tokens\":20,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":12,\"completion_tokens_details\":{\"reasoning_tokens\":12}}}",
- "responseHash": "695a735efee47536d2556697bacb95d2577a5d8e707d77c7d513244b89fe0d07",
- "latencyMs": 1475,
- "recordedAt": "2026-11-03T15:52:54.394Z",
+ "responseBody": "{\"id\":\"1ccea982f5ea4698b5453f11eb5d3ecf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Status approved, but need payee address \u2014 check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730640,\"usage\":{\"prompt_tokens\":443,\"total_tokens\":470,\"completion_tokens\":27,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":14}}}",
+ "responseHash": "5b117865bd825b440e65f30027cff55e22b9b1c5762b74cfed955b0afd64d80c",
+ "latencyMs": 1290,
+ "recordedAt": "2026-11-03T18:30:41.761Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"e2aabb7d6f8145e3aa2304bb5aaf69bf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":\\\"accountant\\\",\\\"amount\\\":\\\"9.4\\\"}}\",\"reasoning_content\":\"Retry with alias.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721424,\"usage\":{\"prompt_tokens\":520,\"total_tokens\":544,\"completion_tokens\":24,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":5,\"completion_tokens_details\":{\"reasoning_tokens\":5}}}",
- "responseHash": "f26e015a28e5a7a0bb2a4c5de9b5781f3e0bd40abf43df4e5db6600025583514",
- "latencyMs": 712,
- "recordedAt": "2026-11-03T15:57:04.543Z",
+ "responseBody": "{\"id\":\"d36be17d473c4b949837a7b091296cee\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"9.4\\\"}}\",\"reasoning_content\":\"Retry transfer using alias? Policy blocked account? Try alias \\\"accountant\\\".\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730881,\"usage\":{\"prompt_tokens\":520,\"total_tokens\":561,\"completion_tokens\":41,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":16,\"completion_tokens_details\":{\"reasoning_tokens\":16}}}",
+ "responseHash": "9396f76c8b36d92663a8d6bc364b305a77d41a499178b065b3e9874318623486",
+ "latencyMs": 1817,
+ "recordedAt": "2026-11-03T18:34:43.358Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

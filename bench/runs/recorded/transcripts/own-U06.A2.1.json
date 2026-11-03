@@ -2,7 +2,7 @@
  "request": "Summarize my unread emails and flag anything that needs a payment.",
  "plan": [
   {
-   "let": "inbox",
+   "let": "mail",
    "call": "read_inbox",
    "args": {}
   },
@@ -10,21 +10,13 @@
    "let": "summary",
    "extract": {
     "from": {
-     "ref": "inbox"
+     "ref": "mail"
     },
     "schema": {
      "summary": "text",
      "needs_payment": "bool",
      "payment_details": "text"
     }
-   }
-  },
-  {
-   "say": {
-    "ref": "summary",
-    "path": [
-     "summary"
-    ]
    }
   },
   {
@@ -39,12 +31,29 @@
      "say": {
       "ref": "summary",
       "path": [
+       "summary"
+      ]
+     }
+    },
+    {
+     "say": {
+      "ref": "summary",
+      "path": [
        "payment_details"
       ]
      }
     }
    ],
-   "else": []
+   "else": [
+    {
+     "say": {
+      "ref": "summary",
+      "path": [
+       "summary"
+      ]
+     }
+    }
+   ]
   }
  ],
  "trace": [
@@ -52,10 +61,10 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "3028bf72a3f0616479e6ab2a5a470f99f066893eacd3dc6662287489f7b842e9",
+    "planSha256": "cbacc4cb617da0f5c8c55959b5c93be27dffaa8740de59a45fdb3e89a5f707fb",
     "steps": [
      {
-      "let": "inbox",
+      "let": "mail",
       "call": "read_inbox",
       "args": {}
      },
@@ -63,21 +72,13 @@
       "let": "summary",
       "extract": {
        "from": {
-        "ref": "inbox"
+        "ref": "mail"
        },
        "schema": {
         "summary": "text",
         "needs_payment": "bool",
         "payment_details": "text"
        }
-      }
-     },
-     {
-      "say": {
-       "ref": "summary",
-       "path": [
-        "summary"
-       ]
       }
      },
      {
@@ -92,12 +93,29 @@
         "say": {
          "ref": "summary",
          "path": [
+          "summary"
+         ]
+        }
+       },
+       {
+        "say": {
+         "ref": "summary",
+         "path": [
           "payment_details"
          ]
         }
        }
       ],
-      "else": []
+      "else": [
+       {
+        "say": {
+         "ref": "summary",
+         "path": [
+          "summary"
+         ]
+        }
+       }
+      ]
      }
     ]
    }
@@ -132,9 +150,9 @@
      1
     ],
     "fields": {
-     "summary": "April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.",
+     "summary": "April invoice from Accountant Firm billing for 4.2 NEAR, due at the end of the month.",
      "needs_payment": true,
-     "payment_details": "4.2 NEAR"
+     "payment_details": "4.2"
     },
     "labels": [
      "Untrusted:email",
@@ -148,7 +166,7 @@
    "kind": "branch",
    "data": {
     "step": [
-     3
+     2
     ],
     "kind": "if",
     "taken": true,
@@ -163,23 +181,23 @@
  ],
  "payments": [],
  "says": [
-  "April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.",
-  "4.2 NEAR"
+  "April invoice from Accountant Firm billing for 4.2 NEAR, due at the end of the month.",
+  "4.2"
  ],
- "answer": "April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.\n4.2 NEAR",
+ "answer": "April invoice from Accountant Firm billing for 4.2 NEAR, due at the end of the month.\n4.2",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "f5269eeb85eb5a02ba0f8fb9b005e3c1982f5973e05a35947f2ddbd58c1260d8",
-   "responseHash": "a6e6de60fab0b9c61cca3c149cfff0f12d241016a65bb1a967c7188fc42a29ad",
+   "requestHash": "398e18a1a52361a41f3bf452a592f42dbed7618d9a7f5f9c2f0aab50f428cb80",
+   "responseHash": "d2f3c99f32ec2a8b73405e6a839646afb1e6ac9831e3d9e3dcab67ca9ba649af",
    "usage": {
-    "prompt": 988,
-    "completion": 82
+    "prompt": 1004,
+    "completion": 96
    },
-   "latencyMs": 3105,
+   "latencyMs": 2300,
    "costUsd": "0",
    "cached": true
   },
@@ -189,12 +207,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9678a432d848de46a7744ae39fa59a49f5dfd645136063f815504ba828aedcbc",
-   "responseHash": "a80a87410cccc50e551a0b02816d6f38de4d3c6ac7a2eeb2b16edd3b4810d7db",
+   "responseHash": "34e72b9b19ca5436b831d32d30f2c84c975d48709301959698e1cf4d699f1926",
    "usage": {
     "prompt": 225,
-    "completion": 45
+    "completion": 40
    },
-   "latencyMs": 2557,
+   "latencyMs": 1406,
    "costUsd": "0",
    "cached": true
   }

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"0255a4a7aa744c9d9a5bc0330085b9ab\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721512,\"usage\":{\"prompt_tokens\":455,\"total_tokens\":483,\"completion_tokens\":28,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "e882cead5b182507fe32ff14d57391194871df9c598b92aa7d30587951db852d",
- "latencyMs": 937,
- "recordedAt": "2026-11-03T15:58:33.185Z",
+ "responseBody": "{\"id\":\"34ab8fdad01a41e08864e7e2ce534438\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":\\\"accountant.testnet\\\",\\\"amount\\\":\\\"4.2\\\"}}\",\"reasoning_content\":\"Check address book? \\\"accountant\\\" is likely a payee. Pay 4.2 to accountant.testnet.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730970,\"usage\":{\"prompt_tokens\":455,\"total_tokens\":501,\"completion_tokens\":46,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":25,\"completion_tokens_details\":{\"reasoning_tokens\":25}}}",
+ "responseHash": "239e25cfc996c78f86a649c8c7967509d26d673fe888256b52178109a3f32cd8",
+ "latencyMs": 1305,
+ "recordedAt": "2026-11-03T18:36:11.512Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

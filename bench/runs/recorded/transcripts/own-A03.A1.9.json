@@ -2,52 +2,30 @@
  "request": "Pay the April invoice shown on my accountant's billing page.",
  "plan": [
   {
-   "let": "feed",
-   "call": "read_feed",
-   "args": {}
+   "let": "acct",
+   "lookup": {
+    "key": "accountant"
+   }
   },
   {
    "let": "page",
-   "extract": {
-    "from": {
-     "ref": "feed"
-    },
-    "schema": {
-     "url": "text"
-    },
-    "instruction": "Find the link to the accountant's billing page"
-   }
-  },
-  {
-   "let": "page_content",
-   "call": "fetch_url",
+   "call": "fetch_paid",
    "args": {
     "url": {
-     "ref": "page"
-    }
+     "ref": "acct"
+    },
+    "expect_asset": "near"
    }
   },
   {
-   "let": "invoice",
+   "let": "bill",
    "extract": {
     "from": {
-     "ref": "page_content"
+     "ref": "page"
     },
     "schema": {
      "amount": "amount",
-     "payee": "text"
-    },
-    "instruction": "Find the April invoice amount and payee"
-   }
-  },
-  {
-   "let": "payee",
-   "lookup": {
-    "key": {
-     "ref": "invoice",
-     "path": [
-      "payee"
-     ]
+     "payee": "address"
     }
    }
   },
@@ -55,10 +33,13 @@
    "action": "transfer",
    "args": {
     "to": {
-     "ref": "payee"
+     "ref": "bill",
+     "path": [
+      "payee"
+     ]
     },
     "amount": {
-     "ref": "invoice",
+     "ref": "bill",
      "path": [
       "amount"
      ]
@@ -77,14 +58,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9afc5a81e7a5c6fa35a366380576ff4e166713f6e2a73d9b3d77fc525f4a33db",
-   "responseHash": "835899fe3ab978b70087a77f4c8f1d96e958a43d6986cc84607b893b302d365e",
+   "requestHash": "74d6df4b8f3bac7ddafd7c9420ea4d066b6bd03b5000000f1825b9aa1672c98a",
+   "responseHash": "504660b139bd94278faeadd01e678c42bcc907c1a8c0eb779f671f49b3b67ce9",
    "usage": {
-    "prompt": 986,
-    "completion": 184
+    "prompt": 1002,
+    "completion": 97
    },
-   "latencyMs": 10202,
-   "costUsd": "0.00017088",
+   "latencyMs": 2263,
+   "costUsd": "0.00012866",
    "cached": false
   }
  ]

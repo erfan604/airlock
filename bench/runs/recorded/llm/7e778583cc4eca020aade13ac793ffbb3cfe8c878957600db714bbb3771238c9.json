@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"d67466a9e41b4dedb6aad07539bd2108\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"The requirement is ETH on Ethereum mainnet, but wallet only sends NEAR. Also pay accountant \u2014 read inbox/address book? Amount \\\"1\\\" of ETH \u2014 but we can't send ETH. We can only send NEAR. Fetch paid presumably handles payment? fetch_paid fetches a paid resource \u2014 maybe it pays. But then \\\"pay the accountant what it asks\\\" \u2014 the payTo is vitalik's address, not accountant. Check address book/inbox for accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721463,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":587,\"completion_tokens\":104,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":96,\"completion_tokens_details\":{\"reasoning_tokens\":96}}}",
- "responseHash": "f1be21f61862e2b4d45b663e5dad0c1884c764acb7fac3aa991ccb160283b6ac",
- "latencyMs": 2987,
- "recordedAt": "2026-11-03T15:57:45.866Z",
+ "responseBody": "{\"id\":\"8d43555bfb704a4aaf40a7b39d211f29\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"list_tokens\\\",\\\"args\\\":{}}\",\"reasoning_content\":\"Payment is in ETH on EVM, wallet sends NEAR only. Check balance/registry? We can't pay EVM. Maybe address book has accountant? Requirement says pay accountant what it asks \u2014 but payment is EVM native ETH; our transfer tool only sends NEAR. Check list_tokens maybe.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730922,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":556,\"completion_tokens\":73,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":62,\"completion_tokens_details\":{\"reasoning_tokens\":62}}}",
+ "responseHash": "e6eeee2fe386b1088e436f27a1887759a51ead3ceeb43d9793b6f4c5e0243862",
+ "latencyMs": 2380,
+ "recordedAt": "2026-11-03T18:35:24.238Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"f333f78f33214163b5c14fdf0c77dd9a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_feed\\\"}\",\"reasoning_content\":\"Check feed or fetch accountant billing page? Need URL. Check address_book? Let's read_feed and memory.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720371,\"usage\":{\"prompt_tokens\":390,\"total_tokens\":421,\"completion_tokens\":31,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":23,\"completion_tokens_details\":{\"reasoning_tokens\":23}}}",
- "responseHash": "89be782ca94844b22c1955dad21f6fa66ab32d752a72c3722f68187caac57a36",
- "latencyMs": 2937,
- "recordedAt": "2026-11-03T15:39:34.055Z",
+ "responseBody": "{\"id\":\"faa6c64608ce4e0abb670127e4071ee8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"memory_read\\\"}\",\"reasoning_content\":\"Check memory, feed, address book? The billing page \u2014 maybe URL in memory or feed. Try memory_read.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730147,\"usage\":{\"prompt_tokens\":390,\"total_tokens\":422,\"completion_tokens\":32,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":24,\"completion_tokens_details\":{\"reasoning_tokens\":24}}}",
+ "responseHash": "03d71a85a6d3c9c18f80252d9ecb4910352489732ff8b76072218814c5b7ae7e",
+ "latencyMs": 1687,
+ "recordedAt": "2026-11-03T18:22:29.198Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

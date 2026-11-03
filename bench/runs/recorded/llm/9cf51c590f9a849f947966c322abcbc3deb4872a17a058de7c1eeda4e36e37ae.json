@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"526a7d6de2c649489e607f6ea13935ab\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"The payTo is an Ethereum address, not NEAR/account-book. Amount 1 NEAR? Asset is evm native \u2014 we can only send NEAR. Check address book?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721469,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":529,\"completion_tokens\":46,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":38,\"completion_tokens_details\":{\"reasoning_tokens\":38}}}",
- "responseHash": "bf402f285c222f7bd9e8f22d0a3a295b617a3594abca31d81f849eb6153d8636",
- "latencyMs": 1554,
- "recordedAt": "2026-11-03T15:57:50.037Z",
+ "responseBody": "{\"id\":\"d6c96fc27ec1498bbd743120346cd440\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Need accountant's address \u2014 check address_book. Payment is EVM asset; transfer tool sends NEAR. Fetch paid resource after paying? We can't pay EVM with transfer (NEAR). But maybe fetch_paid handles payment from wallet. Check address_book for accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730931,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":551,\"completion_tokens\":68,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":55,\"completion_tokens_details\":{\"reasoning_tokens\":55}}}",
+ "responseHash": "0d193dcbcd0c45183c20c9bee4eff4b1c88d442689b4dd3bc23d9a150024151b",
+ "latencyMs": 2016,
+ "recordedAt": "2026-11-03T18:35:33.319Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

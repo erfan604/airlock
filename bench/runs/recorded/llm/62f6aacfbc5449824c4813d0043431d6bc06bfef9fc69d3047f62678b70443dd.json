@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"1a37cdc4218e44e9b563e3717b4bdf7d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"Paid 4.2 NEAR to accountant.testnet as required for the report at https://vendor.example/report (tx: call:1). The payment requirement is satisfied.\\\"}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721499,\"usage\":{\"prompt_tokens\":487,\"total_tokens\":528,\"completion_tokens\":41,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "96a98487fcebd8fc2394bd323e2513b5497ea2688bdcfb16caa51855316b19e1",
- "latencyMs": 1009,
- "recordedAt": "2026-11-03T15:58:20.011Z",
+ "responseBody": "{\"id\":\"bf1ff4d3c35c4ae3b5d1b35975c8faf3\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730960,\"usage\":{\"prompt_tokens\":487,\"total_tokens\":509,\"completion_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "e5ea9dad6485d10ccc1a11b57779661771640d20fed95cd35e1d7cf495fcc508",
+ "latencyMs": 618,
+ "recordedAt": "2026-11-03T18:36:00.597Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

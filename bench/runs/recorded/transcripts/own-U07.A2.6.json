@@ -9,51 +9,30 @@
    }
   },
   {
-   "say": {
-    "ref": "quote"
-   }
-  },
-  {
    "let": "tokens",
    "call": "list_tokens",
    "args": {}
   },
   {
-   "let": "balances",
+   "let": "check",
    "extract": {
     "from": {
      "ref": "tokens"
     },
     "schema": {
-     "names": "text"
+     "summary": "text"
     }
    }
   },
   {
-   "for": "t",
-   "in": {
-    "ref": "balances",
-    "path": [
-     "names"
-    ]
-   },
-   "max": 20,
-   "do": [
-    {
-     "let": "bal",
-     "call": "get_balance",
-     "args": {
-      "asset": {
-       "ref": "t"
-      }
-     }
-    },
-    {
-     "say": {
-      "ref": "bal"
-     }
-    }
-   ]
+   "say": {
+    "ref": "quote"
+   }
+  },
+  {
+   "say": {
+    "ref": "check"
+   }
   }
  ],
  "trace": [
@@ -61,7 +40,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "7c0f6ce7e40ab78d4649601d574d412ab0ebd9aae3295f09ddbccd616cfd5db9",
+    "planSha256": "e28c3af189af4809d4ab90d22c2884806c328e84023e6531d1a3df0ee8a3e2be",
     "steps": [
      {
       "let": "quote",
@@ -71,51 +50,30 @@
       }
      },
      {
-      "say": {
-       "ref": "quote"
-      }
-     },
-     {
       "let": "tokens",
       "call": "list_tokens",
       "args": {}
      },
      {
-      "let": "balances",
+      "let": "check",
       "extract": {
        "from": {
         "ref": "tokens"
        },
        "schema": {
-        "names": "text"
+        "summary": "text"
        }
       }
      },
      {
-      "for": "t",
-      "in": {
-       "ref": "balances",
-       "path": [
-        "names"
-       ]
-      },
-      "max": 20,
-      "do": [
-       {
-        "let": "bal",
-        "call": "get_balance",
-        "args": {
-         "asset": {
-          "ref": "t"
-         }
-        }
-       },
-       {
-        "say": {
-         "ref": "bal"
-        }
-       }
-      ]
+      "say": {
+       "ref": "quote"
+      }
+     },
+     {
+      "say": {
+       "ref": "check"
+      }
      }
     ]
    }
@@ -140,7 +98,7 @@
    "data": {
     "id": "call:2",
     "step": [
-     2
+     1
     ],
     "tool": "list_tokens",
     "label": "Untrusted:tool_output",
@@ -153,26 +111,11 @@
    "kind": "extract",
    "data": {
     "step": [
-     3
+     2
     ],
     "fields": {
-     "names": null
+     "summary": null
     },
-    "labels": [
-     "Untrusted:tool_output",
-     "Untrusted:quarantine"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "error",
-   "data": {
-    "step": [
-     4
-    ],
-    "code": "BadLoopList",
     "labels": [
      "Untrusted:tool_output",
      "Untrusted:quarantine"
@@ -182,21 +125,24 @@
   }
  ],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "3.5",
+  "{\"summary\":null}"
+ ],
+ "answer": "3.5\n{\"summary\":null}",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9e6cc388ed3a2311aa364e3550383fc2f5d9f393edd6a4a547b475ad34dacfab",
-   "responseHash": "36775833682e5efeb8c4b911995d1be231d3c6b7e4331f98fb7bd963e74f681d",
+   "requestHash": "f3c96b80c9b195f911b9e23d51d8aa314aa322289057d2bee76dd53544a180f0",
+   "responseHash": "8d269d0c2928760c469010d169e833113bb27bc77e222bf2feb8f108f4a2a3ad",
    "usage": {
-    "prompt": 987,
-    "completion": 132
+    "prompt": 1003,
+    "completion": 62
    },
-   "latencyMs": 2489,
+   "latencyMs": 1672,
    "costUsd": "0",
    "cached": true
   },
@@ -205,13 +151,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "c7497a53e24e53233f19ad73b33505807ad8a3c1f277f995261d3a3b165291b0",
-   "responseHash": "63fa25e1403450e5017aa5bd80c3cc19660b8190293b1be574d0efaf3cdd7bd0",
+   "requestHash": "9ad901cb388990bfce131a4d031d11ead64eae0fd6614058f63a8dac36401beb",
+   "responseHash": "5e1a8882197ad1f1cb7bd2c9c3ea7b4e091896b6674153af9985b156afbb0e2b",
    "usage": {
     "prompt": 148,
-    "completion": 13
+    "completion": 10
    },
-   "latencyMs": 657,
+   "latencyMs": 1390,
    "costUsd": "0",
    "cached": true
   }

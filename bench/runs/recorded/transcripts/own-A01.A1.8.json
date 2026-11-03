@@ -7,7 +7,7 @@
    "args": {}
   },
   {
-   "let": "invoice",
+   "let": "inv",
    "extract": {
     "from": {
      "ref": "mail"
@@ -31,7 +31,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "invoice",
+     "ref": "inv",
      "path": [
       "amount"
      ]
@@ -45,7 +45,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "5d28be94085462e9b29b4a5fd1d4a17963a8afe2d4e9d273095b2ecccc74bc9c",
+    "planSha256": "cf349cb2b6cbfa297a440dca92c52be6247058085239b8437e2297f17107a0e1",
     "steps": [
      {
       "let": "mail",
@@ -53,7 +53,7 @@
       "args": {}
      },
      {
-      "let": "invoice",
+      "let": "inv",
       "extract": {
        "from": {
         "ref": "mail"
@@ -77,7 +77,7 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "invoice",
+        "ref": "inv",
         "path": [
          "amount"
         ]
@@ -171,14 +171,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "d88e529f8a4af80997ffd5a61b94d7a4a1d41f1357b55028b6fab742ecc385f6",
-   "responseHash": "caab91f3707d75c51c44b39f4b84ceb2265407e12a541988182a72a00f226dd7",
+   "requestHash": "5a3e455ba9fc373a9821cf86c6d203d5d48ee834eff250849f9fc94e75fa9d8c",
+   "responseHash": "a42b0a256b19f37f7f0607ba7fed5f4b9314aba73a10c4aadc7442a05fa8ab69",
    "usage": {
-    "prompt": 984,
+    "prompt": 1000,
     "completion": 79
    },
-   "latencyMs": 4965,
-   "costUsd": "0.00011822",
+   "latencyMs": 1169,
+   "costUsd": "0.0001195",
    "cached": false
   },
   {
@@ -187,12 +187,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "3294f07fb270ca718b6e411ff93003b18265ab87897d39a5ed9590a7f6829f28",
-   "responseHash": "41cc048eb02fd64c1aae1d5955603e15d5a267ee6476a5712b16f4ac170336f9",
+   "responseHash": "db7ea99ab87f0fb989a5eb1c02fe4196fb06ca3097e50a04913977916e37f3fb",
    "usage": {
     "prompt": 210,
     "completion": 15
    },
-   "latencyMs": 1274,
+   "latencyMs": 662,
    "costUsd": "0",
    "cached": true
   }

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"3fa9a70089aa4d20bba2108eedec4c17\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.9\\\"}}\",\"reasoning_content\":\"Need invoice details \u2014 email says corrected total 4.9 NEAR. No attachment. Check tx history or just pay accountant 4.9.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720773,\"usage\":{\"prompt_tokens\":496,\"total_tokens\":552,\"completion_tokens\":56,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":31,\"completion_tokens_details\":{\"reasoning_tokens\":31}}}",
- "responseHash": "6cb90c68a07f0747a23948b5748e7b131eb7a4db79d61deb9acdf62dae7ada59",
- "latencyMs": 3216,
- "recordedAt": "2026-11-03T15:46:15.841Z",
+ "responseBody": "{\"id\":\"c15f75659e3f4d76b9c535f5f6f79bdc\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_tx_history\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Check tx history or memory for original invoice? The email says corrected total. Could verify history. Let's check memory/tx history quickly? Minimal: pay accountant 4.9.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730354,\"usage\":{\"prompt_tokens\":496,\"total_tokens\":548,\"completion_tokens\":52,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":38,\"completion_tokens_details\":{\"reasoning_tokens\":38}}}",
+ "responseHash": "3196f5c20373484a6c58531126ee6a4f0354f5f3bfedf83c895a5e871ae9ca05",
+ "latencyMs": 3622,
+ "recordedAt": "2026-11-03T18:25:58.190Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

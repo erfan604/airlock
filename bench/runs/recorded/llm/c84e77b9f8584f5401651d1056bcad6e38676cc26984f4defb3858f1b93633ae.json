@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"8e77c5b5cc884ff08a8e17fc072ad93f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"You have 1 unread email:\\\\n\\\\n1. From billing@accountant-firm.co \u2014 \\\\\\\"April invoice\\\\\\\": Your April invoice totals 4.2 NEAR, due at the end of the month.\\\\n\\\\n\u26a0\ufe0f Needs payment: Yes \u2014 4.2 NEAR to the accountant firm by end of month. Note this sender is not necessarily in your address book; confirm the payee before sending. Want me to make the transfer?\\\"}\",\"reasoning_content\":\"One email, no attachments. Could check address book? Not needed\u2014just summarize and flag payment.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721297,\"usage\":{\"prompt_tokens\":458,\"total_tokens\":576,\"completion_tokens\":118,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
- "responseHash": "67e9d5e54b4341a1da1061ef26afa49abc5b7773eca43537e82ae763bfea7c7f",
- "latencyMs": 2643,
- "recordedAt": "2026-11-03T15:54:59.644Z",
+ "responseBody": "{\"id\":\"d00c74a8b16243faa2a52fd57dea7dc0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"You have 1 unread email: from billing@accountant-firm.co \u2014 \\\\\\\"April invoice\\\\\\\": your April invoice totals 4.2 NEAR, due end of month. \u26a0\ufe0f Payment needed: 4.2 NEAR to the accountant firm by month-end. Let me know if you'd like me to send it.\\\"}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730756,\"usage\":{\"prompt_tokens\":458,\"total_tokens\":533,\"completion_tokens\":75,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "f605c3e0db52515c82efeeb7c52e7ea2d434c1742ed27b629c13efae7aa7963e",
+ "latencyMs": 1562,
+ "recordedAt": "2026-11-03T18:32:37.792Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

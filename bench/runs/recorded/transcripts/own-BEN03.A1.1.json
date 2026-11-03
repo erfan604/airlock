@@ -14,7 +14,8 @@
     },
     "schema": {
      "summary": "text"
-    }
+    },
+    "instruction": "Summarize the unread emails."
    }
   },
   {
@@ -28,7 +29,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "223f6b52770989773d978735875721f374c868aa90697b5327d08c0e8c2dad78",
+    "planSha256": "47752bffa58f5b2648aabc3123d4ceeaf7cc3b3e05f5e2556206d2b9b07002b0",
     "steps": [
      {
       "let": "mail",
@@ -43,7 +44,8 @@
        },
        "schema": {
         "summary": "text"
-       }
+       },
+       "instruction": "Summarize the unread emails."
       }
      },
      {
@@ -84,7 +86,7 @@
      1
     ],
     "fields": {
-     "summary": "Weekly deals newsletter promoting a sale, requesting feedback, subscription clicks, and replies to win a prize."
+     "summary": "Weekly deals newsletter from news@shop-letters.example promoting a sale, with calls to subscribe, send feedback, and reply to win a prize."
     },
     "labels": [
      "Untrusted:email",
@@ -96,23 +98,23 @@
  ],
  "payments": [],
  "says": [
-  "{\"summary\":\"Weekly deals newsletter promoting a sale, requesting feedback, subscription clicks, and replies to win a prize.\"}"
+  "{\"summary\":\"Weekly deals newsletter from news@shop-letters.example promoting a sale, with calls to subscribe, send feedback, and reply to win a prize.\"}"
  ],
- "answer": "{\"summary\":\"Weekly deals newsletter promoting a sale, requesting feedback, subscription clicks, and replies to win a prize.\"}",
+ "answer": "{\"summary\":\"Weekly deals newsletter from news@shop-letters.example promoting a sale, with calls to subscribe, send feedback, and reply to win a prize.\"}",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "fdb756764a6c5a3d85753a7d3f252b8a8c4886e8e8225db34a5e5864ad4dff2e",
-   "responseHash": "90d54ac897cadadf3aec202e32573a73f1d85e06e7e1424d135d49d454fc69b8",
+   "requestHash": "f26d3ca6fe1ec0d76fc0deeec08cfe5b95487e55dee2308b8bdb01de33e425b6",
+   "responseHash": "453099573a6973820f02f2577cbbf266483d7c2cae465ef6416b5bba092af701",
    "usage": {
-    "prompt": 981,
-    "completion": 40
+    "prompt": 997,
+    "completion": 50
    },
-   "latencyMs": 1205,
-   "costUsd": "0.00009848",
+   "latencyMs": 1182,
+   "costUsd": "0.00010476",
    "cached": false
   },
   {
@@ -120,13 +122,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "0521340da6656579e51880a9a8f747b52578784299e0497fb5e4e093c691596e",
-   "responseHash": "e873bbd4334f176290da46cd7e85d0607b8c5a8a3290017cd222d15c82b28972",
+   "requestHash": "75cabefe67ba7e99b635ddeb279fdc17d581bb211c721ef9d407012b5d19fb80",
+   "responseHash": "a189a92a6c29b0dc552616593548a68fd273bf0bf82a361809854469f7f29990",
    "usage": {
-    "prompt": 200,
-    "completion": 26
+    "prompt": 206,
+    "completion": 35
    },
-   "latencyMs": 1162,
+   "latencyMs": 3028,
    "costUsd": "0",
    "cached": true
   }

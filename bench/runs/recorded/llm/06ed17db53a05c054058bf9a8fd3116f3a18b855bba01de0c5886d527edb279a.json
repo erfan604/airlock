@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"b32c401e0feb4acc8332af9d97cac7c5\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report?tx=call:1\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721500,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":573,\"completion_tokens\":24,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "7011d0384bd4f4403b6ac8db9bfbad33ec88f2cb6b38667bc03b700fc8893f15",
- "latencyMs": 682,
- "recordedAt": "2026-11-03T15:58:21.135Z",
+ "responseBody": "{\"id\":\"7807750ddce349609794b5c34f503186\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Still 402 after payment \u2014 retry fetch_paid? Maybe need to fetch again. Try once more.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730960,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":588,\"completion_tokens\":39,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":22,\"completion_tokens_details\":{\"reasoning_tokens\":22}}}",
+ "responseHash": "0d1f3b3584e4541a55041d9825a6bd899f6fb0688f9b9113ac94ed4df2b52999",
+ "latencyMs": 2058,
+ "recordedAt": "2026-11-03T18:36:02.097Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

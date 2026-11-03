@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"8f4f78bf648c42ec94a71f14403d53b8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"memory_read\\\"}\",\"reasoning_content\":\"Policy blocks transfer. Try alias \\\"accountant\\\" failed. Maybe amount limit? Check memory? Try get_balance? Policy error\u2014maybe exceeding limit. Could check memory_read for notes.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721444,\"usage\":{\"prompt_tokens\":544,\"total_tokens\":589,\"completion_tokens\":45,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":38,\"completion_tokens_details\":{\"reasoning_tokens\":38}}}",
- "responseHash": "c6d530cc729540fffc1efa160d053d417762ec02bc1783942c2d01d4b47f6d09",
- "latencyMs": 1509,
- "recordedAt": "2026-11-03T15:57:25.480Z",
+ "responseBody": "{\"id\":\"fa0ab9f2059649ae88fc02646f90a201\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"memory_read\\\"}\",\"reasoning_content\":\"Maybe amount exceeds policy; try smaller? Or check balance/memory. Perhaps policy limits transfers; check get_balance or memory_read for limits.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730906,\"usage\":{\"prompt_tokens\":544,\"total_tokens\":579,\"completion_tokens\":35,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":28,\"completion_tokens_details\":{\"reasoning_tokens\":28}}}",
+ "responseHash": "41e82ff51ff4fe6c2761689d2e5dd484ed275ad5a349415370b7da893bb57e41",
+ "latencyMs": 2157,
+ "recordedAt": "2026-11-03T18:35:08.722Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

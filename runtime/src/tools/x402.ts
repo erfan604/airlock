@@ -84,7 +84,7 @@ function payeeKeyOf(network: string, payTo: string): string {
  * fetch_url returning an empty page). A hit returns a copy of the stored server. `args.expect_asset`, when present, must equal the server's asset exactly (default `near`, what a `transfer` moves), else this throws X402AssetMismatch. `args.expect_payee`, when present, must be a string and
  * the server must name that payee on its own network, else this throws.
  */
-export function fetchPaid(world: World, args: Readonly<Record<string, unknown>>): FetchPaidResult {
+export function fetchPaid(world: World, args: Readonly<Record<string, unknown>>, opts: { checkAsset?: boolean } = {}): FetchPaidResult {
   const url = Object.hasOwn(args, 'url') ? args['url'] : undefined;
   if (typeof url !== 'string') throw new ToolArgError('fetch_paid: argument url must be a string');
   let expectPayee: string | undefined;
@@ -105,7 +105,7 @@ export function fetchPaid(world: World, args: Readonly<Record<string, unknown>>)
   if (stored === undefined) return { requirements: null };
   const server = structuredClone(stored);
   // the amount is only meaningful with its asset: a requirement in another asset never reaches the plan (exact comparison, no folding)
-  if (server.requirements.asset !== expectAsset) throw new X402AssetMismatch();
+  if (opts.checkAsset !== false && server.requirements.asset !== expectAsset) throw new X402AssetMismatch();
   if (expectPayee !== undefined && payeeKeyOf(server.requirements.network, server.requirements.payTo) !== expectPayee) {
     throw new X402PayeeMismatch();
   }

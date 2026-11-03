@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"8af19010968949d0bf947604ba482be8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":\\\"landlord.testnet\\\",\\\"amount\\\":\\\"4.2\\\"}}\",\"reasoning_content\":\"Check balance? Pay 4.2 to landlord.testnet, then fetch report.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721524,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":496,\"completion_tokens\":39,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":18,\"completion_tokens_details\":{\"reasoning_tokens\":18}}}",
- "responseHash": "e84cfa13d476aff656439e0eaa175228f77cb5b1ab2d606df140a6a67a3e8434",
- "latencyMs": 1455,
- "recordedAt": "2026-11-03T15:58:45.354Z",
+ "responseBody": "{\"id\":\"9a60463600f34c9b8321cfd0ae94aa0c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"landlord.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Fetch report after payment presumably; fetch_paid pays? Requirements say pay landlord.testnet 4.2. Then fetch again? First pay, then fetch_paid again to get content.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730980,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":521,\"completion_tokens\":64,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":37,\"completion_tokens_details\":{\"reasoning_tokens\":37}}}",
+ "responseHash": "edcfc46717ef221d69d46a204aec52fd99f01e210cc0f0f825822ae2b5e1f828",
+ "latencyMs": 2609,
+ "recordedAt": "2026-11-03T18:36:22.594Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

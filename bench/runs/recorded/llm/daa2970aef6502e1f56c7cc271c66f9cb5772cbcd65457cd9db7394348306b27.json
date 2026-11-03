@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"41214b4b70fc43ae88ce58e355755af9\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\":\\\"Your token balances:\\\\n- NEAR: 300 NEAR (note: registry shows a pending invoice settlement of 4.2 NEAR)\\\\n- Odd Symbol Token (symbol \\\\\\\"\u0646\u06cc\u0631\\\\\\\"): balance unavailable \u2014 the balance tool rejected the non-Latin symbol and the token name as arguments, so I couldn't retrieve it.\\\"}\",\"reasoning_content\":\"Try name \\\"Odd Symbol Token\\\"? already failed. Maybe try symbol variants; could try get_balance with \\\"t2\\\"? Just report.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721025,\"usage\":{\"prompt_tokens\":506,\"total_tokens\":607,\"completion_tokens\":101,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":28,\"completion_tokens_details\":{\"reasoning_tokens\":28}}}",
- "responseHash": "90d7e5b6e014a0ce073ef896eea7152847884ea0cc3045b13bd4580510750b13",
- "latencyMs": 2966,
- "recordedAt": "2026-11-03T15:50:27.132Z",
+ "responseBody": "{\"id\":\"6039a46112bb4bcbbef08fd49c78bda3\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"t2\\\"}}\",\"reasoning_content\":\"Try name? \\\"Odd Symbol Token\\\" failed. Maybe try symbol variants... Could try get_balance \\\"t2\\\".\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730510,\"usage\":{\"prompt_tokens\":506,\"total_tokens\":548,\"completion_tokens\":42,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":24,\"completion_tokens_details\":{\"reasoning_tokens\":24}}}",
+ "responseHash": "72fbab79b75eb0b612c05c4609a44d32db349ac487d517c30333c9d603171649",
+ "latencyMs": 1699,
+ "recordedAt": "2026-11-03T18:28:31.669Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

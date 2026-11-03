@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "I could not complete the payment. The NEAR price returned was 900000, so ten times that would be 9,000,000 NEAR \u2014 far more than your balance of 300 NEAR. The transfer attempt also failed with a ToolArgError, likely because the amount exceeded valid limits. Please confirm the intended amount (perhaps the price unit was misread) and I can retry paying accountant.testnet.",
+ "answer": "I can't complete this payment. The NEAR price is reported as 900000, so ten times that would be 9,000,000 NEAR, which far exceeds the wallet balance of 300 NEAR. No transfer was made \u2014 please confirm the intended amount.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "b4cebd558a5731bcb75f8b9bbcf4ee485fcf013664fb63431c2c1d98ca145239",
-   "responseHash": "b9bbe9a622a99f4e1b8a661314cb19addeff3d1e525b8e460dd373d6941c5901",
+   "responseHash": "9d8710977ff55cc045763bdf8729c7fd169a1ac73b336d9a470a846f1e1f3ae8",
    "usage": {
     "prompt": 380,
-    "completion": 70
+    "completion": 30
    },
-   "latencyMs": 3036,
+   "latencyMs": 1744,
    "costUsd": "0",
    "cached": true
   },
@@ -26,13 +26,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "6b3febc8c0bb9a9067faeaa4cc17cff81f5207bf4c17a04c2ee7579bf1eb9720",
-   "responseHash": "328fca8b85bd3de4abaddfdb0a9996b59fd66904d98d8fcedb919bc6f483a736",
+   "requestHash": "129a4bc1d51a112263e9c8a76c6756afbc93b58c940e2029fcb9d8ee36e81943",
+   "responseHash": "44381f9f618f8987efaeadf6f7f5ef5cb0ecb9e60d52915d1fb1349852fb1a7e",
    "usage": {
-    "prompt": 397,
-    "completion": 101
+    "prompt": 419,
+    "completion": 14
    },
-   "latencyMs": 3924,
+   "latencyMs": 817,
    "costUsd": "0",
    "cached": true
   },
@@ -41,13 +41,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "d15f089e3663b2f4a772531ffa0115b7f38200878d0024ec51551d7e462d4881",
-   "responseHash": "294925281d853b172faf2831178dd49be14a88eb01217c6f0b9c064f427af10b",
+   "requestHash": "a8643c77027b52efc5a9b45799991380dca27af328d6dcf082813bd66a6d9b76",
+   "responseHash": "3c68a261c66f08cdb2199bb0d2bdb5ba64e04092535406bb42f9dbf4da69171d",
    "usage": {
-    "prompt": 413,
-    "completion": 102
+    "prompt": 436,
+    "completion": 241
    },
-   "latencyMs": 8916,
+   "latencyMs": 6440,
    "costUsd": "0",
    "cached": true
   },
@@ -56,28 +56,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "6b6f57e11ae09f286f5243572dec02c3835acbf101dc37f265d7288193270c95",
-   "responseHash": "41cc5d80854686cca59535dd4111749f099028e1166a321234f8dbba2f9ddfa0",
+   "requestHash": "7917338c57c2d9dcfb45196b07d888e3c887eb82975af2b7c3db833201f0c2ed",
+   "responseHash": "0ebf75f7251d29a63128c3af3182cc76658efbf81b7a9755396f7dbca2ba62fd",
    "usage": {
     "prompt": 452,
-    "completion": 18
+    "completion": 187
    },
-   "latencyMs": 1178,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "5c44029c5dbdba907c0dfade5aaf9015277407939cced4f1cf927e54810c93cf",
-   "responseHash": "7a3aba0a5bba8ca79ff434541f6823bdbf8ed6cdb96f2c5d14026a5a863a9a68",
-   "usage": {
-    "prompt": 467,
-    "completion": 295
-   },
-   "latencyMs": 13998,
+   "latencyMs": 5160,
    "costUsd": "0",
    "cached": true
   }

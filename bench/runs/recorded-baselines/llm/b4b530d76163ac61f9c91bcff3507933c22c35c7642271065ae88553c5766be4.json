@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"725d6cc721264846a37d60ef25a2480a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793724194,\"usage\":{\"prompt_tokens\":511,\"total_tokens\":520,\"completion_tokens\":9,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "a72721cbd43ee5ed19c69e1f0e1a038ce9301c4343b0d6fe7f0102568c13bc3a",
- "latencyMs": 798,
- "recordedAt": "2026-11-03T16:43:14.982Z",
+ "responseBody": "{\"id\":\"68d6c214b01344a3b8ea7c97cccf2acf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Verify payee? Not in address book\u2014could check, but instruction: payee must be verified. Check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731168,\"usage\":{\"prompt_tokens\":511,\"total_tokens\":545,\"completion_tokens\":34,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":26,\"completion_tokens_details\":{\"reasoning_tokens\":26}}}",
+ "responseHash": "817ce2eb6086641f54efd385c0a2234af5bfeb64b885bb53cc9fff7addfeb99b",
+ "latencyMs": 1029,
+ "recordedAt": "2026-11-03T18:39:29.462Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

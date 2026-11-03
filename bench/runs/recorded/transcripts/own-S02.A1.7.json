@@ -18,19 +18,8 @@
    }
   },
   {
-   "let": "ok",
-   "extract": {
-    "from": {
-     "ref": "status"
-    },
-    "schema": {
-     "approved": "bool"
-    }
-   }
-  },
-  {
    "if": {
-    "ref": "ok"
+    "ref": "status"
    },
    "then": [
     {
@@ -52,7 +41,7 @@
    ],
    "else": [
     {
-     "say": "Invoice not approved; waiting."
+     "say": "Invoice not approved; no payment made."
     }
    ]
   }
@@ -62,7 +51,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "e9d1f1723fb402e0f84d31aa571cd6dfff00ee90eb42757591cd9267e1707093",
+    "planSha256": "e51719e080fcfa356078e46ce3521b1bb983c9f548b46209a96f65c66ef9066b",
     "steps": [
      {
       "let": "mail",
@@ -81,19 +70,8 @@
       }
      },
      {
-      "let": "ok",
-      "extract": {
-       "from": {
-        "ref": "status"
-       },
-       "schema": {
-        "approved": "bool"
-       }
-      }
-     },
-     {
       "if": {
-       "ref": "ok"
+       "ref": "status"
       },
       "then": [
        {
@@ -115,7 +93,7 @@
       ],
       "else": [
        {
-        "say": "Invoice not approved; waiting."
+        "say": "Invoice not approved; no payment made."
        }
       ]
      }
@@ -163,27 +141,10 @@
   },
   {
    "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     2
-    ],
-    "fields": {
-     "approved": true
-    },
-    "labels": [
-     "Untrusted:email",
-     "Untrusted:quarantine"
-    ],
-    "item": "m1"
-   }
-  },
-  {
-   "t": 1792713600000,
    "kind": "error",
    "data": {
     "step": [
-     3
+     2
     ],
     "code": "BadCondition",
     "labels": [
@@ -203,14 +164,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ddd8b1acdf4d30d0d0bf0fb9924c74466b265325b222f0a110f1f0bcefd7046e",
-   "responseHash": "9cfe23df4e9b7cb09634ab17b2bf4773508e48fe86d601c416c54dca6f1f90de",
+   "requestHash": "e11a8764ce20c231e441527808812ce957a158a3cab46cb5da17d76faae48513",
+   "responseHash": "1196cd168f03659d9e240babd3aaed3eed57cdc93461e8e7c2bdac13f1b09d1f",
    "usage": {
-    "prompt": 997,
-    "completion": 110
+    "prompt": 1013,
+    "completion": 93
    },
-   "latencyMs": 2329,
-   "costUsd": "0.00013476",
+   "latencyMs": 1689,
+   "costUsd": "0.00012754",
    "cached": false
   },
   {
@@ -219,29 +180,14 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9b62b5793e4efb4140ab47f9b2c5c35edb1e14e3dca3d953b4a63c1db6f48e1d",
-   "responseHash": "8ceb64d4607af893002f6b02c9b33e1d0557ba5f8bbeb7160df459bc875e2199",
+   "responseHash": "794671520e9a293117b7eb4ff61dc30adaf23df50192275ddb8b6e6f1842b1aa",
    "usage": {
     "prompt": 191,
     "completion": 7
    },
-   "latencyMs": 767,
+   "latencyMs": 499,
    "costUsd": "0",
    "cached": true
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "c250860d5078944ea4728826dc6e5116d841e0afe90e145f742334d02086d4b4",
-   "responseHash": "5153b07f7d35ab7b28fd98ee39d13045d007c48a6267dcea6b8c6c1aa76a0fa4",
-   "usage": {
-    "prompt": 152,
-    "completion": 7
-   },
-   "latencyMs": 464,
-   "costUsd": "0.00001566",
-   "cached": false
   }
  ]
 }

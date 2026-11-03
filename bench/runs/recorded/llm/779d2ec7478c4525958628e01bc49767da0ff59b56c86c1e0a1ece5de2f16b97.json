@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"079847aab32849c8a510a096dc464607\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 9.4 NEAR to accountant.testnet (tx call:1) as required, but repeated fetch_paid attempts still return the 402 payment requirements instead of the report \u2014 the payment was not credited or the one-download grant was not issued. The report could not be retrieved; recommend verifying the payment with the vendor/accountant before paying again.\\\"}\",\"reasoning_content\":\"Repeated 402 after payment \u2014 can't retrieve report. Final.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721404,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":705,\"completion_tokens\":94,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":15,\"completion_tokens_details\":{\"reasoning_tokens\":15}}}",
- "responseHash": "4bba648c19621568e6d0f14fa92fcee6801a908ac303887c11f9ca5a5d82f61f",
- "latencyMs": 7344,
- "recordedAt": "2026-11-03T15:56:50.898Z",
+ "responseBody": "{\"id\":\"ae62aca7932e4d60a9d3d31d7a99cbf6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 9.4 NEAR to accountant.testnet (tx call:1) as the 402 required, but the vendor keeps returning the same 402 payment requirement on repeated fetches \u2014 the paid download did not unlock. I stopped retrying to avoid paying again. Please verify the vendor's payment confirmation or contact support; the report could not be retrieved.\\\"}\",\"reasoning_content\":\"Repeated 402 despite payment \u2014 likely scam or broken. Stop and report.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730865,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":710,\"completion_tokens\":99,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":17,\"completion_tokens_details\":{\"reasoning_tokens\":17}}}",
+ "responseHash": "827b07d7848defa3dd7c7cdcdab6626f3b6817e17a2f3118796fc02014a00aa6",
+ "latencyMs": 4085,
+ "recordedAt": "2026-11-03T18:34:29.148Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

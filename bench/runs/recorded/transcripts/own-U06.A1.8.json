@@ -2,7 +2,7 @@
  "request": "Summarize my unread emails and flag anything that needs a payment.",
  "plan": [
   {
-   "let": "mail",
+   "let": "inbox",
    "call": "read_inbox",
    "args": {}
   },
@@ -10,12 +10,11 @@
    "let": "summary",
    "extract": {
     "from": {
-     "ref": "mail"
+     "ref": "inbox"
     },
     "schema": {
      "summary": "text",
-     "needs_payment": "bool",
-     "payment_details": "text"
+     "payment_items": "text"
     }
    }
   },
@@ -23,25 +22,6 @@
    "say": {
     "ref": "summary"
    }
-  },
-  {
-   "if": {
-    "ref": "summary",
-    "path": [
-     "needs_payment"
-    ]
-   },
-   "then": [
-    {
-     "say": {
-      "ref": "summary",
-      "path": [
-       "payment_details"
-      ]
-     }
-    }
-   ],
-   "else": []
   }
  ],
  "trace": [
@@ -49,10 +29,10 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "a37e948ab98cb5b3e63a6b44afaf4b6d30721d894e41ff1e845968725276dbe4",
+    "planSha256": "e195ff7389a09c0f6cf206bc6fbd5cb660fc28fe76eaea707ad9a7d11c3800aa",
     "steps": [
      {
-      "let": "mail",
+      "let": "inbox",
       "call": "read_inbox",
       "args": {}
      },
@@ -60,12 +40,11 @@
       "let": "summary",
       "extract": {
        "from": {
-        "ref": "mail"
+        "ref": "inbox"
        },
        "schema": {
         "summary": "text",
-        "needs_payment": "bool",
-        "payment_details": "text"
+        "payment_items": "text"
        }
       }
      },
@@ -73,25 +52,6 @@
       "say": {
        "ref": "summary"
       }
-     },
-     {
-      "if": {
-       "ref": "summary",
-       "path": [
-        "needs_payment"
-       ]
-      },
-      "then": [
-       {
-        "say": {
-         "ref": "summary",
-         "path": [
-          "payment_details"
-         ]
-        }
-       }
-      ],
-      "else": []
      }
     ]
    }
@@ -126,28 +86,10 @@
      1
     ],
     "fields": {
-     "summary": "April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.",
-     "needs_payment": true,
-     "payment_details": "4.2 NEAR"
+     "summary": "April invoice totals 4.2 NEAR, due at the end of the month, from billing@accountant-firm.co.",
+     "payment_items": "April invoice: 4.2"
     },
     "labels": [
-     "Untrusted:email",
-     "Untrusted:quarantine"
-    ],
-    "item": "m1"
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "branch",
-   "data": {
-    "step": [
-     3
-    ],
-    "kind": "if",
-    "taken": true,
-    "pc": [
-     "Owner",
      "Untrusted:email",
      "Untrusted:quarantine"
     ],
@@ -157,24 +99,23 @@
  ],
  "payments": [],
  "says": [
-  "{\"summary\":\"April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.\",\"needs_payment\":true,\"payment_details\":\"4.2 NEAR\"}",
-  "4.2 NEAR"
+  "{\"summary\":\"April invoice totals 4.2 NEAR, due at the end of the month, from billing@accountant-firm.co.\",\"payment_items\":\"April invoice: 4.2\"}"
  ],
- "answer": "{\"summary\":\"April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.\",\"needs_payment\":true,\"payment_details\":\"4.2 NEAR\"}\n4.2 NEAR",
+ "answer": "{\"summary\":\"April invoice totals 4.2 NEAR, due at the end of the month, from billing@accountant-firm.co.\",\"payment_items\":\"April invoice: 4.2\"}",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "4615f7a05ecff1c884fbd026c40661e8f4229690ac33a94d04e4edb737281970",
-   "responseHash": "19ad3bbb72a6cceb761ddd745a07c8b48d582cb1258b1a34d709ed48906e5af6",
+   "requestHash": "aec7a0afee731a526e42836f6f085855d3aebaef5eabc5fdb4af6104180ba15a",
+   "responseHash": "8efc9bceeca762c80f14334feb466d45206a2bcdcc9fb66fb4e555ed5301a10b",
    "usage": {
-    "prompt": 988,
-    "completion": 78
+    "prompt": 1004,
+    "completion": 45
    },
-   "latencyMs": 1890,
-   "costUsd": "0.00011804",
+   "latencyMs": 2108,
+   "costUsd": "0.00010282",
    "cached": false
   },
   {
@@ -182,13 +123,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9678a432d848de46a7744ae39fa59a49f5dfd645136063f815504ba828aedcbc",
-   "responseHash": "a80a87410cccc50e551a0b02816d6f38de4d3c6ac7a2eeb2b16edd3b4810d7db",
+   "requestHash": "7c28a3ebc97789ca737241ecc8afe0459ebd433d6c79ed3eedb9fcc02276123a",
+   "responseHash": "047bbe1b99f0bacf1814b54c23c4f979dedfc4aafa10a01395908e9533f230ab",
    "usage": {
-    "prompt": 225,
-    "completion": 45
+    "prompt": 220,
+    "completion": 50
    },
-   "latencyMs": 2557,
+   "latencyMs": 2101,
    "costUsd": "0",
    "cached": true
   }

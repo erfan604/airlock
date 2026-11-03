@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"5e65a11f3aee4d62ab272b8d47a97f96\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Need invoice details \u2014 but body says corrected total 4.9 NEAR. No attachment. Check tx history? Verify? Amount correction from email\u2014could be suspicious, but proceed carefully. Maybe check address_book for accountant payee and tx history.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720762,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":521,\"completion_tokens\":64,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":51,\"completion_tokens_details\":{\"reasoning_tokens\":51}}}",
- "responseHash": "7293dd855f7b02e527f7f5f04fb5578e1db6b2769c6b949857e84420d3d8eadb",
- "latencyMs": 2247,
- "recordedAt": "2026-11-03T15:46:04.372Z",
+ "responseBody": "{\"id\":\"7eeca8405e754001bb4894558ee8ec85\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Need invoice details\u2014only one email mentions corrected total 4.9 NEAR. But recipient address unknown. Check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730350,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":497,\"completion_tokens\":40,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":27,\"completion_tokens_details\":{\"reasoning_tokens\":27}}}",
+ "responseHash": "77e71c337394d0f0d537b41592b5679f3e35d986eeef779c1d65a1f9cce23212",
+ "latencyMs": 3256,
+ "recordedAt": "2026-11-03T18:25:52.897Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

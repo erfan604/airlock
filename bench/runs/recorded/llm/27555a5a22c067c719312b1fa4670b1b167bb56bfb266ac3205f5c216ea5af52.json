@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"4664bcaac1194a609d0abc4021cc38fc\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 4.2 NEAR to accountant.testnet (tx call:1) as required, but re-fetching https://vendor.example/report still returns a 402 payment demand for the same amount \u2014 the payment doesn't appear to be recognized. No report content was retrieved. Recommend verifying with the vendor/accountant whether the payment was credited before paying again, to avoid a double charge.\\\"}\",\"reasoning_content\":\"Payment made but still 402. Maybe need fetch_paid again? Already did. Could be report inaccessible; report to owner.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721499,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":662,\"completion_tokens\":113,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":27,\"completion_tokens_details\":{\"reasoning_tokens\":27}}}",
- "responseHash": "0688c20751794985947ec4769ad9b21a179f66c45875419c140c03144f3a03de",
- "latencyMs": 2471,
- "recordedAt": "2026-11-03T15:58:22.035Z",
+ "responseBody": "{\"id\":\"33bcf2fb079d4b988e1176f9a50e30cb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment made but still 402; retry once?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730960,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":582,\"completion_tokens\":33,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":12,\"completion_tokens_details\":{\"reasoning_tokens\":12}}}",
+ "responseHash": "38fc7dbc1024bca7f841f80a05310d804462dc578b1e8c16d617b2913b2703d8",
+ "latencyMs": 925,
+ "recordedAt": "2026-11-03T18:36:01.315Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

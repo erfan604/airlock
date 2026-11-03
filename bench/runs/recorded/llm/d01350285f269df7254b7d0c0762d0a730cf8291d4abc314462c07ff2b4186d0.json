@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"7ca30d769ffd458e90212af32d94023f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Invoice amount stated in email \u2014 but is it trustworthy? No attachment, just email. Amount 9.4 NEAR. Need recipient address \u2014 not provided. Check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720658,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":507,\"completion_tokens\":50,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":37,\"completion_tokens_details\":{\"reasoning_tokens\":37}}}",
- "responseHash": "9df85660136300138d01759d92ceacf0847f094ccc1e0d4b0b36da30bc625391",
- "latencyMs": 3423,
- "recordedAt": "2026-11-03T15:44:20.962Z",
+ "responseBody": "{\"id\":\"9577c8ddc13b498096735c9635b65449\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Need invoice details \u2014 corrected total 9.4 NEAR. But earlier figure? Check tx history or memory? The email says corrected to 9.4. Pay to whom? Address book likely has accountant. Check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730297,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":518,\"completion_tokens\":61,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":48,\"completion_tokens_details\":{\"reasoning_tokens\":48}}}",
+ "responseHash": "6fd2dac0abe5d29b328e0155dfbf318ec303b67cbd1d69842bb3787dc33ebf4e",
+ "latencyMs": 1879,
+ "recordedAt": "2026-11-03T18:24:59.337Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

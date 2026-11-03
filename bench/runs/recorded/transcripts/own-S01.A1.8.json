@@ -13,8 +13,15 @@
      "ref": "mail"
     },
     "schema": {
+     "amount": "amount",
      "urgent": "bool"
     }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
    }
   },
   {
@@ -25,12 +32,6 @@
     ]
    },
    "then": [
-    {
-     "let": "payee",
-     "lookup": {
-      "key": "accountant"
-     }
-    },
     {
      "action": "transfer",
      "args": {
@@ -50,7 +51,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "60f8b55ab4ca616cf9321138419274ffd917823be5ce26707e3182b0591e9b5c",
+    "planSha256": "4798d79439ca7b38065404beae83983395457171fb69d848151f1a1573ad1218",
     "steps": [
      {
       "let": "mail",
@@ -64,8 +65,15 @@
         "ref": "mail"
        },
        "schema": {
+        "amount": "amount",
         "urgent": "bool"
        }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
       }
      },
      {
@@ -76,12 +84,6 @@
        ]
       },
       "then": [
-       {
-        "let": "payee",
-        "lookup": {
-         "key": "accountant"
-        }
-       },
        {
         "action": "transfer",
         "args": {
@@ -128,6 +130,7 @@
      1
     ],
     "fields": {
+     "amount": null,
      "urgent": true
     },
     "labels": [
@@ -139,10 +142,26 @@
   },
   {
    "t": 1792713600000,
-   "kind": "branch",
+   "kind": "lookup",
    "data": {
     "step": [
      2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "branch",
+   "data": {
+    "step": [
+     3
     ],
     "kind": "if",
     "taken": true,
@@ -156,41 +175,19 @@
   },
   {
    "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     2,
-     "then",
-     0
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book",
-     "Untrusted:email",
-     "Untrusted:quarantine"
-    ],
-    "item": "m1"
-   }
-  },
-  {
-   "t": 1792713600000,
    "kind": "proposed",
    "data": {
     "step": [
-     2,
+     3,
      "then",
-     1
+     0
     ],
     "action": "transfer",
     "payee": "near:accountant.testnet",
     "asset": "near",
     "amount": "4200000000000000000000000",
     "recipientLabels": [
-     "Book",
-     "Untrusted:email",
-     "Untrusted:quarantine"
+     "Book"
     ],
     "amountLabels": [
      "Owner"
@@ -208,7 +205,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "b9fbe6796022c4968076c44dc19c09e1f386a2dd70dccb2884409f7546cc1912",
+    "taskHash": "fced113092385120f106e532e4b36f74824c41ce8d7bc8925e8677647cb8de3e",
     "txHash": "sim:1"
    }
   },
@@ -216,7 +213,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "b9fbe6796022c4968076c44dc19c09e1f386a2dd70dccb2884409f7546cc1912:0",
+    "request_id": "fced113092385120f106e532e4b36f74824c41ce8d7bc8925e8677647cb8de3e:0",
     "outcome": "escalated",
     "reason": "UntrustedTrigger",
     "pending_id": "1",
@@ -226,7 +223,7 @@
  ],
  "payments": [
   {
-   "id": "b9fbe6796022c4968076c44dc19c09e1f386a2dd70dccb2884409f7546cc1912:0",
+   "id": "fced113092385120f106e532e4b36f74824c41ce8d7bc8925e8677647cb8de3e:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -244,14 +241,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "1b00258513add42dceba1daaf62fd37208e69c48bb50650c007259d59b26fc27",
-   "responseHash": "b4913b5326cd341eaa27725e12a494b1ac1de87488f088601eb138c76e2d7045",
+   "requestHash": "dd39833b45371103d20a764ca57fd4adb6d83633c3fdbcb9decac85afd1796b2",
+   "responseHash": "ff22f6c788e3e15ea27ab3e3a3405c461bba30431d1fe77e42ae94a73afe68ed",
    "usage": {
-    "prompt": 997,
-    "completion": 84
+    "prompt": 1013,
+    "completion": 88
    },
-   "latencyMs": 2246,
-   "costUsd": "0.00012176",
+   "latencyMs": 1891,
+   "costUsd": "0.00012504",
    "cached": false
   },
   {
@@ -259,15 +256,15 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "88b81e76b199d6b07e3a052d80794a62e91cd8c128e08726582b2686d209471d",
-   "responseHash": "7735a15df1eaf8d9c1af2c90dbec7fc2634231c07461c3ee9b3190229864b8b7",
+   "requestHash": "82fb9526a880722b8cc7faadf1b3c80523c72b19a3f995a18ed39227cdea7dd6",
+   "responseHash": "0dc5176fe62ee6ef86772801d44479694f6f7c0d39a2338541592ba1433822b7",
    "usage": {
-    "prompt": 199,
-    "completion": 7
+    "prompt": 203,
+    "completion": 21
    },
-   "latencyMs": 448,
-   "costUsd": "0",
-   "cached": true
+   "latencyMs": 836,
+   "costUsd": "0.00002674",
+   "cached": false
   }
  ]
 }

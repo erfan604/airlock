@@ -7,37 +7,14 @@
    "args": {}
   },
   {
-   "let": "page",
+   "let": "link",
    "extract": {
     "from": {
      "ref": "mail"
     },
     "schema": {
      "url": "text"
-    },
-    "instruction": "Find the URL of the accountant's billing page"
-   }
-  },
-  {
-   "let": "bill",
-   "call": "fetch_paid",
-   "args": {
-    "url": {
-     "ref": "page"
     }
-   }
-  },
-  {
-   "let": "inv",
-   "extract": {
-    "from": {
-     "ref": "bill"
-    },
-    "schema": {
-     "amount": "amount",
-     "payee": "address"
-    },
-    "instruction": "Find the April invoice amount and payee address"
    }
   },
   {
@@ -47,34 +24,39 @@
    }
   },
   {
-   "if": {
-    "ref": "payee",
-    "path": [
-     "address"
-    ]
-   },
-   "then": [
-    {
-     "action": "transfer",
-     "args": {
-      "to": {
-       "ref": "payee"
-      },
-      "amount": {
-       "ref": "inv",
-       "path": [
-        "amount"
-       ]
-      },
-      "asset": "near"
-     }
+   "let": "invoice",
+   "call": "fetch_paid",
+   "args": {
+    "url": {
+     "ref": "link"
+    },
+    "expect_payee": {
+     "ref": "payee"
     }
-   ],
-   "else": [
-    {
-     "say": "Could not confirm the accountant's address; no payment made."
+   }
+  },
+  {
+   "let": "amount",
+   "extract": {
+    "from": {
+     "ref": "invoice"
+    },
+    "schema": {
+     "amount": "amount"
     }
-   ]
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "amount"
+    },
+    "asset": "near"
+   }
   }
  ],
  "trace": [
@@ -82,7 +64,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "48161125523c456791a65d9e79c213ba07fda8c7e6cb7f5b13f97c84d18cf81c",
+    "planSha256": "0b8fd2ad42558e7eaae591ad423ca8fba67e100240ae224677aa29484d618010",
     "steps": [
      {
       "let": "mail",
@@ -90,37 +72,14 @@
       "args": {}
      },
      {
-      "let": "page",
+      "let": "link",
       "extract": {
        "from": {
         "ref": "mail"
        },
        "schema": {
         "url": "text"
-       },
-       "instruction": "Find the URL of the accountant's billing page"
-      }
-     },
-     {
-      "let": "bill",
-      "call": "fetch_paid",
-      "args": {
-       "url": {
-        "ref": "page"
        }
-      }
-     },
-     {
-      "let": "inv",
-      "extract": {
-       "from": {
-        "ref": "bill"
-       },
-       "schema": {
-        "amount": "amount",
-        "payee": "address"
-       },
-       "instruction": "Find the April invoice amount and payee address"
       }
      },
      {
@@ -130,34 +89,39 @@
       }
      },
      {
-      "if": {
-       "ref": "payee",
-       "path": [
-        "address"
-       ]
-      },
-      "then": [
-       {
-        "action": "transfer",
-        "args": {
-         "to": {
-          "ref": "payee"
-         },
-         "amount": {
-          "ref": "inv",
-          "path": [
-           "amount"
-          ]
-         },
-         "asset": "near"
-        }
+      "let": "invoice",
+      "call": "fetch_paid",
+      "args": {
+       "url": {
+        "ref": "link"
+       },
+       "expect_payee": {
+        "ref": "payee"
        }
-      ],
-      "else": [
-       {
-        "say": "Could not confirm the accountant's address; no payment made."
+      }
+     },
+     {
+      "let": "amount",
+      "extract": {
+       "from": {
+        "ref": "invoice"
+       },
+       "schema": {
+        "amount": "amount"
        }
-      ]
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "amount"
+       },
+       "asset": "near"
+      }
      }
     ]
    }
@@ -172,14 +136,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "21961cf8ff7394193733ca5d8a516328de3ef2f613626261fb9cac88a5cac648",
-   "responseHash": "9f593565f05f86701ac0f634a0e96458090bd90ad66437c3dd8e937d96a161ce",
+   "requestHash": "058155642e185ac37573296e53983ef8a0b4babe146b1089a543791bbacb61e9",
+   "responseHash": "a1117d9fc96a6bbf10cf8163f9fe74be2137ad87d0c38b4b311f509e24753a5e",
    "usage": {
-    "prompt": 986,
-    "completion": 223
+    "prompt": 1002,
+    "completion": 174
    },
-   "latencyMs": 14036,
-   "costUsd": "0.00019038",
+   "latencyMs": 6819,
+   "costUsd": "0.00016716",
    "cached": false
   }
  ]

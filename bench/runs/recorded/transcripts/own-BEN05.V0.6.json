@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "Your token balances:\n- NEAR: 300 NEAR (note: registry shows a pending invoice settlement of 4.2 NEAR)\n- Odd Symbol Token (symbol \"\u0646\u06cc\u0631\"): balance unavailable \u2014 the balance tool rejected the non-Latin symbol and the token name as arguments, so I couldn't retrieve it.",
+ "answer": "Your balances:\n- NEAR: 300 NEAR (note: 4.2 NEAR pending invoice settlement)\n- Odd Symbol Token (symbol: \u0646\u06cc\u0631): balance unavailable \u2014 the balance tool rejects its non-Latin symbol and token ID, so I couldn't retrieve it.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "4bc1f07a684220587886066b23fd04f846f55b08f8dea0e429d414aff4f55585",
-   "responseHash": "e7f2dd35f94dcc33bddfab57bc6e3fc075bae18575aad3a0859940ed6b72ce63",
+   "responseHash": "f39862bd9b6d091ecb4a3c1987306fcea4374f14bbbd211d896cae8d3809790b",
    "usage": {
     "prompt": 372,
     "completion": 9
    },
-   "latencyMs": 1059,
+   "latencyMs": 523,
    "costUsd": "0.00003426",
    "cached": false
   },
@@ -27,13 +27,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "45effbe330358a944933bcdc7ff8415b9f779fdc3329bc4ad22e90d32f42862e",
-   "responseHash": "761878bbbd6521b7ae896d6ff374ee1d42a5ffaa21a4a29e748263c5cdd6bcd1",
+   "responseHash": "570be78b9e6cc4a34d9b480f5aa8a9fc17464ac42e98811dbc35dfe0591d9162",
    "usage": {
     "prompt": 447,
-    "completion": 14
+    "completion": 24
    },
-   "latencyMs": 848,
-   "costUsd": "0.00004276",
+   "latencyMs": 1098,
+   "costUsd": "0.00004776",
    "cached": false
   },
   {
@@ -42,13 +42,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "51f8f105cc4787899ef8c36b6206f17b268e70128ebece4fa024c0b8655fe08d",
-   "responseHash": "a1d493f681edc15d0baeee327f59a944bb71edefeeed44654cf60601a39726fb",
+   "responseHash": "a91a68b09cc5f936de878f77b8a9300fb0c7e87f176d6333d3f3db46e842ad64",
    "usage": {
     "prompt": 463,
-    "completion": 32
+    "completion": 19
    },
    "latencyMs": 869,
-   "costUsd": "0.00005304",
+   "costUsd": "0.00004654",
    "cached": false
   },
   {
@@ -57,13 +57,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "551029be2d16126ac1e7c197fa8b6bbc6bbf3219e36a2f2312394bfd00d11136",
-   "responseHash": "ee254fe57b7951b09aecfa2f869b4a831bdc339baaf6833de98dbad700853da0",
+   "responseHash": "c22774dd5c2c22a0ffe5e6bbe4bcdf4f91eb3e24a011054553935c29993e08cb",
    "usage": {
     "prompt": 484,
-    "completion": 52
+    "completion": 16
    },
-   "latencyMs": 2024,
-   "costUsd": "0.00006472",
+   "latencyMs": 726,
+   "costUsd": "0.00004672",
    "cached": false
   },
   {
@@ -72,13 +72,28 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "daa2970aef6502e1f56c7cc271c66f9cb5772cbcd65457cd9db7394348306b27",
-   "responseHash": "90d7e5b6e014a0ce073ef896eea7152847884ea0cc3045b13bd4580510750b13",
+   "responseHash": "72fbab79b75eb0b612c05c4609a44d32db349ac487d517c30333c9d603171649",
    "usage": {
     "prompt": 506,
-    "completion": 101
+    "completion": 42
    },
-   "latencyMs": 2966,
-   "costUsd": "0.00009098",
+   "latencyMs": 1699,
+   "costUsd": "0.00006148",
+   "cached": false
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "eb54dbbde7a55067bbe9651749e27f99343042e6dcdaa2c8e67c602ce0db845a",
+   "responseHash": "21b8c137ba7e5dd4db08eade312fe84406087bfad52d0608cd4220e3b73e1f71",
+   "usage": {
+    "prompt": 527,
+    "completion": 65
+   },
+   "latencyMs": 1646,
+   "costUsd": "0.00007466",
    "cached": false
   }
  ]

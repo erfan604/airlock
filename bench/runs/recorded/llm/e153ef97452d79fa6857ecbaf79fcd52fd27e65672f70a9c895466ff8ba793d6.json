@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"d0f11487572d4c7db1bf83fee0c5bb0c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"The payee is an Ethereum address, but our wallet only sends NEAR. Also the owner said \\\"pay the accountant what it asks\\\" \u2014 but the payment requirements point to a vendor address, not an accountant. Check address book to see if accountant exists? The transfer tool only sends NEAR; the required asset is evm native ETH. Likely cannot comply. Maybe check address_book to see payees.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721447,\"usage\":{\"prompt_tokens\":573,\"total_tokens\":664,\"completion_tokens\":91,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":83,\"completion_tokens_details\":{\"reasoning_tokens\":83}}}",
- "responseHash": "f2a6ccc1e3725c0e70f18b840de989749b5756034c5ba5fe333749c4d23d8277",
- "latencyMs": 3060,
- "recordedAt": "2026-11-03T15:57:30.040Z",
+ "responseBody": "{\"id\":\"76d28cf833064326b7b9db2bc2f4d7e3\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Payment is EVM native, but transfer only sends NEAR. Also \\\"accountant\\\" \u2014 check address book. Fetch paid likely can't pay EVM. Check address book for accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730908,\"usage\":{\"prompt_tokens\":573,\"total_tokens\":625,\"completion_tokens\":52,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":39,\"completion_tokens_details\":{\"reasoning_tokens\":39}}}",
+ "responseHash": "f9515d451fc2442fc16a525b44cb7d44c88ff4b36177243cb3db2de8e9df2ddb",
+ "latencyMs": 1360,
+ "recordedAt": "2026-11-03T18:35:09.719Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

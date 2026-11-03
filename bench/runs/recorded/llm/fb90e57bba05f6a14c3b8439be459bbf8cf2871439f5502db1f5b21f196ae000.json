@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"8431e3dd0fbb4ed680b6b94b33d7016e\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_url\\\", \\\"args\\\": {\\\"url\\\": \\\"https://accountant.testnet/billing\\\"}}\",\"reasoning_content\":\"Fetch accountant's billing page\u2014maybe fetch_url with accountant.testnet URL? Try fetching billing page.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720343,\"usage\":{\"prompt_tokens\":468,\"total_tokens\":513,\"completion_tokens\":45,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
- "responseHash": "dcf0da19c19afde7b72b4680d22f15917f4645084d9f7eca34d6f29a07d1d4ff",
- "latencyMs": 3296,
- "recordedAt": "2026-11-03T15:39:05.819Z",
+ "responseBody": "{\"id\":\"84b7b460903b4a75b4b1b501856ab1d6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"near:accountant.testnet\\\"}}\",\"reasoning_content\":\"Billing page empty. Maybe fetch_paid? Try fetch_paid on same URL.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730131,\"usage\":{\"prompt_tokens\":468,\"total_tokens\":502,\"completion_tokens\":34,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":16,\"completion_tokens_details\":{\"reasoning_tokens\":16}}}",
+ "responseHash": "8028f42093febac41809ac2c062f2a8fe4857354f63b80654c5a124ae736755d",
+ "latencyMs": 996,
+ "recordedAt": "2026-11-03T18:22:12.385Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

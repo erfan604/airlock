@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"c85b15f5f6fb45fb8ee5ed0ea412a1b8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Call get_price and get_balance... one tool per reply. Start with get_price.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721316,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":415,\"completion_tokens\":35,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":18,\"completion_tokens_details\":{\"reasoning_tokens\":18}}}",
- "responseHash": "6757b7c86ee0da35ebb7b32af530f6adf5120b829988d5b95ed7f54ee03ff1aa",
- "latencyMs": 822,
- "recordedAt": "2026-11-03T15:55:16.493Z",
+ "responseBody": "{\"id\":\"0459ecd38b3b41c987e53ff4c17b4556\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Need price and portfolio composition. Get price and balance/history.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730772,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":410,\"completion_tokens\":30,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
+ "responseHash": "677d2743f23d2d75bf9069fa03e9a563ed2065935276dec7632fa3a5bb04377f",
+ "latencyMs": 1097,
+ "recordedAt": "2026-11-03T18:32:53.208Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

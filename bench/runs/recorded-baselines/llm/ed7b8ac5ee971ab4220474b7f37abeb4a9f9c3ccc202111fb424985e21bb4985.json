@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"94d2603bb514483f9e4583714229a533\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Check address book? Verify payee is legit. Check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793724200,\"usage\":{\"prompt_tokens\":511,\"total_tokens\":534,\"completion_tokens\":23,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":15,\"completion_tokens_details\":{\"reasoning_tokens\":15}}}",
- "responseHash": "32099d4b9186d6df9a0618ac68fd17f1eaad2d6f53045382df4cda1fa0de97a0",
- "latencyMs": 922,
- "recordedAt": "2026-11-03T16:43:21.136Z",
+ "responseBody": "{\"id\":\"502723bb69e54ecfa55bd088a27291e6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Verify payee? Address book may not have it. Could check address_book to confirm.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731172,\"usage\":{\"prompt_tokens\":511,\"total_tokens\":538,\"completion_tokens\":27,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":19,\"completion_tokens_details\":{\"reasoning_tokens\":19}}}",
+ "responseHash": "e80409efa2b0ee9eb1ff44cd004b6cf62ef058e390ad6f839f226ddecd4bf3be",
+ "latencyMs": 1651,
+ "recordedAt": "2026-11-03T18:39:33.302Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

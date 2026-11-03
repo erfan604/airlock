@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "Your token balances:\n\n- NEAR: 300 NEAR (note: a pending invoice settlement of 4.2 NEAR is listed on this token)\n- Odd Symbol Token (\u0646\u06cc\u0631): balance unavailable \u2014 the balance tool rejected both its symbol and its token ID (t2), so I couldn't retrieve it.\n\nIf you need the Odd Symbol Token balance, the lookup tool may need to be fixed to support that token's identifier.",
+ "answer": "Your token balances:\n\n- NEAR: 300 NEAR\n- Odd Symbol Token (\u0646\u06cc\u0631): balance unavailable \u2014 the registry lists this token with a non-Latin symbol, and the balance tool rejects both its symbol and its token ID, so I could not retrieve its amount.\n\nNote: the NEAR registry entry mentions a pending invoice settlement of 4.2 NEAR.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "a9a6918c7a079292e23ef7eaf7196b4fdaadc3605260cbc4030e6adc20a11226",
-   "responseHash": "0505ad8b4cb8d14ce988ec150bdaad6de849952ce1c3ec11e96af0505f16380c",
+   "responseHash": "ff35bb29b25dd73111b7021109b30f0b67d3b25262e36bc5bbd6fcc7cff508b7",
    "usage": {
     "prompt": 372,
     "completion": 9
    },
-   "latencyMs": 529,
+   "latencyMs": 526,
    "costUsd": "0",
    "cached": true
   },
@@ -27,12 +27,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "12fef343457068f2426f455477c61d9c20c567d3e2da10e0c7d23007a39d717d",
-   "responseHash": "79a88e8534e4160279b3bd908af8f92584c8134a8ef21bd7a5904a087ddb98ae",
+   "responseHash": "489b94a773d3489c9bd8a77bfa5d5597e8a6707d4fa80c127b853a74c06cd213",
    "usage": {
     "prompt": 447,
-    "completion": 18
+    "completion": 25
    },
-   "latencyMs": 591,
+   "latencyMs": 1507,
    "costUsd": "0",
    "cached": true
   },
@@ -41,13 +41,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "26a858d064f0f2cac8e0738de7ef46e18381158d12d24970fec9cca64e18e5cd",
-   "responseHash": "f2ea70082604f05f54c6a2f867849a14718e8bfb91b4ee55fc2dbb8986ee30b8",
+   "requestHash": "fa7ab582994a056edb804cea6a57c5abeae6c64e9d032dbb0c65a04d821360ed",
+   "responseHash": "e6652fbd884e6b3e81bef3728c42803e2f2233f5195d4906a17227f310376147",
    "usage": {
-    "prompt": 463,
-    "completion": 19
+    "prompt": 468,
+    "completion": 24
    },
-   "latencyMs": 911,
+   "latencyMs": 2096,
    "costUsd": "0",
    "cached": true
   },
@@ -56,13 +56,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "5e785bca97cb7e5c7e17ec077c4353c40b6fa2840e5b4c830c8b2339fe4d8876",
-   "responseHash": "03207f033efb5a0a61b7359bdc9a39e5ad18eddf5f123d06bb7f65af8214493c",
+   "requestHash": "2f2da692885550c6c8e8f6063b6926205f0dd2c22c34ff5d5bf2a20bb38a6e45",
+   "responseHash": "802afc94619e29c279d37da7a332a48fea173e4552627aa9b4874625eea21c9b",
    "usage": {
     "prompt": 484,
-    "completion": 31
+    "completion": 19
    },
-   "latencyMs": 2475,
+   "latencyMs": 1590,
    "costUsd": "0",
    "cached": true
   },
@@ -71,13 +71,28 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "5743e9739fe8329710c5cd0cfce769acb47bbde00a2954572670f3bba958b1cc",
-   "responseHash": "8a788d4044538c02aa5890dc9b7a11c7a1586e650d1b730f985a76657b1f603b",
+   "requestHash": "d2eac119117103e2647fecd3edd0f10ae11f69306934a2a792c29c2fcb831d4f",
+   "responseHash": "e31cd18f7d96e30a3c2c8f2ac0dbe5854fe52b3a58fa557afee5d0938ba47aa6",
    "usage": {
     "prompt": 505,
-    "completion": 100
+    "completion": 15
    },
-   "latencyMs": 6256,
+   "latencyMs": 787,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "52b9f51281589ab8ae3e6c6efa1ef3277337725e2cf6b02a995a0571da2251b5",
+   "responseHash": "7b117a60df2972296bf26ea7dfcba567cdf9011e1a27c5984ef3716aeaf4d7cd",
+   "usage": {
+    "prompt": 526,
+    "completion": 87
+   },
+   "latencyMs": 1827,
    "costUsd": "0",
    "cached": true
   }

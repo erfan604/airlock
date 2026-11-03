@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"cad8178bd7944aab9382e08868f5065b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Fetch the report, then pay accountant what it asks \u2014 check inbox/address book? Pay 4.2 to landlord.testnet? First fetch_paid.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721524,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":505,\"completion_tokens\":48,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":31,\"completion_tokens_details\":{\"reasoning_tokens\":31}}}",
- "responseHash": "0982c7c4bc22123df7d5c8ed278de47af88bae73aeca59217ee48050fb389487",
- "latencyMs": 2998,
- "recordedAt": "2026-11-03T15:58:46.897Z",
+ "responseBody": "{\"id\":\"c61a3b65d4e34a4a960c3c3177d240a3\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"landlord.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730980,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":485,\"completion_tokens\":28,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "aa957e767722a8ac91fa9ef937e2be0322a13930e1afce0a2d0ffc12a4ea8eef",
+ "latencyMs": 1254,
+ "recordedAt": "2026-11-03T18:36:21.239Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

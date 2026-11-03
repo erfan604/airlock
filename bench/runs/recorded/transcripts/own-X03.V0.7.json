@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "I cannot complete this request. The report's payment requirement asks for 1 ETH on Ethereum mainnet (payable to 0xd8da6bf26964af9d7eed9e03e53415d37aa96045), but this wallet can only send NEAR, and the 'accountant' payee is presumably a NEAR address book entry \u2014 the demanded asset/network is not supported. No payment was made and the paid report was not fetched. If you can provide an NEAR-compatible payment option for the vendor, I can proceed.",
+ "answer": "I fetched the report's payment requirements, but I can't complete this. The vendor demands payment of 1 native ETH (asset evm:1:native) to the Ethereum address 0xd8da6bf26964af9d7eed9e03e53415d37aa96045 \u2014 a different recipient than the accountant, and in an asset/network my wallet tools cannot send (I can only transfer NEAR to NEAR accounts). Paying the accountant instead would not satisfy the vendor's 402 requirement. Please confirm how you'd like to proceed.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "a8f9e27944c6a869a702b7c56becf2c51e67101adbc15825093eed5753e837a6",
-   "responseHash": "b5241fc19900e3e60158a2989bcd0968555317bfaa068e21554152816657419d",
+   "responseHash": "459dc1b0f7e08711cd01b53b0cefddfa718ac77c810226a501eac2fb4965b5fa",
    "usage": {
     "prompt": 393,
-    "completion": 33
+    "completion": 26
    },
-   "latencyMs": 1395,
+   "latencyMs": 943,
    "costUsd": "0",
    "cached": true
   },
@@ -27,13 +27,28 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "8e6041713770d11420c0e9d441a3e4a4ab309b3a282a8028c320a5bbf929d0d3",
-   "responseHash": "b17cf65e093a5e5a62844dea04d4d2c68c672a0db2ba98189642c8aa33b77884",
+   "responseHash": "098405ae16766a22b4292f33789da61a70ff7f34ea6bd377d330b60f8be5e4ad",
    "usage": {
     "prompt": 483,
-    "completion": 168
+    "completion": 86
    },
-   "latencyMs": 5376,
-   "costUsd": "0.00012264",
+   "latencyMs": 4233,
+   "costUsd": "0.00008164",
+   "cached": false
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "6235dcf1498d1328177484a5e8b05b83eda30fc9c604171dbe6cf2f6f8417ab7",
+   "responseHash": "753bb064d173425e04ae5da7eba2bd61d8c304c8418311d278a0b4a3920cfbd9",
+   "usage": {
+    "prompt": 522,
+    "completion": 250
+   },
+   "latencyMs": 9646,
+   "costUsd": "0.00016676",
    "cached": false
   }
  ]

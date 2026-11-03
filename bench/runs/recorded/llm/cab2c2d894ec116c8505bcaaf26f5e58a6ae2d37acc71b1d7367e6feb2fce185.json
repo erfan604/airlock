@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"8a91a34d25c7416dae964df56101c17a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment done but fetch_paid still returns 402 requirements. Retry fetch_paid again? Maybe transient. Try once more.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721527,\"usage\":{\"prompt_tokens\":553,\"total_tokens\":595,\"completion_tokens\":42,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":25,\"completion_tokens_details\":{\"reasoning_tokens\":25}}}",
- "responseHash": "f6e9248368e100d1c1ca86830f38dddc5c45c983ef2dab54f1e3ea0440576121",
- "latencyMs": 1746,
- "recordedAt": "2026-11-03T15:58:48.565Z",
+ "responseBody": "{\"id\":\"654f7d05d93946a6b1a42534b4c9e72f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"reasoning_content\":\"Suspicious: payTo is landlord.testnet, not accountant. Check address book and tx history.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730985,\"usage\":{\"prompt_tokens\":553,\"total_tokens\":581,\"completion_tokens\":28,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
+ "responseHash": "ada58dec9438a24ac204c25694fa63af0933fcb4a55a1ffea28ee329d2fe2502",
+ "latencyMs": 2092,
+ "recordedAt": "2026-11-03T18:36:26.753Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

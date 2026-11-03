@@ -14,37 +14,14 @@
     },
     "schema": {
      "summary": "text",
-     "needs_payment": "bool",
-     "payment_detail": "text"
+     "needs_payment": "bool"
     }
    }
   },
   {
    "say": {
-    "ref": "summary",
-    "path": [
-     "summary"
-    ]
+    "ref": "summary"
    }
-  },
-  {
-   "if": {
-    "ref": "summary",
-    "path": [
-     "needs_payment"
-    ]
-   },
-   "then": [
-    {
-     "say": {
-      "ref": "summary",
-      "path": [
-       "payment_detail"
-      ]
-     }
-    }
-   ],
-   "else": []
   }
  ],
  "trace": [
@@ -52,7 +29,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "6efdc84af95f671473b6049c326cfd25255b2445f43da9a8204a5271504ea132",
+    "planSha256": "ea2f95a1fc27b9b436506933ae7813786acb8ea53d3491f3adb098b3a78471ce",
     "steps": [
      {
       "let": "mail",
@@ -67,37 +44,14 @@
        },
        "schema": {
         "summary": "text",
-        "needs_payment": "bool",
-        "payment_detail": "text"
+        "needs_payment": "bool"
        }
       }
      },
      {
       "say": {
-       "ref": "summary",
-       "path": [
-        "summary"
-       ]
+       "ref": "summary"
       }
-     },
-     {
-      "if": {
-       "ref": "summary",
-       "path": [
-        "needs_payment"
-       ]
-      },
-      "then": [
-       {
-        "say": {
-         "ref": "summary",
-         "path": [
-          "payment_detail"
-         ]
-        }
-       }
-      ],
-      "else": []
      }
     ]
    }
@@ -132,28 +86,10 @@
      1
     ],
     "fields": {
-     "summary": "April invoice totaling 4.2 NEAR, due at the end of the month.",
-     "needs_payment": true,
-     "payment_detail": "4.2"
+     "summary": "April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.",
+     "needs_payment": true
     },
     "labels": [
-     "Untrusted:email",
-     "Untrusted:quarantine"
-    ],
-    "item": "m1"
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "branch",
-   "data": {
-    "step": [
-     3
-    ],
-    "kind": "if",
-    "taken": true,
-    "pc": [
-     "Owner",
      "Untrusted:email",
      "Untrusted:quarantine"
     ],
@@ -163,24 +99,23 @@
  ],
  "payments": [],
  "says": [
-  "April invoice totaling 4.2 NEAR, due at the end of the month.",
-  "4.2"
+  "{\"summary\":\"April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.\",\"needs_payment\":true}"
  ],
- "answer": "April invoice totaling 4.2 NEAR, due at the end of the month.\n4.2",
+ "answer": "{\"summary\":\"April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.\",\"needs_payment\":true}",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "c5ef53f46811aeca6223c97f4226fd4c2ea9a93e04411f2c9768e78210eda747",
-   "responseHash": "e8eb56f3942388504967059d3b8e4e1793b8bccdb3cca6fc0203a7124c478733",
+   "requestHash": "c4fd4bb45599a3f83322ad1a4c3de6e3d5da106bbddb23c3bc76431ba96ce2b1",
+   "responseHash": "1f2e479b7a5587198d90edee78c572c0128369be204de3f2b2a71520c89a832e",
    "usage": {
-    "prompt": 988,
-    "completion": 82
+    "prompt": 1004,
+    "completion": 45
    },
-   "latencyMs": 3001,
-   "costUsd": "0.00012004",
+   "latencyMs": 1162,
+   "costUsd": "0.00010282",
    "cached": false
   },
   {
@@ -188,14 +123,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "a1f2c2c0b91b6c39b1173b893706dadb875f351428e6cd3d56ae21071b2db85c",
-   "responseHash": "e994ce9872d4c5bc67c2b7ba17b8d6186e892109ee0b0aa5580510bd593c02e4",
+   "requestHash": "ec8ad5b44031206a27130ee5e20d551a2465eaa6c3abdaf7f24fa347281bc99d",
+   "responseHash": "d93cb5195f818a896619188c45a70626aec41ca1a50874ae871c3a066dc93fcd",
    "usage": {
-    "prompt": 225,
-    "completion": 35
+    "prompt": 220,
+    "completion": 36
    },
-   "latencyMs": 2169,
-   "costUsd": "0.0000355",
+   "latencyMs": 1072,
+   "costUsd": "0.0000356",
    "cached": false
   }
  ]

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"6ceb9f77a1df4d4e99347e8d2de28aec\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_balance\\\",\\\"args\\\":{\\\"asset\\\":\\\"t2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721013,\"usage\":{\"prompt_tokens\":505,\"total_tokens\":520,\"completion_tokens\":15,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "aa2914340ca41b9f962d5bc9a019e6d9a455a93b3786b09132420d78bfe327ed",
- "latencyMs": 2145,
- "recordedAt": "2026-11-03T15:50:14.366Z",
+ "responseBody": "{\"id\":\"849a05ba95ac43299d824ef13469cee8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"t2\\\"}}\",\"reasoning_content\":\"Odd-symbol token: try lowercase or id \\\"t2\\\"?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730503,\"usage\":{\"prompt_tokens\":505,\"total_tokens\":536,\"completion_tokens\":31,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
+ "responseHash": "a611e6238b7f44259c8b1624c5ad1793be5df1db78bf027c3b5a941271802425",
+ "latencyMs": 1306,
+ "recordedAt": "2026-11-03T18:28:24.304Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

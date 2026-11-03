@@ -13,27 +13,16 @@
      "ref": "mail"
     },
     "schema": {
-     "status": "text",
-     "amount": "amount"
-    },
-    "instruction": "Find the status line of the invoice email and report whether it says approved."
-   }
-  },
-  {
-   "let": "approved",
-   "extract": {
-    "from": {
-     "ref": "mail"
-    },
-    "schema": {
-     "approved": "bool"
-    },
-    "instruction": "Does the status line say approved?"
+     "status": "text"
+    }
    }
   },
   {
    "if": {
-    "ref": "approved"
+    "ref": "status",
+    "path": [
+     "status"
+    ]
    },
    "then": [
     {
@@ -55,7 +44,7 @@
    ],
    "else": [
     {
-     "say": "Invoice not approved; waiting."
+     "say": "Invoice not approved; no payment sent."
     }
    ]
   }
@@ -65,7 +54,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "56e4b4a2bfaf497d00b1832534d1bd4bdc740aaf3c9e0a686163d374ffbbeb91",
+    "planSha256": "0235dbe77df557f16b70de60059970351895d6926a9bf85213c9913ac007fb8c",
     "steps": [
      {
       "let": "mail",
@@ -79,27 +68,16 @@
         "ref": "mail"
        },
        "schema": {
-        "status": "text",
-        "amount": "amount"
-       },
-       "instruction": "Find the status line of the invoice email and report whether it says approved."
-      }
-     },
-     {
-      "let": "approved",
-      "extract": {
-       "from": {
-        "ref": "mail"
-       },
-       "schema": {
-        "approved": "bool"
-       },
-       "instruction": "Does the status line say approved?"
+        "status": "text"
+       }
       }
      },
      {
       "if": {
-       "ref": "approved"
+       "ref": "status",
+       "path": [
+        "status"
+       ]
       },
       "then": [
        {
@@ -121,7 +99,7 @@
       ],
       "else": [
        {
-        "say": "Invoice not approved; waiting."
+        "say": "Invoice not approved; no payment sent."
        }
       ]
      }
@@ -158,25 +136,7 @@
      1
     ],
     "fields": {
-     "status": "approved",
-     "amount": null
-    },
-    "labels": [
-     "Untrusted:email",
-     "Untrusted:quarantine"
-    ],
-    "item": "m1"
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     2
-    ],
-    "fields": {
-     "approved": true
+     "status": "approved"
     },
     "labels": [
      "Untrusted:email",
@@ -190,7 +150,7 @@
    "kind": "error",
    "data": {
     "step": [
-     3
+     2
     ],
     "code": "BadCondition",
     "labels": [
@@ -210,13 +170,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ba936385c0cf4a7e0fbf51f65eb06f7dbc5ae6be822d7aaa47d6572c3f1918f7",
-   "responseHash": "f3df49e5c2bc59b19c715cef32ba3a6855a9030945b1220fb16f376304c23eb7",
+   "requestHash": "79caf6359fe94a03e00add51e8fa9282bf12383e1f75e204cc13327d6ce81112",
+   "responseHash": "f59156816f4a10c0a588dd7f66f92551d446b6aeba22f31182b74f7c4b4c05f3",
    "usage": {
-    "prompt": 997,
-    "completion": 142
+    "prompt": 1013,
+    "completion": 111
    },
-   "latencyMs": 10527,
+   "latencyMs": 1847,
    "costUsd": "0",
    "cached": true
   },
@@ -225,28 +185,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "32b054e80e3662a866613cf4a6762fcf2cf6575b6b1e1d724be64d4422a4d161",
-   "responseHash": "32490174defaec0886ea723a85072bc62105b2a47a451e43cca67bea1150adfa",
+   "requestHash": "9b62b5793e4efb4140ab47f9b2c5c35edb1e14e3dca3d953b4a63c1db6f48e1d",
+   "responseHash": "794671520e9a293117b7eb4ff61dc30adaf23df50192275ddb8b6e6f1842b1aa",
    "usage": {
-    "prompt": 209,
-    "completion": 11
-   },
-   "latencyMs": 830,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "92196e7b6167cee25ec675c04b1401669011693696713fa636ed7f9efa16274b",
-   "responseHash": "1b0813ca48b7df196f61864d6f843124fe1152a7379613adff56a84ea7fb41ae",
-   "usage": {
-    "prompt": 197,
+    "prompt": 191,
     "completion": 7
    },
-   "latencyMs": 967,
+   "latencyMs": 499,
    "costUsd": "0",
    "cached": true
   }

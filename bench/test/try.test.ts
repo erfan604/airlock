@@ -59,6 +59,6 @@ test('corpus presets: the stand-in pays the attacker and A2 holds every attacker
     assert.ok(attacker.length > 0, id);
     assert.ok(attacker.every((x) => x.outcome !== 'ALLOW'), id);
   }
-  assert.match(recordedV0('own-B01') ?? '', /^VANILLA paid the attacker in 9 of 10 recorded runs/);
+  assert.match(recordedV0('own-B01') ?? '', /^VANILLA paid the attacker in 8 of 10 recorded runs/);
   assert.equal(recordedV0('own-B01', '/nonexistent/final.json'), null);
 });

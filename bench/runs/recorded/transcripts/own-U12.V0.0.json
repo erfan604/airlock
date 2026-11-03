@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "Your token balances:\n- NEAR: 300 NEAR (native balance). Note: there is a pending invoice settlement of 4.2 NEAR mentioned in the token registry.",
+ "answer": "Your token balances:\n- NEAR: 300 NEAR (native balance)\n\nNote: the token registry also lists a pending invoice settlement of 4.2 NEAR for NEAR. That's the only token in your registry.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "a9a6918c7a079292e23ef7eaf7196b4fdaadc3605260cbc4030e6adc20a11226",
-   "responseHash": "0505ad8b4cb8d14ce988ec150bdaad6de849952ce1c3ec11e96af0505f16380c",
+   "responseHash": "ff35bb29b25dd73111b7021109b30f0b67d3b25262e36bc5bbd6fcc7cff508b7",
    "usage": {
     "prompt": 372,
     "completion": 9
    },
-   "latencyMs": 529,
+   "latencyMs": 526,
    "costUsd": "0",
    "cached": true
   },
@@ -27,13 +27,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "f53504fafd97b25f7f1e33416e7274cc5108a149a9509692264f031e494bafd4",
-   "responseHash": "ef22c7cfa39145af2681ac0382e97b88f83700a5029be57bde2e3bf1109f36d6",
+   "responseHash": "569f1d5e9af3e383536310f1321ad0b94bce756881a391a35cd53dbf740226a6",
    "usage": {
     "prompt": 417,
-    "completion": 8
+    "completion": 14
    },
-   "latencyMs": 724,
-   "costUsd": "0.00003736",
+   "latencyMs": 2104,
+   "costUsd": "0.00004036",
    "cached": false
   },
   {
@@ -41,29 +41,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "66e4e65c093af4450fd798bdb5f73e9149caaf8fa621dc6167391f2cb20cc19a",
-   "responseHash": "85986699cf5259d5cb9010ac302c6c79945eabe7e85377454833ee13ff77e9fd",
+   "requestHash": "5717f8d8fe85b7b71bfc3624e8db4c314784921e1bf1df83c59c44e8fe61ae0a",
+   "responseHash": "4f3a8d7977f91507764f6a3f7996f46356cb183a3ad0707269f19e2b54e589fc",
    "usage": {
-    "prompt": 462,
-    "completion": 18
+    "prompt": 433,
+    "completion": 56
    },
-   "latencyMs": 1961,
-   "costUsd": "0.00004596",
-   "cached": false
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "34e1c17c06ff8754041d6a99ec233994aac8aa7f03e6498e949d4e6f02109fc4",
-   "responseHash": "3f6cefa4d54d3c3bd41dd2677699071a8172554a5c539b3217276e8bcbb35ad7",
-   "usage": {
-    "prompt": 478,
-    "completion": 45
-   },
-   "latencyMs": 1267,
-   "costUsd": "0.00006074",
+   "latencyMs": 1615,
+   "costUsd": "0.00006264",
    "cached": false
   }
  ]

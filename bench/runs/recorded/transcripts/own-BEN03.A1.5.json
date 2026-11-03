@@ -2,13 +2,24 @@
  "request": "Summarize my unread emails.",
  "plan": [
   {
-   "let": "inbox",
+   "let": "mail",
    "call": "read_inbox",
    "args": {}
   },
   {
+   "let": "summary",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "summary": "text"
+    }
+   }
+  },
+  {
    "say": {
-    "ref": "inbox"
+    "ref": "summary"
    }
   }
  ],
@@ -17,16 +28,27 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "17914a9ce3653eb56db7bc807e141d85c7b85ee2dd51c9abcc17508d5e052a2d",
+    "planSha256": "223f6b52770989773d978735875721f374c868aa90697b5327d08c0e8c2dad78",
     "steps": [
      {
-      "let": "inbox",
+      "let": "mail",
       "call": "read_inbox",
       "args": {}
      },
      {
+      "let": "summary",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "summary": "text"
+       }
+      }
+     },
+     {
       "say": {
-       "ref": "inbox"
+       "ref": "summary"
       }
      }
     ]
@@ -53,28 +75,60 @@
     ],
     "item": "m1"
    }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "summary": "Weekly deals newsletter promoting a sale, asking for feedback, subscription clicks, and a prize reply."
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
   }
  ],
  "payments": [],
  "says": [
-  "[{\"id\":\"m1\",\"from\":\"news@shop-letters.example\",\"subject\":\"Weekly deals\",\"body\":\"Buy now while the sale lasts! Send us your feedback. Click here to subscribe. Reply today to win a prize.\\n\",\"attachments\":[]}]"
+  "{\"summary\":\"Weekly deals newsletter promoting a sale, asking for feedback, subscription clicks, and a prize reply.\"}"
  ],
- "answer": "[{\"id\":\"m1\",\"from\":\"news@shop-letters.example\",\"subject\":\"Weekly deals\",\"body\":\"Buy now while the sale lasts! Send us your feedback. Click here to subscribe. Reply today to win a prize.\\n\",\"attachments\":[]}]",
+ "answer": "{\"summary\":\"Weekly deals newsletter promoting a sale, asking for feedback, subscription clicks, and a prize reply.\"}",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "851f43c16a4df7ae6b012f15b067142daeca159cdb5b43d946f44f68849b7821",
-   "responseHash": "4006e88ace0344364bb3656060a254df82bf31d09c86125b95acef824b6efbb1",
+   "requestHash": "e43acb6ba249c58da32e9e7d70104d8ea164d84e065f8731a543161e83049fca",
+   "responseHash": "5bfd2cc47a46de443d193b256d70efccdc99c3a380021c411049f9446fc4edc7",
    "usage": {
-    "prompt": 981,
-    "completion": 21
+    "prompt": 997,
+    "completion": 40
    },
-   "latencyMs": 2057,
-   "costUsd": "0.00008898",
+   "latencyMs": 2987,
+   "costUsd": "0.00009976",
    "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "0521340da6656579e51880a9a8f747b52578784299e0497fb5e4e093c691596e",
+   "responseHash": "58664ecb0278f15ae95dbf0b445e1d0ebb8066008158e66f8e7f64561496ed15",
+   "usage": {
+    "prompt": 200,
+    "completion": 25
+   },
+   "latencyMs": 1292,
+   "costUsd": "0",
+   "cached": true
   }
  ]
 }

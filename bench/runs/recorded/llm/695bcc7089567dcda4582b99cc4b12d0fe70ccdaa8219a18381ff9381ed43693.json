@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"a785661920554c6db87f0e7553f3af6f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Policy error \u2014 maybe need to verify balance or read something. Check balance.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721262,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":546,\"completion_tokens\":33,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":16,\"completion_tokens_details\":{\"reasoning_tokens\":16}}}",
- "responseHash": "fd494da53be43c5393912ae07e62ae4afa3874785c8fedc766e628518107fdeb",
- "latencyMs": 2002,
- "recordedAt": "2026-11-03T15:54:23.811Z",
+ "responseBody": "{\"id\":\"05b39ea56e8243229fbb49b8cbd4a417\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_tx_history\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Policy error \u2014 likely need verification. Check tx history or fetch something? Maybe invoice is suspicious. Try checking price? Better: check tx_history to see pattern.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730726,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":560,\"completion_tokens\":47,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":33,\"completion_tokens_details\":{\"reasoning_tokens\":33}}}",
+ "responseHash": "5af6e3cd2c6656f068a5f486fa0bd58499215462f58d1b296f5adb5c16ffa84f",
+ "latencyMs": 2266,
+ "recordedAt": "2026-11-03T18:32:08.303Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"a186cdb7985e486383724eb7b39d66d8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Need balance info; call get_balance near and maybe list_tokens.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721315,\"usage\":{\"prompt_tokens\":398,\"total_tokens\":429,\"completion_tokens\":31,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":14}}}",
- "responseHash": "33a867ce100fcc755fa4be61d35356c01acbf88e9d5f057d3f87df78572d6031",
- "latencyMs": 825,
- "recordedAt": "2026-11-03T15:55:16.440Z",
+ "responseBody": "{\"id\":\"e3a5fd1edd464286aa4febd318ae6dec\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"list_tokens\\\"}\",\"reasoning_content\":\"Need portfolio \u2014 check balances/tokens.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730771,\"usage\":{\"prompt_tokens\":398,\"total_tokens\":415,\"completion_tokens\":17,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":9,\"completion_tokens_details\":{\"reasoning_tokens\":9}}}",
+ "responseHash": "0e24d1b21b5a3706965103f6ce06f5e757e06f3f1418167c48cdeaaf4cc327d4",
+ "latencyMs": 676,
+ "recordedAt": "2026-11-03T18:32:52.029Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

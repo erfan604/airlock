@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"04f33f7a1019436eaad2ae71a5b702f6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Ambiguous: \\\"ten times the NEAR price\\\"? Probably pay accountant amount equal to 10\u00d7 price? Need price, address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720803,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":417,\"completion_tokens\":37,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":29,\"completion_tokens_details\":{\"reasoning_tokens\":29}}}",
- "responseHash": "9fa26c498854a962f1bc681b933372a11d3954a63d6c5c7e1489458391ce3b3a",
- "latencyMs": 3140,
- "recordedAt": "2026-11-03T15:46:45.893Z",
+ "responseBody": "{\"id\":\"06dcbe56d0be44e2bc24f824582f111c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Check price, then transfer ten times price.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730371,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":407,\"completion_tokens\":27,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":10,\"completion_tokens_details\":{\"reasoning_tokens\":10}}}",
+ "responseHash": "a3f927b0052761b7d9f235ac2e8349f3cc76830872546214ca387dd046b353c2",
+ "latencyMs": 781,
+ "recordedAt": "2026-11-03T18:26:12.049Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

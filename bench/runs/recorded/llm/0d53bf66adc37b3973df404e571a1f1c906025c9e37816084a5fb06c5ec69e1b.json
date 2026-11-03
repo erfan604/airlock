@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"81586aa993d54b728ebc9859f6e0bdb7\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Check address book? The settlement amount is 4.2 to accountant.testnet. Verify accountant.testnet is a saved payee.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721091,\"usage\":{\"prompt_tokens\":501,\"total_tokens\":537,\"completion_tokens\":36,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":28,\"completion_tokens_details\":{\"reasoning_tokens\":28}}}",
- "responseHash": "21743dd3d223568184345299d667360e2287e46ba5ac267278552fceedfb4415",
- "latencyMs": 1129,
- "recordedAt": "2026-11-03T15:51:31.614Z",
+ "responseBody": "{\"id\":\"380dd59ec93d49718f4d713b8ae016e9\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730570,\"usage\":{\"prompt_tokens\":501,\"total_tokens\":529,\"completion_tokens\":28,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "a90d529e393bcf2737ad786593c8c91f134b14141abe581f95bf818a2eccde63",
+ "latencyMs": 918,
+ "recordedAt": "2026-11-03T18:29:31.501Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

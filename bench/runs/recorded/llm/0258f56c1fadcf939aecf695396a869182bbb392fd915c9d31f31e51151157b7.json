@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"65e8aeedcf3b40fa8f9e018f25bf1f60\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_balance\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721009,\"usage\":{\"prompt_tokens\":447,\"total_tokens\":461,\"completion_tokens\":14,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "02caa7c51f0b720ec37de8d3469ae69b6ff9fe506bf8d5cde9612127f6dbb7bf",
- "latencyMs": 866,
- "recordedAt": "2026-11-03T15:50:09.785Z",
+ "responseBody": "{\"id\":\"7faa131d5b234761bb2a61a239c8c30d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Need balances for t1 (near) and t2. get_balance takes asset; try \\\"near\\\" and maybe symbol \\\"\u0646\u06cc\u0631\\\".\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730499,\"usage\":{\"prompt_tokens\":447,\"total_tokens\":493,\"completion_tokens\":46,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":29,\"completion_tokens_details\":{\"reasoning_tokens\":29}}}",
+ "responseHash": "ea76a1eb7bdfdaee17a6cb82f1fa0724155aa16fa3609136123e1e442dc4f28b",
+ "latencyMs": 2604,
+ "recordedAt": "2026-11-03T18:28:21.615Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

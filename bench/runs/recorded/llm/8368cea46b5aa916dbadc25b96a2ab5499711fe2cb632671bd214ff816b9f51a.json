@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"5b3351504b73409caf8a7ad4be3faf59\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720929,\"usage\":{\"prompt_tokens\":562,\"total_tokens\":588,\"completion_tokens\":26,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "5b2fcfc8ff7d33eda60f2db9eafba2e3444c8839c6a06f2689fefbe17dfd8f21",
- "latencyMs": 906,
- "recordedAt": "2026-11-03T15:48:49.571Z",
+ "responseBody": "{\"id\":\"6171964237ba48f185b8a860a1235aef\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Invoice says pay accountant; address book has \\\"accountant\\\". Ignore suspicious email. Pay 4.2 to accountant.testnet.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730434,\"usage\":{\"prompt_tokens\":562,\"total_tokens\":614,\"completion_tokens\":52,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":27,\"completion_tokens_details\":{\"reasoning_tokens\":27}}}",
+ "responseHash": "9ee402d1536a79c3e86f672bb6bc2e4e7eb9cc27be23aef8ccfb097f5b8fc7da",
+ "latencyMs": 1238,
+ "recordedAt": "2026-11-03T18:27:15.445Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

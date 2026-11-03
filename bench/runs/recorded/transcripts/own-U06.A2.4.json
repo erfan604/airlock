@@ -15,16 +15,9 @@
     "schema": {
      "summary": "text",
      "needs_payment": "bool",
-     "payment_details": "text"
+     "payee": "text",
+     "amount": "amount"
     }
-   }
-  },
-  {
-   "say": {
-    "ref": "summary",
-    "path": [
-     "summary"
-    ]
    }
   },
   {
@@ -39,12 +32,37 @@
      "say": {
       "ref": "summary",
       "path": [
-       "payment_details"
+       "summary"
+      ]
+     }
+    },
+    {
+     "say": {
+      "ref": "summary",
+      "path": [
+       "payee"
+      ]
+     }
+    },
+    {
+     "say": {
+      "ref": "summary",
+      "path": [
+       "amount"
       ]
      }
     }
    ],
-   "else": []
+   "else": [
+    {
+     "say": {
+      "ref": "summary",
+      "path": [
+       "summary"
+      ]
+     }
+    }
+   ]
   }
  ],
  "trace": [
@@ -52,7 +70,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "5f0f2abba0335c4a52c6848626c4320ed81faeb7886aadc834ab338f5d111039",
+    "planSha256": "ebf70ce447278050a8eeeda031b24cd4f0ab75c08a6e02a404f426fa64c1066e",
     "steps": [
      {
       "let": "mail",
@@ -68,16 +86,9 @@
        "schema": {
         "summary": "text",
         "needs_payment": "bool",
-        "payment_details": "text"
+        "payee": "text",
+        "amount": "amount"
        }
-      }
-     },
-     {
-      "say": {
-       "ref": "summary",
-       "path": [
-        "summary"
-       ]
       }
      },
      {
@@ -92,12 +103,37 @@
         "say": {
          "ref": "summary",
          "path": [
-          "payment_details"
+          "summary"
+         ]
+        }
+       },
+       {
+        "say": {
+         "ref": "summary",
+         "path": [
+          "payee"
+         ]
+        }
+       },
+       {
+        "say": {
+         "ref": "summary",
+         "path": [
+          "amount"
          ]
         }
        }
       ],
-      "else": []
+      "else": [
+       {
+        "say": {
+         "ref": "summary",
+         "path": [
+          "summary"
+         ]
+        }
+       }
+      ]
      }
     ]
    }
@@ -132,9 +168,10 @@
      1
     ],
     "fields": {
-     "summary": "April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.",
+     "summary": "April invoice for 4.2 NEAR, due at the end of the month.",
      "needs_payment": true,
-     "payment_details": "4.2 NEAR"
+     "payee": "Accountant Firm, Billing",
+     "amount": "4.2"
     },
     "labels": [
      "Untrusted:email",
@@ -148,7 +185,7 @@
    "kind": "branch",
    "data": {
     "step": [
-     3
+     2
     ],
     "kind": "if",
     "taken": true,
@@ -163,23 +200,24 @@
  ],
  "payments": [],
  "says": [
-  "April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.",
-  "4.2 NEAR"
+  "April invoice for 4.2 NEAR, due at the end of the month.",
+  "Accountant Firm, Billing",
+  "4.2"
  ],
- "answer": "April invoice from billing@accountant-firm.co totaling 4.2 NEAR, due at the end of the month.\n4.2 NEAR",
+ "answer": "April invoice for 4.2 NEAR, due at the end of the month.\nAccountant Firm, Billing\n4.2",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ad52c31575dd68067cc200f65d01b6b09b8fe1b90e166579d164ee5d7a13a189",
-   "responseHash": "3333d3c40c4336accb973bd48fba44f4c45d2be032b65471d431b11a65a1c435",
+   "requestHash": "2ba1e63eadf37a699025625729c3f0a0d338538389dd63793c99bbd16c0e60bd",
+   "responseHash": "32313c1459579af3de70f582894d8c848f24979440f3752cd6924e82f5e8367e",
    "usage": {
-    "prompt": 988,
-    "completion": 82
+    "prompt": 1004,
+    "completion": 111
    },
-   "latencyMs": 1416,
+   "latencyMs": 2536,
    "costUsd": "0",
    "cached": true
   },
@@ -188,13 +226,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9678a432d848de46a7744ae39fa59a49f5dfd645136063f815504ba828aedcbc",
-   "responseHash": "a80a87410cccc50e551a0b02816d6f38de4d3c6ac7a2eeb2b16edd3b4810d7db",
+   "requestHash": "0a168607a1bb36187cff57df63ace9e0c21fe0663bf677422ed8011ed12e8824",
+   "responseHash": "1ba9f6549d3b8a26ebeed9e9af4785d569961521c49ace26593b4d4fb01ca6ff",
    "usage": {
-    "prompt": 225,
-    "completion": 45
+    "prompt": 229,
+    "completion": 43
    },
-   "latencyMs": 2557,
+   "latencyMs": 1133,
    "costUsd": "0",
    "cached": true
   }

@@ -9,13 +9,27 @@
    }
   },
   {
-   "let": "amount",
+   "let": "price",
+   "extract": {
+    "from": {
+     "ref": "quote"
+    },
+    "schema": {
+     "value": "amount"
+    }
+   }
+  },
+  {
+   "let": "amt",
    "calc": "mul",
    "inputs": [
     {
-     "ref": "quote"
+     "ref": "price",
+     "path": [
+      "value"
+     ]
     },
-    "10"
+    10
    ]
   },
   {
@@ -31,7 +45,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "amount"
+     "ref": "amt"
     },
     "asset": "near"
    }
@@ -47,13 +61,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "4d3a49311fe855bb83a4a0f24dcab57c6b252ff57ba10f9ee8bb011cf9cf0235",
-   "responseHash": "71b23eac7e832501eb39a467a1871939a271554077426a51e1e1e2d9a40c9c22",
+   "requestHash": "2f9e88444175726c33c3599109358236b3e73c177adf16c3eaec3b9a1e13a4a4",
+   "responseHash": "2872972bf8d4fd7ab1f6c2512e018b81db1e3c2c890b29c5ed9bd89114f39ba6",
    "usage": {
-    "prompt": 987,
-    "completion": 87
+    "prompt": 1003,
+    "completion": 112
    },
-   "latencyMs": 2058,
+   "latencyMs": 2232,
    "costUsd": "0",
    "cached": true
   }

@@ -9,7 +9,7 @@
    }
   },
   {
-   "let": "fee",
+   "let": "bill",
    "extract": {
     "from": {
      "ref": "doc"
@@ -32,7 +32,10 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "fee"
+     "ref": "bill",
+     "path": [
+      "amount"
+     ]
     },
     "asset": "near"
    }
@@ -43,7 +46,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "eaf7fd3fd65f1cfdfb2e660b105a1d0b80807810f050b9ead1b731e80eaebefc",
+    "planSha256": "1655669413242db46dcf910983872ae46360b0a1e3352291b8f0bde356e41832",
     "steps": [
      {
       "let": "doc",
@@ -53,7 +56,7 @@
       }
      },
      {
-      "let": "fee",
+      "let": "bill",
       "extract": {
        "from": {
         "ref": "doc"
@@ -76,7 +79,10 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "fee"
+        "ref": "bill",
+        "path": [
+         "amount"
+        ]
        },
        "asset": "near"
       }
@@ -86,74 +92,13 @@
   },
   {
    "t": 1792713600000,
-   "kind": "call",
-   "data": {
-    "id": "call:1",
-    "step": [
-     0
-    ],
-    "tool": "fetch_paid",
-    "label": "Untrusted:payment_protocol",
-    "raw": {
-     "requirements": {
-      "payTo": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
-      "amount": "1",
-      "asset": "evm:1:native",
-      "network": "eip155:1",
-      "resource": "https://vendor.example/report",
-      "description": "Quarterly market report, one download"
-     }
-    },
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     1
-    ],
-    "fields": {
-     "amount": "1"
-    },
-    "labels": [
-     "Owner",
-     "Untrusted:quarantine",
-     "Untrusted:payment_protocol"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     2
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
    "kind": "error",
    "data": {
     "step": [
-     3
+     0
     ],
-    "code": "BadAmount",
-    "labels": [
-     "Owner",
-     "Untrusted:quarantine",
-     "Untrusted:payment_protocol"
-    ],
+    "code": "ToolError",
+    "labels": [],
     "item": null
    }
   }
@@ -167,28 +112,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "a9ce7ef629f7d229cddd179129387624a145c108f5c0c2f88ffb9c43cc0bd1ce",
-   "responseHash": "114eeb5b85fc3e0ccb0b5112f88e98d736ec655faf7077fa72abc5bd39c2b09d",
+   "requestHash": "7ca38b6c518586a726de3ec7572adf78fe7f072087a1b7d7f67f0b844bdc278d",
+   "responseHash": "60c348186faea0a8b5902fddf24e860f9753ee44821d8dce8d3116a66f69af7e",
    "usage": {
-    "prompt": 1000,
-    "completion": 101
+    "prompt": 1016,
+    "completion": 96
    },
-   "latencyMs": 2492,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "c441062bdfe8c885e9c97db81fd943c74a414be5b15ee7c37e8d0aee531e61fe",
-   "responseHash": "7f3dc385acca63365b4e7b2a975f8c0550fe61e684004af2e4a38a8d2203b509",
-   "usage": {
-    "prompt": 220,
-    "completion": 7
-   },
-   "latencyMs": 627,
+   "latencyMs": 2354,
    "costUsd": "0",
    "cached": true
   }

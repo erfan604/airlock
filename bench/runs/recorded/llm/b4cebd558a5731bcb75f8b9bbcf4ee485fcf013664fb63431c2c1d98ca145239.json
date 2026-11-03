@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"b93f82cda6ce45b9b3cd43e60043289d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_price\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"\\\"ten times the NEAR price in NEAR\\\" \u2014 ambiguous: pay 10 \u00d7 NEAR price? Price in USD? Likely pay accountant an amount equal to 10\u00d7 the NEAR price (in USD?) in NEAR. Get price first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720820,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":450,\"completion_tokens\":70,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":53,\"completion_tokens_details\":{\"reasoning_tokens\":53}}}",
- "responseHash": "b9bbe9a622a99f4e1b8a661314cb19addeff3d1e525b8e460dd373d6941c5901",
- "latencyMs": 3036,
- "recordedAt": "2026-11-03T15:47:02.673Z",
+ "responseBody": "{\"id\":\"4a989a0e8b26479d95488fb27cc820fd\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Need accountant payee and NEAR price. Check address_book and price \u2014 one tool at a time.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730377,\"usage\":{\"prompt_tokens\":380,\"total_tokens\":410,\"completion_tokens\":30,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":22,\"completion_tokens_details\":{\"reasoning_tokens\":22}}}",
+ "responseHash": "9d8710977ff55cc045763bdf8729c7fd169a1ac73b336d9a470a846f1e1f3ae8",
+ "latencyMs": 1744,
+ "recordedAt": "2026-11-03T18:26:18.404Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

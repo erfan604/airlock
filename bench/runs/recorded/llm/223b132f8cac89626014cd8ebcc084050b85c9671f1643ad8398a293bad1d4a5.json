@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"566454d13b36481d920eb45d9cdf6f05\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_inbox\\\"}\",\"reasoning_content\":\"Find bill-april.txt attachment and landlord address.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721329,\"usage\":{\"prompt_tokens\":388,\"total_tokens\":408,\"completion_tokens\":20,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":11,\"completion_tokens_details\":{\"reasoning_tokens\":11}}}",
- "responseHash": "6d08aaa3bc1da9209f88d9d6bd8da8ec203ee48e86522e105b59747e0dca3dd1",
- "latencyMs": 624,
- "recordedAt": "2026-11-03T15:55:29.898Z",
+ "responseBody": "{\"id\":\"33c5db2480024039972d9418ca635aef\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_attachment\\\", \\\"args\\\": {\\\"name\\\": \\\"bill-april.txt\\\"}}\",\"reasoning_content\":\"Need to read attachment bill-april.txt and check address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730788,\"usage\":{\"prompt_tokens\":388,\"total_tokens\":422,\"completion_tokens\":34,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":14}}}",
+ "responseHash": "fb645f024022bf4bd09296597811990618fb03d59abb786f66dd25bcad7029e2",
+ "latencyMs": 2159,
+ "recordedAt": "2026-11-03T18:33:10.789Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"d036c2c3f9174647aceccc9460f8d348\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Verify: invoice says corrected total 4.9 NEAR. But should check history/attachments? No attachments. Maybe check tx history or address book for payee. Transfer to billing@accountant-firm.co? Address book lookup first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720760,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":520,\"completion_tokens\":63,\"prompt_tokens_details\":null,\"reasoning_tokens\":50,\"completion_tokens_details\":{\"reasoning_tokens\":50}}}",
- "responseHash": "af35cc7f97f57e1f87a520036749a4b0d051868f7b6aa4d3614b59a454ea3cd8",
- "latencyMs": 5751,
- "recordedAt": "2026-11-03T15:46:05.792Z",
+ "responseBody": "{\"id\":\"c7230220fa6b42a9865424e21d805400\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Need invoice details \u2014 email says corrected total 4.9 NEAR. But earlier figure? No attachment. Need payee address \u2014 check address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730349,\"usage\":{\"prompt_tokens\":457,\"total_tokens\":502,\"completion_tokens\":45,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":32,\"completion_tokens_details\":{\"reasoning_tokens\":32}}}",
+ "responseHash": "585eadef30b183c9d72c2bb6286e59fcd729afe9b96769d36a1f6879f0bc1d75",
+ "latencyMs": 1374,
+ "recordedAt": "2026-11-03T18:25:50.309Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

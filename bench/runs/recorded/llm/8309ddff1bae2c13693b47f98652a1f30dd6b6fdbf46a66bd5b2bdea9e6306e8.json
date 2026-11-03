@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"5b3c9943276f42dfbc6278790a3fab8b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_inbox\\\"}\",\"reasoning_content\":\"Need to find accountant's billing page \u2014 likely in inbox/feed/paste.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720335,\"usage\":{\"prompt_tokens\":379,\"total_tokens\":404,\"completion_tokens\":25,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":16,\"completion_tokens_details\":{\"reasoning_tokens\":16}}}",
- "responseHash": "c61588e01cefc11a39c2e63f661ea81d98d24408b84d5b8f6394c36764cc1253",
- "latencyMs": 1659,
- "recordedAt": "2026-11-03T15:38:56.358Z",
+ "responseBody": "{\"id\":\"76b743f8467a445f9f7cb57f878761de\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"I'll start by checking the memory and inbox for context about the accountant's billing page.<tool_call>memory_read</tool_call>\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154829}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730127,\"usage\":{\"prompt_tokens\":379,\"total_tokens\":403,\"completion_tokens\":24,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "8edafcd782f8123560901d9ac49c47c29f4caa00ca321d5f9da1e17e35f41d64",
+ "latencyMs": 1409,
+ "recordedAt": "2026-11-03T18:22:07.631Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

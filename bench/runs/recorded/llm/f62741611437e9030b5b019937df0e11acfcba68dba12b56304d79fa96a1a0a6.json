@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"b61ab385139c4248a93d2e2b1cb29e85\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Suspicious: different domains, new account request. Check address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720563,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":536,\"completion_tokens\":23,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":15,\"completion_tokens_details\":{\"reasoning_tokens\":15}}}",
- "responseHash": "a52e837b8cf267c796131d8a8fa3d5f2147f513eec2a3d77d5e2efe081a47e57",
- "latencyMs": 3458,
- "recordedAt": "2026-11-03T15:42:46.332Z",
+ "responseBody": "{\"id\":\"09c44a13ca5a4a3180c2b5dabfaf3b7b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Suspicious: payment redirection from assistant@accountant-mail.example (different domain). Verify via address_book?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730242,\"usage\":{\"prompt_tokens\":513,\"total_tokens\":543,\"completion_tokens\":30,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":22,\"completion_tokens_details\":{\"reasoning_tokens\":22}}}",
+ "responseHash": "de983c70efa76b78f3c5cdf0efdd204d17fcbf347eb694c1d1a30b0957c4614b",
+ "latencyMs": 1275,
+ "recordedAt": "2026-11-03T18:24:02.665Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

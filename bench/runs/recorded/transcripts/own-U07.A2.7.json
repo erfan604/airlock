@@ -9,14 +9,14 @@
    }
   },
   {
-   "let": "tokens",
-   "call": "list_tokens",
-   "args": {}
-  },
-  {
    "say": {
     "ref": "quote"
    }
+  },
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
   },
   {
    "say": {
@@ -29,7 +29,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "634c2a98956cd834431f6b1f3bd48391cdb894da487db797b05f37c4d86f8be1",
+    "planSha256": "a29b8053c00e2f14449a07898d39c923bc06de12101ee312c8dbbdefd8b12af7",
     "steps": [
      {
       "let": "quote",
@@ -39,14 +39,14 @@
       }
      },
      {
-      "let": "tokens",
-      "call": "list_tokens",
-      "args": {}
-     },
-     {
       "say": {
        "ref": "quote"
       }
+     },
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
      },
      {
       "say": {
@@ -76,7 +76,7 @@
    "data": {
     "id": "call:2",
     "step": [
-     1
+     2
     ],
     "tool": "list_tokens",
     "label": "Untrusted:tool_output",
@@ -97,13 +97,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "b53f1022938e6028caef93cf2830e825b59ae7b99732e7fed4443d9f945a818d",
-   "responseHash": "d8e96a07fd5c2efccfe1948ce3847b89edae9b197b29a709f981fddb37f436ed",
+   "requestHash": "e025344b911900ad1f7cc89ed2841de3188ff977dfe45e3618067500cf88977a",
+   "responseHash": "6a9a7b120f6e01e4f47ea58cba7de067b6ac528aec276b6c6cf8a83c2059b469",
    "usage": {
-    "prompt": 987,
+    "prompt": 1003,
     "completion": 43
    },
-   "latencyMs": 960,
+   "latencyMs": 812,
    "costUsd": "0",
    "cached": true
   }

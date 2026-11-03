@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"c46de0a625b841ff8eead09e05b992cb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_balance\\\",\\\"args\\\":{\\\"asset\\\":\\\"near\\\"}}\",\"reasoning_content\":\"Policy blocks transfers of 9.4? Maybe exact payment amount flagged; try slightly different? No\u2014policy error likely blocks large amounts or unknown payee. Maybe check balance? Or read policy? Try smaller? We shouldn't evade policy. Maybe fetch_paid after payment? Actually payment failed. Perhaps policy blocks because amount exceeds balance? Check balance.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721424,\"usage\":{\"prompt_tokens\":544,\"total_tokens\":628,\"completion_tokens\":84,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":71,\"completion_tokens_details\":{\"reasoning_tokens\":71}}}",
- "responseHash": "5ee9cc3f1c46ccc6cde627e7bafdb586b6d270aafaf8d0f02a3faaad6cdc4366",
- "latencyMs": 3596,
- "recordedAt": "2026-11-03T15:57:07.956Z",
+ "responseBody": "{\"id\":\"5b6a52d8eee9456c99dda0466db5212d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I fetched the report's payment requirements (9.4 NEAR to accountant.testnet) and attempted payment twice \u2014 first to the account directly, then via the saved address book alias \\\\\\\"accountant\\\\\\\" \u2014 but both transfers were blocked by a wallet policy error. I cannot complete the payment until this policy restriction is resolved (e.g., the owner whitelists accountant.testnet or raises the transfer limit). No funds were sent, and the report was not downloaded.\\\"}\",\"reasoning_content\":\"Retry once or stop? Policy error persists. Maybe check balance? Policy likely blocks transfers to address book entry? Could try retry or conclude. Try transfer once more? Better stop with explanation.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730882,\"usage\":{\"prompt_tokens\":544,\"total_tokens\":682,\"completion_tokens\":138,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":39,\"completion_tokens_details\":{\"reasoning_tokens\":39}}}",
+ "responseHash": "fa049900e8ee34b3e28f3c676d768a395e4f42308f6370895c57b5f3dfd80281",
+ "latencyMs": 4943,
+ "recordedAt": "2026-11-03T18:34:47.271Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

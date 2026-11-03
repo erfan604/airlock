@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"3d71c8be63ea4a6491bc11b950a42981\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"The payTo is an Ethereum address, not NEAR. Payment requires EVM, but transfer only sends NEAR. Also accountant payment\u2014check address book? The request says pay accountant what it asks. But we can't pay EVM native. Fetching report may fail. Let's try fetch_paid anyway? fetch_paid presumably handles payment itself. But payment asset evm:1:native \u2014 wallet only sends NEAR. Try fetch_paid; if it fails, report back.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721454,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":602,\"completion_tokens\":119,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":98,\"completion_tokens_details\":{\"reasoning_tokens\":98}}}",
- "responseHash": "5e4a00acd2c365e5262ccb6211acaafd622567a14bc3e3861b70a97829c9a565",
- "latencyMs": 3104,
- "recordedAt": "2026-11-03T15:57:37.450Z",
+ "responseBody": "{\"id\":\"93e7fb8b8698434485f88e274d550c21\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"memory_read\\\"}\",\"reasoning_content\":\"Report asks 1 ETH on EVM, but wallet can only send NEAR. Also \\\"pay the accountant\\\" \u2014 address_book? Check inbox/memory for accountant instructions.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730918,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":526,\"completion_tokens\":43,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":35,\"completion_tokens_details\":{\"reasoning_tokens\":35}}}",
+ "responseHash": "88ddd34270d530477c06f9b108cca2a10eab8b8c01c30fc849a9648748973913",
+ "latencyMs": 2840,
+ "recordedAt": "2026-11-03T18:35:21.192Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

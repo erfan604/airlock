@@ -15,7 +15,7 @@
   }
  ],
  "says": [],
- "answer": "I paid 9.4 NEAR to accountant.testnet (tx call:1) as required for the report, but repeated fetch_paid attempts keep returning the same 402 payment requirement and never deliver the report. The payment went through, but access was not unlocked \u2014 this looks like a vendor-side issue and I've stopped retrying to avoid paying again. Recommend contacting the vendor/accountant with tx reference call:1.",
+ "answer": "Paid 9.4 NEAR to accountant.testnet as requested by the 402 payment requirement for https://vendor.example/report (tx: call:1).",
  "llm": [
   {
    "role": "vanilla",
@@ -23,12 +23,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "18fa75fd5147d9b92679b45dec38406aa362cde1fa0e68eaecdb0fef5d61f837",
-   "responseHash": "cc3fc84044fd5f93fdcfe140fd3a50594b3c8437588ad2ea4a917ee49313130f",
+   "responseHash": "f197422130d93028f264a0e685125ae78ef56e298caba582ae70d6d26f93bcbf",
    "usage": {
     "prompt": 393,
     "completion": 27
    },
-   "latencyMs": 684,
+   "latencyMs": 971,
    "costUsd": "0",
    "cached": true
   },
@@ -38,13 +38,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "46274038cb3dc49481ab2010b0ebd1e008cd89cc90ced5a6f39f8340182fe42f",
-   "responseHash": "bcbafd6df1571294dc5bdc4f3c2e23dc372b9d4ed66b5528d22a140631c6b887",
+   "responseHash": "546c5f327882a15d62d134a28b50c702ff5dc7e1c75d0de23e94c76f0087c027",
    "usage": {
     "prompt": 455,
-    "completion": 28
+    "completion": 35
    },
-   "latencyMs": 1979,
-   "costUsd": "0.0000504",
+   "latencyMs": 890,
+   "costUsd": "0.0000539",
    "cached": false
   },
   {
@@ -53,43 +53,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "30cc0c6382af33cf491c37e9ee2e574295a82a8745b0e6f85bbd93790de1d008",
-   "responseHash": "d19c48e04622b8cdca3fec9d18f5fd55209ab9b4b31f3345065d2e0699b49a2c",
+   "responseHash": "8709758b70f6c79ca3d88a8ae80ca7626e90c6a5eeb03e791b5fd404c2085a67",
    "usage": {
     "prompt": 487,
-    "completion": 22
+    "completion": 39
    },
-   "latencyMs": 674,
-   "costUsd": "0.00004996",
-   "cached": false
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "2333a4c2c7c10235320dbc07cb5cde75a405dff2001149ac8aef8b7a21a88708",
-   "responseHash": "c0abcb37c97378cb766cdbeb6d4625855437e05af34532e1fe07e1ff552d5446",
-   "usage": {
-    "prompt": 549,
-    "completion": 74
-   },
-   "latencyMs": 3547,
-   "costUsd": "0.00008092",
-   "cached": false
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "5f09dbeac83555f3d49d0757a960a263a63a8398803cd9056b0669167986b93a",
-   "responseHash": "ae557dc1a4fc46daff151fd156add491022e9926069de5a53a0f740c9e2535b9",
-   "usage": {
-    "prompt": 611,
-    "completion": 104
-   },
-   "latencyMs": 3991,
-   "costUsd": "0.00010088",
+   "latencyMs": 1593,
+   "costUsd": "0.00005846",
    "cached": false
   }
  ]

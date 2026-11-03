@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"748dcba77e264d2db808d0a9d724109f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721499,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":567,\"completion_tokens\":18,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "39f1173f908688af4d840af0f03dcc49a34b73d9c0d8b329c8f53a91688143e2",
- "latencyMs": 1036,
- "recordedAt": "2026-11-03T15:58:20.633Z",
+ "responseBody": "{\"id\":\"c8742ae10c99480198b4a804b17582f4\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment made but still returning requirements; retry once more? It may need time. Try fetch again.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730962,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":591,\"completion_tokens\":42,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
+ "responseHash": "36ba82fed835c52142e47c89718108d2dca19484419500b933fa742eb96bf451",
+ "latencyMs": 1732,
+ "recordedAt": "2026-11-03T18:36:03.578Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

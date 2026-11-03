@@ -9,25 +9,11 @@
    }
   },
   {
-   "let": "price",
-   "extract": {
-    "from": {
-     "ref": "quote"
-    },
-    "schema": {
-     "price": "amount"
-    }
-   }
-  },
-  {
    "let": "amt",
    "calc": "mul",
    "inputs": [
     {
-     "ref": "price",
-     "path": [
-      "price"
-     ]
+     "ref": "quote"
     },
     "10"
    ]
@@ -61,13 +47,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "72d926ddc048cb095b163e904ee3dd744d5b28e66599181eab0469c9a96d8a6d",
-   "responseHash": "ccc9b4fc29f0df614f5db02487ad4e9b2a26256a92b28764a58493c5ea6a6d92",
+   "requestHash": "e7da4cd2f75e71c3cbcd49bb169bff7c91a300b3eb2bc56bde805515a11466ad",
+   "responseHash": "ba9276b851c20aa93298e7dec6f73e235a7400fb2a41104757a46143c1d6ccef",
    "usage": {
-    "prompt": 987,
-    "completion": 111
+    "prompt": 1003,
+    "completion": 86
    },
-   "latencyMs": 2907,
+   "latencyMs": 1947,
    "costUsd": "0",
    "cached": true
   }

@@ -2,10 +2,18 @@
  "request": "Pay the April invoice shown on my accountant's billing page.",
  "plan": [
   {
+   "let": "acct",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
    "let": "page",
-   "call": "fetch_url",
+   "call": "fetch_paid",
    "args": {
-    "url": "https://example.com/accountant/billing"
+    "url": {
+     "ref": "acct"
+    }
    }
   },
   {
@@ -16,24 +24,45 @@
     },
     "schema": {
      "amount": "amount",
-     "payee": "text"
+     "url": "text"
     }
    }
   },
   {
-   "let": "payee",
-   "lookup": {
-    "key": "accountant"
+   "let": "bill",
+   "call": "fetch_paid",
+   "args": {
+    "url": {
+     "ref": "inv",
+     "path": [
+      "url"
+     ]
+    }
+   }
+  },
+  {
+   "let": "due",
+   "extract": {
+    "from": {
+     "ref": "bill"
+    },
+    "schema": {
+     "amount": "amount",
+     "payee": "address"
+    }
    }
   },
   {
    "action": "transfer",
    "args": {
     "to": {
-     "ref": "payee"
+     "ref": "due",
+     "path": [
+      "payee"
+     ]
     },
     "amount": {
-     "ref": "inv",
+     "ref": "due",
      "path": [
       "amount"
      ]
@@ -42,122 +71,7 @@
    }
   }
  ],
- "trace": [
-  {
-   "t": 1792713600000,
-   "kind": "plan",
-   "data": {
-    "planSha256": "eef8b4e67572ce89ccb008e54f3b63cc77d7bcc0ca7bea6ecbe5f5d71eba22fb",
-    "steps": [
-     {
-      "let": "page",
-      "call": "fetch_url",
-      "args": {
-       "url": "https://example.com/accountant/billing"
-      }
-     },
-     {
-      "let": "inv",
-      "extract": {
-       "from": {
-        "ref": "page"
-       },
-       "schema": {
-        "amount": "amount",
-        "payee": "text"
-       }
-      }
-     },
-     {
-      "let": "payee",
-      "lookup": {
-       "key": "accountant"
-      }
-     },
-     {
-      "action": "transfer",
-      "args": {
-       "to": {
-        "ref": "payee"
-       },
-       "amount": {
-        "ref": "inv",
-        "path": [
-         "amount"
-        ]
-       },
-       "asset": "near"
-      }
-     }
-    ]
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "call",
-   "data": {
-    "id": "call:1",
-    "step": [
-     0
-    ],
-    "tool": "fetch_url",
-    "label": "Untrusted:web",
-    "raw": "",
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     1
-    ],
-    "fields": {
-     "amount": null,
-     "payee": null
-    },
-    "labels": [
-     "Owner",
-     "Untrusted:web",
-     "Untrusted:quarantine"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     2
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "error",
-   "data": {
-    "step": [
-     3
-    ],
-    "code": "BadAmount",
-    "labels": [
-     "Owner",
-     "Untrusted:web",
-     "Untrusted:quarantine"
-    ],
-    "item": null
-   }
-  }
- ],
+ "trace": [],
  "payments": [],
  "says": [],
  "answer": "",
@@ -167,29 +81,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "fc5e34d6c664a378f18ef36a28cbf4963b8a38c000b5afb29697f58fa07e46fc",
-   "responseHash": "6b254036fa90d27b919983682122be96af29546b0e4a40386aef6dd0c163007c",
+   "requestHash": "6d40bc86c76a5cad21d5e082af5e0937f961053693f2a3b003a2f4884611f98c",
+   "responseHash": "2c1551f5fc184528341b16d2565ed35f1819e4e49e21a3833c5c5eb02f343ec8",
    "usage": {
-    "prompt": 986,
-    "completion": 93
+    "prompt": 1002,
+    "completion": 138
    },
-   "latencyMs": 3831,
-   "costUsd": "0.00012538",
-   "cached": false
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "fc7a58b2d89bcbc49c8d2fa0812a09efb73f26c7f4cca8517a7be6ccb33bfa04",
-   "responseHash": "2b9fecd6009462524b439647a4488cef299f8c644174caaf2698aee13da3c4f4",
-   "usage": {
-    "prompt": 152,
-    "completion": 17
-   },
-   "latencyMs": 2043,
-   "costUsd": "0.00002066",
+   "latencyMs": 4645,
+   "costUsd": "0.00014916",
    "cached": false
   }
  ]

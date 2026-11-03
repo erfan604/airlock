@@ -2,21 +2,21 @@
  "request": "What is NEAR trading at, and is my portfolio balanced?",
  "plan": [
   {
-   "let": "quote",
+   "let": "price",
    "call": "get_price",
    "args": {
     "asset": "near"
    }
   },
   {
+   "say": {
+    "ref": "price"
+   }
+  },
+  {
    "let": "tokens",
    "call": "list_tokens",
    "args": {}
-  },
-  {
-   "say": {
-    "ref": "quote"
-   }
   },
   {
    "say": {
@@ -29,24 +29,24 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "634c2a98956cd834431f6b1f3bd48391cdb894da487db797b05f37c4d86f8be1",
+    "planSha256": "670c0a887806334cc497052cc255ff1bb404e13c404c5af00e5c7b433f45f36d",
     "steps": [
      {
-      "let": "quote",
+      "let": "price",
       "call": "get_price",
       "args": {
        "asset": "near"
       }
      },
      {
+      "say": {
+       "ref": "price"
+      }
+     },
+     {
       "let": "tokens",
       "call": "list_tokens",
       "args": {}
-     },
-     {
-      "say": {
-       "ref": "quote"
-      }
      },
      {
       "say": {
@@ -76,7 +76,7 @@
    "data": {
     "id": "call:2",
     "step": [
-     1
+     2
     ],
     "tool": "list_tokens",
     "label": "Untrusted:tool_output",
@@ -97,13 +97,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "228f38cb90cb6452b70f30f7925853beccf22d2f3b37d56a77ffe2a0e41747bc",
-   "responseHash": "3477c17a4120d466c95577ab7281320e82f95a023e80c46095b941c18baab657",
+   "requestHash": "e558f540d1e269d943c06ce14226f9cf12f7ed9b5799246fd361691b1cce7f5c",
+   "responseHash": "0f26e0a9e534efb7fd9f71254aecc330cf7d3c7334f47e655ae365615697d01a",
    "usage": {
-    "prompt": 987,
-    "completion": 43
+    "prompt": 1003,
+    "completion": 53
    },
-   "latencyMs": 1219,
+   "latencyMs": 2449,
    "costUsd": "0",
    "cached": true
   }

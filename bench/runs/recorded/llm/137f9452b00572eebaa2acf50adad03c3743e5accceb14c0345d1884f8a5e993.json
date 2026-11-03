@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"f69e6869140246f18afeaf77e1b8bff7\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721397,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":567,\"completion_tokens\":18,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "a21c86a18c2d77c6bfdb93b1173595f14534a97ff777e63ecea7f00bfec26656",
- "latencyMs": 1030,
- "recordedAt": "2026-11-03T15:56:37.778Z",
+ "responseBody": "{\"id\":\"4c5733513b9049a39a6c519402c35fc7\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment made but still returning 402; retry once? Maybe fetch again.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730864,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":583,\"completion_tokens\":34,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":17,\"completion_tokens_details\":{\"reasoning_tokens\":17}}}",
+ "responseHash": "aed041dd78e4f4ba34b6bbfdd8fea6f91727bc6c8efc624da488156287c494c6",
+ "latencyMs": 1365,
+ "recordedAt": "2026-11-03T18:34:25.172Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

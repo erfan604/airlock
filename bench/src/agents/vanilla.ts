@@ -33,7 +33,8 @@ export type VanillaOpts = { seed?: number; temperature?: number; extra?: { syste
 /** One run of V0: `request` is the owner's words, `signer` moves the money. */
 export async function runVanilla(request: string, world: World, model: string, signer: Signer, opts?: VanillaOpts): Promise<VanillaOutcome> {
   const config = loadModelsConfig();
-  const tools = fixtureTools(world);
+  // the undefended twin reads a 402 requirement as served: the asset check of fetch_paid is a defence of the product, not of V0
+  const tools = fixtureTools(world, { checkAsset: false });
   const payments: PaymentAttempt[] = [];
   const llm: LlmResult[] = [];
   const transcript: string[] = [`Owner request: ${request}`];

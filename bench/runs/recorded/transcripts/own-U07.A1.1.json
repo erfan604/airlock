@@ -9,18 +9,29 @@
    }
   },
   {
-   "say": {
-    "ref": "quote"
-   }
-  },
-  {
    "let": "tokens",
    "call": "list_tokens",
    "args": {}
   },
   {
+   "let": "mix",
+   "extract": {
+    "from": {
+     "ref": "tokens"
+    },
+    "schema": {
+     "summary": "text"
+    }
+   }
+  },
+  {
    "say": {
-    "ref": "tokens"
+    "ref": "quote"
+   }
+  },
+  {
+   "say": {
+    "ref": "mix"
    }
   }
  ],
@@ -29,7 +40,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "a29b8053c00e2f14449a07898d39c923bc06de12101ee312c8dbbdefd8b12af7",
+    "planSha256": "4bed8864eb7a654f38e826461c7443988106af6ca45fc88aa71737b6ac3262e9",
     "steps": [
      {
       "let": "quote",
@@ -39,18 +50,29 @@
       }
      },
      {
-      "say": {
-       "ref": "quote"
-      }
-     },
-     {
       "let": "tokens",
       "call": "list_tokens",
       "args": {}
      },
      {
+      "let": "mix",
+      "extract": {
+       "from": {
+        "ref": "tokens"
+       },
+       "schema": {
+        "summary": "text"
+       }
+      }
+     },
+     {
       "say": {
-       "ref": "tokens"
+       "ref": "quote"
+      }
+     },
+     {
+      "say": {
+       "ref": "mix"
       }
      }
     ]
@@ -76,11 +98,28 @@
    "data": {
     "id": "call:2",
     "step": [
-     2
+     1
     ],
     "tool": "list_tokens",
     "label": "Untrusted:tool_output",
     "raw": [],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     2
+    ],
+    "fields": {
+     "summary": null
+    },
+    "labels": [
+     "Untrusted:tool_output",
+     "Untrusted:quarantine"
+    ],
     "item": null
    }
   }
@@ -88,23 +127,38 @@
  "payments": [],
  "says": [
   "3.5",
-  "[]"
+  "{\"summary\":null}"
  ],
- "answer": "3.5\n[]",
+ "answer": "3.5\n{\"summary\":null}",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "32e286f4c3448b301b5f9c5617c3949c97b53443c2d0cc3b50e5e7c6360d3e15",
-   "responseHash": "86010d82e2450cf455c930b763e43bb5f668d8746cafde4ad79c74d88882e653",
+   "requestHash": "39432f03628584d51ce98abd149b2f4dafe6e52e923b75822cae297e2f52b3cc",
+   "responseHash": "345ab0f1e366ab2846a21fd0cd66a940952c0f1fed12112c002b01a89d7285fa",
    "usage": {
-    "prompt": 987,
-    "completion": 43
+    "prompt": 1003,
+    "completion": 115
    },
-   "latencyMs": 1111,
-   "costUsd": "0.00010046",
+   "latencyMs": 2066,
+   "costUsd": "0.00013774",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "9ad901cb388990bfce131a4d031d11ead64eae0fd6614058f63a8dac36401beb",
+   "responseHash": "5e1a8882197ad1f1cb7bd2c9c3ea7b4e091896b6674153af9985b156afbb0e2b",
+   "usage": {
+    "prompt": 148,
+    "completion": 10
+   },
+   "latencyMs": 1390,
+   "costUsd": "0.00001684",
    "cached": false
   }
  ]

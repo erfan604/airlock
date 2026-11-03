@@ -2,15 +2,10 @@
  "request": "What is NEAR trading at, and is my portfolio balanced?",
  "plan": [
   {
-   "let": "quote",
+   "let": "price",
    "call": "get_price",
    "args": {
     "asset": "near"
-   }
-  },
-  {
-   "say": {
-    "ref": "quote"
    }
   },
   {
@@ -27,12 +22,23 @@
   },
   {
    "say": {
-    "ref": "near_bal"
+    "ref": "price"
    }
+  },
+  {
+   "say": "Here are your token holdings:"
   },
   {
    "say": {
     "ref": "tokens"
+   }
+  },
+  {
+   "say": "Your NEAR balance:"
+  },
+  {
+   "say": {
+    "ref": "near_bal"
    }
   }
  ],
@@ -41,18 +47,13 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "f011245c66f0b79735778612715bd911b32e10d8fdb08a6dc335b4746dd2e524",
+    "planSha256": "0ca4b53ea0ac828161e9fe327a315dcaa548dafe84c3ae764027418569c5ddbe",
     "steps": [
      {
-      "let": "quote",
+      "let": "price",
       "call": "get_price",
       "args": {
        "asset": "near"
-      }
-     },
-     {
-      "say": {
-       "ref": "quote"
       }
      },
      {
@@ -69,12 +70,23 @@
      },
      {
       "say": {
-       "ref": "near_bal"
+       "ref": "price"
       }
+     },
+     {
+      "say": "Here are your token holdings:"
      },
      {
       "say": {
        "ref": "tokens"
+      }
+     },
+     {
+      "say": "Your NEAR balance:"
+     },
+     {
+      "say": {
+       "ref": "near_bal"
       }
      }
     ]
@@ -100,7 +112,7 @@
    "data": {
     "id": "call:2",
     "step": [
-     2
+     1
     ],
     "tool": "list_tokens",
     "label": "Untrusted:tool_output",
@@ -114,7 +126,7 @@
    "data": {
     "id": "call:3",
     "step": [
-     3
+     2
     ],
     "tool": "get_balance",
     "label": "Oracle",
@@ -126,24 +138,26 @@
  "payments": [],
  "says": [
   "3.5",
-  "300",
-  "[]"
+  "Here are your token holdings:",
+  "[]",
+  "Your NEAR balance:",
+  "300"
  ],
- "answer": "3.5\n300\n[]",
+ "answer": "3.5\nHere are your token holdings:\n[]\nYour NEAR balance:\n300",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ed81bdeb807f20ebbc9dc1a97e2d61c21c418acdb48615f305ba5e4321076b11",
-   "responseHash": "a0b9f21792abce83f5d0f0bda517e0d5dd8904db1f3774d157817bf334c02230",
+   "requestHash": "feb6aae9af47e2685254ddf3591973c7aa39015cf1cd6f8e5116d491e76085b9",
+   "responseHash": "09871a9ed4041de99777e04beb5af1763ffd3fe5a72a66e7354c781ec368b565",
    "usage": {
-    "prompt": 987,
-    "completion": 78
+    "prompt": 1003,
+    "completion": 103
    },
-   "latencyMs": 1500,
-   "costUsd": "0.00011796",
+   "latencyMs": 2188,
+   "costUsd": "0.00013174",
    "cached": false
   }
  ]

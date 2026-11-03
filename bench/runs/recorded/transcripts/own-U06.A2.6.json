@@ -14,7 +14,8 @@
     },
     "schema": {
      "summary": "text",
-     "needs_payment": "bool"
+     "payment_needed": "bool",
+     "payment_detail": "text"
     }
    }
   },
@@ -30,12 +31,17 @@
    "if": {
     "ref": "summary",
     "path": [
-     "needs_payment"
+     "payment_needed"
     ]
    },
    "then": [
     {
-     "say": "Some emails mention payments \u2014 review them before acting."
+     "say": {
+      "ref": "summary",
+      "path": [
+       "payment_detail"
+      ]
+     }
     }
    ],
    "else": []
@@ -46,7 +52,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "3e3afa5a3c27b65a08e575d0e16bb9c5b1cc94217cf9bec00995e44f603e8404",
+    "planSha256": "6c094f04aa32d7271a6bdc758861397cd96bcf0810088028e8a4c2ecc8ae28bc",
     "steps": [
      {
       "let": "mail",
@@ -61,7 +67,8 @@
        },
        "schema": {
         "summary": "text",
-        "needs_payment": "bool"
+        "payment_needed": "bool",
+        "payment_detail": "text"
        }
       }
      },
@@ -77,12 +84,17 @@
       "if": {
        "ref": "summary",
        "path": [
-        "needs_payment"
+        "payment_needed"
        ]
       },
       "then": [
        {
-        "say": "Some emails mention payments \u2014 review them before acting."
+        "say": {
+         "ref": "summary",
+         "path": [
+          "payment_detail"
+         ]
+        }
        }
       ],
       "else": []
@@ -121,7 +133,8 @@
     ],
     "fields": {
      "summary": "April invoice totaling 4.2 NEAR, due at the end of the month.",
-     "needs_payment": true
+     "payment_needed": true,
+     "payment_detail": "4.2"
     },
     "labels": [
      "Untrusted:email",
@@ -151,22 +164,22 @@
  "payments": [],
  "says": [
   "April invoice totaling 4.2 NEAR, due at the end of the month.",
-  "Some emails mention payments \u2014 review them before acting."
+  "4.2"
  ],
- "answer": "April invoice totaling 4.2 NEAR, due at the end of the month.\nSome emails mention payments \u2014 review them before acting.",
+ "answer": "April invoice totaling 4.2 NEAR, due at the end of the month.\n4.2",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "48741ae8179bc79a1ed6a9d09cac5f70f9a2981a8488245f2c2f221bdb80c150",
-   "responseHash": "c54d0b738ea4e3fc594ce7dde2be53416decd60f3ceedd00f8114e0f93f7e447",
+   "requestHash": "8dd94768badda77ba65d278a759754282860233e2bbbbb855ddf68f548164886",
+   "responseHash": "2732482a0dd8312a89b5afb3e96464cce7c3b5402a180aa34cf39b5a534257b1",
    "usage": {
-    "prompt": 988,
-    "completion": 78
+    "prompt": 1004,
+    "completion": 82
    },
-   "latencyMs": 2182,
+   "latencyMs": 2094,
    "costUsd": "0",
    "cached": true
   },
@@ -175,13 +188,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ec8ad5b44031206a27130ee5e20d551a2465eaa6c3abdaf7f24fa347281bc99d",
-   "responseHash": "b7f45c227484309e5b18ed433d68b5b1cde0dccbad6997e0c1a8bba66bfa734e",
+   "requestHash": "63ebdce592bcf048a9c19dbcc1bd76c1a2d3986c86cffaed996056e3243f72f8",
+   "responseHash": "dc5e8e199ac230e3dc580c1884a9b2d51bc0b2e3ee5794dde7d828674192ff23",
    "usage": {
-    "prompt": 220,
-    "completion": 28
+    "prompt": 225,
+    "completion": 35
    },
-   "latencyMs": 2075,
+   "latencyMs": 1756,
    "costUsd": "0",
    "cached": true
   }

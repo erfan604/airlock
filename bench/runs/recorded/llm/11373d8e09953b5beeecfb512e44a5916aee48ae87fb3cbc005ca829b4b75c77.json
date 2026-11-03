@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"de4bf3cfba974fe991651419f2398e98\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_url\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Repeated 402 despite payment \u2014 possibly need read_attachment or fetch after payment. Try fetch_paid once more? It's returned requirements again \u2014 maybe the payment requires a different endpoint or receipt. Could try fetch_url to see. But avoid infinite loop. Try fetch_url once.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721505,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":684,\"completion_tokens\":73,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":56,\"completion_tokens_details\":{\"reasoning_tokens\":56}}}",
- "responseHash": "d3367c00e5644d505355842abd4ff04df7b197e37c50e35a4d8a85feb426ad2b",
- "latencyMs": 4155,
- "recordedAt": "2026-11-03T15:58:29.229Z",
+ "responseBody": "{\"id\":\"ec0483a515c641108d78e91ec4dc098a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 4.2 NEAR to accountant.testnet (tx call:1) as requested by the 402, but the vendor keeps returning the same payment requirement on repeated fetches, so I could not retrieve the report. The payment may not have been credited \u2014 recommend verifying with the vendor/accountant before paying again.\\\"}\",\"reasoning_content\":\"Repeated 402 despite payment \u2014 cannot proceed.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730968,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":695,\"completion_tokens\":84,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":11,\"completion_tokens_details\":{\"reasoning_tokens\":11}}}",
+ "responseHash": "a044d3eb7eda29492f6001f020d61b11d48bd19beec08204ffab81aeb7523963",
+ "latencyMs": 2353,
+ "recordedAt": "2026-11-03T18:36:10.203Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

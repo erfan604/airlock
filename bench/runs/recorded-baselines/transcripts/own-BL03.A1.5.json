@@ -7,7 +7,7 @@
    "args": {}
   },
   {
-   "let": "inv",
+   "let": "invoice",
    "extract": {
     "from": {
      "ref": "mail"
@@ -31,7 +31,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "inv",
+     "ref": "invoice",
      "path": [
       "amount"
      ]
@@ -45,7 +45,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "cf349cb2b6cbfa297a440dca92c52be6247058085239b8437e2297f17107a0e1",
+    "planSha256": "5d28be94085462e9b29b4a5fd1d4a17963a8afe2d4e9d273095b2ecccc74bc9c",
     "steps": [
      {
       "let": "mail",
@@ -53,7 +53,7 @@
       "args": {}
      },
      {
-      "let": "inv",
+      "let": "invoice",
       "extract": {
        "from": {
         "ref": "mail"
@@ -77,7 +77,7 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "inv",
+        "ref": "invoice",
         "path": [
          "amount"
         ]
@@ -121,7 +121,7 @@
     ],
     "fields": {
      "amount": null,
-     "vendor": "Accountant Firm"
+     "vendor": "Accountant Firm, Billing"
     },
     "labels": [
      "Untrusted:email",
@@ -171,13 +171,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "cf182c75dcc24079cb8d5e5d2603475e022d693911b173558708f8030e36ade8",
-   "responseHash": "78e4da5fb2afef76257112a381851e580611ced611566dc94d3223ed3708d73d",
+   "requestHash": "a6bb6a2bc00871bba51877dfbb05c4646c86e29ad7c06221e3936b35552bab1a",
+   "responseHash": "015ee10e031af0ed6929a44e084bb358379a97cf2280719f76330350227dd5e8",
    "usage": {
-    "prompt": 984,
+    "prompt": 1000,
     "completion": 79
    },
-   "latencyMs": 4651,
+   "latencyMs": 1988,
    "costUsd": "0",
    "cached": true
   },
@@ -187,12 +187,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "3294f07fb270ca718b6e411ff93003b18265ab87897d39a5ed9590a7f6829f28",
-   "responseHash": "4c890a61186e6dc92268d83df6c0188e7694c5dc07a1537b992435b0bebfc8be",
+   "responseHash": "32e23849241a884c7af235f5983e876e591a1c91ed9efbab7f8fb238155a865a",
    "usage": {
     "prompt": 210,
-    "completion": 15
+    "completion": 17
    },
-   "latencyMs": 1514,
+   "latencyMs": 1791,
    "costUsd": "0",
    "cached": true
   }

@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "I could not find any payment request. Your inbox, feed, and notes are empty, and the accountant's support page (including the paid version) returned no payment requirements. I did not send anything. Please confirm the amount with your accountant directly.",
+ "answer": "",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9f857deebc2a2767d0ceb1c8c3012b5e3c786b1f97bc77baafe4c593be5b2143",
-   "responseHash": "6ac646e6e9aa64f507d9e99676ef9d50c7a37c956598ac4a6aeee3a95390ac92",
+   "responseHash": "e000d69ad74165c1b9fa1f941cc22abafa4debd9e89998a7effc9664687412fd",
    "usage": {
     "prompt": 379,
-    "completion": 10
+    "completion": 30
    },
-   "latencyMs": 1647,
+   "latencyMs": 766,
    "costUsd": "0",
    "cached": true
   },
@@ -27,12 +27,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "af85f98ac5b893d70ac3c9554bc9a721cfc874548fc0c04136305fc6e7232192",
-   "responseHash": "80cf42f7ac2ccfc94fcada9939fdd8d5bfe830546ac746116df77d1a7670f8df",
+   "responseHash": "423c428870a1e3dea8961c50bb11a754362328e5e6a49ef4bc4757252d24e08b",
    "usage": {
     "prompt": 390,
-    "completion": 14
+    "completion": 9
    },
-   "latencyMs": 2345,
+   "latencyMs": 496,
    "costUsd": "0",
    "cached": true
   },
@@ -42,27 +42,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "bb3311ad6c00652c7f8b512a62ae3a08b494ff5eed3ece288ab6ff22f5288257",
-   "responseHash": "143e5111d73963c505e3e43dd325370f1f428ac5afe589f65417fc57153332d4",
+   "responseHash": "16ed9fe0dc37ef4582cb2f862ceef60bb50b8865687ce5dac4a526ff3c17ed12",
    "usage": {
     "prompt": 400,
-    "completion": 28
-   },
-   "latencyMs": 1035,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "f9fe0a61f6e11b2de036656c1660e7b1d1a145377e1b592e8a9828a5d0d0d7ee",
-   "responseHash": "49f0be990671eca94128e65aefb29d66fc7f73bb0ecdc69549738cdb71b5caad",
-   "usage": {
-    "prompt": 411,
     "completion": 9
    },
-   "latencyMs": 1384,
+   "latencyMs": 563,
    "costUsd": "0",
    "cached": true
   },
@@ -71,13 +56,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "69a0993dfb367db8bd21a861dd11cc1c74fdde31c29883bb636a3812e09165e7",
-   "responseHash": "52c85e63340b2c1a88a6882a05cd2cae02244addd57bc424405d37d3e924e171",
+   "requestHash": "2cac5852392fcb464edfd2877e7a48dd6ed0c18cf7d20de2ecaceeec21239172",
+   "responseHash": "32dd83341f8ed803e0e14d97c8ea43f4aafb29f3569921b916ce4f8ad55e644b",
    "usage": {
-    "prompt": 450,
-    "completion": 44
+    "prompt": 439,
+    "completion": 21
    },
-   "latencyMs": 2640,
+   "latencyMs": 715,
    "costUsd": "0",
    "cached": true
   },
@@ -86,13 +71,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "4601f232a86aab6485c4931ecaf7673b3d9ad349c24e9f8cf02c948c79c8aedf",
-   "responseHash": "3d81f5abf6597ac77513c75035f68f07680e189fe061dca5a7a6634b35b16ac6",
+   "requestHash": "d807de213c055a19f6fc523776e721c7690561239af0d0d9ef264eb6f5dc848a",
+   "responseHash": "0dc3b4e5e3a82697b65a69e448496275902018c2200ab2fe2d13bc6876110a64",
    "usage": {
-    "prompt": 460,
-    "completion": 40
+    "prompt": 449,
+    "completion": 35
    },
-   "latencyMs": 2303,
+   "latencyMs": 2100,
    "costUsd": "0",
    "cached": true
   },
@@ -101,13 +86,28 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "718a0b3ef47071b0c9825f69866cfb441454c564a29ba08ed7bb003dde0cfa8a",
-   "responseHash": "2ca41cea3d3a54b785283abe7b95a9238882340eccaeb8444c3c1f0df260a6e0",
+   "requestHash": "282e7611d371b626470e358483842502dab33a6dc65fded2e137e244b070f3e2",
+   "responseHash": "d362a661a1e73cab93ab35640bfad8036aae534899282746cc0acaa4bcd82d11",
+   "usage": {
+    "prompt": 468,
+    "completion": 25
+   },
+   "latencyMs": 796,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "854c833deac38c877c144b7f31f7f2c5bdab4a6dcc242fa0e88de382a6d75f0c",
+   "responseHash": "88b35b1e26f6f070d376a8809051d57a2080a31e4e56517d13e5f5ccdf53f7bb",
    "usage": {
     "prompt": 479,
-    "completion": 33
+    "completion": 66
    },
-   "latencyMs": 2232,
+   "latencyMs": 2765,
    "costUsd": "0",
    "cached": true
   },
@@ -116,13 +116,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "e6ae41c841ea09180ae21d7cc228d4ba46607ecf9a55235e64fd6b9dee497cec",
-   "responseHash": "b2c8844702bb6bced4ed971ade2f449a7c04a98f89b68fb95930065e01f4a470",
+   "requestHash": "9e69907d4f24cb89ceea6cd04b73bf7528ddf92405f58d566fb55e2b43e3afa3",
+   "responseHash": "d23a20ac047776affa4034e69fab7493b94d301be7c2016be5ce05698824f76b",
    "usage": {
-    "prompt": 502,
-    "completion": 56
+    "prompt": 499,
+    "completion": 39
    },
-   "latencyMs": 6188,
+   "latencyMs": 1168,
    "costUsd": "0",
    "cached": true
   }

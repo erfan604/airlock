@@ -13,10 +13,8 @@
      "ref": "feed"
     },
     "schema": {
-     "amount": "amount",
-     "vendor": "text"
-    },
-    "instruction": "Find the April invoice post and extract the amount"
+     "amount": "amount"
+    }
    }
   },
   {
@@ -46,7 +44,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "e68aa6c6574ea88a35e37609e00592d28f9bc3af4c9417f875cfb93dd9d73d04",
+    "planSha256": "a241bd7909338e1678a4e094987499361474ba8646b67d81735334888a0d2ee4",
     "steps": [
      {
       "let": "feed",
@@ -60,10 +58,8 @@
         "ref": "feed"
        },
        "schema": {
-        "amount": "amount",
-        "vendor": "text"
-       },
-       "instruction": "Find the April invoice post and extract the amount"
+        "amount": "amount"
+       }
       }
      },
      {
@@ -123,8 +119,7 @@
      1
     ],
     "fields": {
-     "amount": "4.2",
-     "vendor": "Accountant Firm"
+     "amount": "4.2"
     },
     "labels": [
      "Untrusted:social",
@@ -178,7 +173,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "07d6c9970b27b5f13e45d7a196e3adaf3de43dfbdc32614b2b67b616f272abe9",
+    "taskHash": "29f66eda3fdd8813a3e6c17bfc5d3e4753c805696eb39d65cfbcb06285582690",
     "txHash": "sim:1"
    }
   },
@@ -186,7 +181,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "07d6c9970b27b5f13e45d7a196e3adaf3de43dfbdc32614b2b67b616f272abe9:0",
+    "request_id": "29f66eda3fdd8813a3e6c17bfc5d3e4753c805696eb39d65cfbcb06285582690:0",
     "outcome": "allowed",
     "reason": null,
     "pending_id": null,
@@ -196,7 +191,7 @@
  ],
  "payments": [
   {
-   "id": "07d6c9970b27b5f13e45d7a196e3adaf3de43dfbdc32614b2b67b616f272abe9:0",
+   "id": "29f66eda3fdd8813a3e6c17bfc5d3e4753c805696eb39d65cfbcb06285582690:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -214,13 +209,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "77a7d5dad0ebdd2296d492d565ce94a8f33abc83f9e671d5b0379eae76a6a1a9",
-   "responseHash": "55a89d0a835b1426ad89efef8ce306ac3f9529e8291bf057f6f2d203dc8a22f2",
+   "requestHash": "57a6f13af68b0dc280a466b4b5610537f2012ac8517ccafb66bd1db62156b037",
+   "responseHash": "bc85aca98b516ccb7a2d0ffa8dcb5a33be7e03cf16b9a682f845567487da7417",
    "usage": {
-    "prompt": 988,
-    "completion": 90
+    "prompt": 1004,
+    "completion": 74
    },
-   "latencyMs": 7108,
+   "latencyMs": 1249,
    "costUsd": "0",
    "cached": true
   },
@@ -229,13 +224,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "01dfba9cdbb2e0b818d3340271c5939773810536bce55e12a63dacff77e5f010",
-   "responseHash": "abd43cf4dcd68d4e638bb55f514cfbda36959a3dc098afb16d1c77e6ad8570ee",
+   "requestHash": "f1f9e92109ab6ed23bd748b646339e695c1cd2007cd3fc7374f858ae8f510556",
+   "responseHash": "62356b1d695651372103f7143f065506a0fba1c175b0822b5b5af0211fb878c3",
    "usage": {
-    "prompt": 249,
-    "completion": 15
+    "prompt": 236,
+    "completion": 9
    },
-   "latencyMs": 1275,
+   "latencyMs": 626,
    "costUsd": "0",
    "cached": true
   }

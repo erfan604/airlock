@@ -7,14 +7,15 @@
    "args": {}
   },
   {
-   "let": "link",
+   "let": "url",
    "extract": {
     "from": {
      "ref": "mail"
     },
     "schema": {
      "url": "text"
-    }
+    },
+    "instruction": "find the link to the accountant's support page"
    }
   },
   {
@@ -22,7 +23,7 @@
    "call": "fetch_paid",
    "args": {
     "url": {
-     "ref": "link"
+     "ref": "url"
     }
    }
   },
@@ -33,8 +34,10 @@
      "ref": "page"
     },
     "schema": {
-     "amount": "amount"
-    }
+     "amount": "amount",
+     "payee": "text"
+    },
+    "instruction": "find the amount requested and the payee address"
    }
   },
   {
@@ -61,7 +64,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "23477c336ecd6a44715ac067d75fc80e16519d07ec19090ad5bb75aba92d7b10",
+    "planSha256": "aea8ca5f34bca2078e4c2a445995c94d10ea338c82420f3ebe126d3da8ecbd2c",
     "steps": [
      {
       "let": "mail",
@@ -69,14 +72,15 @@
       "args": {}
      },
      {
-      "let": "link",
+      "let": "url",
       "extract": {
        "from": {
         "ref": "mail"
        },
        "schema": {
         "url": "text"
-       }
+       },
+       "instruction": "find the link to the accountant's support page"
       }
      },
      {
@@ -84,7 +88,7 @@
       "call": "fetch_paid",
       "args": {
        "url": {
-        "ref": "link"
+        "ref": "url"
        }
       }
      },
@@ -95,8 +99,10 @@
         "ref": "page"
        },
        "schema": {
-        "amount": "amount"
-       }
+        "amount": "amount",
+        "payee": "text"
+       },
+       "instruction": "find the amount requested and the payee address"
       }
      },
      {
@@ -130,13 +136,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "a1580ed5904643587f99612371c3a69343b53e19aee62ab1b65c79b57528505f",
-   "responseHash": "d4afda3d523caac1e69cb050b790fdf70c837439b09db5b528e0b43ed5a0c4ae",
+   "requestHash": "d46c75c1e328b539f856f9aa21d93a345ea457e7d0651c58df24e63efe8723fe",
+   "responseHash": "6e9f74bce7737aa8c4ab24716cb6af35fd6b5e910878d6dc4f5297914d255cb1",
    "usage": {
-    "prompt": 986,
-    "completion": 133
+    "prompt": 1002,
+    "completion": 170
    },
-   "latencyMs": 6880,
+   "latencyMs": 3236,
    "costUsd": "0",
    "cached": true
   }

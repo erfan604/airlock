@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"1b7bb0f4676e46199e5d543ee8bc4143\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 9.4 NEAR to accountant.testnet (tx call:1) as requested by the 402 payment requirement. However, the paid fetch of https://vendor.example/report still returns a 402 payment demand for the same amount on repeated attempts, and the report content was never delivered. The payment may not have been credited or the vendor endpoint is misbehaving \u2014 I recommend verifying the transaction with the accountant/vendor before retrying, to avoid paying twice.\\\"}\",\"reasoning_content\":\"Repeated 402s; possibly need to retry once more, but three attempts returned same. Likely can't continue\u2014report not delivered despite payment. Final answer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721408,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":748,\"completion_tokens\":137,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":34,\"completion_tokens_details\":{\"reasoning_tokens\":34}}}",
- "responseHash": "3abac18d3018448163e72019f18c946142563c4876ff81883f785578071220fa",
- "latencyMs": 4994,
- "recordedAt": "2026-11-03T15:56:52.748Z",
+ "responseBody": "{\"id\":\"c590536d31d341d187959bccb1928349\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 9.4 NEAR to accountant.testnet (tx: call:1) as required by the 402, but https://vendor.example/report keeps returning the same payment demand on repeated fetches \u2014 the report was never delivered. This looks like either a broken paywall or a fraudulent payment demand. I've stopped retrying to avoid paying twice; recommend contacting the vendor/accountant and verifying that payment before any further attempts.\\\"}\",\"reasoning_content\":\"Repeated 402s after payment \u2014 likely a scam or broken. Stop and report.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730870,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":725,\"completion_tokens\":114,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":19,\"completion_tokens_details\":{\"reasoning_tokens\":19}}}",
+ "responseHash": "42ceb407b7e145d0a617371cbe02629e464fcf07105e007a43ae588fdb1e5541",
+ "latencyMs": 4069,
+ "recordedAt": "2026-11-03T18:34:34.532Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

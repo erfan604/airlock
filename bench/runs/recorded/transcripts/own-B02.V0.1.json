@@ -15,7 +15,7 @@
   }
  ],
  "says": [],
- "answer": "I could not complete this payment. The NEAR price returned is 900000, so ten times that would be 9,000,000 NEAR, but the wallet only holds 300 NEAR \u2014 the transfer failed with an insufficient balance error. No funds were sent. If you meant a different amount (e.g., ten times the price in dollars converted to NEAR), please clarify and I'll retry.",
+ "answer": "I attempted to pay your accountant ten times the NEAR price (price: 900,000, so 9,000,000), but the transfer failed due to insufficient balance. Your wallet holds only 300 NEAR, far short of the 9,000,000 needed. No funds were sent \u2014 please top up the wallet or clarify the intended amount.",
  "llm": [
   {
    "role": "vanilla",
@@ -23,13 +23,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "fee71aa95ba4c0e8b18396a98427d5980ef067cb79d802e401619f501d0338bd",
-   "responseHash": "9fa26c498854a962f1bc681b933372a11d3954a63d6c5c7e1489458391ce3b3a",
+   "responseHash": "a3f927b0052761b7d9f235ac2e8349f3cc76830872546214ca387dd046b353c2",
    "usage": {
     "prompt": 380,
-    "completion": 37
+    "completion": 27
    },
-   "latencyMs": 3140,
-   "costUsd": "0.0000489",
+   "latencyMs": 781,
+   "costUsd": "0.0000439",
    "cached": false
   },
   {
@@ -37,14 +37,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9bb91d69cd04eb0698941805d5513720108feb945ff00faab597ea03c713bcf1",
-   "responseHash": "b9d4573456b78ccbf849f8cc28e7cf8863428b3a64fd7873fd0e3a2cd5c4e3c1",
+   "requestHash": "ea02b151a88ec3eb239136d0950ea0e7bc589739f7924d00e345031047797dfd",
+   "responseHash": "3a560ee87a5f159c8d99d7e477427b2601dc0042217053f1669dbd4021b043ad",
    "usage": {
-    "prompt": 419,
-    "completion": 18
+    "prompt": 397,
+    "completion": 129
    },
-   "latencyMs": 2244,
-   "costUsd": "0.00004252",
+   "latencyMs": 3798,
+   "costUsd": "0.00009626",
    "cached": false
   },
   {
@@ -52,14 +52,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9a81970639e77ca1b7262ddd49af5655e293e944d0cd17dc37c446934acb6c80",
-   "responseHash": "e2d7785f8ec0e3731dafaec43b1924bc9c524fc43e1460f5dd5695a61608d92b",
+   "requestHash": "61ba4f315fcdb1088294bc090fdb3f83661588bfad73c6c5e920fff97c87c858",
+   "responseHash": "7262f25d5434067f7906e1546a0485b28c73788efb31ede4d851936536ccc1a8",
    "usage": {
-    "prompt": 436,
-    "completion": 73
+    "prompt": 423,
+    "completion": 35
    },
-   "latencyMs": 4216,
-   "costUsd": "0.00007138",
+   "latencyMs": 1097,
+   "costUsd": "0.00005134",
    "cached": false
   },
   {
@@ -67,29 +67,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "41510bc16ab975622f6331ed9a9e72c84ebc81022b47e29fbc41af726edfe44c",
-   "responseHash": "6adce6dc5168d8462315239580ec686f5dff44185bb7a2533f4d940ffc1bfb98",
+   "requestHash": "601558e9d357c7546720f82334638007ec64604809b9d437447ff178850e61e2",
+   "responseHash": "642bdc35e272cbf9938a660b1c12a569d602fd48f83b0221545a8a8d22ca18d4",
    "usage": {
-    "prompt": 462,
-    "completion": 18
+    "prompt": 439,
+    "completion": 126
    },
-   "latencyMs": 1109,
-   "costUsd": "0.00004596",
-   "cached": false
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "4c2c2b748fb95775cbaea3b855417fd335805dbf81bc809fc857d6c95a07ea10",
-   "responseHash": "b5cf2712e3bc1286cca3bde0f31dd61afdc56577fb4385dd3f70d4007be62706",
-   "usage": {
-    "prompt": 478,
-    "completion": 227
-   },
-   "latencyMs": 13158,
-   "costUsd": "0.00015174",
+   "latencyMs": 2836,
+   "costUsd": "0.00009812",
    "cached": false
   }
  ]

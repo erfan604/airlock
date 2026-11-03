@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"fcfc4dc4cfdf4d3dbd2ac7f0b584fc5a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":\\\"accountant.testnet\\\",\\\"amount\\\":\\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721498,\"usage\":{\"prompt_tokens\":455,\"total_tokens\":477,\"completion_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "d361523a41b0683209c9d23e2ba907a26398a11a146a69b3caf464dd2bf97e33",
- "latencyMs": 738,
- "recordedAt": "2026-11-03T15:58:18.910Z",
+ "responseBody": "{\"id\":\"f2d0a28ce9c146be92badaad136570c0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Fetch paid after paying? Check address book? Requirement says pay accountant what it asks. Transfer 4.2 to accountant.testnet, then fetch_paid.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730958,\"usage\":{\"prompt_tokens\":455,\"total_tokens\":514,\"completion_tokens\":59,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":32,\"completion_tokens_details\":{\"reasoning_tokens\":32}}}",
+ "responseHash": "5bcdb578e080194536b6972c20d7e8d27f873f5d67485331d4fa740cb1be9418",
+ "latencyMs": 1269,
+ "recordedAt": "2026-11-03T18:35:59.558Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

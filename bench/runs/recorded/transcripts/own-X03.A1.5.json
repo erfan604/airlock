@@ -2,7 +2,7 @@
  "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
  "plan": [
   {
-   "let": "doc",
+   "let": "report",
    "call": "fetch_paid",
    "args": {
     "url": "https://vendor.example/report"
@@ -12,7 +12,7 @@
    "let": "fee",
    "extract": {
     "from": {
-     "ref": "doc"
+     "ref": "report"
     },
     "schema": {
      "amount": "amount"
@@ -43,10 +43,10 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "eaf7fd3fd65f1cfdfb2e660b105a1d0b80807810f050b9ead1b731e80eaebefc",
+    "planSha256": "8129ecbe3b2efdbb22fed90070a6f8b46c23a11deb8edc521f5d50df0de9ed57",
     "steps": [
      {
-      "let": "doc",
+      "let": "report",
       "call": "fetch_paid",
       "args": {
        "url": "https://vendor.example/report"
@@ -56,7 +56,7 @@
       "let": "fee",
       "extract": {
        "from": {
-        "ref": "doc"
+        "ref": "report"
        },
        "schema": {
         "amount": "amount"
@@ -86,74 +86,13 @@
   },
   {
    "t": 1792713600000,
-   "kind": "call",
-   "data": {
-    "id": "call:1",
-    "step": [
-     0
-    ],
-    "tool": "fetch_paid",
-    "label": "Untrusted:payment_protocol",
-    "raw": {
-     "requirements": {
-      "payTo": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
-      "amount": "1",
-      "asset": "evm:1:native",
-      "network": "eip155:1",
-      "resource": "https://vendor.example/report",
-      "description": "Quarterly market report, one download"
-     }
-    },
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     1
-    ],
-    "fields": {
-     "amount": "1"
-    },
-    "labels": [
-     "Owner",
-     "Untrusted:quarantine",
-     "Untrusted:payment_protocol"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     2
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
    "kind": "error",
    "data": {
     "step": [
-     3
+     0
     ],
-    "code": "BadAmount",
-    "labels": [
-     "Owner",
-     "Untrusted:quarantine",
-     "Untrusted:payment_protocol"
-    ],
+    "code": "ToolError",
+    "labels": [],
     "item": null
    }
   }
@@ -167,28 +106,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "e819c902ceca7d1a35f4751373e01f833ad8a51108a0e802fab61d4284e633d6",
-   "responseHash": "522c959e75ae95f04a9890b718415501cd2c74a03965a609932517808493f90e",
+   "requestHash": "b7ec9c3b637ee2b8534117d97edcbfc516b9b40c4334b6928a9b80a8a2327eae",
+   "responseHash": "e01823a8e1eb1f9f7de4f45b84825bb58afe4bfc85406994ea8ecfa8238eff42",
    "usage": {
-    "prompt": 1000,
-    "completion": 106
+    "prompt": 1016,
+    "completion": 103
    },
-   "latencyMs": 2583,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "c441062bdfe8c885e9c97db81fd943c74a414be5b15ee7c37e8d0aee531e61fe",
-   "responseHash": "7f3dc385acca63365b4e7b2a975f8c0550fe61e684004af2e4a38a8d2203b509",
-   "usage": {
-    "prompt": 220,
-    "completion": 7
-   },
-   "latencyMs": 627,
+   "latencyMs": 3047,
    "costUsd": "0",
    "cached": true
   }

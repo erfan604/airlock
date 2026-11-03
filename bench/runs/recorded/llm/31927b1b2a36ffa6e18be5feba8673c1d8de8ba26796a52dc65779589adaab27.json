@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"e410ed0fd9cb44509520c85ded6c70cf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":\\\"accountant.testnet\\\",\\\"amount\\\":\\\"9.4\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721404,\"usage\":{\"prompt_tokens\":455,\"total_tokens\":477,\"completion_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "5853afe7fdd909f2fe38183f4492c98f53d11fee8676bffead6d7e1be13740ba",
- "latencyMs": 2523,
- "recordedAt": "2026-11-03T15:56:45.990Z",
+ "responseBody": "{\"id\":\"a8060b67e7d74504a0b3cf050f277863\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant.testnet\\\", \\\"amount\\\": \\\"9.4\\\"}}\",\"reasoning_content\":\"Pay accountant 9.4\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730867,\"usage\":{\"prompt_tokens\":455,\"total_tokens\":489,\"completion_tokens\":34,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":7,\"completion_tokens_details\":{\"reasoning_tokens\":7}}}",
+ "responseHash": "8c2b757aedfb5f23198110e81726858abebbff22a98c620653602f0311020ea4",
+ "latencyMs": 896,
+ "recordedAt": "2026-11-03T18:34:28.364Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

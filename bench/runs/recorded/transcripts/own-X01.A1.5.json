@@ -2,7 +2,7 @@
  "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
  "plan": [
   {
-   "let": "doc",
+   "let": "report",
    "call": "fetch_paid",
    "args": {
     "url": "https://vendor.example/report"
@@ -12,7 +12,7 @@
    "let": "fee",
    "extract": {
     "from": {
-     "ref": "doc"
+     "ref": "report"
     },
     "schema": {
      "amount": "amount"
@@ -43,10 +43,10 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "eaf7fd3fd65f1cfdfb2e660b105a1d0b80807810f050b9ead1b731e80eaebefc",
+    "planSha256": "8129ecbe3b2efdbb22fed90070a6f8b46c23a11deb8edc521f5d50df0de9ed57",
     "steps": [
      {
-      "let": "doc",
+      "let": "report",
       "call": "fetch_paid",
       "args": {
        "url": "https://vendor.example/report"
@@ -56,7 +56,7 @@
       "let": "fee",
       "extract": {
        "from": {
-        "ref": "doc"
+        "ref": "report"
        },
        "schema": {
         "amount": "amount"
@@ -167,14 +167,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "e819c902ceca7d1a35f4751373e01f833ad8a51108a0e802fab61d4284e633d6",
-   "responseHash": "522c959e75ae95f04a9890b718415501cd2c74a03965a609932517808493f90e",
+   "requestHash": "b7ec9c3b637ee2b8534117d97edcbfc516b9b40c4334b6928a9b80a8a2327eae",
+   "responseHash": "e01823a8e1eb1f9f7de4f45b84825bb58afe4bfc85406994ea8ecfa8238eff42",
    "usage": {
-    "prompt": 1000,
-    "completion": 106
+    "prompt": 1016,
+    "completion": 103
    },
-   "latencyMs": 2583,
-   "costUsd": "0.000133",
+   "latencyMs": 3047,
+   "costUsd": "0.00013278",
    "cached": false
   },
   {
@@ -183,12 +183,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "5a43b5c7888e8abe73cb8eb3082ed09958ad14c209e97967c758aa7861a1b38e",
-   "responseHash": "3eab9b30a5d3325360fb42f8edd617d97ffeeade093cae9988444d81346c77bb",
+   "responseHash": "1b82d6233b31b74244286c828a93176d1fac8f30d0f29ec941a372bad7e0dfc6",
    "usage": {
     "prompt": 193,
     "completion": 9
    },
-   "latencyMs": 575,
+   "latencyMs": 775,
    "costUsd": "0",
    "cached": true
   }

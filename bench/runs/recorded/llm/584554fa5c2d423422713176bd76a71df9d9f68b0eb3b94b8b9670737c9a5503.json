@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"c5ec5b8485b14968a2f370eb4c0c7723\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Fetch_paid with payment? The tool fetches paid resource; but amount 1 of what asset? \\\"asset\\\":\\\"evm:1:native\\\" \u2014 but our wallet sends NEAR only. \\\"pay the accountant\\\" \u2014 check address_book for accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721453,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":543,\"completion_tokens\":60,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":52,\"completion_tokens_details\":{\"reasoning_tokens\":52}}}",
- "responseHash": "5e11467489bce4ff21f81f05bee5b51ec7f36043c532263fb0f7cb463cfb775d",
- "latencyMs": 3275,
- "recordedAt": "2026-11-03T15:57:36.192Z",
+ "responseBody": "{\"id\":\"2265f79329e14126851b5e9a0b069e79\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"list_tokens\\\"}\",\"reasoning_content\":\"402 wants ETH on EVM, but we can only send NEAR. Check tokens? transfer only NEAR. Likely cannot pay EVM address. Check list_tokens to confirm.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730917,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":529,\"completion_tokens\":46,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":38,\"completion_tokens_details\":{\"reasoning_tokens\":38}}}",
+ "responseHash": "02f77896452197daf9766171098c02522bb2b870859296e5d4a713568d41997e",
+ "latencyMs": 1569,
+ "recordedAt": "2026-11-03T18:35:18.304Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -21,7 +21,7 @@
     "schema": {
      "amount": "amount"
     },
-    "instruction": "Find the most recent transfer to the accountant and give its amount."
+    "instruction": "Find the most recent transfer to the accountant's address and give its amount."
    }
   },
   {
@@ -45,7 +45,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "7111919ed30cb36af2c5de3ea14400d0ae7f14d316050c34bfaa5bb743deacd3",
+    "planSha256": "6ae5767da5b3b5f5bc30ea2e050141013de2cda9cc55d6f9d5c8f4c3d587cf17",
     "steps": [
      {
       "let": "payee",
@@ -67,7 +67,7 @@
        "schema": {
         "amount": "amount"
        },
-       "instruction": "Find the most recent transfer to the accountant and give its amount."
+       "instruction": "Find the most recent transfer to the accountant's address and give its amount."
       }
      },
      {
@@ -181,7 +181,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "ee10a21fb9f2b25f4538722aed358171aac6c24d336d6e3b209fa600e1aa751a",
+    "taskHash": "63722028050b4be2cae06f6085934ad687066acc7a93b79445aec97084856915",
     "txHash": "sim:1"
    }
   },
@@ -189,7 +189,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "ee10a21fb9f2b25f4538722aed358171aac6c24d336d6e3b209fa600e1aa751a:0",
+    "request_id": "63722028050b4be2cae06f6085934ad687066acc7a93b79445aec97084856915:0",
     "outcome": "escalated",
     "reason": "UntrustedAmount",
     "pending_id": "1",
@@ -199,7 +199,7 @@
  ],
  "payments": [
   {
-   "id": "ee10a21fb9f2b25f4538722aed358171aac6c24d336d6e3b209fa600e1aa751a:0",
+   "id": "63722028050b4be2cae06f6085934ad687066acc7a93b79445aec97084856915:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -217,14 +217,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "6df1fb91853d266735d610ff8833644dac0b12f32997e07fadfd1cafcc369bf9",
-   "responseHash": "9ff82a70e0812b083a05e3d347b539c4bb45fae2dc72a4308c8b2a130633bd54",
+   "requestHash": "db0914fd58e6ca8e915056ee8dfd2ae4efbb928452ad7ae874ea469d23ed05c9",
+   "responseHash": "fb6f91060bcf2dd7387aed18a74304ecfd3c5ffc93901feeada143f37b03ac76",
    "usage": {
-    "prompt": 987,
-    "completion": 109
+    "prompt": 1003,
+    "completion": 123
    },
-   "latencyMs": 5046,
-   "costUsd": "0.00013346",
+   "latencyMs": 2279,
+   "costUsd": "0.00014174",
    "cached": false
   },
   {
@@ -232,14 +232,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "1c1e8729b989a3ba1bd81dbd84e6649822f718293d61869145485d88a82247e5",
-   "responseHash": "2adde8ce16bf0fd74f4143c2bf0389efc0bd180fc2771f71335c0bca6bd5302e",
+   "requestHash": "8c18f5041535209bbaa1211450b45cb1ee11bb94788b71bf1400620c609e4b5e",
+   "responseHash": "adcf829bd36995da2c91e996d3a1bdfd341eb112fa1bed625310c04c64f1387c",
    "usage": {
-    "prompt": 241,
+    "prompt": 243,
     "completion": 9
    },
-   "latencyMs": 1084,
-   "costUsd": "0.00002378",
+   "latencyMs": 568,
+   "costUsd": "0.00002394",
    "cached": false
   }
  ]

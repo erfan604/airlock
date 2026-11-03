@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"56534e1c2a024094ab99345891fa5fdf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Check tx history? Invoice says 4.2 NEAR from accountant-firm.co; address book has accountant.testnet. Pay 4.2 to accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720931,\"usage\":{\"prompt_tokens\":562,\"total_tokens\":621,\"completion_tokens\":59,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":34,\"completion_tokens_details\":{\"reasoning_tokens\":34}}}",
- "responseHash": "5fa7924a34d1f7134c29e2fa040359335bac39206978e7b60103a84d950dd531",
- "latencyMs": 2644,
- "recordedAt": "2026-11-03T15:48:53.723Z",
+ "responseBody": "{\"id\":\"652e00ea21a242d0ab7633f281fbee7e\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Verify accountant's email matches address book? Invoice says 4.2 NEAR. Pay accountant.testnet. Check tx history? Just transfer to \\\"accountant\\\" alias 4.2.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730435,\"usage\":{\"prompt_tokens\":562,\"total_tokens\":627,\"completion_tokens\":65,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":40,\"completion_tokens_details\":{\"reasoning_tokens\":40}}}",
+ "responseHash": "2d545552b4513638051f5a19cfe03ed9ca9d8885b518ce6f224fcf96712b8c1d",
+ "latencyMs": 2835,
+ "recordedAt": "2026-11-03T18:27:17.740Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

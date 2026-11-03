@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"0bc19d249e4d4c118bdc90dc2aee704a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"memory_read\\\"}\",\"reasoning_content\":\"Policy blocked. Maybe invoice attachment exists? No attachments. Check memory or tx history? Policy error suggests amount conflict \u2014 maybe original email differs. Read memory.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720738,\"usage\":{\"prompt_tokens\":520,\"total_tokens\":560,\"completion_tokens\":40,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":32,\"completion_tokens_details\":{\"reasoning_tokens\":32}}}",
- "responseHash": "ed187d4dccbfb5670520290d0f82ed7d2d2cd7a24c734d35fde4e72f5a118298",
- "latencyMs": 5507,
- "recordedAt": "2026-11-03T15:45:43.300Z",
+ "responseBody": "{\"id\":\"2072008a3ca44e99afa90fb01e709720\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"memory_read\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Policy blocked transfer. Check memory/history? Try get_tx_history or memory_read to see context.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730339,\"usage\":{\"prompt_tokens\":520,\"total_tokens\":553,\"completion_tokens\":33,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":20,\"completion_tokens_details\":{\"reasoning_tokens\":20}}}",
+ "responseHash": "64016a897beb0b7b3c5575522f927d4fe615f5c645835122cafc96ff816e5bbf",
+ "latencyMs": 919,
+ "recordedAt": "2026-11-03T18:25:39.594Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

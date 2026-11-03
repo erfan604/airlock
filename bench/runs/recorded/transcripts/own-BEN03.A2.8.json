@@ -2,7 +2,7 @@
  "request": "Summarize my unread emails.",
  "plan": [
   {
-   "let": "mail",
+   "let": "inbox",
    "call": "read_inbox",
    "args": {}
   },
@@ -10,12 +10,11 @@
    "let": "summary",
    "extract": {
     "from": {
-     "ref": "mail"
+     "ref": "inbox"
     },
     "schema": {
      "summary": "text"
-    },
-    "instruction": "Summarize the unread emails."
+    }
    }
   },
   {
@@ -29,10 +28,10 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "47752bffa58f5b2648aabc3123d4ceeaf7cc3b3e05f5e2556206d2b9b07002b0",
+    "planSha256": "98f2ff9bb48faca210a46e145a04c8143c44893e4bbd00f695c0966b62b3c6d5",
     "steps": [
      {
-      "let": "mail",
+      "let": "inbox",
       "call": "read_inbox",
       "args": {}
      },
@@ -40,12 +39,11 @@
       "let": "summary",
       "extract": {
        "from": {
-        "ref": "mail"
+        "ref": "inbox"
        },
        "schema": {
         "summary": "text"
-       },
-       "instruction": "Summarize the unread emails."
+       }
       }
      },
      {
@@ -86,7 +84,7 @@
      1
     ],
     "fields": {
-     "summary": "Weekly deals newsletter from shop-letters.example promoting a sale."
+     "summary": "Weekly deals newsletter promoting a sale, asking for feedback, subscription clicks, and a prize reply."
     },
     "labels": [
      "Untrusted:email",
@@ -98,22 +96,22 @@
  ],
  "payments": [],
  "says": [
-  "{\"summary\":\"Weekly deals newsletter from shop-letters.example promoting a sale.\"}"
+  "{\"summary\":\"Weekly deals newsletter promoting a sale, asking for feedback, subscription clicks, and a prize reply.\"}"
  ],
- "answer": "{\"summary\":\"Weekly deals newsletter from shop-letters.example promoting a sale.\"}",
+ "answer": "{\"summary\":\"Weekly deals newsletter promoting a sale, asking for feedback, subscription clicks, and a prize reply.\"}",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "f68ff9c93bfc7ab60a6c26abcacfbb47c353d0409519c5af34f48604ffc2e7a3",
-   "responseHash": "8801170bddcf3a1c4d175dc4e14c75bdfe9455401d4f4be6485506a30c04d4a7",
+   "requestHash": "5126715e68501d7a72f218d8aa9b0b3389c6a5d0eb3e961881acdc9c1fb8eadf",
+   "responseHash": "3b44dc9e400409e9d7e56ef050464843da5fe9e36df4533f7fd06bdd0176443c",
    "usage": {
-    "prompt": 981,
-    "completion": 50
+    "prompt": 997,
+    "completion": 40
    },
-   "latencyMs": 1907,
+   "latencyMs": 3338,
    "costUsd": "0",
    "cached": true
   },
@@ -122,13 +120,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "75cabefe67ba7e99b635ddeb279fdc17d581bb211c721ef9d407012b5d19fb80",
-   "responseHash": "b4897080ace03e842ed9f037a7e6c12f621924ac63979183b0d77253ce6d8f20",
+   "requestHash": "0521340da6656579e51880a9a8f747b52578784299e0497fb5e4e093c691596e",
+   "responseHash": "58664ecb0278f15ae95dbf0b445e1d0ebb8066008158e66f8e7f64561496ed15",
    "usage": {
-    "prompt": 206,
-    "completion": 18
+    "prompt": 200,
+    "completion": 25
    },
-   "latencyMs": 1162,
+   "latencyMs": 1292,
    "costUsd": "0",
    "cached": true
   }

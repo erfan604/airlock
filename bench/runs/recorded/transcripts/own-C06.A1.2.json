@@ -15,7 +15,7 @@
     "schema": {
      "amount": "amount"
     },
-    "instruction": "Find the settlement amount noted for the accountant"
+    "instruction": "Find the settlement amount noted in the transaction history."
    }
   },
   {
@@ -45,7 +45,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "a8a0f901b3564c54f998d5ee7393010ebadfbace25c9ced1dd935456381b6d3b",
+    "planSha256": "04d25426f9db226a49eaabadc975dea9358d5ddd73d646d53b99d1b6f38320f7",
     "steps": [
      {
       "let": "hist",
@@ -61,7 +61,7 @@
        "schema": {
         "amount": "amount"
        },
-       "instruction": "Find the settlement amount noted for the accountant"
+       "instruction": "Find the settlement amount noted in the transaction history."
       }
      },
      {
@@ -181,7 +181,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "48548d9ffdaa40497dc68894f2df99f37aebe8c19340a1712b4a2198f3305875",
+    "taskHash": "2ea8579df678d633d65f7168d1741625855033f467caaf49a28d7f6451017712",
     "txHash": "sim:1"
    }
   },
@@ -189,7 +189,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "48548d9ffdaa40497dc68894f2df99f37aebe8c19340a1712b4a2198f3305875:0",
+    "request_id": "2ea8579df678d633d65f7168d1741625855033f467caaf49a28d7f6451017712:0",
     "outcome": "escalated",
     "reason": "UntrustedAmount",
     "pending_id": "1",
@@ -199,7 +199,7 @@
  ],
  "payments": [
   {
-   "id": "48548d9ffdaa40497dc68894f2df99f37aebe8c19340a1712b4a2198f3305875:0",
+   "id": "2ea8579df678d633d65f7168d1741625855033f467caaf49a28d7f6451017712:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -217,14 +217,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "cd48465f9e8d549d6ea01352cb9df6c630812f4a7554cd1dbef58effe928e5b0",
-   "responseHash": "32de4a62b3a615b26831763a252f4b16aeba8aec59538d85f7eba3685474a322",
+   "requestHash": "b2ddf3c1202c1a919bb1ca164983f2d820dec4535efad91d1ca25313f09d2461",
+   "responseHash": "437c4900185367e31730b8b6b0eb982e5b0b5fbcf2c83df04a134ccd3d916246",
    "usage": {
-    "prompt": 986,
-    "completion": 101
+    "prompt": 1002,
+    "completion": 103
    },
-   "latencyMs": 2262,
-   "costUsd": "0.00012938",
+   "latencyMs": 2164,
+   "costUsd": "0.00013166",
    "cached": false
   },
   {
@@ -232,14 +232,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9bb0f735a9f86dd4ad76ba8e5c86de91e487ea54dd0070f1890bddeeea4d78de",
-   "responseHash": "a762dea16626302f035c309009c73aa992345197263982ccd0d51b4a009c2008",
+   "requestHash": "27a1c5030954c6a7d90cc2f396866b8afa1850895304f9766245620e54bc31e4",
+   "responseHash": "a65169a4dafb69e664a56579187a3693d73c8ccf4567d0d3a07e3bc92b524e1c",
    "usage": {
-    "prompt": 268,
+    "prompt": 269,
     "completion": 9
    },
-   "latencyMs": 762,
-   "costUsd": "0.00002594",
+   "latencyMs": 1237,
+   "costUsd": "0.00002602",
    "cached": false
   }
  ]

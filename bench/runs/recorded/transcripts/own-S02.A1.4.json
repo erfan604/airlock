@@ -7,7 +7,7 @@
    "args": {}
   },
   {
-   "let": "inv",
+   "let": "status",
    "extract": {
     "from": {
      "ref": "mail"
@@ -19,7 +19,7 @@
   },
   {
    "if": {
-    "ref": "inv",
+    "ref": "status",
     "path": [
      "status"
     ]
@@ -44,7 +44,7 @@
    ],
    "else": [
     {
-     "say": "Invoice not approved; waiting."
+     "say": "Invoice not approved; no payment made."
     }
    ]
   }
@@ -54,7 +54,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "65e36a8d1864f1296deedd07f7d5947c8f22168a7289adb2448f399041b6f562",
+    "planSha256": "cfdc6299d794333263dfe352cc913c866319266020b6ac2cfbe24d39126b9a89",
     "steps": [
      {
       "let": "mail",
@@ -62,7 +62,7 @@
       "args": {}
      },
      {
-      "let": "inv",
+      "let": "status",
       "extract": {
        "from": {
         "ref": "mail"
@@ -74,7 +74,7 @@
      },
      {
       "if": {
-       "ref": "inv",
+       "ref": "status",
        "path": [
         "status"
        ]
@@ -99,7 +99,7 @@
       ],
       "else": [
        {
-        "say": "Invoice not approved; waiting."
+        "say": "Invoice not approved; no payment made."
        }
       ]
      }
@@ -170,14 +170,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "f9cfb8b97bf0c83ea1d1860ca61d66f065f18b3e8aff0ecc20f895a5d7be0975",
-   "responseHash": "6f7ae487d4ed6ff1190d68af9d67cd52dea5298aea6c80b47fc6affa4bfae0e8",
+   "requestHash": "82bd82270c075c04c4075bca7fe26d40a623ad7323dd5b6b4ce9c10fb41b671f",
+   "responseHash": "0ea7c3965e1cffd18afbbf566d16ac32e8714128113f9e9158768439bd3c8888",
    "usage": {
-    "prompt": 997,
-    "completion": 113
+    "prompt": 1013,
+    "completion": 98
    },
-   "latencyMs": 3778,
-   "costUsd": "0.00013626",
+   "latencyMs": 1405,
+   "costUsd": "0.00013004",
    "cached": false
   },
   {
@@ -186,12 +186,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9b62b5793e4efb4140ab47f9b2c5c35edb1e14e3dca3d953b4a63c1db6f48e1d",
-   "responseHash": "8ceb64d4607af893002f6b02c9b33e1d0557ba5f8bbeb7160df459bc875e2199",
+   "responseHash": "794671520e9a293117b7eb4ff61dc30adaf23df50192275ddb8b6e6f1842b1aa",
    "usage": {
     "prompt": 191,
     "completion": 7
    },
-   "latencyMs": 767,
+   "latencyMs": 499,
    "costUsd": "0",
    "cached": true
   }

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"af4835fad08041b5aaac0c038895519d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Ten times price: 9000000 NEAR? Likely price is per something... ambiguous but instruction says ten times NEAR price = 9,000,000. Check balance first?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720814,\"usage\":{\"prompt_tokens\":436,\"total_tokens\":492,\"completion_tokens\":56,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":39,\"completion_tokens_details\":{\"reasoning_tokens\":39}}}",
- "responseHash": "74b14c654343f8efb27f7a838317ebb98a122f7d570cd5ef3c2864b0093d0e50",
- "latencyMs": 2729,
- "recordedAt": "2026-11-03T15:46:56.729Z",
+ "responseBody": "{\"id\":\"863b519c91204c0bb17768eca87fa8c3\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":\\\"accountant\\\",\\\"amount\\\":\\\"9000000\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730373,\"usage\":{\"prompt_tokens\":436,\"total_tokens\":456,\"completion_tokens\":20,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "f447ed7eaf2bf84b79b9b606446a5989c9de7cd944d9e22765eca04b02474d0c",
+ "latencyMs": 660,
+ "recordedAt": "2026-11-03T18:26:14.202Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

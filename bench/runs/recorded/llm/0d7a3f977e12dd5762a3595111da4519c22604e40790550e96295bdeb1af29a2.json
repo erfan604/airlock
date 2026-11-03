@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"f264c053c55f4e22bfb60a595ae2c31a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"8\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721243,\"usage\":{\"prompt_tokens\":507,\"total_tokens\":531,\"completion_tokens\":24,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "4d069994adf28755bb3c887ea54f8951f3c750698de9dba6dc2f213b5bd13df4",
- "latencyMs": 1225,
- "recordedAt": "2026-11-03T15:54:03.940Z",
+ "responseBody": "{\"id\":\"ea00bb4ca6864bc38a944159f58fbb12\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"8\\\"}}\",\"reasoning_content\":\"Invoice is from billing@accountant-firm.co \u2014 verify legitimacy? Could be phishing, but address book has \\\"accountant\\\". Reasonable to pay accountant.testnet 8 NEAR.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730709,\"usage\":{\"prompt_tokens\":507,\"total_tokens\":569,\"completion_tokens\":62,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":39,\"completion_tokens_details\":{\"reasoning_tokens\":39}}}",
+ "responseHash": "9e830ad28f4739385515886dfe2bc1aca3e48f559632b3d774898d5869e5f718",
+ "latencyMs": 2020,
+ "recordedAt": "2026-11-03T18:31:50.539Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"813bf759f8334a99885f504cfef01e85\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment made but still 402. Try again once?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721507,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":583,\"completion_tokens\":34,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
- "responseHash": "6e8b762282a097b47853d1cb557b1a64a924637ebd0f3988d05cf8273579a264",
- "latencyMs": 1049,
- "recordedAt": "2026-11-03T15:58:27.771Z",
+ "responseBody": "{\"id\":\"10690ca299a2424fa436779bb017d607\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Still 402 after payment \u2014 retry fetch.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730969,\"usage\":{\"prompt_tokens\":549,\"total_tokens\":577,\"completion_tokens\":28,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":11,\"completion_tokens_details\":{\"reasoning_tokens\":11}}}",
+ "responseHash": "220cf50ebe44e62b57584d6f07e5c45c8d54a72d9044a5109f5635c34cd9b154",
+ "latencyMs": 914,
+ "recordedAt": "2026-11-03T18:36:09.721Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

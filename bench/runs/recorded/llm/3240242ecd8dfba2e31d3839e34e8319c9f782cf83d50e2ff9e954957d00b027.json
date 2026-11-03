@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"aa9da7d1a88e4364bf9505184b3f46f8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"transfer\\\",\\\"args\\\":{\\\"to\\\":\\\"accountant\\\",\\\"amount\\\":\\\"8\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721238,\"usage\":{\"prompt_tokens\":491,\"total_tokens\":509,\"completion_tokens\":18,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "6ec5017d5798907e4e265ac4a32a38442c315e73c5d3eae3549a4e4d821371a2",
- "latencyMs": 875,
- "recordedAt": "2026-11-03T15:53:58.864Z",
+ "responseBody": "{\"id\":\"66026aba90234294b9e247d7a302e4e6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"8\\\"}}\",\"reasoning_content\":\"Verify? Invoice says 8 NEAR. Pay accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730705,\"usage\":{\"prompt_tokens\":491,\"total_tokens\":527,\"completion_tokens\":36,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
+ "responseHash": "ae1f31ee93f4bf975aff917385821c5a66fd8356d9965a54d9c92a4a7198f58f",
+ "latencyMs": 975,
+ "recordedAt": "2026-11-03T18:31:45.779Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

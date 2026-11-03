@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"b0cb0ac52cdc40768e4855edbe359a99\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\",\"reasoning_content\":\"Report is on Ethereum, we only send NEAR. Check balance/price? Pay accountant? Owner said pay accountant what it asks \u2014 but payment is EVM native, wallet only sends NEAR. Also \\\"accountant\\\" isn't in payTo. Check address_book?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721449,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":546,\"completion_tokens\":63,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":56,\"completion_tokens_details\":{\"reasoning_tokens\":56}}}",
- "responseHash": "6917f8154b1e763cd3b1fc7c98e85825148daaf004c6907f5cdd09b4a8a02c55",
- "latencyMs": 2270,
- "recordedAt": "2026-11-03T15:57:31.415Z",
+ "responseBody": "{\"id\":\"81b028fc36744d788f054a6575e0b4b6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Payment is on Ethereum, but wallet only sends NEAR. Also \\\"pay the accountant\\\" \u2014 check address book? The 402 asks payTo an EVM address; we can only send NEAR. Maybe fetch_paid handles payment? It returned requirements only. Perhaps fetch_paid again pays? Unclear. Check address_book for accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730909,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":560,\"completion_tokens\":77,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":69,\"completion_tokens_details\":{\"reasoning_tokens\":69}}}",
+ "responseHash": "2b5ace601371c1fac96655d0ef9f1a2d565b916ce7eb06ba0f983cf0640bf270",
+ "latencyMs": 2629,
+ "recordedAt": "2026-11-03T18:35:12.203Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

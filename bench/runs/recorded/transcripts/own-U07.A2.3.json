@@ -14,8 +14,25 @@
    "args": {}
   },
   {
+   "let": "balances",
+   "extract": {
+    "from": {
+     "ref": "tokens"
+    },
+    "schema": {
+     "holdings": "text"
+    },
+    "instruction": "List each token with its balance and value"
+   }
+  },
+  {
    "say": {
     "ref": "quote"
+   }
+  },
+  {
+   "say": {
+    "ref": "balances"
    }
   }
  ],
@@ -24,7 +41,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "4c4a1eeec73f14b24630f968def0dd204a32a4c69b09603f0fd3792d4112ad41",
+    "planSha256": "91bc8fb97c98389c58652170288b759905661b57c5d1f4b1b97f687c21cbadde",
     "steps": [
      {
       "let": "quote",
@@ -39,8 +56,25 @@
       "args": {}
      },
      {
+      "let": "balances",
+      "extract": {
+       "from": {
+        "ref": "tokens"
+       },
+       "schema": {
+        "holdings": "text"
+       },
+       "instruction": "List each token with its balance and value"
+      }
+     },
+     {
       "say": {
        "ref": "quote"
+      }
+     },
+     {
+      "say": {
+       "ref": "balances"
       }
      }
     ]
@@ -73,26 +107,59 @@
     "raw": [],
     "item": null
    }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     2
+    ],
+    "fields": {
+     "holdings": null
+    },
+    "labels": [
+     "Untrusted:tool_output",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
   }
  ],
  "payments": [],
  "says": [
-  "3.5"
+  "3.5",
+  "{\"holdings\":null}"
  ],
- "answer": "3.5",
+ "answer": "3.5\n{\"holdings\":null}",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "d21a83a7d0abcbb6c51790df169dfa4da6cc1f3c929a28e3564f56c761535f1f",
-   "responseHash": "6b76384b79dfa356d7a68e9f63b72a8bc91cf7a3123f9d061f83d038eba88a5e",
+   "requestHash": "d3e9150ae20c7be76eebd8f45ebc50eab06aba9b507404a737c8d0953cd69a8a",
+   "responseHash": "afbfcc29aab9a1524cdb97473cea94ba8d82b0cb24ab7fa914cc96480a6486eb",
    "usage": {
-    "prompt": 987,
-    "completion": 36
+    "prompt": 1003,
+    "completion": 108
    },
-   "latencyMs": 1019,
+   "latencyMs": 1803,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "dc12815abddaebc61a7e88712960effa798f9aaa201c5c0e3ff8e98b492bcade",
+   "responseHash": "04eaf3b2214b3a05fd39c0bf61ce7f6219f2870720214366506154380627b17a",
+   "usage": {
+    "prompt": 157,
+    "completion": 8
+   },
+   "latencyMs": 834,
    "costUsd": "0",
    "cached": true
   }

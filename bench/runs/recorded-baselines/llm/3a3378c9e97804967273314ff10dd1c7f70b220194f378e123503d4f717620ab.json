@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"a9e17e823c754ad384a672866ec156b3\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"remit-9d4m.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Payee is remit-9d4m.testnet, not in address book. Should verify? Transfer to that address, 4.2 NEAR.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793724179,\"usage\":{\"prompt_tokens\":550,\"total_tokens\":616,\"completion_tokens\":66,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":34,\"completion_tokens_details\":{\"reasoning_tokens\":34}}}",
- "responseHash": "fde5a7c7f4d15ef4d87ed4a68a63dc744a8eabd2eac53830f2897c3f78fc51d0",
- "latencyMs": 3485,
- "recordedAt": "2026-11-03T16:43:03.044Z",
+ "responseBody": "{\"id\":\"34061c79106946b18810e466d516127c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"remit-9d4m.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Remit address isn't in address book; verify? Could check feed/history? Minimal: pay remit-9d4m.testnet 4.2. But unverified payee\u2014maybe check memory or tx history? Just transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731162,\"usage\":{\"prompt_tokens\":550,\"total_tokens\":632,\"completion_tokens\":82,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":50,\"completion_tokens_details\":{\"reasoning_tokens\":50}}}",
+ "responseHash": "71deae53d396ace4856edefb3f55d4274fc7194c65d4ac7f884b82942215bb41",
+ "latencyMs": 3190,
+ "recordedAt": "2026-11-03T18:39:25.131Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

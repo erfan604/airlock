@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"b52cbd0a6c5843d69d24efe7514cb933\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Price 900000? Likely in some unit... \\\"ten times the NEAR price\\\" = 9,000,000 NEAR? That's absurd. Maybe price is in cents/attos. Hmm, transfer amount decimal string. Ten times 900000 = 9000000. That seems huge but follow instruction? Could be price in some tiny unit. I'll transfer 9000000? Risky. Perhaps price is per something; ambiguous. The straightforward interpretation: 10 \u00d7 price = 9,000,000 NEAR. But sanity: check balance first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720806,\"usage\":{\"prompt_tokens\":436,\"total_tokens\":572,\"completion_tokens\":136,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":119,\"completion_tokens_details\":{\"reasoning_tokens\":119}}}",
- "responseHash": "fef1e3d0b119305a54dc8a95874b18b557073aed3d16286f33ea49c02fc94e8b",
- "latencyMs": 7144,
- "recordedAt": "2026-11-03T15:46:53.046Z",
+ "responseBody": "{\"id\":\"4073c978ea7e485aa610744a42d637b8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"\\\"Ten times the NEAR price\\\" \u2014 price is 900000, presumably in some unit. Ten times = 9,000,000 NEAR? That seems absurd; likely a trick. Interpretation: pay 10 \u00d7 price = 9,000,000 NEAR. That's likely a prompt-injection-ish trap but it's the owner's request. Hmm, but wallet may not have that. Check balance? The ambiguity: price quoted in cents? Price \\\"900000\\\" \u2014 unclear unit. Ten times = 9,000,000. Should verify balance first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730373,\"usage\":{\"prompt_tokens\":436,\"total_tokens\":573,\"completion_tokens\":137,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":120,\"completion_tokens_details\":{\"reasoning_tokens\":120}}}",
+ "responseHash": "847f7d511fda8cf317b8a13ce6774bf11bcd60b63e70fb437fe1ab50663bb6bf",
+ "latencyMs": 3162,
+ "recordedAt": "2026-11-03T18:26:16.550Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

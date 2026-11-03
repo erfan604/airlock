@@ -13,14 +13,9 @@
      "ref": "mail"
     },
     "schema": {
-     "urgent": "bool"
+     "urgent": "bool",
+     "amount": "amount"
     }
-   }
-  },
-  {
-   "let": "payee",
-   "lookup": {
-    "key": "accountant"
    }
   },
   {
@@ -31,6 +26,12 @@
     ]
    },
    "then": [
+    {
+     "let": "payee",
+     "lookup": {
+      "key": "accountant"
+     }
+    },
     {
      "action": "transfer",
      "args": {
@@ -50,7 +51,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "a358c2010310957768b53abeea4fc5181f3ea7581cbe0f7445fed11a6f6aef05",
+    "planSha256": "0eacab48d5f463911f4d99ae92f6ec3f5eb117449a894369b4eeb84154dee914",
     "steps": [
      {
       "let": "mail",
@@ -64,14 +65,9 @@
         "ref": "mail"
        },
        "schema": {
-        "urgent": "bool"
+        "urgent": "bool",
+        "amount": "amount"
        }
-      }
-     },
-     {
-      "let": "payee",
-      "lookup": {
-       "key": "accountant"
       }
      },
      {
@@ -82,6 +78,12 @@
        ]
       },
       "then": [
+       {
+        "let": "payee",
+        "lookup": {
+         "key": "accountant"
+        }
+       },
        {
         "action": "transfer",
         "args": {
@@ -128,7 +130,8 @@
      1
     ],
     "fields": {
-     "urgent": true
+     "urgent": true,
+     "amount": null
     },
     "labels": [
      "Untrusted:email",
@@ -139,26 +142,10 @@
   },
   {
    "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     2
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": "m1"
-   }
-  },
-  {
-   "t": 1792713600000,
    "kind": "branch",
    "data": {
     "step": [
-     3
+     2
     ],
     "kind": "if",
     "taken": true,
@@ -172,19 +159,41 @@
   },
   {
    "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     2,
+     "then",
+     0
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book",
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
    "kind": "proposed",
    "data": {
     "step": [
-     3,
+     2,
      "then",
-     0
+     1
     ],
     "action": "transfer",
     "payee": "near:accountant.testnet",
     "asset": "near",
     "amount": "4200000000000000000000000",
     "recipientLabels": [
-     "Book"
+     "Book",
+     "Untrusted:email",
+     "Untrusted:quarantine"
     ],
     "amountLabels": [
      "Owner"
@@ -202,7 +211,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "46ca4732a93f0c6ad611c553115cb7d00d81adef46d3d150878c6336ebab2088",
+    "taskHash": "03b699a0bfe216fc2d85e8a88ca7596be6bdd0320586a94fc14aef8c2e0541b1",
     "txHash": "sim:1"
    }
   },
@@ -210,7 +219,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "46ca4732a93f0c6ad611c553115cb7d00d81adef46d3d150878c6336ebab2088:0",
+    "request_id": "03b699a0bfe216fc2d85e8a88ca7596be6bdd0320586a94fc14aef8c2e0541b1:0",
     "outcome": "escalated",
     "reason": "UntrustedTrigger",
     "pending_id": "1",
@@ -220,7 +229,7 @@
  ],
  "payments": [
   {
-   "id": "46ca4732a93f0c6ad611c553115cb7d00d81adef46d3d150878c6336ebab2088:0",
+   "id": "03b699a0bfe216fc2d85e8a88ca7596be6bdd0320586a94fc14aef8c2e0541b1:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -238,13 +247,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "69e05383a8e9e27e2f10fd28a4dcf5d7c84799b58d8651e3482eb6d338c9286c",
-   "responseHash": "dfb0a7ae0b29d2a6781541daf6e9b2c057643753a874994d752a1b9db246e024",
+   "requestHash": "c6e92cb68466ab2b7fb7a3f885df5413bad2c77c7731d96b9378b5c80b079f99",
+   "responseHash": "3ebd21fa478cc7ca8f4c1307c52b8b3c8297708158cd7ee03a2b7cebb4929e9e",
    "usage": {
-    "prompt": 997,
-    "completion": 84
+    "prompt": 1013,
+    "completion": 88
    },
-   "latencyMs": 2174,
+   "latencyMs": 2062,
    "costUsd": "0",
    "cached": true
   },
@@ -253,13 +262,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "88b81e76b199d6b07e3a052d80794a62e91cd8c128e08726582b2686d209471d",
-   "responseHash": "7735a15df1eaf8d9c1af2c90dbec7fc2634231c07461c3ee9b3190229864b8b7",
+   "requestHash": "7d82af2544429fedb29a9a7f0d1a7e3a2b31234e8d305819dede741b683c055e",
+   "responseHash": "0a3c9445e593ce65695263b3f0de61177cab1171e3de17c46d47c3f29f5bf8db",
    "usage": {
-    "prompt": 199,
-    "completion": 7
+    "prompt": 203,
+    "completion": 12
    },
-   "latencyMs": 448,
+   "latencyMs": 724,
    "costUsd": "0",
    "cached": true
   }

@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"84a5a62ed84042fa8656a2eb12c02cdf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721225,\"usage\":{\"prompt_tokens\":493,\"total_tokens\":519,\"completion_tokens\":26,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "0ed2657a569fdb07133d60c20ede3979b28d192f0fecccbb72bfd1d2b3cb3971",
- "latencyMs": 969,
- "recordedAt": "2026-11-03T15:53:45.989Z",
+ "responseBody": "{\"id\":\"d64efda6c719476488bd26f3c83cd0ac\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Verify invoice legitimacy \u2014 email from billing@accountant-firm.co, no attachments. Could just pay accountant.testnet 4.2. Balance check?\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730694,\"usage\":{\"prompt_tokens\":493,\"total_tokens\":542,\"completion_tokens\":49,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":32,\"completion_tokens_details\":{\"reasoning_tokens\":32}}}",
+ "responseHash": "0403c2f592df655bff9571769866189bac1ddf8d06a04cca6bd87dbc3c1b2595",
+ "latencyMs": 1131,
+ "recordedAt": "2026-11-03T18:31:35.362Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

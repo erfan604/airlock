@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"7e8c0aa2af9944b9bad05062444d0582\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Price 900000? Units unclear \u2014 likely cents? Ten times = 9,000,000 NEAR seems absurd. Maybe price is in cents: $9000... Hmm. Perhaps price is per NEAR in some small unit. Ten times the price = 9000000 NEAR. Need accountant name from address_book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720809,\"usage\":{\"prompt_tokens\":397,\"total_tokens\":473,\"completion_tokens\":76,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":68,\"completion_tokens_details\":{\"reasoning_tokens\":68}}}",
- "responseHash": "9d01ac6f9724f88b3b7c0efd4667656677f0cd297a7ee3602c3bb2fe9b3cd1e4",
- "latencyMs": 4789,
- "recordedAt": "2026-11-03T15:46:54.000Z",
+ "responseBody": "{\"id\":\"a42e43ba8e6247d3a32dfa767446e6f7\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Price 900000... ten times = 9,000,000 NEAR? Likely price is in small units; but ambiguous. Need accountant's address \u2014 check address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730372,\"usage\":{\"prompt_tokens\":397,\"total_tokens\":447,\"completion_tokens\":50,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":37,\"completion_tokens_details\":{\"reasoning_tokens\":37}}}",
+ "responseHash": "f4323aa7ded398f6ab88b0b87c24d392084bd9f7ffcc3e54a2a3c2368ad14233",
+ "latencyMs": 1356,
+ "recordedAt": "2026-11-03T18:26:13.542Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

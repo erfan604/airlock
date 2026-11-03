@@ -14,73 +14,25 @@
    "args": {}
   },
   {
-   "let": "balance",
-   "call": "get_balance",
-   "args": {
-    "asset": "near"
+   "let": "balance_info",
+   "extract": {
+    "from": {
+     "ref": "tokens"
+    },
+    "schema": {
+     "summary": "text"
+    }
    }
   },
   {
-   "let": "value",
-   "calc": "mul",
-   "inputs": [
-    {
-     "ref": "balance"
-    },
-    {
-     "ref": "quote"
-    }
-   ]
+   "say": {
+    "ref": "quote"
+   }
   },
   {
-   "let": "half",
-   "calc": "div",
-   "inputs": [
-    {
-     "ref": "value"
-    },
-    "2"
-   ]
-  },
-  {
-   "let": "check",
-   "calc": "gt",
-   "inputs": [
-    {
-     "ref": "half"
-    },
-    {
-     "ref": "value"
-    }
-   ]
-  },
-  {
-   "if": {
-    "ref": "check",
-    "path": [
-     "result"
-    ]
-   },
-   "then": [
-    {
-     "say": {
-      "ref": "quote"
-     }
-    },
-    {
-     "say": "Your portfolio looks unbalanced: NEAR is more than half your value."
-    }
-   ],
-   "else": [
-    {
-     "say": {
-      "ref": "quote"
-     }
-    },
-    {
-     "say": "Your NEAR holdings are within half of your portfolio value, so it looks reasonably balanced."
-    }
-   ]
+   "say": {
+    "ref": "balance_info"
+   }
   }
  ],
  "trace": [
@@ -88,7 +40,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "4a71d8983aab7879d6080843fd8d979e545f609aca1a75ac593d8c4f5b0ab80c",
+    "planSha256": "4fc075fcf777c63cfd7f9ec3dd4a7e4f2a2279ff63a8baa243ec9c2dd0a191aa",
     "steps": [
      {
       "let": "quote",
@@ -103,73 +55,25 @@
       "args": {}
      },
      {
-      "let": "balance",
-      "call": "get_balance",
-      "args": {
-       "asset": "near"
+      "let": "balance_info",
+      "extract": {
+       "from": {
+        "ref": "tokens"
+       },
+       "schema": {
+        "summary": "text"
+       }
       }
      },
      {
-      "let": "value",
-      "calc": "mul",
-      "inputs": [
-       {
-        "ref": "balance"
-       },
-       {
-        "ref": "quote"
-       }
-      ]
+      "say": {
+       "ref": "quote"
+      }
      },
      {
-      "let": "half",
-      "calc": "div",
-      "inputs": [
-       {
-        "ref": "value"
-       },
-       "2"
-      ]
-     },
-     {
-      "let": "check",
-      "calc": "gt",
-      "inputs": [
-       {
-        "ref": "half"
-       },
-       {
-        "ref": "value"
-       }
-      ]
-     },
-     {
-      "if": {
-       "ref": "check",
-       "path": [
-        "result"
-       ]
-      },
-      "then": [
-       {
-        "say": {
-         "ref": "quote"
-        }
-       },
-       {
-        "say": "Your portfolio looks unbalanced: NEAR is more than half your value."
-       }
-      ],
-      "else": [
-       {
-        "say": {
-         "ref": "quote"
-        }
-       },
-       {
-        "say": "Your NEAR holdings are within half of your portfolio value, so it looks reasonably balanced."
-       }
-      ]
+      "say": {
+       "ref": "balance_info"
+      }
      }
     ]
    }
@@ -204,100 +108,58 @@
   },
   {
    "t": 1792713600000,
-   "kind": "call",
+   "kind": "extract",
    "data": {
-    "id": "call:3",
     "step": [
      2
     ],
-    "tool": "get_balance",
-    "label": "Oracle",
-    "raw": "300",
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "calc",
-   "data": {
-    "step": [
-     3
-    ],
-    "op": "mul",
-    "result": "1050",
+    "fields": {
+     "summary": null
+    },
     "labels": [
-     "Owner",
-     "Oracle"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "calc",
-   "data": {
-    "step": [
-     4
-    ],
-    "op": "div",
-    "result": "525",
-    "labels": [
-     "Owner",
-     "Oracle"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "calc",
-   "data": {
-    "step": [
-     5
-    ],
-    "op": "gt",
-    "result": false,
-    "labels": [
-     "Owner",
-     "Oracle"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "error",
-   "data": {
-    "step": [
-     6
-    ],
-    "code": "BadCondition",
-    "labels": [
-     "Owner",
-     "Oracle"
+     "Untrusted:tool_output",
+     "Untrusted:quarantine"
     ],
     "item": null
    }
   }
  ],
  "payments": [],
- "says": [],
- "answer": "",
+ "says": [
+  "3.5",
+  "{\"summary\":null}"
+ ],
+ "answer": "3.5\n{\"summary\":null}",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "7821dfa5c979efd79fd690f98bf9212e55836e8473c72afadbb66afb35ea99dc",
-   "responseHash": "ff55e1289f2cc2a8fe3910d36f79aaf2c97d26df3f3f2574056a8a9a5588ce51",
+   "requestHash": "6d0eae6674fb9d8bbce53d3665407ea5f30024f8a219106750c139a57779de9c",
+   "responseHash": "f467db9d70116ba93dd3029c20ca5529057de9a3356e461f7b9535d56bc16122",
    "usage": {
-    "prompt": 987,
-    "completion": 173
+    "prompt": 1003,
+    "completion": 93
    },
-   "latencyMs": 2921,
-   "costUsd": "0.00016546",
+   "latencyMs": 1738,
+   "costUsd": "0.00012674",
    "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "9ad901cb388990bfce131a4d031d11ead64eae0fd6614058f63a8dac36401beb",
+   "responseHash": "5e1a8882197ad1f1cb7bd2c9c3ea7b4e091896b6674153af9985b156afbb0e2b",
+   "usage": {
+    "prompt": 148,
+    "completion": 10
+   },
+   "latencyMs": 1390,
+   "costUsd": "0",
+   "cached": true
   }
  ]
 }

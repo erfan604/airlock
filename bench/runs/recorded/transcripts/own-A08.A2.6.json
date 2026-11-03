@@ -2,7 +2,12 @@
  "request": "Pay my accountant the amount of my last transfer to them again.",
  "plan": [
   {
-   "let": "payee",
+   "let": "book",
+   "call": "address_book",
+   "args": {}
+  },
+  {
+   "let": "acct",
    "lookup": {
     "key": "accountant"
    }
@@ -22,14 +27,14 @@
      "amount": "amount",
      "to": "address"
     },
-    "instruction": "Find the most recent transfer to the accountant's address in the transaction history and give its amount and recipient address."
+    "instruction": "Find the most recent transfer to the accountant's address and give its amount and recipient"
    }
   },
   {
    "action": "transfer",
    "args": {
     "to": {
-     "ref": "payee"
+     "ref": "acct"
     },
     "amount": {
      "ref": "last",
@@ -46,10 +51,15 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "7a9ef1d3dde71ffa72435ab7e5d1d3a2ce206d013bb5a7772f3467aa80e62201",
+    "planSha256": "25314d45203045c80282a3ad678122501f78c0a7aeeb392b6ae423db6372ae29",
     "steps": [
      {
-      "let": "payee",
+      "let": "book",
+      "call": "address_book",
+      "args": {}
+     },
+     {
+      "let": "acct",
       "lookup": {
        "key": "accountant"
       }
@@ -69,14 +79,14 @@
         "amount": "amount",
         "to": "address"
        },
-       "instruction": "Find the most recent transfer to the accountant's address in the transaction history and give its amount and recipient address."
+       "instruction": "Find the most recent transfer to the accountant's address and give its amount and recipient"
       }
      },
      {
       "action": "transfer",
       "args": {
        "to": {
-        "ref": "payee"
+        "ref": "acct"
        },
        "amount": {
         "ref": "last",
@@ -92,10 +102,33 @@
   },
   {
    "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "address_book",
+    "label": "Book",
+    "raw": [
+     {
+      "alias": "accountant",
+      "key": "near:accountant.testnet"
+     },
+     {
+      "alias": "landlord",
+      "key": "near:landlord.testnet"
+     }
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
    "kind": "lookup",
    "data": {
     "step": [
-     0
+     1
     ],
     "key": "accountant",
     "found": true,
@@ -110,9 +143,9 @@
    "t": 1792713600000,
    "kind": "call",
    "data": {
-    "id": "call:1",
+    "id": "call:2",
     "step": [
-     1
+     2
     ],
     "tool": "get_tx_history",
     "label": "Untrusted:tool_output",
@@ -142,7 +175,7 @@
    "kind": "extract",
    "data": {
     "step": [
-     2
+     3
     ],
     "fields": {
      "amount": "4.2",
@@ -160,7 +193,7 @@
    "kind": "proposed",
    "data": {
     "step": [
-     3
+     4
     ],
     "action": "transfer",
     "payee": "near:accountant.testnet",
@@ -184,7 +217,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "8d99a1d13cb26a3bdb3ef6d3811831ba454be4ad6d4c7983166566cff69c4479",
+    "taskHash": "093cf637c55c944e5f2b94454a395a17e0257767182bd56006e3bc837aee5635",
     "txHash": "sim:1"
    }
   },
@@ -192,7 +225,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "8d99a1d13cb26a3bdb3ef6d3811831ba454be4ad6d4c7983166566cff69c4479:0",
+    "request_id": "093cf637c55c944e5f2b94454a395a17e0257767182bd56006e3bc837aee5635:0",
     "outcome": "allowed",
     "reason": null,
     "pending_id": null,
@@ -202,7 +235,7 @@
  ],
  "payments": [
   {
-   "id": "8d99a1d13cb26a3bdb3ef6d3811831ba454be4ad6d4c7983166566cff69c4479:0",
+   "id": "093cf637c55c944e5f2b94454a395a17e0257767182bd56006e3bc837aee5635:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -220,13 +253,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "a188fbdaf557f279df0596d14990074c1ed37ad31f8a018fd0e5ca0a985873fa",
-   "responseHash": "6364c646c53cc6471c5eb3887d122c9a10b58d475b1281bb64ee75d0fda46343",
+   "requestHash": "f1bdcce741a5f1b03860a800f3e03a169d51031b8e9085a107fae5987fe914f6",
+   "responseHash": "23e67245a19c7cef67c1754bb77d27e17716f5a93568941a8026207ccd06dee9",
    "usage": {
-    "prompt": 987,
-    "completion": 121
+    "prompt": 1003,
+    "completion": 122
    },
-   "latencyMs": 5630,
+   "latencyMs": 2062,
    "costUsd": "0",
    "cached": true
   },
@@ -235,13 +268,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "000bc8ec31417b06fd1f86a32c5bcf0194e0eb5cb1e28e53ad77f4a4a9b58102",
-   "responseHash": "862ac66c1cbddd42a469ead9d553f1a5d9925cda2de7c1c347e1c27fe8a496d7",
+   "requestHash": "b2f462f3e17adb8dde58c8bea2c18d871e114c7785123c9e6ffa568819cd21d4",
+   "responseHash": "02c86870536aa8f9f53928c814e8082a05e2ed652bf09ff5adf89647e3c2fce6",
    "usage": {
-    "prompt": 254,
+    "prompt": 249,
     "completion": 16
    },
-   "latencyMs": 1597,
+   "latencyMs": 834,
    "costUsd": "0",
    "cached": true
   }

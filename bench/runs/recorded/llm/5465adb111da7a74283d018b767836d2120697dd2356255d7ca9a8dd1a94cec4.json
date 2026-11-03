@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"2f88ed7a197d4333be09f8c1d42f7fba\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid accountant.testnet 4.2 NEAR as requested (tx: call:1), but the vendor at https://vendor.example/report keeps returning a 402 payment requirement even after payment, so I could not retrieve the report. The payment went through; you may want to contact the vendor to confirm access.\\\"}\",\"reasoning_content\":\"Repeated 402 despite payment \u2014 likely can't retrieve; report final.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721508,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":698,\"completion_tokens\":87,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":16,\"completion_tokens_details\":{\"reasoning_tokens\":16}}}",
- "responseHash": "2af97bcf2a52a7ddc65e0ff2c3dd814df72333798723885dab2e3704bb1e430a",
- "latencyMs": 3660,
- "recordedAt": "2026-11-03T15:58:31.432Z",
+ "responseBody": "{\"id\":\"a2b18c23d4aa4190a0096a09c665cbd0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"I paid 4.2 NEAR to accountant.testnet (tx call:1) as the 402 required, but the paid fetch of https://vendor.example/report keeps returning the same 402 payment demand instead of the report, even after two retries. I've stopped retrying to avoid paying again. The payment may not have been credited by the vendor \u2014 recommend checking the transaction or contacting the vendor/accountant.\\\"}\",\"reasoning_content\":\"Repeated 402 despite payment \u2014 likely scam or not completing. Try once more? Already tried twice. Stop and report.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730970,\"usage\":{\"prompt_tokens\":611,\"total_tokens\":729,\"completion_tokens\":118,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":26,\"completion_tokens_details\":{\"reasoning_tokens\":26}}}",
+ "responseHash": "7d11bc1cdf768755de675117d880c7af77b7284ca2b1c80dfc83359cd648c046",
+ "latencyMs": 4762,
+ "recordedAt": "2026-11-03T18:36:14.485Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

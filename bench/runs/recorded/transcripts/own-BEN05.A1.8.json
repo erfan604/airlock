@@ -5,29 +5,6 @@
    "let": "tokens",
    "call": "list_tokens",
    "args": {}
-  },
-  {
-   "for": "tok",
-   "in": {
-    "ref": "tokens"
-   },
-   "max": 20,
-   "do": [
-    {
-     "let": "bal",
-     "call": "get_balance",
-     "args": {
-      "asset": {
-       "ref": "tok"
-      }
-     }
-    },
-    {
-     "say": {
-      "ref": "bal"
-     }
-    }
-   ]
   }
  ],
  "trace": [
@@ -35,35 +12,12 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "b3653e4a8abab47375dea0e033a7428898a1198b1e29816f3fd93573ae4940a3",
+    "planSha256": "5025f8491acbe796b55639ec8e3e42432ee0e0753699c175bd55e7f56667ff42",
     "steps": [
      {
       "let": "tokens",
       "call": "list_tokens",
       "args": {}
-     },
-     {
-      "for": "tok",
-      "in": {
-       "ref": "tokens"
-      },
-      "max": 20,
-      "do": [
-       {
-        "let": "bal",
-        "call": "get_balance",
-        "args": {
-         "asset": {
-          "ref": "tok"
-         }
-        }
-       },
-       {
-        "say": {
-         "ref": "bal"
-        }
-       }
-      ]
      }
     ]
    }
@@ -94,39 +48,6 @@
     ],
     "item": null
    }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "branch",
-   "data": {
-    "step": [
-     1
-    ],
-    "kind": "for",
-    "iterations": 2,
-    "pc": [
-     "Owner",
-     "Untrusted:tool_output"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "error",
-   "data": {
-    "step": [
-     1,
-     "do",
-     0
-    ],
-    "code": "RefusedToolArg",
-    "labels": [
-     "Untrusted:tool_output"
-    ],
-    "detail": "UntrustedToolArg",
-    "item": null
-   }
   }
  ],
  "payments": [],
@@ -138,14 +59,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "f1866d7ee9603335cb104a0d76f11fb7d4f62bc20c98616ec8716a04048fcdce",
-   "responseHash": "2e9723e14b10929b602ae4f4b179bdc21903216961b76a35015d5b94c7ecb601",
+   "requestHash": "5741391622fea23a3b412c8b80d1d8ef6d60111cc07c3da11fca5b4b9a8a9ec6",
+   "responseHash": "5d65670b6ba7fbcbe975889a028e798dfa464c383fb40a03a75acad27dda29ab",
    "usage": {
-    "prompt": 979,
-    "completion": 55
+    "prompt": 995,
+    "completion": 14
    },
-   "latencyMs": 1847,
-   "costUsd": "0.00010582",
+   "latencyMs": 647,
+   "costUsd": "0.0000866",
    "cached": false
   }
  ]

@@ -2,18 +2,12 @@
  "request": "Pay my accountant the pending settlement amount shown in my token list.",
  "plan": [
   {
-   "let": "payee",
-   "lookup": {
-    "key": "accountant"
-   }
-  },
-  {
    "let": "tokens",
    "call": "list_tokens",
    "args": {}
   },
   {
-   "let": "amt",
+   "let": "pending",
    "extract": {
     "from": {
      "ref": "tokens"
@@ -21,7 +15,13 @@
     "schema": {
      "amount": "amount"
     },
-    "instruction": "pending settlement amount"
+    "instruction": "Find the pending settlement amount shown in the token list"
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
    }
   },
   {
@@ -31,7 +31,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "amt"
+     "ref": "pending"
     },
     "asset": "near"
    }
@@ -42,21 +42,15 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "91fc50a9bab3acb2923d80c017730d80ad8b4ecd3bc9202ebe5725045cee403e",
+    "planSha256": "eea5da3c4b3ac7f89c89485f1d41d4d142b4432251684fe7c821dfc29b6bbdef",
     "steps": [
-     {
-      "let": "payee",
-      "lookup": {
-       "key": "accountant"
-      }
-     },
      {
       "let": "tokens",
       "call": "list_tokens",
       "args": {}
      },
      {
-      "let": "amt",
+      "let": "pending",
       "extract": {
        "from": {
         "ref": "tokens"
@@ -64,7 +58,13 @@
        "schema": {
         "amount": "amount"
        },
-       "instruction": "pending settlement amount"
+       "instruction": "Find the pending settlement amount shown in the token list"
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
       }
      },
      {
@@ -74,7 +74,7 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "amt"
+        "ref": "pending"
        },
        "asset": "near"
       }
@@ -84,27 +84,11 @@
   },
   {
    "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     0
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
    "kind": "call",
    "data": {
     "id": "call:1",
     "step": [
-     1
+     0
     ],
     "tool": "list_tokens",
     "label": "Untrusted:tool_output",
@@ -130,7 +114,7 @@
    "kind": "extract",
    "data": {
     "step": [
-     2
+     1
     ],
     "fields": {
      "amount": "4.2"
@@ -138,6 +122,22 @@
     "labels": [
      "Untrusted:tool_output",
      "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
     ],
     "item": null
    }
@@ -167,14 +167,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "bbaf91af40104517328daf0ffc09220266fb690289a6be1337c5b5e6b5be15eb",
-   "responseHash": "d32b143e9d7e3a49645f67eddbb81afe6534cde3643c634ec853b2c88fde0cfc",
+   "requestHash": "eab691a210f91580ba9aa3de05386f49af0fab0d41afd3b1862845f8f86349f9",
+   "responseHash": "3e0d695ef0ddee0c6862871ce9c5d3d47a069b691d11941e31cf7057ff2ef00d",
    "usage": {
-    "prompt": 987,
-    "completion": 75
+    "prompt": 1003,
+    "completion": 96
    },
-   "latencyMs": 1931,
-   "costUsd": "0.00011646",
+   "latencyMs": 2297,
+   "costUsd": "0.00012824",
    "cached": false
   },
   {
@@ -182,14 +182,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "4455ae4a524b9827f56612d10b7279b4816b5c43ef4dc857210cc201505cfea0",
-   "responseHash": "23c058ab85e7eae24d54e75ab8b4e735bdf73cf5cd505fc81187af4e5e8c1e3b",
+   "requestHash": "7bf3b47895e186212d9894b06a8352349a6c411fcc1fdbceed03d3f5a28cddc0",
+   "responseHash": "e8a85382241ec96f31aa6412d4fbeeaa2b0bab01164c2fc2d6011cf14d24b8ae",
    "usage": {
-    "prompt": 232,
-    "completion": 17
+    "prompt": 239,
+    "completion": 9
    },
-   "latencyMs": 773,
-   "costUsd": "0.00002706",
+   "latencyMs": 909,
+   "costUsd": "0.00002362",
    "cached": false
   }
  ]

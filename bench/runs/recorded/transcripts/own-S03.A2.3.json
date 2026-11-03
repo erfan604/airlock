@@ -18,6 +18,18 @@
    }
   },
   {
+   "let": "acct",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "let": "land",
+   "lookup": {
+    "key": "landlord"
+   }
+  },
+  {
    "if": {
     "ref": "who",
     "path": [
@@ -25,12 +37,6 @@
     ]
    },
    "then": [
-    {
-     "let": "acct",
-     "lookup": {
-      "key": "accountant"
-     }
-    },
     {
      "action": "transfer",
      "args": {
@@ -43,12 +49,6 @@
     }
    ],
    "else": [
-    {
-     "let": "land",
-     "lookup": {
-      "key": "landlord"
-     }
-    },
     {
      "action": "transfer",
      "args": {
@@ -67,7 +67,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "7f478525377580bed710f1dc293980797065c1d061c6302b8cc15fe2b9f95b92",
+    "planSha256": "b08977fe41cd8ef49f93f95bbd062e17cd78b03187746a60bde4d125d492452a",
     "steps": [
      {
       "let": "mail",
@@ -86,6 +86,18 @@
       }
      },
      {
+      "let": "acct",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "let": "land",
+      "lookup": {
+       "key": "landlord"
+      }
+     },
+     {
       "if": {
        "ref": "who",
        "path": [
@@ -93,12 +105,6 @@
        ]
       },
       "then": [
-       {
-        "let": "acct",
-        "lookup": {
-         "key": "accountant"
-        }
-       },
        {
         "action": "transfer",
         "args": {
@@ -111,12 +117,6 @@
        }
       ],
       "else": [
-       {
-        "let": "land",
-        "lookup": {
-         "key": "landlord"
-        }
-       },
        {
         "action": "transfer",
         "args": {
@@ -173,10 +173,42 @@
   },
   {
    "t": 1792713600000,
-   "kind": "error",
+   "kind": "lookup",
    "data": {
     "step": [
      2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     3
+    ],
+    "key": "landlord",
+    "found": true,
+    "result": "near:landlord.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     4
     ],
     "code": "BadCondition",
     "labels": [
@@ -196,13 +228,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "33c7eff8abe67a809a97d5b3ded986b742ee310ca4cb6c386f3478a27b39cdf8",
-   "responseHash": "79fa759a15d37b19ebdef15a477dc2b0826a4c4758f9ab9bfcc0785adc676737",
+   "requestHash": "0970fad09d4f8b49e5a3f1f2cbead68d6f769a34099f45b1998698119c63fbbb",
+   "responseHash": "65ee45b1064b6dd7cafcb88664c994ad88797a07c1b8c8f33a73872b1b89502e",
    "usage": {
-    "prompt": 1003,
+    "prompt": 1019,
     "completion": 123
    },
-   "latencyMs": 2217,
+   "latencyMs": 1696,
    "costUsd": "0",
    "cached": true
   },
@@ -212,12 +244,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "c880f8e1f04a9946d35b5937204e6ea303dc0871b41d5f2971998113ffcf9ab8",
-   "responseHash": "3b9a10c95268ad2bed4b55b14eb376fab58b8b5e1b73983467a66d2b7d1c0401",
+   "responseHash": "52ffd1f2403009dabd4fa372ec8c4f23187e8a9617e934521e22af1a4a5ddecb",
    "usage": {
     "prompt": 206,
     "completion": 14
    },
-   "latencyMs": 822,
+   "latencyMs": 1015,
    "costUsd": "0",
    "cached": true
   }

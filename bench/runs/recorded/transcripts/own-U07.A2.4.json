@@ -19,9 +19,39 @@
    "args": {}
   },
   {
-   "say": {
-    "ref": "tokens"
+   "let": "bal",
+   "call": "get_balance",
+   "args": {
+    "asset": "near"
    }
+  },
+  {
+   "let": "half",
+   "calc": "gt",
+   "inputs": [
+    {
+     "ref": "bal"
+    },
+    "0"
+   ]
+  },
+  {
+   "if": {
+    "ref": "half",
+    "path": [
+     "gt"
+    ]
+   },
+   "then": [
+    {
+     "say": "You currently hold NEAR; for a balanced portfolio consider diversifying across your listed tokens."
+    }
+   ],
+   "else": [
+    {
+     "say": "You hold little or no NEAR; your portfolio may be underweight NEAR."
+    }
+   ]
   }
  ],
  "trace": [
@@ -29,7 +59,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "a29b8053c00e2f14449a07898d39c923bc06de12101ee312c8dbbdefd8b12af7",
+    "planSha256": "70768baacc2d19726ed04a705c9b88bdb6001e7478b8cb2644895c2a5684e2be",
     "steps": [
      {
       "let": "quote",
@@ -49,9 +79,39 @@
       "args": {}
      },
      {
-      "say": {
-       "ref": "tokens"
+      "let": "bal",
+      "call": "get_balance",
+      "args": {
+       "asset": "near"
       }
+     },
+     {
+      "let": "half",
+      "calc": "gt",
+      "inputs": [
+       {
+        "ref": "bal"
+       },
+       "0"
+      ]
+     },
+     {
+      "if": {
+       "ref": "half",
+       "path": [
+        "gt"
+       ]
+      },
+      "then": [
+       {
+        "say": "You currently hold NEAR; for a balanced portfolio consider diversifying across your listed tokens."
+       }
+      ],
+      "else": [
+       {
+        "say": "You hold little or no NEAR; your portfolio may be underweight NEAR."
+       }
+      ]
      }
     ]
    }
@@ -83,27 +143,69 @@
     "raw": [],
     "item": null
    }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:3",
+    "step": [
+     3
+    ],
+    "tool": "get_balance",
+    "label": "Oracle",
+    "raw": "300",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "calc",
+   "data": {
+    "step": [
+     4
+    ],
+    "op": "gt",
+    "result": true,
+    "labels": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     5
+    ],
+    "code": "BadCondition",
+    "labels": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
   }
  ],
  "payments": [],
- "says": [
-  "3.5",
-  "[]"
- ],
- "answer": "3.5\n[]",
+ "says": [],
+ "answer": "",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "a077cfdbaf706257f79114dfa1f1d9032142b6eca76d94ec1cb45de3a268ab63",
-   "responseHash": "4e86f2c529b6efb62d1cb9ebc8502bb2ce51b0e208e3983095361c31677d9812",
+   "requestHash": "b3fe39325a5a78c7af76c187c464cfb6abf7d2985146fc09b59760bf9753743b",
+   "responseHash": "68c5476af4cebf91b0e2c4274f72e99d775d3c34194ead42b6470dc6ac886b3e",
    "usage": {
-    "prompt": 987,
-    "completion": 43
+    "prompt": 1003,
+    "completion": 155
    },
-   "latencyMs": 1084,
+   "latencyMs": 3276,
    "costUsd": "0",
    "cached": true
   }

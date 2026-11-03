@@ -9,40 +9,13 @@
    }
   },
   {
-   "let": "bal",
-   "call": "get_balance",
-   "args": {
-    "asset": "near"
-   }
-  },
-  {
-   "let": "value",
-   "calc": "mul",
-   "inputs": [
-    {
-     "ref": "bal"
-    },
-    {
-     "ref": "quote"
-    }
-   ]
-  },
-  {
    "let": "tokens",
    "call": "list_tokens",
    "args": {}
   },
   {
-   "say": "NEAR price and holdings:"
-  },
-  {
    "say": {
     "ref": "quote"
-   }
-  },
-  {
-   "say": {
-    "ref": "bal"
    }
   },
   {
@@ -56,7 +29,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "d5b484386bad35ffb4ed6053207b9f8332c2ee426108b478be0cd07c9615410d",
+    "planSha256": "634c2a98956cd834431f6b1f3bd48391cdb894da487db797b05f37c4d86f8be1",
     "steps": [
      {
       "let": "quote",
@@ -66,40 +39,13 @@
       }
      },
      {
-      "let": "bal",
-      "call": "get_balance",
-      "args": {
-       "asset": "near"
-      }
-     },
-     {
-      "let": "value",
-      "calc": "mul",
-      "inputs": [
-       {
-        "ref": "bal"
-       },
-       {
-        "ref": "quote"
-       }
-      ]
-     },
-     {
       "let": "tokens",
       "call": "list_tokens",
       "args": {}
      },
      {
-      "say": "NEAR price and holdings:"
-     },
-     {
       "say": {
        "ref": "quote"
-      }
-     },
-     {
-      "say": {
-       "ref": "bal"
       }
      },
      {
@@ -132,36 +78,6 @@
     "step": [
      1
     ],
-    "tool": "get_balance",
-    "label": "Oracle",
-    "raw": "300",
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "calc",
-   "data": {
-    "step": [
-     2
-    ],
-    "op": "mul",
-    "result": "1050",
-    "labels": [
-     "Owner",
-     "Oracle"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "call",
-   "data": {
-    "id": "call:3",
-    "step": [
-     3
-    ],
     "tool": "list_tokens",
     "label": "Untrusted:tool_output",
     "raw": [],
@@ -171,26 +87,24 @@
  ],
  "payments": [],
  "says": [
-  "NEAR price and holdings:",
   "3.5",
-  "300",
   "[]"
  ],
- "answer": "NEAR price and holdings:\n3.5\n300\n[]",
+ "answer": "3.5\n[]",
  "llm": [
   {
    "role": "planner",
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "0a26640e64f14ecd5d0960e733efbecdc6095af48b7b54349e7d94460e1481af",
-   "responseHash": "36a8117f4ce0954bf66746a81b3e7cb1b2eabb70564294534af57932b5b20e26",
+   "requestHash": "019bb868edb1f107b4401c2f34aed5d0fb6252fa7f0d4afcd8106137298dc6dc",
+   "responseHash": "c9c6378d58e0b7862de723a7ac77616c7a063d3313dac697d47f96453def03b6",
    "usage": {
-    "prompt": 987,
-    "completion": 125
+    "prompt": 1003,
+    "completion": 66
    },
-   "latencyMs": 3377,
-   "costUsd": "0.00014146",
+   "latencyMs": 1159,
+   "costUsd": "0.00011324",
    "cached": false
   }
  ]

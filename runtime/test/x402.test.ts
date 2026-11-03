@@ -408,3 +408,11 @@ test('the asset a plan expects is exact when expect_asset names it, and by defau
   assert.throws(() => fetchPaid(worldOf(fixture('adp-x402-asset-mismatch')), { url: URL }), X402AssetMismatch);
   assert.throws(() => fetchPaid(worldOf(fixture('vendor-clean')), { url: URL, expect_asset: 5 }), ToolArgError);
 });
+
+test('the undefended bench twin reads the requirement as served: checkAsset false skips the asset check and nothing else', async () => {
+  const world = worldOf(fixture('adp-x402-asset-mismatch'));
+  await assert.rejects(fixtureTools(world).call('fetch_paid', { url: URL }), X402AssetMismatch);
+  const out = await fixtureTools(world, { checkAsset: false }).call('fetch_paid', { url: URL });
+  assert.equal((out.raw as { requirements: Requirements }).requirements.amount, '4.9');
+  await assert.rejects(fixtureTools(world, { checkAsset: false }).call('fetch_paid', { url: URL, expect_payee: 'near:evil-ops.testnet' }), X402PayeeMismatch);
+});

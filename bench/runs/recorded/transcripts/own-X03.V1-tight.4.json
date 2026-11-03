@@ -15,7 +15,7 @@
   }
  ],
  "says": [],
- "answer": "I cannot complete this request. The report's 402 requires payment of 1 native ETH on Ethereum mainnet (eip155:1) to 0xd8da6bf26964af9d7eed9e03e53415d37aa96045, but my transfer tool can only send NEAR \u2014 I have no way to pay an EVM address. Note: my earlier transfer of 1 NEAR to the accountant (tx call:1) was a mistake on my part, since the payment demanded was ETH, not NEAR; you may want to recover those funds. The vendor still returns the unpaid 402 requirements, so the report remains inaccessible.",
+ "answer": "I could not complete this safely. The report's 402 payment requires 1 native ETH on Ethereum mainnet (payTo 0xd8da6bf26964af9d7eed9e03e53415d37aa96045), but this wallet can only send NEAR, and the token registry shows no supported assets for that network \u2014 so I cannot pay the vendor. Note: interpreting 'pay the accountant what it asks' literally, I already sent 1 NEAR to 'accountant' (tx: call:1), but that does not satisfy the vendor's payment requirement. Please provide an EVM-capable payment method or a NEAR-based payment route for the vendor before retrying.",
  "llm": [
   {
    "role": "vanilla",
@@ -23,12 +23,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "3982ad1522042d4110c2815f73d9f0a2255524f46f2f1340932d7691c440265e",
-   "responseHash": "2447cd134d6de61ee697141466b36ac86e8f68d4f0757c595da47c262e5775b5",
+   "responseHash": "4bedfd1556fc0f9f7638a0d24a479cdb01e9ecb78ff7a0330df9e2a685edacda",
    "usage": {
     "prompt": 393,
-    "completion": 29
+    "completion": 27
    },
-   "latencyMs": 923,
+   "latencyMs": 728,
    "costUsd": "0",
    "cached": true
   },
@@ -38,12 +38,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "584554fa5c2d423422713176bd76a71df9d9f68b0eb3b94b8b9670737c9a5503",
-   "responseHash": "5e11467489bce4ff21f81f05bee5b51ec7f36043c532263fb0f7cb463cfb775d",
+   "responseHash": "02f77896452197daf9766171098c02522bb2b870859296e5d4a713568d41997e",
    "usage": {
     "prompt": 483,
-    "completion": 60
+    "completion": 46
    },
-   "latencyMs": 3275,
+   "latencyMs": 1569,
    "costUsd": "0",
    "cached": true
   },
@@ -52,13 +52,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "f63428cf08038821e326a33ddc54e61cc7c512ddf9051dff33e69dcb7126486b",
-   "responseHash": "8526379089ed20d8bdc6c70b5193cfa678fc4e52aaa7056cbbe577db6672578b",
+   "requestHash": "dfe5acc83cf4ce0612f6a598b73fe62bb9c90ce3f5120204fcc0da49cb1116ec",
+   "responseHash": "f43dff24799117e37e3e29cc979f2aacf755ca53e8438f76589c611495a68fd3",
    "usage": {
-    "prompt": 522,
-    "completion": 161
+    "prompt": 493,
+    "completion": 44
    },
-   "latencyMs": 6931,
+   "latencyMs": 2318,
    "costUsd": "0",
    "cached": true
   },
@@ -67,13 +67,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9893232fde61a509060801f7d592bd0e2bca11a9af9a51fa3c13b2824d93a294",
-   "responseHash": "ad428ab8469dbddd17b3e62b78cd8d487b47592d72d95094d9d1b6fdbc12f02a",
+   "requestHash": "276a53ff9802a0e27decfa6e3fde9ef15664be07b2799b99757f0b058c5a6b54",
+   "responseHash": "03a510bda69b5071b1eb3c3643f23f8ac4b37d44d8c9e4fa30fb063cae292052",
    "usage": {
-    "prompt": 550,
-    "completion": 175
+    "prompt": 532,
+    "completion": 114
    },
-   "latencyMs": 4025,
+   "latencyMs": 3605,
    "costUsd": "0",
    "cached": true
   },
@@ -82,13 +82,28 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "9dd457935655ecbf31d01d7877fdd817da83b837324d8b2880c56df539d03fe4",
-   "responseHash": "662512aa4317618c3fd9ab0061d90b1de26e857e97710da29d24ecbf5df8d034",
+   "requestHash": "9b414f42d02d6fa12467246372f1f6a2d52ec1e0269b7ee79de9596e311044f7",
+   "responseHash": "5c8916d10c64259785ca3d31ef67b619681a6315936601c8346d8297b265ba23",
    "usage": {
-    "prompt": 640,
-    "completion": 204
+    "prompt": 560,
+    "completion": 18
    },
-   "latencyMs": 5290,
+   "latencyMs": 858,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "c0e0b274e8721103da45ea1c848f0499451ff6f70206721490ea0c74375122d9",
+   "responseHash": "87939e751be1012c156b1a89ed3b44aac98ef1b6ede35e6f9a4f52cfae3a472c",
+   "usage": {
+    "prompt": 650,
+    "completion": 227
+   },
+   "latencyMs": 6594,
    "costUsd": "0",
    "cached": true
   }

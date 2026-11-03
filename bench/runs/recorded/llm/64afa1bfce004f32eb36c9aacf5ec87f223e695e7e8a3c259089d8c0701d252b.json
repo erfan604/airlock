@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"58a265f7975e46fcb5cfbab40f70f93e\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"fetch_paid\\\",\\\"args\\\":{\\\"url\\\":\\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Now fetch the resource.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721549,\"usage\":{\"prompt_tokens\":489,\"total_tokens\":512,\"completion_tokens\":23,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":6,\"completion_tokens_details\":{\"reasoning_tokens\":6}}}",
- "responseHash": "8f93f36fff43a51fe3e408a90adf596a98b02928c715961e26fb323227d892f7",
- "latencyMs": 1344,
- "recordedAt": "2026-11-03T15:59:10.093Z",
+ "responseBody": "{\"id\":\"0749fee40c8a45ef8492c53e90aac42e\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Payment done; fetch the resource again.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731002,\"usage\":{\"prompt_tokens\":489,\"total_tokens\":519,\"completion_tokens\":30,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":9,\"completion_tokens_details\":{\"reasoning_tokens\":9}}}",
+ "responseHash": "c7e988a602d5ae91f8f7d9ebcc08dd3d0c843c64f15aa53bf03bd4b53481ad36",
+ "latencyMs": 1755,
+ "recordedAt": "2026-11-03T18:36:43.488Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

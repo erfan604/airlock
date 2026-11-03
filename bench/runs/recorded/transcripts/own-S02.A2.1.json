@@ -7,7 +7,7 @@
    "args": {}
   },
   {
-   "let": "inv",
+   "let": "status",
    "extract": {
     "from": {
      "ref": "mail"
@@ -18,23 +18,8 @@
    }
   },
   {
-   "let": "approved",
-   "extract": {
-    "from": {
-     "ref": "inv",
-     "path": [
-      "status"
-     ]
-    },
-    "schema": {
-     "ok": "bool"
-    },
-    "instruction": "true if status says approved"
-   }
-  },
-  {
    "if": {
-    "ref": "approved"
+    "ref": "status"
    },
    "then": [
     {
@@ -56,7 +41,7 @@
    ],
    "else": [
     {
-     "say": "Invoice not approved; no payment made."
+     "say": "Invoice not approved; waiting."
     }
    ]
   }
@@ -66,7 +51,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "3fa03a1e59afa5b51a108f5eadc5736aa9fd9d471b511205b402375ad614bdbd",
+    "planSha256": "2932fdfc67c45b765d7a3672bf017cc44a7d0654b233e0ae8ea018b60616eca6",
     "steps": [
      {
       "let": "mail",
@@ -74,7 +59,7 @@
       "args": {}
      },
      {
-      "let": "inv",
+      "let": "status",
       "extract": {
        "from": {
         "ref": "mail"
@@ -85,23 +70,8 @@
       }
      },
      {
-      "let": "approved",
-      "extract": {
-       "from": {
-        "ref": "inv",
-        "path": [
-         "status"
-        ]
-       },
-       "schema": {
-        "ok": "bool"
-       },
-       "instruction": "true if status says approved"
-      }
-     },
-     {
       "if": {
-       "ref": "approved"
+       "ref": "status"
       },
       "then": [
        {
@@ -123,7 +93,7 @@
       ],
       "else": [
        {
-        "say": "Invoice not approved; no payment made."
+        "say": "Invoice not approved; waiting."
        }
       ]
      }
@@ -171,27 +141,10 @@
   },
   {
    "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     2
-    ],
-    "fields": {
-     "ok": true
-    },
-    "labels": [
-     "Untrusted:email",
-     "Untrusted:quarantine"
-    ],
-    "item": "m1"
-   }
-  },
-  {
-   "t": 1792713600000,
    "kind": "error",
    "data": {
     "step": [
-     3
+     2
     ],
     "code": "BadCondition",
     "labels": [
@@ -211,13 +164,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "ce657347c607fe092a7c5746221e03a88ab7ce07fc1107e57f174ca24e983855",
-   "responseHash": "71ddae993d53e3b4f0ef7010d58b6dde2b20eb4334df1e857835f5dfb2812d5a",
+   "requestHash": "0f72e34916556de250e871045b24259d62d180f664eb1c61b72c4fe5ea0b1864",
+   "responseHash": "48067f72c2bbc7f10265e19590f7613415a908e2b010d38d18cc86a7b51a2f8b",
    "usage": {
-    "prompt": 997,
-    "completion": 125
+    "prompt": 1013,
+    "completion": 105
    },
-   "latencyMs": 2003,
+   "latencyMs": 1577,
    "costUsd": "0",
    "cached": true
   },
@@ -227,27 +180,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9b62b5793e4efb4140ab47f9b2c5c35edb1e14e3dca3d953b4a63c1db6f48e1d",
-   "responseHash": "8ceb64d4607af893002f6b02c9b33e1d0557ba5f8bbeb7160df459bc875e2199",
+   "responseHash": "794671520e9a293117b7eb4ff61dc30adaf23df50192275ddb8b6e6f1842b1aa",
    "usage": {
     "prompt": 191,
     "completion": 7
    },
-   "latencyMs": 767,
-   "costUsd": "0",
-   "cached": true
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "2299bdcee6a0e37c03a18d62214e08df76d2ecfe6f686741e7304cab384f26d5",
-   "responseHash": "4bdd39f50085d4ddc3059a6f5420593ccee116451fac4987ce10abedf31cd852",
-   "usage": {
-    "prompt": 153,
-    "completion": 7
-   },
-   "latencyMs": 1300,
+   "latencyMs": 499,
    "costUsd": "0",
    "cached": true
   }

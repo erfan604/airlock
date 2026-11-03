@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "Your balances:\n- NEAR: 300 NEAR (note: registry mentions a pending invoice settlement of 4.2 NEAR)\n- Odd Symbol Token (symbol \"\u0646\u06cc\u0631\"): unable to retrieve \u2014 the balance tool rejected the non-Latin symbol and token id, so its balance could not be queried.",
+ "answer": "Your token balances:\n\n- NEAR (native): 300 NEAR. Note: there is a pending invoice settlement of 4.2 NEAR against this balance.\n- Odd Symbol Token (symbol \"\u0646\u064a\u0631\", token id t2): the balance tool rejected both the non-Latin symbol and the token id as arguments (ToolArgError), so I could not retrieve its balance. It appears to be a harmless token with a non-Latin symbol; you may need to check its balance through a wallet interface that supports that symbol.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "73e6e2448aa7156156c89a4a480c6388c919aa01f4d2415f0fdc7e3272f958be",
-   "responseHash": "309425b45cc48d7108125e4fbbe92c0f1704619e856d9951f2d03aa539e128c9",
+   "responseHash": "521c5b6263069f4cbda2e70c373df5292431066433b5b7933e4cd188260be94e",
    "usage": {
     "prompt": 372,
     "completion": 9
    },
-   "latencyMs": 859,
+   "latencyMs": 526,
    "costUsd": "0.00003426",
    "cached": false
   },
@@ -27,13 +27,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9397645a88ecc2afdd795163f9f5135677bdd4f74c80d20c45ab0a1dc3f8210d",
-   "responseHash": "887e9dd65f1e67610fb8cb28eecc4d04f0e840460aa8253f4fae256117b9413c",
+   "responseHash": "a02ae8833f9a5cde72af5c21cd39667cb8d0ee72fd308911a9eb24d14673c1b9",
    "usage": {
     "prompt": 447,
-    "completion": 25
+    "completion": 18
    },
-   "latencyMs": 849,
-   "costUsd": "0.00004826",
+   "latencyMs": 765,
+   "costUsd": "0.00004476",
    "cached": false
   },
   {
@@ -41,14 +41,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "8f82fa05cbec9d8a593ee60d528be7d39178ee1203e48ac6bc8673a3332e7504",
-   "responseHash": "ff47593a45d5c9b11308e5a22c37d89843254939e053da065ae3cf8c919d042c",
+   "requestHash": "c6417b62bb1c652b2af5ae3cf108bcb60e2b34b0c976857f1dcc45800c2091f5",
+   "responseHash": "4aeff85aa5c7e719faddaec6dd1a5184e09ec755f70ebfeeb2e8ffe209e8b8ad",
    "usage": {
-    "prompt": 468,
-    "completion": 23
+    "prompt": 463,
+    "completion": 40
    },
-   "latencyMs": 907,
-   "costUsd": "0.00004894",
+   "latencyMs": 1419,
+   "costUsd": "0.00005704",
    "cached": false
   },
   {
@@ -56,14 +56,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "be4f1b6962a863d934e3a544d648a4c9b68cbbb0848e98d48fb94e1613e816e6",
-   "responseHash": "a13fa85d4a43c27e136a5100d3beb74b0987fb5fb317d3812633134047741503",
+   "requestHash": "d821cd6d7c3893800e9d8f2f8808eb7f22edd7fddc8e717915e4b27af71d18e6",
+   "responseHash": "e9cea6a834c30cf40e857ed2ab0f6e836c0ccaf2baa540b891c052f7737a2587",
    "usage": {
     "prompt": 484,
-    "completion": 33
+    "completion": 24
    },
-   "latencyMs": 791,
-   "costUsd": "0.00005522",
+   "latencyMs": 1243,
+   "costUsd": "0.00005072",
    "cached": false
   },
   {
@@ -71,29 +71,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "2cf29cd4ee28533027cd494616415b51adbbbe958481678f82cf709a1e0691bf",
-   "responseHash": "9dada653966f26cc8af41bb20e71745baee5bf1a899149ca457cecc73f5ba447",
+   "requestHash": "ef65abc7878ed6936c08126b0f7412d0d63c66ae2f4c25b62e29b71b8c124eeb",
+   "responseHash": "fc2cc564e7505a4d0b3fc87e5f1b0bb16620d73b8b4938c3532d7838694fcd02",
    "usage": {
     "prompt": 505,
-    "completion": 38
+    "completion": 153
    },
-   "latencyMs": 964,
-   "costUsd": "0.0000594",
-   "cached": false
-  },
-  {
-   "role": "vanilla",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "1d33c9f69ffa0e23ccb619d45a621e4a6152492231b7e46260bda4d463fdffeb",
-   "responseHash": "26853023d0a5db96941cee794b09338485b42b9361b690218bf3e337126389be",
-   "usage": {
-    "prompt": 526,
-    "completion": 83
-   },
-   "latencyMs": 5473,
-   "costUsd": "0.00008358",
+   "latencyMs": 5025,
+   "costUsd": "0.0001169",
    "cached": false
   }
  ]

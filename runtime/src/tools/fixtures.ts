@@ -45,7 +45,7 @@ function oracle(tool: ToolName, map: Readonly<Record<string, string>>, asset: st
   return value;
 }
 
-function read(world: World, name: ToolName, args: Args): unknown {
+function read(world: World, name: ToolName, args: Args, checkAsset: boolean): unknown {
   switch (name) {
     case 'read_inbox':
       return world.inbox;
@@ -64,7 +64,7 @@ function read(world: World, name: ToolName, args: Args): unknown {
     case 'read_paste':
       return world.paste ?? '';
     case 'fetch_paid':
-      return fetchPaid(world, args);
+      return fetchPaid(world, args, { checkAsset });
     case 'get_balance':
       return oracle(name, world.balances, strArg(name, args, 'asset'));
     case 'get_price':
@@ -77,11 +77,12 @@ function read(world: World, name: ToolName, args: Args): unknown {
   }
 }
 
-export function fixtureTools(world: World): Tools {
+/** `checkAsset: false` is for the undefended bench twin (V0), which must read a requirement as served; every product path leaves it on. */
+export function fixtureTools(world: World, opts: { checkAsset?: boolean } = {}): Tools {
   return {
     async call(name: ToolName, args: Args): Promise<{ raw: unknown; label: LabelName }> {
       if (typeof name !== 'string' || !Object.hasOwn(TOOL_CHANNEL, name)) throw new UnknownToolError('unknown tool');
-      return { raw: structuredClone(read(world, name, args)), label: TOOL_CHANNEL[name] };
+      return { raw: structuredClone(read(world, name, args, opts.checkAsset !== false)), label: TOOL_CHANNEL[name] };
     },
   };
 }

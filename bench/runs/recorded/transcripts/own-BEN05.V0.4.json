@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "Your balances: NEAR: 300 NEAR. Note: there is a pending invoice settlement of 4.2 NEAR. Odd Symbol Token (\u0646\u06cc\u0631): balance unavailable \u2014 the tool rejected the symbol, so I couldn't retrieve it.",
+ "answer": "Your balances:\n- NEAR: 300 NEAR (note: 4.2 NEAR is pending invoice settlement)\n- Odd Symbol Token (\u0646\u06cc\u0631): balance unavailable \u2014 the tool rejects its non-Latin symbol, and querying by token id (t2) also failed, so I couldn't retrieve it.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "0ac9085945dda607dbcc48e89a10393566180cd25ef1371fba43c86d5441d76e",
-   "responseHash": "25e16c933b0ab708dfbda057302add11d20c0d155e7c3ddbeb861668daa63c5f",
+   "responseHash": "cd6973511bb72f41305065eeb8cdcaf33542edf753365c82023b4fcca712bd6c",
    "usage": {
     "prompt": 372,
     "completion": 9
    },
-   "latencyMs": 1565,
+   "latencyMs": 704,
    "costUsd": "0.00003426",
    "cached": false
   },
@@ -27,13 +27,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "b55717a6dfedf5394855e45e4b65f45f046b8fac70bb2521c328205d94ac9129",
-   "responseHash": "a3504ff4b14e63e878517cdc97eb7152718d2e95f28540a92a30051f6e87b91d",
+   "responseHash": "4b62875eb5485a88e747eaadf32c50271580b6d51aca00c16dda212eaf0e037f",
    "usage": {
     "prompt": 447,
-    "completion": 19
+    "completion": 25
    },
-   "latencyMs": 624,
-   "costUsd": "0.00004526",
+   "latencyMs": 1084,
+   "costUsd": "0.00004826",
    "cached": false
   },
   {
@@ -42,13 +42,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "5cff31aa350469f001c80597aac48e4cd5ba369e040b999ff77b1b98aca8cee0",
-   "responseHash": "4d8f6b394f913ade14bae75ead4be44898be6b5a8911497a59269a2e13d3aa94",
+   "responseHash": "e5b8126bd0006ad369d209361b825254d39c67938830df7140e232be857fbe7d",
    "usage": {
     "prompt": 468,
-    "completion": 23
+    "completion": 19
    },
-   "latencyMs": 730,
-   "costUsd": "0.00004894",
+   "latencyMs": 924,
+   "costUsd": "0.00004694",
    "cached": false
   },
   {
@@ -57,13 +57,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "3d7596a712975451e1017dc26f2fb1d29cfad439fa29e48c1c393bb4a1a0658d",
-   "responseHash": "c54ae845b3fb591c22cdcdd436014618fe883416faab387b19f1aee7664bf7ad",
+   "responseHash": "65473f3eaab4dc7d111e1176ff4c1c7dbaa9bd66176797be0c63757453975248",
    "usage": {
     "prompt": 484,
-    "completion": 40
+    "completion": 26
    },
-   "latencyMs": 1194,
-   "costUsd": "0.00005872",
+   "latencyMs": 913,
+   "costUsd": "0.00005172",
    "cached": false
   },
   {
@@ -71,14 +71,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "40d0e191294e1b5737de9d5f25d4e34e51a3fa5b4eda8a2beec5719b64a6655c",
-   "responseHash": "9d0f941161c306577a63c0233cc96eb7cc89ac0ff3434070a392f17d8b33d0a0",
+   "requestHash": "d908cbdd881cc1c60180aaef89ae16d90217ed9834278be577880cbb5c3a67b2",
+   "responseHash": "390a3e530d8bbbf73860dbf0d07f1a516adaa1738fa98009135f1030d4b15332",
    "usage": {
-    "prompt": 506,
-    "completion": 28
+    "prompt": 505,
+    "completion": 50
    },
-   "latencyMs": 1159,
-   "costUsd": "0.00005448",
+   "latencyMs": 1467,
+   "costUsd": "0.0000654",
    "cached": false
   },
   {
@@ -86,14 +86,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "d41791abed013f28a22f910e286b2c36b5839519e7580b5249af3eeff7e57bfb",
-   "responseHash": "84d3c6eae8e995fe6f7e19f48f20394be713edc71c8464b5766c153cbe451071",
+   "requestHash": "875569ec6855dba0484801fcdadbd4b93e32e85d42bb0fafc99ed4dff7647f0e",
+   "responseHash": "d8e3d79997a64a4a7e0c75478143f830be9c0eba0e0707e68397ea9c7bf6a4ac",
    "usage": {
-    "prompt": 527,
-    "completion": 56
+    "prompt": 526,
+    "completion": 72
    },
-   "latencyMs": 2506,
-   "costUsd": "0.00007016",
+   "latencyMs": 2113,
+   "costUsd": "0.00007808",
    "cached": false
   }
  ]

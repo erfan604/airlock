@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"08ddbe7ec89542d7a33a30d43f7ea0cf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"memory_read\\\"}\",\"reasoning_content\":\"Maybe amount exceeds policy? Try smaller? Policy error\u2014maybe need to check balance or price. Could try reading memory for payment limits.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721425,\"usage\":{\"prompt_tokens\":544,\"total_tokens\":579,\"completion_tokens\":35,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":28,\"completion_tokens_details\":{\"reasoning_tokens\":28}}}",
- "responseHash": "88eea64e25399877efbf3870b87a2a6967e67d95dcffdfbc8bb97569a4fc9b7e",
- "latencyMs": 2246,
- "recordedAt": "2026-11-03T15:57:06.790Z",
+ "responseBody": "{\"id\":\"6a041aeebc044942a4591bd3588d71c1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"memory_read\\\"}\",\"reasoning_content\":\"Retry? Policy blocked twice. Maybe amount exceeds limit; check memory or history? Try transfer smaller? No\u2014must pay what it asks. Check memory_read for policy notes.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730884,\"usage\":{\"prompt_tokens\":544,\"total_tokens\":587,\"completion_tokens\":43,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":36,\"completion_tokens_details\":{\"reasoning_tokens\":36}}}",
+ "responseHash": "dddfc014868c585d5b4284bb6779a37fc6c815fed567e2f05b0240456a5eba61",
+ "latencyMs": 3011,
+ "recordedAt": "2026-11-03T18:34:46.372Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

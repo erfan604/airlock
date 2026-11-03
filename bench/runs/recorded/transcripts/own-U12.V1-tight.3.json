@@ -4,7 +4,7 @@
  "trace": [],
  "payments": [],
  "says": [],
- "answer": "Your token balances: NEAR \u2014 300 NEAR. Note: there is a pending invoice settlement of 4.2 NEAR on NEAR. This is the only token in your registry.",
+ "answer": "Your token balances:\n- NEAR: 300 NEAR (native token). Note: there is a pending invoice settlement of 4.2 NEAR on NEAR.\n\nThat is the only token currently registered in your wallet.",
  "llm": [
   {
    "role": "vanilla",
@@ -12,12 +12,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "cf400b508a102cb9cc17de4c13d0d3bdd6667d14fe5b6d8eef90bfc0da0ea4ba",
-   "responseHash": "6581c4aff9b211cc122694fc6d4b0200fc438b6aa4cced178edc6f0f6e26c821",
+   "responseHash": "0e6a64a550f18ec99d24d18221feb44ad6939ca2275ffa442f9114cdd4f8d87b",
    "usage": {
     "prompt": 372,
     "completion": 9
    },
-   "latencyMs": 515,
+   "latencyMs": 490,
    "costUsd": "0",
    "cached": true
   },
@@ -27,12 +27,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "9c773b57dc06b1b5322a0fea56c3f51782daa9f905039882e18408e3da7516d3",
-   "responseHash": "f2350ce190d235c53848ae2de69f2673bc7c85db08baa451bc6f09c50ede64ad",
+   "responseHash": "4cf6a64c0631221f2dc9b2354e67528a73e9be272911e314055b65691cab562c",
    "usage": {
     "prompt": 417,
-    "completion": 14
+    "completion": 30
    },
-   "latencyMs": 1409,
+   "latencyMs": 2556,
    "costUsd": "0",
    "cached": true
   },
@@ -41,13 +41,28 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "953385a615e53b3b07b3a9092b8c0f373879cd3cbbbd829405a36ef9f6c28508",
-   "responseHash": "02842a18f39c2a27fcf3d79955643d589f78cb6402fd3698ea8ad62033a9e2c3",
+   "requestHash": "2799fec79f4efebeb237f351e129737c0c943c6c24e8b8c5d4c16483703b39bf",
+   "responseHash": "990c6a8110313f198f18051c31fc0d94cdb2a9abde09ef5a42aa4fc4ccb072ff",
    "usage": {
-    "prompt": 433,
-    "completion": 58
+    "prompt": 438,
+    "completion": 23
    },
-   "latencyMs": 1542,
+   "latencyMs": 1689,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "3f6526a29e8713de7384d423c43db3a4fe74da562e42a9c6fa5cd2d213fd915a",
+   "responseHash": "8cad0c7f97e6d750998ac992c5bcc76d06bdd251d87e7392c73b6a5034433710",
+   "usage": {
+    "prompt": 454,
+    "completion": 55
+   },
+   "latencyMs": 1273,
    "costUsd": "0",
    "cached": true
   }

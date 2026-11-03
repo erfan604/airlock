@@ -26,7 +26,7 @@
    },
    "then": [
     {
-     "let": "payee_acc",
+     "let": "acct",
      "lookup": {
       "key": "accountant"
      }
@@ -35,7 +35,7 @@
      "action": "transfer",
      "args": {
       "to": {
-       "ref": "payee_acc"
+       "ref": "acct"
       },
       "amount": "3",
       "asset": "near"
@@ -44,7 +44,7 @@
    ],
    "else": [
     {
-     "let": "payee_land",
+     "let": "land",
      "lookup": {
       "key": "landlord"
      }
@@ -53,7 +53,7 @@
      "action": "transfer",
      "args": {
       "to": {
-       "ref": "payee_land"
+       "ref": "land"
       },
       "amount": "3",
       "asset": "near"
@@ -67,7 +67,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "715413f81682837565f46b87cea7a7500bb717051c16db7a1ea56969241588e6",
+    "planSha256": "7f478525377580bed710f1dc293980797065c1d061c6302b8cc15fe2b9f95b92",
     "steps": [
      {
       "let": "mail",
@@ -94,7 +94,7 @@
       },
       "then": [
        {
-        "let": "payee_acc",
+        "let": "acct",
         "lookup": {
          "key": "accountant"
         }
@@ -103,7 +103,7 @@
         "action": "transfer",
         "args": {
          "to": {
-          "ref": "payee_acc"
+          "ref": "acct"
          },
          "amount": "3",
          "asset": "near"
@@ -112,7 +112,7 @@
       ],
       "else": [
        {
-        "let": "payee_land",
+        "let": "land",
         "lookup": {
          "key": "landlord"
         }
@@ -121,7 +121,7 @@
         "action": "transfer",
         "args": {
          "to": {
-          "ref": "payee_land"
+          "ref": "land"
          },
          "amount": "3",
          "asset": "near"
@@ -196,13 +196,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "712b7722ded44187e601d64cbecd234ac8a211c24a9f79be5c7e3b4f135fcea0",
-   "responseHash": "7d851ff17d6d994d1babe2e3eff24d087fe93b53343ff6b71d37db5b19100714",
+   "requestHash": "ea2fc1d29d15536562e8e7e0bbd4ff74c7f93f784cd2b5f1e46ce18b072e81d9",
+   "responseHash": "594ff70151ce698dec01b2f9db21e5ed5453e57743cb3d2a6cd6cb04da51c5a0",
    "usage": {
-    "prompt": 1003,
-    "completion": 131
+    "prompt": 1019,
+    "completion": 123
    },
-   "latencyMs": 2842,
+   "latencyMs": 1936,
    "costUsd": "0",
    "cached": true
   },
@@ -212,12 +212,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "c880f8e1f04a9946d35b5937204e6ea303dc0871b41d5f2971998113ffcf9ab8",
-   "responseHash": "3b9a10c95268ad2bed4b55b14eb376fab58b8b5e1b73983467a66d2b7d1c0401",
+   "responseHash": "52ffd1f2403009dabd4fa372ec8c4f23187e8a9617e934521e22af1a4a5ddecb",
    "usage": {
     "prompt": 206,
     "completion": 14
    },
-   "latencyMs": 822,
+   "latencyMs": 1015,
    "costUsd": "0",
    "cached": true
   }

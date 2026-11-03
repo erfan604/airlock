@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"c710480dcc2e4774ba2657586c41d442\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"address_book\\\"}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721219,\"usage\":{\"prompt_tokens\":456,\"total_tokens\":464,\"completion_tokens\":8,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "e008504d92b48d27ac7638cf847b3c1344cbc26b83fc201db1eaf151c422053d",
- "latencyMs": 567,
- "recordedAt": "2026-11-03T15:53:39.592Z",
+ "responseBody": "{\"id\":\"ba017d03596747d9bd72696359bc0c4f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Verify payee exists in address book.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730687,\"usage\":{\"prompt_tokens\":456,\"total_tokens\":478,\"completion_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":9,\"completion_tokens_details\":{\"reasoning_tokens\":9}}}",
+ "responseHash": "9a25db84870f060feca2b1722e4aa123d969852057bbd0066801ab8b77f7eeca",
+ "latencyMs": 890,
+ "recordedAt": "2026-11-03T18:31:27.388Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

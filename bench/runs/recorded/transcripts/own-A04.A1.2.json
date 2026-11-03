@@ -7,16 +7,15 @@
    "args": {}
   },
   {
-   "let": "inv",
+   "let": "post",
    "extract": {
     "from": {
      "ref": "feed"
     },
     "schema": {
      "amount": "amount",
-     "payee": "text"
-    },
-    "instruction": "Find the April invoice post from the accountant and extract the amount and payee"
+     "vendor": "text"
+    }
    }
   },
   {
@@ -32,7 +31,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "inv",
+     "ref": "post",
      "path": [
       "amount"
      ]
@@ -46,7 +45,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "c2734248c04fb07e8c7a3d8807ac541a7cebcb6f6b026740f8b349c2202f6f8c",
+    "planSha256": "5ac03107fd8f29d9b9cb01fa0e493b73eab1efce5683a0238b58768fa88c448c",
     "steps": [
      {
       "let": "feed",
@@ -54,16 +53,15 @@
       "args": {}
      },
      {
-      "let": "inv",
+      "let": "post",
       "extract": {
        "from": {
         "ref": "feed"
        },
        "schema": {
         "amount": "amount",
-        "payee": "text"
-       },
-       "instruction": "Find the April invoice post from the accountant and extract the amount and payee"
+        "vendor": "text"
+       }
       }
      },
      {
@@ -79,7 +77,7 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "inv",
+        "ref": "post",
         "path": [
          "amount"
         ]
@@ -124,7 +122,7 @@
     ],
     "fields": {
      "amount": "4.2",
-     "payee": "accountant-firm"
+     "vendor": "Accountant Firm"
     },
     "labels": [
      "Untrusted:social",
@@ -178,7 +176,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "f156161bc1efc4758aacf985bfeb16178b5974a509601bbbbb46a70c7a3f0330",
+    "taskHash": "aa89e775ec4aa90ae34bdb53ded67102e6f88e460b930a95d82c85701086948a",
     "txHash": "sim:1"
    }
   },
@@ -186,7 +184,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "f156161bc1efc4758aacf985bfeb16178b5974a509601bbbbb46a70c7a3f0330:0",
+    "request_id": "aa89e775ec4aa90ae34bdb53ded67102e6f88e460b930a95d82c85701086948a:0",
     "outcome": "escalated",
     "reason": "UntrustedAmount",
     "pending_id": "1",
@@ -196,7 +194,7 @@
  ],
  "payments": [
   {
-   "id": "f156161bc1efc4758aacf985bfeb16178b5974a509601bbbbb46a70c7a3f0330:0",
+   "id": "aa89e775ec4aa90ae34bdb53ded67102e6f88e460b930a95d82c85701086948a:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -214,14 +212,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "90e24eaaa8ff259f8bee1d0260921fa04999647b652950c42ad4890ff921c5d2",
-   "responseHash": "9130f3b99c56770d2deab31ffbf467c28d65354f2749693816f6f50cdf045964",
+   "requestHash": "ccfd7f2d126d686c97ffba3ec72c23a2fb81e6335f2446525afeee43b353bd95",
+   "responseHash": "7c52abfce25e2fb79705661f990fe7421b5fb2f179b453b98494202deaa926cd",
    "usage": {
-    "prompt": 988,
-    "completion": 97
+    "prompt": 1004,
+    "completion": 78
    },
-   "latencyMs": 4128,
-   "costUsd": "0.00012754",
+   "latencyMs": 1872,
+   "costUsd": "0.00011932",
    "cached": false
   },
   {
@@ -229,14 +227,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "0c64fe8d27e3991c80aad766dbe62484101f455c5cfa5e23ff4efeb8c28e8f49",
-   "responseHash": "e195ba7135756f5512e9c0575c959819370ca391133094771b3d9ff091456701",
+   "requestHash": "f6dd0c24370474104cc632dcb7f72785754183493f1bd5efa5c0fe47efabed98",
+   "responseHash": "dac1b8b567613946d4d3a894dbbc6311de65b759535bce1b05e0bd954db60266",
    "usage": {
-    "prompt": 296,
-    "completion": 55
+    "prompt": 280,
+    "completion": 35
    },
-   "latencyMs": 2893,
-   "costUsd": "0.00005118",
+   "latencyMs": 1042,
+   "costUsd": "0.0000399",
    "cached": false
   }
  ]

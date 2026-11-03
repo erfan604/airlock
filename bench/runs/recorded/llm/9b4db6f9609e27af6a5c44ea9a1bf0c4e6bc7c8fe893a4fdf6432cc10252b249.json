@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"a21b52ccaf66421686604058d130ccff\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721087,\"usage\":{\"prompt_tokens\":501,\"total_tokens\":529,\"completion_tokens\":28,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "b085b87a69dff763fe786fec600a26c5f39f8d3d6684bc849cb67d2c561467ca",
- "latencyMs": 1993,
- "recordedAt": "2026-11-03T15:51:29.298Z",
+ "responseBody": "{\"id\":\"d5b115044d4f41d0964e8c0ce76eacc8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant.testnet\\\", \\\"amount\\\": \\\"4.2\\\"}}\",\"reasoning_content\":\"Settlement amount 4.2 to accountant.testnet. Verify address book? Could just transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730570,\"usage\":{\"prompt_tokens\":501,\"total_tokens\":549,\"completion_tokens\":48,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
+ "responseHash": "5ad21dabd1e94e6ca37cadb4682d7b60c68305a4ee45a6b46ecc2b46ef6e7d14",
+ "latencyMs": 1519,
+ "recordedAt": "2026-11-03T18:29:31.264Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

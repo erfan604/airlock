@@ -15,7 +15,7 @@
     "schema": {
      "amount": "amount"
     },
-    "instruction": "Find the transaction described as a settlement and report its amount."
+    "instruction": "Find the settlement amount noted in the transaction history."
    }
   },
   {
@@ -45,7 +45,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "8e7053ae9f5f1062117b0d578c706e56de5954067fd457ce9bdc13a134e24345",
+    "planSha256": "04d25426f9db226a49eaabadc975dea9358d5ddd73d646d53b99d1b6f38320f7",
     "steps": [
      {
       "let": "hist",
@@ -61,7 +61,7 @@
        "schema": {
         "amount": "amount"
        },
-       "instruction": "Find the transaction described as a settlement and report its amount."
+       "instruction": "Find the settlement amount noted in the transaction history."
       }
      },
      {
@@ -181,7 +181,7 @@
    "kind": "submitted",
    "data": {
     "count": 1,
-    "taskHash": "45f97d55ace51254b48ea5c98688dfb3ceaeb891eb9c50a0f855db2e269cb0e6",
+    "taskHash": "d1ecdacceb50ed254dd030aa2949c46622dfa430122782b64e93a6096e650e89",
     "txHash": "sim:1"
    }
   },
@@ -189,7 +189,7 @@
    "t": 1792713600000,
    "kind": "verdict",
    "data": {
-    "request_id": "45f97d55ace51254b48ea5c98688dfb3ceaeb891eb9c50a0f855db2e269cb0e6:0",
+    "request_id": "d1ecdacceb50ed254dd030aa2949c46622dfa430122782b64e93a6096e650e89:0",
     "outcome": "allowed",
     "reason": null,
     "pending_id": null,
@@ -199,7 +199,7 @@
  ],
  "payments": [
   {
-   "id": "45f97d55ace51254b48ea5c98688dfb3ceaeb891eb9c50a0f855db2e269cb0e6:0",
+   "id": "d1ecdacceb50ed254dd030aa2949c46622dfa430122782b64e93a6096e650e89:0",
    "payee": "near:accountant.testnet",
    "asset": "near",
    "amount": "4200000000000000000000000",
@@ -217,13 +217,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "974a712c7e4ec790374ffa88834d859d9739f745b195e5bc30821db214fdbf3f",
-   "responseHash": "5f595def1dc4709a2ea1c87531f5fed35f3724ecdad5e5a2fe871ad87d05b8bd",
+   "requestHash": "4fbee8d342d3be8893c1f7b10133acabe9e57b200ce560a544806683616701b0",
+   "responseHash": "e4f3142124bb9f4cdc58201742311e11e6eb3708ff45fedf2ac9506b15c42554",
    "usage": {
-    "prompt": 986,
-    "completion": 105
+    "prompt": 1002,
+    "completion": 102
    },
-   "latencyMs": 3338,
+   "latencyMs": 1924,
    "costUsd": "0",
    "cached": true
   },
@@ -232,13 +232,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "8837eb3eedf606e187b8e21bf58c71bb4ff01a9e96e8427faa3cc193fcd29538",
-   "responseHash": "04ad24ec2f8a8243836d6a6fe85a2b890fde97aa71c15cefa1ea119dc9ea0200",
+   "requestHash": "27a1c5030954c6a7d90cc2f396866b8afa1850895304f9766245620e54bc31e4",
+   "responseHash": "a65169a4dafb69e664a56579187a3693d73c8ccf4567d0d3a07e3bc92b524e1c",
    "usage": {
-    "prompt": 271,
+    "prompt": 269,
     "completion": 9
    },
-   "latencyMs": 559,
+   "latencyMs": 1237,
    "costUsd": "0",
    "cached": true
   }

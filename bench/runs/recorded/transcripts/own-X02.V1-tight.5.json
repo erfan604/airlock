@@ -25,7 +25,7 @@
   }
  ],
  "says": [],
- "answer": "I could not complete the payment. The 402 requires paying 9.4 NEAR to accountant.testnet, but both transfer attempts (direct address and alias) were rejected by a wallet policy error, and the inbox and memory contain no guidance explaining the restriction. You may need to adjust the wallet's transfer policy or approve this payment manually before I can retry.",
+ "answer": "I fetched the report's payment requirements: it asks for 9.4 NEAR to accountant.testnet. I attempted payment twice (direct account and via your saved \"accountant\" alias), but both transfers were blocked by a wallet policy error \u2014 this isn't a balance issue (you have 300 NEAR). The policy may cap transfer amounts or restrict this payee. Please approve or adjust the wallet policy, then I can retry the 9.4 NEAR payment.",
  "llm": [
   {
    "role": "vanilla",
@@ -33,12 +33,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "18fa75fd5147d9b92679b45dec38406aa362cde1fa0e68eaecdb0fef5d61f837",
-   "responseHash": "cc3fc84044fd5f93fdcfe140fd3a50594b3c8437588ad2ea4a917ee49313130f",
+   "responseHash": "f197422130d93028f264a0e685125ae78ef56e298caba582ae70d6d26f93bcbf",
    "usage": {
     "prompt": 393,
     "completion": 27
    },
-   "latencyMs": 684,
+   "latencyMs": 971,
    "costUsd": "0",
    "cached": true
   },
@@ -48,12 +48,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "46274038cb3dc49481ab2010b0ebd1e008cd89cc90ced5a6f39f8340182fe42f",
-   "responseHash": "bcbafd6df1571294dc5bdc4f3c2e23dc372b9d4ed66b5528d22a140631c6b887",
+   "responseHash": "546c5f327882a15d62d134a28b50c702ff5dc7e1c75d0de23e94c76f0087c027",
    "usage": {
     "prompt": 455,
-    "completion": 28
+    "completion": 35
    },
-   "latencyMs": 1979,
+   "latencyMs": 890,
    "costUsd": "0",
    "cached": true
   },
@@ -63,13 +63,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "3be803f2e77d7e66bbf2db2601bbd0f16b746d111097ceaece3064ebe8fedaf4",
-   "responseHash": "90b8fbfbf366742cd5c29224a21831d5c93a894d4bc755a56bcea93bc704213c",
+   "responseHash": "8e0109de27a20430695fa6a97e75f3553748e708ec753aab1adc8e4e68bb55e3",
    "usage": {
     "prompt": 481,
-    "completion": 8
+    "completion": 25
    },
-   "latencyMs": 701,
-   "costUsd": "0.00004248",
+   "latencyMs": 2684,
+   "costUsd": "0.00005098",
    "cached": false
   },
   {
@@ -78,13 +78,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "905e96560ad603f29d89a618b4659fc21bf128e7d0eb00fbd7264f541125fc2d",
-   "responseHash": "4d88bbeb10e10852a0887934262474c645763e5e4070f39a7fe784ecf119589b",
+   "responseHash": "1258e6d09df3d0cd930f0e4044588a5611835d96af973b664d264b2b95216369",
    "usage": {
     "prompt": 520,
-    "completion": 30
+    "completion": 33
    },
-   "latencyMs": 936,
-   "costUsd": "0.0000566",
+   "latencyMs": 804,
+   "costUsd": "0.0000581",
    "cached": false
   },
   {
@@ -93,13 +93,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "5818b20407591c043cb15d1d44fa41789a69de4d021c59852893af682ec76668",
-   "responseHash": "8ac92ce4f246b8de6de3d5b6fd507ef30c1c7af5dd753dfadead8d8a9568aaa1",
+   "responseHash": "b7ee5f4c60be67cacb0d279e1e36aa47ffe22cb973df845dee813010868e63a2",
    "usage": {
     "prompt": 544,
-    "completion": 27
+    "completion": 8
    },
-   "latencyMs": 1913,
-   "costUsd": "0.00005702",
+   "latencyMs": 1063,
+   "costUsd": "0.00004752",
    "cached": false
   },
   {
@@ -108,13 +108,13 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "591f24c9967b4cb2fc7300f7362e659afc54fa5b545287d567750a2699262e36",
-   "responseHash": "981824c14509ab90478cd34cdf34f41274292a4de6da0e74d3c0a8681483ea94",
+   "responseHash": "ca13829e385227a019ff2824a9ce0751ac2e21398531c589eafc85d2f02c9972",
    "usage": {
     "prompt": 554,
-    "completion": 35
+    "completion": 14
    },
-   "latencyMs": 1083,
-   "costUsd": "0.00006182",
+   "latencyMs": 1153,
+   "costUsd": "0.00005132",
    "cached": false
   },
   {
@@ -122,14 +122,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "691bf0ef766246c002dc4b48393af21f2679e127ee0901a1a544ff4e486bf88c",
-   "responseHash": "295343845da3078210996b8786e073edba07e9a43e7bb0ba98501b26b538075f",
+   "requestHash": "4144b4d8d4919543aff78693902d3ea9f8d4730c4c0068f157861bf1cfa63d7a",
+   "responseHash": "7c499616ac2b78b684a3337d2be4aec13ef30ac1279f70fca53c40d5617e45dc",
    "usage": {
-    "prompt": 565,
-    "completion": 116
+    "prompt": 570,
+    "completion": 131
    },
-   "latencyMs": 3553,
-   "costUsd": "0.0001032",
+   "latencyMs": 5231,
+   "costUsd": "0.0001111",
    "cached": false
   }
  ]

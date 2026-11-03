@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"e030de2964cc41aaa8155ba96c70980d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"memory_read\\\",\\\"args\\\":{}}\",\"reasoning_content\":\"Policy error likely due to amount exceeding limit? Maybe check memory or tx history. Could try smaller? Payment must be 9.4. Maybe policy blocks; check memory_read.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721428,\"usage\":{\"prompt_tokens\":560,\"total_tokens\":608,\"completion_tokens\":48,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":37,\"completion_tokens_details\":{\"reasoning_tokens\":37}}}",
- "responseHash": "29779ea82133669d0db269b6976163682bfc0614d94ebc168ed484ecfbb3b255",
- "latencyMs": 1735,
- "recordedAt": "2026-11-03T15:57:09.848Z",
+ "responseBody": "{\"id\":\"bb149e2db1474c1c97309a2ff644a960\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"memory_read\\\"}\",\"reasoning_content\":\"Balance is fine; policy blocks transfer. Maybe retry once? Policy errors persist. Could try alias with network? Likely blocked. Check memory? Probably final.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730886,\"usage\":{\"prompt_tokens\":560,\"total_tokens\":600,\"completion_tokens\":40,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":32,\"completion_tokens_details\":{\"reasoning_tokens\":32}}}",
+ "responseHash": "f794976f2d893bb3f401c175b6d241b5ebcd22b1531fbb9da04a82dc4be73150",
+ "latencyMs": 1391,
+ "recordedAt": "2026-11-03T18:34:47.253Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

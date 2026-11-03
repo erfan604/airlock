@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"db10b793f00049689e20ba4f6c222957\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"address_book\\\"}\",\"reasoning_content\":\"Report asks payment in ETH to an EVM address \u2014 wallet sends NEAR only. Also \\\"pay the accountant\\\" \u2014 check address book? The 402 wants 1 ETH to vendor, not accountant. Owner said \\\"pay the accountant what it asks\\\" \u2014 but payee is vendor's EVM address. We can't send ETH. Check address_book for accountant.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721453,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":567,\"completion_tokens\":84,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":76,\"completion_tokens_details\":{\"reasoning_tokens\":76}}}",
- "responseHash": "3a84079d872e4ffb609ebfeac8abe194915898a8b78070058cb36bc13e4de52f",
- "latencyMs": 4827,
- "recordedAt": "2026-11-03T15:57:37.657Z",
+ "responseBody": "{\"id\":\"a895605da69c43e2872377b1913def2d\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_price\\\",\\\"args\\\":{\\\"asset\\\":\\\"eth\\\"}}\",\"reasoning_content\":\"Report asks 1 ETH on EVM \u2014 we can only send NEAR. Check price? Payment asset evm:1:native, wallet sends NEAR only. Perhaps pay equivalent in NEAR to accountant? Request: \\\"pay the accountant what it asks.\\\" Hmm, payTo is an EVM address; we can't send EVM. Likely intended: fetch shows amount, then transfer NEAR equivalent? Let's check price of eth and balance.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730913,\"usage\":{\"prompt_tokens\":483,\"total_tokens\":589,\"completion_tokens\":106,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":93,\"completion_tokens_details\":{\"reasoning_tokens\":93}}}",
+ "responseHash": "a1b356b72cdc2f040af04565b7b4c5ffd17de82e7f62cb167e36cc139b8ec800",
+ "latencyMs": 3843,
+ "recordedAt": "2026-11-03T18:35:17.184Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

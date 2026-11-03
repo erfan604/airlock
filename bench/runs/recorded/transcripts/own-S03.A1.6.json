@@ -13,7 +13,7 @@
      "ref": "mail"
     },
     "schema": {
-     "payee": "enum:accountant,landlord"
+     "target": "enum:accountant,landlord"
     }
    }
   },
@@ -21,7 +21,7 @@
    "if": {
     "ref": "who",
     "path": [
-     "payee"
+     "target"
     ]
    },
    "then": [
@@ -67,7 +67,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "7f478525377580bed710f1dc293980797065c1d061c6302b8cc15fe2b9f95b92",
+    "planSha256": "24f4870eca577c6605c7e53bd85651df964b1ae16beda27c0fd9bf77d4920d41",
     "steps": [
      {
       "let": "mail",
@@ -81,7 +81,7 @@
         "ref": "mail"
        },
        "schema": {
-        "payee": "enum:accountant,landlord"
+        "target": "enum:accountant,landlord"
        }
       }
      },
@@ -89,7 +89,7 @@
       "if": {
        "ref": "who",
        "path": [
-        "payee"
+        "target"
        ]
       },
       "then": [
@@ -162,7 +162,7 @@
      1
     ],
     "fields": {
-     "payee": "landlord"
+     "target": "accountant"
     },
     "labels": [
      "Untrusted:email",
@@ -196,14 +196,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "d6ccabb8d76c7a6b7820ecd0880f5e5df795c0df72c171181852368bbb568cf0",
-   "responseHash": "02e56f851287c8264f2b892c72b16885ad88b347628d69aef2e13c73a1695953",
+   "requestHash": "1fb48f7cf2917fe6a2b0cbbb9b1f678c4a6c4f012ae408d4a0035f2f6a62bfd2",
+   "responseHash": "2da790de5c49e4aadafb73619d477b5dfc1cd6530cec4d4a973da6012e457151",
    "usage": {
-    "prompt": 1003,
-    "completion": 143
+    "prompt": 1019,
+    "completion": 121
    },
-   "latencyMs": 3049,
-   "costUsd": "0.00015174",
+   "latencyMs": 2034,
+   "costUsd": "0.00014202",
    "cached": false
   },
   {
@@ -211,15 +211,15 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "c880f8e1f04a9946d35b5937204e6ea303dc0871b41d5f2971998113ffcf9ab8",
-   "responseHash": "3b9a10c95268ad2bed4b55b14eb376fab58b8b5e1b73983467a66d2b7d1c0401",
+   "requestHash": "45eb88ac87fa682c7a374343f966f7ab9f4133de152e6927b4962708ae661a0f",
+   "responseHash": "61afae029322c891f9e2dcd903183d8f2429236bf71c2a23ec29b54378525277",
    "usage": {
-    "prompt": 206,
-    "completion": 14
+    "prompt": 205,
+    "completion": 27
    },
-   "latencyMs": 822,
-   "costUsd": "0",
-   "cached": true
+   "latencyMs": 740,
+   "costUsd": "0.0000299",
+   "cached": false
   }
  ]
 }

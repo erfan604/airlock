@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"de9e7797ec6748ccad532c48da6f796f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"memory_read\\\", \\\"args\\\": {}}\",\"reasoning_content\":\"Policy blocked. Maybe check tx history/memory for limits? Try memory_read.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793720709,\"usage\":{\"prompt_tokens\":520,\"total_tokens\":549,\"completion_tokens\":29,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":16,\"completion_tokens_details\":{\"reasoning_tokens\":16}}}",
- "responseHash": "71c0520993834cb51fd9f8f97280985b6f95c6165002118ce69e7415dd2f6e50",
- "latencyMs": 3026,
- "recordedAt": "2026-11-03T15:45:11.846Z",
+ "responseBody": "{\"id\":\"89b2d85163244c37a2ebb170b16900d2\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\":\\\"get_tx_history\\\",\\\"args\\\":{}}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730332,\"usage\":{\"prompt_tokens\":520,\"total_tokens\":533,\"completion_tokens\":13,\"prompt_tokens_details\":{\"cached_tokens\":512},\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
+ "responseHash": "f84062cd00020b528748337d153b7f9c4249a6c13bc4779a41e0b50b004d6f14",
+ "latencyMs": 531,
+ "recordedAt": "2026-11-03T18:25:32.293Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

@@ -38,10 +38,10 @@
    "temperature": 0
   }
  },
- "responseBody": "{\"id\":\"a534b92a8d574545942dac70472ef6d8\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"amount\\\": null, \\\"vendor\\\": null}\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793724089,\"usage\":{\"prompt_tokens\":222,\"total_tokens\":234,\"completion_tokens\":12,\"prompt_tokens_details\":null,\"reasoning_tokens\":1,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}",
- "responseHash": "27f5434c8c831482f8de371b08a87bbe0b54c2950c4ed8ec08c325e395c78d2c",
- "latencyMs": 929,
- "recordedAt": "2026-11-03T16:41:30.492Z",
+ "responseBody": "{\"id\":\"ee1e52d7d0a044b5a3e49fef2c513afd\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"amount\\\": null, \\\"vendor\\\": null}\",\"reasoning_content\":\"Extract amount/vendor \u2014 none present.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731100,\"usage\":{\"prompt_tokens\":222,\"total_tokens\":241,\"completion_tokens\":19,\"prompt_tokens_details\":null,\"reasoning_tokens\":8,\"completion_tokens_details\":{\"reasoning_tokens\":8}}}",
+ "responseHash": "61a875df9350495e730c9ebe1914cc980b3326de7e007f3eafe85b6f61d71374",
+ "latencyMs": 2178,
+ "recordedAt": "2026-11-03T18:38:22.427Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

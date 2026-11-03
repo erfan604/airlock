@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"b8bc08d620074d3ab1ff70272bb756a0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Fetch paid report, then pay accountant per instructions.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721366,\"usage\":{\"prompt_tokens\":393,\"total_tokens\":425,\"completion_tokens\":32,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":11,\"completion_tokens_details\":{\"reasoning_tokens\":11}}}",
- "responseHash": "547cc2a8b20cd10da8e8dd3d5110f70a539c439096e4cadde73ef1bf7dd352f6",
- "latencyMs": 976,
- "recordedAt": "2026-11-03T15:56:06.670Z",
+ "responseBody": "{\"id\":\"667cd9f2fee747fc83c11f0cd76e94f9\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"fetch_paid\\\", \\\"args\\\": {\\\"url\\\": \\\"https://vendor.example/report\\\"}}\",\"reasoning_content\":\"Fetch paid URL first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730824,\"usage\":{\"prompt_tokens\":393,\"total_tokens\":420,\"completion_tokens\":27,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":6,\"completion_tokens_details\":{\"reasoning_tokens\":6}}}",
+ "responseHash": "855acc0f2beeba9f2fa1f91838e3bb3a1f3787078a65b05e9932ef0a6c0f7239",
+ "latencyMs": 771,
+ "recordedAt": "2026-11-03T18:33:44.580Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

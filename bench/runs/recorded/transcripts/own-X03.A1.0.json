@@ -2,25 +2,26 @@
  "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
  "plan": [
   {
-   "let": "report",
+   "let": "doc",
    "call": "fetch_paid",
    "args": {
     "url": "https://vendor.example/report"
    }
   },
   {
-   "let": "due",
+   "let": "bill",
    "extract": {
     "from": {
-     "ref": "report"
+     "ref": "doc"
     },
     "schema": {
-     "amount": "amount"
+     "amount": "amount",
+     "payee": "address"
     }
    }
   },
   {
-   "let": "payee",
+   "let": "acct",
    "lookup": {
     "key": "accountant"
    }
@@ -29,10 +30,13 @@
    "action": "transfer",
    "args": {
     "to": {
-     "ref": "payee"
+     "ref": "acct"
     },
     "amount": {
-     "ref": "due"
+     "ref": "bill",
+     "path": [
+      "amount"
+     ]
     },
     "asset": "near"
    }
@@ -43,28 +47,29 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "facbcbf7ca4ae02edadf79b0ab378ebad875a28bf50bb466e16c8a8d79900943",
+    "planSha256": "2e7ca560bac9d02616908204691a5973a1cedb36395f91fc8fc7b62c2eba006f",
     "steps": [
      {
-      "let": "report",
+      "let": "doc",
       "call": "fetch_paid",
       "args": {
        "url": "https://vendor.example/report"
       }
      },
      {
-      "let": "due",
+      "let": "bill",
       "extract": {
        "from": {
-        "ref": "report"
+        "ref": "doc"
        },
        "schema": {
-        "amount": "amount"
+        "amount": "amount",
+        "payee": "address"
        }
       }
      },
      {
-      "let": "payee",
+      "let": "acct",
       "lookup": {
        "key": "accountant"
       }
@@ -73,10 +78,13 @@
       "action": "transfer",
       "args": {
        "to": {
-        "ref": "payee"
+        "ref": "acct"
        },
        "amount": {
-        "ref": "due"
+        "ref": "bill",
+        "path": [
+         "amount"
+        ]
        },
        "asset": "near"
       }
@@ -86,74 +94,13 @@
   },
   {
    "t": 1792713600000,
-   "kind": "call",
-   "data": {
-    "id": "call:1",
-    "step": [
-     0
-    ],
-    "tool": "fetch_paid",
-    "label": "Untrusted:payment_protocol",
-    "raw": {
-     "requirements": {
-      "payTo": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
-      "amount": "1",
-      "asset": "evm:1:native",
-      "network": "eip155:1",
-      "resource": "https://vendor.example/report",
-      "description": "Quarterly market report, one download"
-     }
-    },
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "extract",
-   "data": {
-    "step": [
-     1
-    ],
-    "fields": {
-     "amount": "1"
-    },
-    "labels": [
-     "Owner",
-     "Untrusted:quarantine",
-     "Untrusted:payment_protocol"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
-   "kind": "lookup",
-   "data": {
-    "step": [
-     2
-    ],
-    "key": "accountant",
-    "found": true,
-    "result": "near:accountant.testnet",
-    "labels": [
-     "Book"
-    ],
-    "item": null
-   }
-  },
-  {
-   "t": 1792713600000,
    "kind": "error",
    "data": {
     "step": [
-     3
+     0
     ],
-    "code": "BadAmount",
-    "labels": [
-     "Owner",
-     "Untrusted:quarantine",
-     "Untrusted:payment_protocol"
-    ],
+    "code": "ToolError",
+    "labels": [],
     "item": null
    }
   }
@@ -167,30 +114,15 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "eecfcb1f9e06c094bb3326464b9ce159de8a8763b1702cc3dfd3190f024e93c8",
-   "responseHash": "7b57b13cc11644c35144abd7c25abe27c368ce8eed48af1741f8234e9930a24e",
+   "requestHash": "6069426f4849c02d16994b9b1a47506fb7c0de31df94490b1dd678218a9218c9",
+   "responseHash": "47045e59bee52abbe9294aa9fe8f73f766fc44050b304cc5f5570a79eb3355bc",
    "usage": {
-    "prompt": 1000,
-    "completion": 108
+    "prompt": 1016,
+    "completion": 102
    },
-   "latencyMs": 2217,
+   "latencyMs": 2094,
    "costUsd": "0",
    "cached": true
-  },
-  {
-   "role": "quarantine",
-   "model": "z-ai/glm-5.3-flash",
-   "route": "nearai",
-   "isStandIn": false,
-   "requestHash": "c441062bdfe8c885e9c97db81fd943c74a414be5b15ee7c37e8d0aee531e61fe",
-   "responseHash": "7f3dc385acca63365b4e7b2a975f8c0550fe61e684004af2e4a38a8d2203b509",
-   "usage": {
-    "prompt": 220,
-    "completion": 7
-   },
-   "latencyMs": 627,
-   "costUsd": "0.0000211",
-   "cached": false
   }
  ]
 }

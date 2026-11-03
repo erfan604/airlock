@@ -2,55 +2,53 @@
  "request": "Pay the April invoice shown on my accountant's billing page.",
  "plan": [
   {
-   "let": "inbox",
-   "call": "read_inbox",
-   "args": {}
-  },
-  {
-   "let": "page",
-   "extract": {
-    "from": {
-     "ref": "inbox"
-    },
-    "schema": {
-     "url": "text"
-    },
-    "instruction": "Find the accountant's billing page URL"
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
    }
   },
   {
-   "let": "bill",
+   "let": "page",
    "call": "fetch_url",
    "args": {
-    "url": {
-     "ref": "page"
-    }
+    "url": "accountant's billing page"
    }
   },
   {
    "let": "invoice",
    "extract": {
     "from": {
-     "ref": "bill"
+     "ref": "page"
     },
     "schema": {
      "amount": "amount",
-     "payee": "address"
+     "url": "text"
+    }
+   }
+  },
+  {
+   "let": "bill",
+   "call": "fetch_paid",
+   "args": {
+    "url": {
+     "ref": "invoice",
+     "path": [
+      "url"
+     ]
     },
-    "instruction": "Find the April invoice amount and payee address"
+    "expect_payee": {
+     "ref": "payee"
+    }
    }
   },
   {
    "action": "transfer",
    "args": {
     "to": {
-     "ref": "invoice",
-     "path": [
-      "payee"
-     ]
+     "ref": "payee"
     },
     "amount": {
-     "ref": "invoice",
+     "ref": "bill",
      "path": [
       "amount"
      ]
@@ -59,7 +57,139 @@
    }
   }
  ],
- "trace": [],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "ff104be3dd786756475e2c2b26caee48c78d5b2c86640c2bda2ab6841da9b99d",
+    "steps": [
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "let": "page",
+      "call": "fetch_url",
+      "args": {
+       "url": "accountant's billing page"
+      }
+     },
+     {
+      "let": "invoice",
+      "extract": {
+       "from": {
+        "ref": "page"
+       },
+       "schema": {
+        "amount": "amount",
+        "url": "text"
+       }
+      }
+     },
+     {
+      "let": "bill",
+      "call": "fetch_paid",
+      "args": {
+       "url": {
+        "ref": "invoice",
+        "path": [
+         "url"
+        ]
+       },
+       "expect_payee": {
+        "ref": "payee"
+       }
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "bill",
+        "path": [
+         "amount"
+        ]
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     0
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     1
+    ],
+    "tool": "fetch_url",
+    "label": "Untrusted:web",
+    "raw": "",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     2
+    ],
+    "fields": {
+     "amount": null,
+     "url": null
+    },
+    "labels": [
+     "Owner",
+     "Untrusted:web",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
+    ],
+    "code": "RefusedToolArg",
+    "labels": [
+     "Owner",
+     "Book",
+     "Untrusted:web",
+     "Untrusted:quarantine"
+    ],
+    "detail": "UntrustedToolArg",
+    "item": null
+   }
+  }
+ ],
  "payments": [],
  "says": [],
  "answer": "",
@@ -69,13 +199,28 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "c233ea7f35eb70c7973a158a921f57e6110020dd531d19be7c6ecfb6e34a54e0",
-   "responseHash": "23642cf7b595eb9c7e8a1688525a6bee105e7cfcda0763bcf8db86aea8c60b89",
+   "requestHash": "202a813c38f45540a9ddb724fb6486a38de1c5b682154f5794eb82f8305ac9f9",
+   "responseHash": "adea0a7eac497e56bcc429b6876434bf6441ddd5410bf212fa1b97eb1f69916c",
    "usage": {
-    "prompt": 986,
-    "completion": 161
+    "prompt": 1002,
+    "completion": 121
    },
-   "latencyMs": 7976,
+   "latencyMs": 2256,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "4d9bc452e93f21c27495faaff4596b37f86ec5f0227b4e482fb6280ca44b2ac0",
+   "responseHash": "1b9169aecf1b0d67ad9cba68778edb96609750da7928768beec0d7c03cf5abc2",
+   "usage": {
+    "prompt": 151,
+    "completion": 15
+   },
+   "latencyMs": 616,
    "costUsd": "0",
    "cached": true
   }

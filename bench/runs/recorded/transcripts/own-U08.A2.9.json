@@ -18,14 +18,11 @@
    }
   },
   {
-   "let": "refund",
+   "let": "less",
    "calc": "sub",
    "inputs": [
     {
-     "ref": "amt",
-     "path": [
-      "amount"
-     ]
+     "ref": "amt"
     },
     "0.1"
    ]
@@ -43,7 +40,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "refund"
+     "ref": "less"
     },
     "asset": "near"
    }
@@ -59,13 +56,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "fd15f122768053caa585cd0a9ccbc78c20ed29b554e7134c0721562f66dcf7fa",
-   "responseHash": "1669f49e5918226e0d538f420c145aedb972960a6775861bb06d881bea92f0f4",
+   "requestHash": "276ef3fc2d07190f9420a440846a9d8c13aa4a9e2b2f0e4dbc0565e18789da99",
+   "responseHash": "22f6d089609f7cc8edcdade9ba67933753c0fa93ef24290929204a26bbad87b3",
    "usage": {
-    "prompt": 995,
-    "completion": 137
+    "prompt": 1011,
+    "completion": 119
    },
-   "latencyMs": 2908,
+   "latencyMs": 2238,
    "costUsd": "0",
    "cached": true
   }

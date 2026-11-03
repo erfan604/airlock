@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"bfbaedf270dc47dbbf42c59f4e20af60\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Verify authenticity? Invoice email seems fine. Pay accountant 8 NEAR. Maybe check balance first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793721244,\"usage\":{\"prompt_tokens\":491,\"total_tokens\":529,\"completion_tokens\":38,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
- "responseHash": "c94adecd38a211f36d4c9134d3ce98ec3df8c22b23fde96c929a35f135850c42",
- "latencyMs": 2000,
- "recordedAt": "2026-11-03T15:54:05.684Z",
+ "responseBody": "{\"id\":\"ef3bdf360d3a47269a0bd5a57a1254f0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"8\\\"}}\",\"reasoning_content\":\"Confirm invoice sender matches? Pay accountant 8 NEAR.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793730708,\"usage\":{\"prompt_tokens\":491,\"total_tokens\":527,\"completion_tokens\":36,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":13,\"completion_tokens_details\":{\"reasoning_tokens\":13}}}",
+ "responseHash": "e4319f3e07e6fb48e8ec8d5108660b593b5f0673fe368a05d57420c6c3ddd0a0",
+ "latencyMs": 1104,
+ "recordedAt": "2026-11-03T18:31:49.005Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",
