@@ -14,6 +14,8 @@ import type { ChainClient } from './chain/near.ts';
 import type { BatchResult, SubmitOutcome } from './chain/types.ts';
 import { ActionRequest, labelsToBits, planSha256 } from './dsl/index.ts';
 import type { CheckedPlan, OwnerTask, PlanStep } from './dsl/index.ts';
+import { isBooked } from './counterparty.ts';
+import type { CounterpartyAssessor, CounterpartyNote } from './counterparty.ts';
 import { pickEvidence, requestContentHash } from './evidence.ts';
 import type { EvidenceField, EvidenceSource, EvidenceStore } from './evidence.ts';
 import { run } from './interpreter/index.ts';
@@ -68,6 +70,8 @@ export interface AgentDeps {
   rpcUrls: string[];
   broadcast?: typeof broadcast;
   evidence: EvidenceStore;
+  /** AIR-304: looks up a payee that is not in the book and names it `counterparty_new` or `counterparty_unverified` on the card; never changes a verdict. */
+  counterparty?: CounterpartyAssessor;
   clock(): number;
 }
 
@@ -144,6 +148,7 @@ interface Prepared {
   req: ActionRequest;
   item: string | null;
   sources: EvidenceSource[];
+  counterparty: CounterpartyNote | null;
 }
 
 // the evidence of a proposal: one entry per distinct origin (tool call) of the recipient, of the amount and of the pc, each with its field,
@@ -251,7 +256,9 @@ export async function* runTask(p: RunTaskParams): AsyncGenerator<TraceEvent, voi
           evm,
           hints: { plan_hash: task.plan_sha256, trace_digest: digest },
         });
-        prepared.push({ req, item: itemId, sources: sourcesOf(proposal, result.trace) });
+        // AIR-304: only a payee outside the book is looked up; the assessor never throws and the note only reaches the owner's card
+        const counterparty = deps.counterparty === undefined || isBooked(deps.book, proposal.payee) ? null : await deps.counterparty.assess(proposal.payee);
+        prepared.push({ req, item: itemId, sources: sourcesOf(proposal, result.trace), counterparty });
       } catch {
         yield ev('error', { code: 'BadRequest', item: itemId, index });
       }
@@ -286,7 +293,7 @@ export async function* runTask(p: RunTaskParams): AsyncGenerator<TraceEvent, voi
           continue;
         }
       }
-      if (deps.evidence.put(id, { requestHash: hash, sources: c.sources }) === 'refused') {
+      if (deps.evidence.put(id, { requestHash: hash, sources: c.sources, ...(c.counterparty === null ? {} : { counterparty: c.counterparty }) }) === 'refused') {
         yield ev('error', { code: 'EvidenceConflict', request_id: id, item: c.item });
       }
     }

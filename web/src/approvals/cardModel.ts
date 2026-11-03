@@ -7,7 +7,7 @@ import type { BookEntryJson, ChannelName, LabelName, LookalikeResult } from '@ai
 import { formatBaseUnits } from '@airlock/runtime/money';
 import type { AssetEntryViewJson, LedgersView, RequestView } from '@airlock/runtime/chain-types';
 import type { Untrusted } from '../components/untrusted.ts';
-import type { BookLabel, CardEvidence } from './evidence.ts';
+import type { BookLabel, CardEvidence, CounterpartyLine } from './evidence.ts';
 import { bookLabelOf, channelsOfMasks } from './evidence.ts';
 import { FORCING_MIN_AMOUNT, forcingLabel, forcingRequired, forcingTarget, lookalikeOf } from './forcing.ts';
 import { magnitudeText } from './magnitude.ts';
@@ -97,6 +97,8 @@ export type CardModel = {
   forcing: ForcingModel | null;
   /** The recipient label says Book but the payee is not in the book: the Book seal is dropped and the card says so (AIR-190). */
   labelMismatch: boolean;
+  /** AIR-304: the runtime's counterparty note for a payee outside the book, or null. A hint for the owner, never a control. */
+  counterparty: CounterpartyLine | null;
 };
 
 // ---- reasons (the closed table of AIR-181) ----
@@ -309,6 +311,7 @@ export function buildCardModel(
     diff: isNew ? { result: found, label: found === null ? null : bookLabelOf(extras.bookLabels ?? {}, found.nearest) } : null,
     magnitude: magnitudeText(amount, l, book, args.asset, a.decimals),
     labelMismatch,
+    counterparty: e.counterparty ?? null,
     forcing: forcingRequired(v, amount, extras.forcingMinAmount ?? FORCING_MIN_AMOUNT, bookKeys)
       ? { required: true, target: forcingTarget(v.payee), label: forcingLabel(v.payee) }
       : null,

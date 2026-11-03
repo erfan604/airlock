@@ -29,6 +29,7 @@ import { rpcAccessKeyReader } from './access-keys.ts';
 import type { AccessKeyReader } from './access-keys.ts';
 import { createApp } from './app.ts';
 import { printBootFingerprint } from './boot.ts';
+import { createCounterparty, httpProbe } from '../counterparty.ts';
 import { buildAgentDeps } from './deps.ts';
 import type { Snapshot } from './deps.ts';
 import { RunStore } from './runs.ts';
@@ -153,6 +154,8 @@ export async function startRuntime(env: NodeJS.ProcessEnv = {}, parts: Partial<R
       evidence,
       clock,
       ...(parts.broadcast === undefined ? {} : { broadcast: parts.broadcast }),
+      // AIR-304: live mode only (replay makes no network call); reads, no key; the note only reaches the card
+      ...(cfg.mode === 'live' ? { counterparty: createCounterparty({ probe: httpProbe({ nearUrls: DEFAULT_RPC_URLS, evmUrls: { 84532: BASE_SEPOLIA_RPCS } }) }) } : {}),
       rpcUrls: [...(cfg.baseSepoliaRpc === null ? [] : [cfg.baseSepoliaRpc]), ...BASE_SEPOLIA_RPCS.filter((u) => u !== cfg.baseSepoliaRpc)],
     },
     () => current,

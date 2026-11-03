@@ -1,4 +1,5 @@
 import { sha256 } from '@noble/hashes/sha2';
+import type { CounterpartyNote } from './counterparty.ts';
 
 // Evidence for the owner's console (AIR-164): who sent the text a request came from, and a cut of the text itself. Raw text only: the
 // console parses it into Untrusted before it shows it (AIR-181). The store is keyed by the derived request id (AIR-160 requestId), so the
@@ -27,6 +28,8 @@ export interface EvidenceSource extends Evidence {
 export interface StoredEvidence {
   requestHash: string;
   sources: EvidenceSource[];
+  /** AIR-304: the counterparty note of a payee that is not in the book (closed codes, see counterparty.ts); absent for a booked payee. */
+  counterparty?: CounterpartyNote;
 }
 
 /** `stored`: new entry. `same`: an entry for this request content exists and is kept. `refused`: the id holds another content, which stays. */

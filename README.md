@@ -41,6 +41,18 @@ The golden runs are `bench/golden/u01.json` (U01, submit `53GuKRQxh6w5yBf4ZCzgBY
 
 The agent's key. The agent account `erfan-agent.testnet` runs under a function-call key limited to the policy account's `submit_batch` method, with an unlimited gas allowance, because every call buys its gas up front and a capped allowance would lock the agent out. That key cannot move NEAR, add keys or call owner methods. It does not limit what the agent submits: the agent can still send any request, and the contract's verdict is the control. The account also holds one full-access key that was used for setup, and `list-keys` shows both. Check with `near account list-keys erfan-agent.testnet network-config testnet now`.
 
+## What the agent's key can do
+
+Checked on testnet on 2026-11-03 with `near account list-keys erfan-agent.testnet network-config testnet now` (or the RPC call `view_access_key_list`).
+
+- Receiver: the policy account `policy.erfan-airlock.testnet`, and no other account.
+- Methods: `submit_batch`, and no other method.
+- Allowance: unlimited. Every call buys its gas up front, and a capped allowance would lock the agent out when it runs low.
+- It can: send requests to `submit_batch`. The contract's verdict decides each one: allow, escalate to you, or block. A request to a payee outside your book never passes on its own, and the card for it carries the counterparty note (`counterparty_new` when the account or address has no history, `counterparty_unverified` when it could not be checked). The note is a hint added by the runtime, not an input of the verdict.
+- It cannot: attach a deposit, so it cannot move NEAR from the agent account through this key. It cannot add or delete keys, deploy code, call any other contract, or call an owner method (`approve`, `reject`, the book, the limits, `revoke_agent`), because the contract answers an owner method only to the owner.
+- Not covered by the key: the agent account also holds a separate full-access key from setup, which is not the function-call key and is not handed to anyone. The key limits where a call can go, not what the agent submits.
+- Revoke: the owner calls `revoke_agent` on the policy contract, which stops every later `submit_batch` from that account, and deletes the key with `near account delete-keys` using the account's full-access key.
+
 ## Architecture
 
 ```

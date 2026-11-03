@@ -23,6 +23,6 @@ export function mountEvidence(app: Hono, chain: Pick<ChainClient, 'getRequest'>,
     const stored = store.evidenceFor(view.request_id);
     // evidence written for other contents of this id is never served
     if (stored === null || stored.requestHash !== requestContentHash(view)) return c.json({ error: 'not found' }, 404);
-    return c.json({ sources: stored.sources });
+    return c.json({ sources: stored.sources, ...(stored.counterparty === undefined ? {} : { counterparty: stored.counterparty }) });
   });
 }

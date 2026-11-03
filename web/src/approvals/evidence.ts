@@ -5,17 +5,44 @@
 // never turns into display text.
 import { untrustedChannels } from '@airlock/runtime/dsl';
 import type { ChannelName } from '@airlock/runtime/dsl';
+import type { CounterpartyNote, CounterpartyReason } from '@airlock/runtime/counterparty';
 import { wrapUntrusted } from '../components/untrusted.ts';
 import type { Untrusted } from '../components/untrusted.ts';
 
 /** The three label masks of a stored request (`RequestView.labels`). */
 export type MaskTriple = { recipient: number; amount: number; pc: number };
 
+/** AIR-304: the runtime's counterparty note, as a closed code and the fixed sentence the card shows for it. Never text from outside. */
+export type CounterpartyLine = { reason: CounterpartyReason; sentence: string };
+
+const COUNTERPARTY_SENTENCES: Readonly<Record<CounterpartyNote['detail'], string>> = {
+  account_absent: 'New payee: this account does not exist on the chain yet.',
+  account_recent: 'New payee: this account is less than 7 days old.',
+  no_history: 'New payee: this address has never sent or received anything on this chain.',
+  lookup_failed: 'AIRLOCK could not check this payee\'s history. Treat it as new.',
+};
+
+/**
+ * The note of `GET /api/evidence/:no`, if any. A note that is not exactly one of the runtime's codes still shows as unchecked: an unreadable
+ * note never reads as an established payee.
+ */
+export function counterpartyOf(raw: unknown): CounterpartyLine | null {
+  if (typeof raw !== 'object' || raw === null || !Object.hasOwn(raw, 'counterparty')) return null;
+  const note = (raw as { counterparty?: unknown }).counterparty;
+  if (note === null || note === undefined) return null;
+  const reason = typeof note === 'object' ? own(note, 'reason') : undefined;
+  const detail = typeof note === 'object' ? own(note, 'detail') : undefined;
+  const valid = (reason === 'counterparty_new' && (detail === 'account_absent' || detail === 'account_recent' || detail === 'no_history')) || (reason === 'counterparty_unverified' && detail === 'lookup_failed');
+  return valid ? { reason, sentence: COUNTERPARTY_SENTENCES[detail] } : { reason: 'counterparty_unverified', sentence: COUNTERPARTY_SENTENCES.lookup_failed };
+}
+
 export type CardEvidence = {
   /** The untrusted channels of the three masks together, in bit order, `unknown` last when bit 15 is set. */
   channels: ChannelName[];
   sender: Untrusted | null;
   snippet: Untrusted | null;
+  /** AIR-304: set only for a payee outside the book that the runtime looked up. */
+  counterparty?: CounterpartyLine | null;
 };
 
 /** The channels named by the three stored masks together, in bit order. Throws for a mask outside 16 bits. */

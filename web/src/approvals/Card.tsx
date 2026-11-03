@@ -204,6 +204,11 @@ export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, 
         <p className="card-reason" data-testid="reason">
           {model.sentence}
         </p>
+        {model.counterparty !== null ? (
+          <p className="card-notice" data-testid="counterparty" data-reason={model.counterparty.reason}>
+            {model.counterparty.sentence}
+          </p>
+        ) : null}
         {stamp.line !== null ? (
           <p className="card-status" data-testid="card-status" role="status">
             {stamp.line}

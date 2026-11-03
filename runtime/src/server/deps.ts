@@ -19,6 +19,7 @@ export interface AgentWiring {
   clock: () => number;
   broadcast?: typeof broadcast;
   rpcUrls: string[];
+  counterparty?: AgentDeps['counterparty'];
 }
 
 export interface Snapshot {
@@ -47,6 +48,7 @@ export function buildAgentDeps(parts: AgentWiring, snapshot: () => Snapshot): Ag
     rpcUrls: parts.rpcUrls,
     ...(parts.broadcast === undefined ? {} : { broadcast: parts.broadcast }),
     evidence: parts.evidence,
+    ...(parts.counterparty === undefined ? {} : { counterparty: parts.counterparty }),
     clock: parts.clock,
   };
 }

@@ -19,7 +19,7 @@ import { Card } from './Card.tsx';
 import type { ApproveArgs, ApproveResult } from './Card.tsx';
 import { approveArgs } from './cardModel.ts';
 import type { RememberArgs } from './cardModel.ts';
-import { parseEvidence } from './evidence.ts';
+import { counterpartyOf, parseEvidence } from './evidence.ts';
 import type { CardEvidence } from './evidence.ts';
 import { MAX_FAILURES } from './cardReducer.ts';
 import { readFailures } from './failures.ts';
@@ -111,7 +111,7 @@ export async function loadApprovals(deps: LoadDeps): Promise<ApprovalsData> {
         deps.view('get_book_entry', { key: view.payee }),
         view.id === null ? Promise.resolve(null) : deps.evidence(view.id).catch(() => null),
       ]);
-      return { view, evidence: parseEvidence(evidenceBody(raw), view.labels), ledgers: ledgers as LedgersView, asset: entry, book: (ownEntry ?? null) as BookEntryJson | null, bookKeys: bookRows.keys, bookLabels: bookRows.labels };
+      return { view, evidence: { ...parseEvidence(evidenceBody(raw), view.labels), counterparty: counterpartyOf(raw) }, ledgers: ledgers as LedgersView, asset: entry, book: (ownEntry ?? null) as BookEntryJson | null, bookKeys: bookRows.keys, bookLabels: bookRows.labels };
     }),
   );
   return { cards, more: all.length - shown.length };
