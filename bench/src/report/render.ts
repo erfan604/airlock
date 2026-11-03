@@ -11,7 +11,8 @@ import { applyApprover, assistedUtility, attackSuccess, benignUtility, ep100, es
 export const BEGIN_MARKER = '<!-- BEGIN GENERATED -->';
 export const END_MARKER = '<!-- END GENERATED -->';
 
-const ORDER: readonly Config[] = ['V0', 'V1', 'V1-tight', 'V2', 'V3', 'A1', 'A2'];
+const ORDER: readonly Config[] = ['V0', 'CAPS', 'BLOCKLIST', 'MANDATE', 'MANDATE-C', 'V1', 'V1-tight', 'V2', 'V3', 'A1', 'A2'];
+const DERIVED_BASELINES: ReadonlySet<Config> = new Set<Config>(['CAPS', 'BLOCKLIST', 'MANDATE', 'MANDATE-C']);
 const GROUPS: readonly string[] = ['A', 'B', 'C', 'S', 'X', 'P'];
 const NANO = 9;
 
@@ -65,16 +66,17 @@ function attackRow(config: string, label: string, runs: readonly RunRecord[], fe
 }
 
 /** The body of docs/BENCH.md between the markers: a pure function of the results file (no date, no path, no commit). */
-export function renderBlock(results: ResultsFile): string {
+export function renderBlock(results: ResultsFile, baselines: readonly RunRecord[] = []): string {
   const { meta, case_meta: caseMeta } = results;
   const stored = results.runs;
   const v0 = stored.filter((r) => r.config === 'V0');
   const storedV3 = stored.filter((r) => r.config === 'V3');
   const v3 = storedV3.length > 0 ? storedV3 : v3FromV0(v0);
-  const all: RunRecord[] = [...stored.filter((r) => r.config !== 'V3'), ...v3];
+  const own = new Set(baselines.map((r) => r.config));
+  const all: RunRecord[] = [...stored.filter((r) => r.config !== 'V3' && !own.has(r.config)), ...baselines, ...v3];
   const configs = ORDER.filter((c) => all.some((r) => r.config === c));
   const of = (c: Config): RunRecord[] => all.filter((r) => r.config === c);
-  const label = (c: Config): string => (c === 'V3' && v3.some((r) => r.derived === true) ? 'V3 (derived from V0)' : c);
+  const label = (c: Config): string => (c === 'V3' && v3.some((r) => r.derived === true) ? 'V3 (derived from V0)' : DERIVED_BASELINES.has(c) && all.some((r) => r.config === c && r.derived === true) ? `${c} (derived from V0)` : c);
 
   // feasibility needs the V0 runs; without them nothing can be said, so no case is left out
   const attackCases = [...new Set(all.filter((r) => r.kind === 'attack').map((r) => r.case))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));

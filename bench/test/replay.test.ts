@@ -10,6 +10,8 @@ import type { Io } from '../src/cli.ts';
 import { verdictCliPath } from '../src/runner/backend.ts';
 import { asciiJson, writeTranscript, readTranscript } from '../src/runner/record.ts';
 import type { ResultsFile, Transcript } from '../src/runner/record.ts';
+import { deriveBaselines } from '../src/baselines/derive.ts';
+import { loadCases } from '../src/runner/cases.ts';
 import { BEGIN_MARKER, END_MARKER, MarkerError, renderBlock, replace } from '../src/report/render.ts';
 import { v1PolicyFor } from '../src/runner/v1.ts';
 import { BENCH_DIR, FIXTURE_ROOT } from './helpers/cases.ts';
@@ -64,7 +66,7 @@ describe('AIR-220 replay', () => {
     assert.equal(await main(args, io(root, lines)), 0);
     assert.equal(readFileSync(doc, 'utf8'), first);
     const stored = JSON.parse(readFileSync(join(RECORDED, 'results.json'), 'utf8')) as ResultsFile;
-    assert.equal(first, `# Benchmark\n## Results\n${renderBlock(stored)}\n## Reproduce\n`);
+    assert.equal(first, `# Benchmark\n## Results\n${renderBlock(stored, deriveBaselines(stored.runs, loadCases(join(RECORDED, 'cases'))))}\n## Reproduce\n`);
     assert.equal(lines.filter((l) => l === 'REPLAY OK 30 runs').length, 2);
   });
 

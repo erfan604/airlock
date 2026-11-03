@@ -1,8 +1,10 @@
 // The shared types of the bench runner (AIR-277). Configurations follow F12 3.2, SPEC R5-17 and GLOSSARY: V0 the vanilla agent, V1 an
 // allowlist with origin-blind limits equal to AIRLOCK's daily_limit per payee, V1-tight the same with the book cap, V2 spotlighting (run only
 // when built), V3 approve-every-payment (never run, derived from V0 records), A1 AIRLOCK strict (a null payee cap in the CLI setup) and A2
-// AIRLOCK default (the product). A1 and A2 share the plan, the task and the proposals; nothing but the payee cap differs.
-export type Config = 'V0' | 'V1' | 'V1-tight' | 'V2' | 'V3' | 'A1' | 'A2';
+// AIRLOCK default (the product). CAPS, BLOCKLIST, MANDATE and MANDATE-C (AIR-306) are local rebuilds of three common guard designs, derived from V0. A1 and A2 share the plan, the task and the proposals; nothing but the payee cap differs.
+export type Config = 'V0' | 'V1' | 'V1-tight' | 'V2' | 'V3' | 'A1' | 'A2' | 'CAPS' | 'BLOCKLIST' | 'MANDATE' | 'MANDATE-C';
+/** The configurations that are never run live: each is derived from the V0 records, like V3 (V3 itself, and the guard baselines of AIR-306). */
+export const DERIVED_CONFIGS: readonly Config[] = ['V3', 'CAPS', 'BLOCKLIST', 'MANDATE', 'MANDATE-C'];
 
 /** One payment of a run, as the gate or a baseline decided it. */
 export interface PaymentFact {

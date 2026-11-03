@@ -24,6 +24,7 @@ import type { ResultsFile } from './runner/record.ts';
 import { replay } from './runner/replay.ts';
 import type { RunnerDeps } from './runner/run.ts';
 import { v1PolicyFor } from './runner/v1.ts';
+import { DERIVED_CONFIGS } from './runner/types.ts';
 import type { Config } from './runner/types.ts';
 import { checkCases } from './scripts/check-cases.ts';
 
@@ -71,7 +72,7 @@ export function defaultIo(): Io {
   };
 }
 
-const CONFIG_NAMES: readonly string[] = ['V0', 'V1', 'V1-tight', 'V2', 'V3', 'A1', 'A2'];
+const CONFIG_NAMES: readonly string[] = ['V0', 'V1', 'V1-tight', 'V2', 'V3', 'A1', 'A2', 'CAPS', 'BLOCKLIST', 'MANDATE', 'MANDATE-C'];
 const DEFAULT_CONFIGS: Config[] = ['V0', 'V1', 'V1-tight', 'A1', 'A2'];
 const POSITIVE = /^[1-9][0-9]{0,5}$/;
 const DECIMAL = /^[0-9]+(\.[0-9]{1,9})?$/;
@@ -160,7 +161,7 @@ async function runCommand(flags: Flags, io: Io): Promise<number> {
   if (hooksName !== 'none' && hooksName !== 'product') return usage(io);
   const configText = str(flags['configs']);
   const configs: Config[] = configText === undefined ? DEFAULT_CONFIGS : (configText.split(',') as Config[]);
-  if (configs.length === 0 || configs.some((c) => !CONFIG_NAMES.includes(c) || c === 'V3') || new Set(configs).size !== configs.length) return usage(io);
+  if (configs.length === 0 || configs.some((c) => !CONFIG_NAMES.includes(c) || DERIVED_CONFIGS.includes(c as Config)) || new Set(configs).size !== configs.length) return usage(io);
   if (configs.includes('V2') && io.deps.v2Agent === undefined) {
     io.out('V2 is not built');
     return 2;

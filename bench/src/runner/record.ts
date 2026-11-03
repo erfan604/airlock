@@ -11,7 +11,7 @@ import type { ExtraSection } from '../extra/types.ts';
 import type { Group } from './cases.ts';
 import type { Config, PaymentFact } from './types.ts';
 
-const CONFIGS = ['V0', 'V1', 'V1-tight', 'V2', 'V3', 'A1', 'A2'] as const;
+const CONFIGS = ['V0', 'V1', 'V1-tight', 'V2', 'V3', 'A1', 'A2', 'CAPS', 'BLOCKLIST', 'MANDATE', 'MANDATE-C'] as const;
 
 export const PaymentFactSchema = z.strictObject({
   id: z.string(),

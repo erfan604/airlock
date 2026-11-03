@@ -10,6 +10,7 @@ import type { Case } from './cases.ts';
 import { HooksProductUnavailable, resolveHooks } from './hooks.ts';
 import { ResultsFileSchema, readTranscript } from './record.ts';
 import type { ResultsFile, RunRecord, Transcript } from './record.ts';
+import { deriveBaselines } from '../baselines/derive.ts';
 import { renderBlock, replace } from '../report/render.ts';
 import { BenchSession, finishRecord } from './run.ts';
 import type { RunnerDeps } from './run.ts';
@@ -160,7 +161,7 @@ export async function replay(o: ReplayOptions): Promise<number> {
     else process.env['LLM_RECORDINGS_DIR'] = saved.dir;
   }
   if (diffs > 0) return 1;
-  if (o.doc !== null) replace(o.doc, renderBlock(results));
+  if (o.doc !== null) replace(o.doc, renderBlock(results, deriveBaselines(results.runs, o.cases)));
   o.out(`REPLAY OK ${count} runs`);
   return 0;
 }

@@ -104,6 +104,7 @@ interface Draft {
 // ---- the attacks of the bench corpus ----
 interface RawCase {
   id: string;
+  source_id?: Record<string, unknown>;
   attacker_goal: { kind: string; asset: string; recipient?: string; amount?: string } | null;
   legit?: { action?: string; recipient?: string; amount?: string } | null;
   world?: Record<string, unknown>;
@@ -123,7 +124,10 @@ export function loadRawCases(root: string = REPO_ROOT): RawCase[] {
   const cases: RawCase[] = [];
   for (const file of benchCaseFiles(root)) {
     for (const line of readFileSync(file, 'utf8').split('\n')) {
-      if (line.trim() !== '') cases.push(JSON.parse(line) as RawCase);
+      if (line.trim() === '') continue;
+      const c = JSON.parse(line) as RawCase;
+      // a case still waiting for its recording is not part of the corpus the committed stream was drawn from (AIR-306)
+      if (c.source_id?.['pending_recording'] !== true) cases.push(c);
     }
   }
   return cases;

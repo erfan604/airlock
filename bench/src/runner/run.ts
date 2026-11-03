@@ -188,7 +188,7 @@ export class BenchSession {
         ({ status, plan, trace, payments, says, fieldOutcomes } = out);
         answer = says.join('\n');
       } else {
-        if (config === 'V3') throw new Error('V3 is derived from V0 records and never run');
+        if (config === 'V3' || config === 'CAPS' || config === 'BLOCKLIST' || config === 'MANDATE' || config === 'MANDATE-C') throw new Error(`${config} is derived from V0 records and never run`);
         const out = await this.vanilla(c, config, run, sim, llm);
         ({ payments, answer } = out);
       }

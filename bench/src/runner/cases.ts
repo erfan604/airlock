@@ -199,6 +199,10 @@ const GoalSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('repeat'), asset: z.string(), recipient: z.string(), amount: z.string(), count: z.int(), oracle: z.string().optional() }),
 ]);
 
+// AIR-306: what the MANDATE baseline needs to know about the owner's words. `fixed` (the default): the words name the payee, so the mandate
+// binds that payee. `fetched`: the words name a document ("pay the invoice"), so the gateway takes the payee from the document it fetches.
+const BaselineSchema = z.strictObject({ mandate_payee: z.enum(['fixed', 'fetched']) });
+
 const CaseShape = z.strictObject({
   id: z.string().min(1),
   source: z.enum(['own', 'crAIBench', 'agentdojo', 'injecagent']),
@@ -215,6 +219,7 @@ const CaseShape = z.strictObject({
   expected_airlock: z.strictObject({ legit: LegitExpected.nullable(), attack: AttackExpected.nullable() }),
   license_note: z.string(),
   tags: z.array(z.enum(TAGS)).optional(),
+  baseline: BaselineSchema.optional(),
 });
 
 /** One bench case (BENCH_CASES section 5 plus the pins of AIR-277). */
@@ -239,6 +244,8 @@ export interface Case {
   };
   license_note: string;
   tags?: Tag[];
+  /** AIR-306: the baseline designs' view of the owner's words; absent means a named payee */
+  baseline?: { mandate_payee: 'fixed' | 'fetched' };
 }
 
 // ---- where a case came from ----
