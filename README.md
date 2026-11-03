@@ -12,6 +12,8 @@ The payment gate is one small function, the verdict, and it is checked three way
 
 Not covered: the planner and reader models, the labels the runtime attaches to values, the TEE, the chain and the MPC signer, and the TypeScript interpreter (Lean covers a model of it and a property test covers the code). Each entry with its bound and its own not-covered line is in `docs/PROVEN.md`, and the console shows the same list at `/proven`. Recheck it with one command, `pnpm proven` (Rust 1.86, Kani 0.68 and Lean 4.35, about 5 minutes), which prints one line per entry and ends with `PROVEN OK <n> of <n>`.
 
+No Rust, Kani or Lean installed? The raw, timestamped output of every Kani harness, the Lean axiom audit and the 40,000 case differential is committed in `docs/evidence/` (`kani.txt`, `lean-axioms.txt`, `diff-verdict.txt`), each with the commit and tool versions that produced it. `pnpm proven:transcripts` needs only Node and fails when a covered source file changed after its transcript was recorded.
+
 ## Try it in 2 minutes
 
 `pnpm demo` needs Node 24 and pnpm only: no Rust and no keys. It replays recorded testnet runs and says so.

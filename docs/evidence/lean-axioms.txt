@@ -1,0 +1,17 @@
+sha=f7516059637cd671c7de87a620c6e756ee97ca59 date=2026-11-03T17:33:38Z tools=node=24.22.1 pnpm=12.14.0 rustc=1.99.1 kani=0.68.0 lake=5.0.0-src+eb6cafb
+cmd=scripts/lean-axioms.sh, then the axioms each theorem uses
+AXIOMS OK: 10 theorems
+LEANCHECKER OK
+THEOREM allow_iff depends on axioms: [propext, Quot.sound]
+THEOREM p1_untrusted_pc_not_allowed depends on axioms: [propext, Quot.sound]
+THEOREM p2_p15_allowed_recipient_trusted depends on axioms: [propext, Quot.sound]
+THEOREM p3_allowed_in_book depends on axioms: [propext, Quot.sound]
+THEOREM p4_p14_p23_untrusted_amount_bounded depends on axioms: [propext, Quot.sound]
+THEOREM p6_lying_book_not_allowed depends on axioms: [propext, Quot.sound]
+THEOREM p7_taint_monotone depends on axioms: [propext, Quot.sound]
+THEOREM p9_p20_missing_not_allowed depends on axioms: [propext, Quot.sound]
+THEOREM p21_allowed_in_task_bound depends on axioms: [propext, Quot.sound]
+THEOREM p22_allowed_in_payee_limit depends on axioms: [propext, Quot.sound]
+THEOREM NI.trusted_payments_independent_of_untrusted depends on axioms: [propext, Classical.choice, Quot.sound]
+THEOREM NIRecipients.trusted_recipients_independent_of_untrusted depends on axioms: [propext, Classical.choice, Quot.sound]
+exit=0

@@ -1,0 +1,23 @@
+sha=f7516059637cd671c7de87a620c6e756ee97ca59 date=2026-11-03T17:34:53Z tools=node=24.22.1 pnpm=12.14.0 rustc=1.99.1 kani=0.68.0 lake=5.0.0-src+eb6cafb
+cmd=scripts/diff-verdict.sh --commit
+tag                                   count   share
+allow                                   886   2.21%
+block:UnknownAsset                     9441  23.60%
+block:Paused                           2420   6.05%
+block:AmountOutOfBounds                8965  22.41%
+block:DailyLimit                       3935   9.84%
+block:FeeTooHigh                       3324   8.31%
+block:MissingProvenance                3259   8.15%
+block:BookLabelNotInBook                790   1.98%
+escalate:OutsideTask                   1045   2.61%
+escalate:OverTaskBound                 1390   3.48%
+escalate:UntrustedTrigger              1288   3.22%
+escalate:UntrustedRecipient            2052   5.13%
+escalate:NewRecipient                   294   0.73%
+escalate:OverPayeeLimit                 405   1.01%
+escalate:UntrustedAmount                506   1.26%
+total                                 40000
+TAGS OK (15 of 15)
+TOGGLE OK (22 lines, 21 flips, 0 allow)
+identical on 40000 cases
+exit=0
