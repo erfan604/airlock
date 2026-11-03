@@ -56,8 +56,10 @@ async function verifyNear(io: VerifyIo, run: GoldenRun, t: GoldenTx): Promise<st
     const ids = new Set(run.requests.map((r) => r.request_id));
     const decided = [...ev(seen.events, 'allowed'), ...ev(seen.events, 'escalated'), ...ev(seen.events, 'blocked')];
     const eventIds = new Set(decided.map((e) => e.data.request_id));
-    if (eventIds.size !== ids.size || [...ids].some((id) => !eventIds.has(id))) return 'the request ids of the events differ from the recorded requests';
-    for (const r of run.requests) {
+    // a run of several submit transactions (AIR-247, live-latest) holds the requests of all of them: every event of this transaction must be a
+    // recorded request, and only the requests this transaction decided are checked here. A one-request run behaves as before.
+    if (eventIds.size === 0 || [...eventIds].some((id) => !ids.has(id as string))) return 'the request ids of the events differ from the recorded requests';
+    for (const r of run.requests.filter((q) => eventIds.has(q.request_id))) {
       const match = decided.find((e) => e.data.request_id === r.request_id);
       if (match === undefined || match.event !== r.outcome) return `the recorded outcome ${r.outcome} is not the event of request ${r.request_id}`;
       if (r.outcome === 'allowed') {
@@ -68,7 +70,8 @@ async function verifyNear(io: VerifyIo, run: GoldenRun, t: GoldenTx): Promise<st
     return null;
   }
   // approve
-  const r = run.requests[0];
+  const held = run.requests.filter((q) => q.pending_id !== null);
+  const r = held.find((q) => ev(seen.events, 'approved').some((e) => e.data.request_id === q.request_id)) ?? held[0];
   if (r === undefined || r.pending_id === null) return 'the run records no pending request to approve';
   const view = await io.getRequest(r.pending_id);
   if (view === null || view.digest === null) return 'the chain has no stored digest for the request';

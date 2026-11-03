@@ -164,3 +164,14 @@ test('the golden schema refuses an unknown key, a bad label and a non-testnet ne
   assert.ok(!GoldenRunSchema.safeParse({ ...ok, network: 'mainnet' }).success);
   assert.ok(!GoldenRunSchema.safeParse({ ...ok, txs: [{ ...tx('submit', SUBMIT), label: 'other' }] }).success);
 });
+
+test('a run with several submit transactions and requests passes each transaction against its own request (AIR-247)', async () => {
+  const io = world();
+  const reqs = [
+    { request_id: 'R1', outcome: 'allowed', reason: null, pending_id: null },
+    { request_id: 'R2', outcome: 'approved', reason: null, pending_id: '4' },
+  ];
+  assert.deepEqual(await oks(io, run('live-latest', reqs, [tx('submit', SUBMIT), tx('approve', APPROVE), tx('tamper', TAMPER, 'failure')])), [true, true, true]);
+  const stray = [{ request_id: 'R9', outcome: 'allowed', reason: null, pending_id: null }];
+  assert.deepEqual(await oks(io, run('live-latest', stray, [tx('submit', SUBMIT)])), [false]);
+});
