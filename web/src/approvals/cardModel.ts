@@ -16,6 +16,9 @@ import type { MagnitudeText } from './magnitude.ts';
 /** `approve(id, to, asset, amount, why, book)`: `id` the decimal pending number, the other five the readable values. */
 export type ApproveArgs = { id: string; to: string; asset: string; amount: string; why: string; book: string };
 
+/** `approve_and_remember(id, to, asset, amount, why, book, cap, daily_limit, label)`: the five card values plus the owner's limits in base units (decimal strings). */
+export type RememberArgs = ApproveArgs & { cap: string; daily_limit: string; label: string };
+
 export class CardError extends Error {
   readonly code: 'NotApprovable';
   constructor(code: 'NotApprovable') {

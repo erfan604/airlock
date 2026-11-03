@@ -54,6 +54,39 @@ test('approve: one FunctionCall action, method approve, deposit 1, the AIR-087 g
   assert.doesNotThrow(() => assertOneAction(c));
 });
 
+test('remember sends one action approve_and_remember with decimal strings', async () => {
+  const h = harness({ signAndSendTransaction: async () => okOutcome });
+  const cap = (3n * 10n ** 24n).toString();
+  const daily = (10n * 10n ** 24n).toString();
+  const r = await h.a.approveAndRemember({ ...args, cap, daily_limit: daily, label: 'Bob the plumber' });
+  assert.deepEqual(r, { ok: true, tx: 'HASH1' });
+  assert.equal(h.calls.length, 1);
+  const c = h.calls[0] as Call;
+  assert.equal(c.signerId, undefined);
+  assert.equal(c.actions.length, 1);
+  const act = c.actions[0] as Call['actions'][number];
+  assert.equal(act.type, 'FunctionCall');
+  assert.equal(act.params.methodName, 'approve_and_remember');
+  assert.equal(act.params.deposit, '1');
+  assert.equal(act.params.gas, GAS);
+  assert.deepEqual(Object.keys(act.params.args), ['id', 'to', 'asset', 'amount', 'why', 'book', 'cap', 'daily_limit', 'label']);
+  for (const key of ['cap', 'daily_limit']) assert.match(String(act.params.args[key]), /^[1-9][0-9]*$/, key);
+  assert.equal(act.params.args.cap, cap);
+  assert.equal(act.params.args.daily_limit, daily);
+  assert.equal(act.params.args.label, 'Bob the plumber');
+  assert.doesNotThrow(() => assertOneAction(c));
+});
+
+test('remember: a remember refusal of the contract maps like an approve refusal', async () => {
+  const h = harness({
+    signAndSendTransaction: async () => {
+      throw new Error('Smart contract panicked: remember rejected: CapBelowAmount');
+    },
+  });
+  const r = await h.a.approveAndRemember({ ...args, cap: '1', daily_limit: '2', label: 'x' });
+  assert.deepEqual(r, { ok: false, kind: 'contract', name: 'CapBelowAmount' });
+});
+
 test('approve: reject is the same with args { id } and 30 Tgas', async () => {
   const h = harness({ signAndSendTransaction: async () => okOutcome }, ['Rejected']);
   const r = await h.a.reject('7');

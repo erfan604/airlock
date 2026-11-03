@@ -10,15 +10,21 @@
 // charge and day are stored for the refund (AIR-105); `agent_allowed` is the owner's allowlist; task expiry does not block an approval
 // (only revocation does); `get_pending` clamps `limit` to 20.
 //
-// Placement (security): `approve` and `get_pending` are the only `pub fn`s in a `#[near]` impl here. Every other item is a free function
+// Placement (security): `approve`, `approve_and_remember` (AIR-299, the same body through the private `approve_stored`) and `get_pending` are the
+// only `pub fn`s in a `#[near]` impl here. Every other item is a free function
 // or lives in a plain `impl Contract`, so none is an exported method: `approve` reaches the execution lanes through `start_execution`.
+// the nine-argument signature of `approve_and_remember` is fixed by AIR-299 (the five card values plus the owner's three limits); the
+// lint also fires on the wrapper `#[near]` generates, which only a module-wide allow reaches
+#![allow(clippy::too_many_arguments)]
 use crate::gate::EvalCtx;
 use crate::ledgers::{LedgerKey, approval_caps, verdict_inputs};
+use crate::policy::BookEntry;
 use crate::request::{Hex32, PendingInfo, RequestRecord, RequestState, RequestView, request_id};
 use crate::time::utc_day;
 use crate::*;
 use airlock_verdict::approve::{ApproveArgs, ApproveError, Live, StoredView, approve_check};
 use airlock_verdict::{Reason, decimal};
+use near_sdk::json_types::U128;
 
 /// The most items `get_pending` returns in one call.
 pub const MAX_PENDING_PAGE: u32 = 20;
@@ -227,31 +233,19 @@ impl Contract {
     }
 }
 
-#[near]
 impl Contract {
-    /// Owner: approve the escalation with short number `id`, naming the five readable values of its card. `#[payable]`, exactly 1
-    /// yoctoNEAR from the owner (`owner_call`, the first statement). In this order, each failure a revert:
-    ///  1. `id` is the canonical decimal of a `u32` and names an escalation, otherwise `unknown id`;
-    ///  2. `approve_check` (AIR-026) compares `to`, `asset`, `amount`, `why` and `book` byte for byte with the stored card, built from the
-    ///     stored record and the registry decimals read now, and rechecks pending, expiry, the agent's allowance, task revocation, the
-    ///     pause and the asset limits: the revert text is `approve rejected: <error>`;
-    ///  3. the ledgers are charged with `charge_approval` (the task part saturates at the bound stored at escalation), the applied
-    ///     charge and the day are stored on the record, the state becomes `Executing` and the number leaves `pending_nos`;
-    ///  4. `approved` is emitted and `start_execution` runs the lane for the stored request (its promise is detached).
-    ///
-    /// The arguments are only compared: the stored request executes, never the arguments.
-    #[payable]
-    pub fn approve(
+    /// The shared body of `approve` and `approve_and_remember` (everything after the owner guard). Returns the stored payee key, the
+    /// stored amount and the asset id of the approved request.
+    fn approve_stored(
         &mut self,
-        id: String,
-        to: String,
-        asset: String,
-        amount: String,
-        why: String,
-        book: String,
-    ) {
-        self.owner_call();
-        let no = canonical_no(&id).unwrap_or_else(|| env::panic_str("unknown id"));
+        id: &str,
+        to: &str,
+        asset: &str,
+        amount: &str,
+        why: &str,
+        book: &str,
+    ) -> (String, u128, String) {
+        let no = canonical_no(id).unwrap_or_else(|| env::panic_str("unknown id"));
         let (request_key, mut rec) = self
             .pending_record(no)
             .unwrap_or_else(|| env::panic_str("unknown id"));
@@ -327,6 +321,7 @@ impl Contract {
         rec.charge_day = utc_day(now_ms);
         rec.state = RequestState::Executing;
         self.pending_nos.remove(&no);
+        let (rec_payee, rec_amount, rec_asset) = (rec.payee.clone(), rec.amount, rec.asset.clone());
         self.records.insert(request_key.clone(), rec);
         Event::Approved {
             request_id: &request_key,
@@ -339,6 +334,108 @@ impl Contract {
         if let Some(promise) = self.start_execution(&request_key) {
             promise.detach();
         }
+        (rec_payee, rec_amount, rec_asset)
+    }
+
+    /// The remember half of `approve_and_remember`: validates the owner's limits against the stored request and inserts the book entry.
+    fn remember_payee(
+        &mut self,
+        payee: String,
+        asset: &str,
+        amount: u128,
+        cap: U128,
+        daily_limit: U128,
+        label: String,
+    ) {
+        let hard_cap = self
+            .asset(asset)
+            .unwrap_or_else(|| env::panic_str("remember rejected: UnknownAsset"))
+            .hard_cap;
+        if cap.0 < amount {
+            env::panic_str("remember rejected: CapBelowAmount");
+        }
+        if cap.0 > hard_cap {
+            env::panic_str("remember rejected: CapAboveAssetCap");
+        }
+        if daily_limit.0 < cap.0 {
+            env::panic_str("remember rejected: DailyBelowCap");
+        }
+        if !crate::policy::valid_label(&label) {
+            env::panic_str("invalid label");
+        }
+        if self.book.contains_key(&payee) {
+            env::panic_str("remember rejected: AlreadyInBook");
+        }
+        Event::BookAdded {
+            key: &payee,
+            label: &label,
+            cap: Some(cap),
+            daily_untrusted_budget: U128(0),
+            daily_limit,
+        }
+        .emit();
+        self.book.insert(
+            payee,
+            BookEntry {
+                cap: Some(cap.0),
+                daily_untrusted_budget: 0,
+                daily_limit: daily_limit.0,
+                label,
+            },
+        );
+    }
+}
+
+#[near]
+impl Contract {
+    /// Owner: approve the escalation with short number `id`, naming the five readable values of its card. `#[payable]`, exactly 1
+    /// yoctoNEAR from the owner (`owner_call`, the first statement). In this order, each failure a revert:
+    ///  1. `id` is the canonical decimal of a `u32` and names an escalation, otherwise `unknown id`;
+    ///  2. `approve_check` (AIR-026) compares `to`, `asset`, `amount`, `why` and `book` byte for byte with the stored card, built from the
+    ///     stored record and the registry decimals read now, and rechecks pending, expiry, the agent's allowance, task revocation, the
+    ///     pause and the asset limits: the revert text is `approve rejected: <error>`;
+    ///  3. the ledgers are charged with `charge_approval` (the task part saturates at the bound stored at escalation), the applied
+    ///     charge and the day are stored on the record, the state becomes `Executing` and the number leaves `pending_nos`;
+    ///  4. `approved` is emitted and `start_execution` runs the lane for the stored request (its promise is detached).
+    ///
+    /// The arguments are only compared: the stored request executes, never the arguments.
+    #[payable]
+    pub fn approve(
+        &mut self,
+        id: String,
+        to: String,
+        asset: String,
+        amount: String,
+        why: String,
+        book: String,
+    ) {
+        self.owner_call();
+        self.approve_stored(&id, &to, &asset, &amount, &why, &book);
+    }
+
+    /// Owner: `approve` and, in the same call, remember the payee (AIR-299, D26). The checks and effects of `approve` run first through
+    /// the same private function, so a refused approve reverts here with its own text. Then, from the stored request (never from an
+    /// argument): `cap` must be at least the stored amount (`remember rejected: CapBelowAmount`) and at most the asset's hard cap
+    /// (`CapAboveAssetCap`), `daily_limit` at least `cap` (`DailyBelowCap`), the label follows the rules of `book_add` (`invalid label`),
+    /// and the payee must not be in the book (`AlreadyInBook`). The book entry is `cap: Some(cap)`, `daily_untrusted_budget: 0`,
+    /// `daily_limit` and `label`; `book_added` is emitted after `approved`. Any revert leaves no state change.
+    #[payable]
+    pub fn approve_and_remember(
+        &mut self,
+        id: String,
+        to: String,
+        asset: String,
+        amount: String,
+        why: String,
+        book: String,
+        cap: U128,
+        daily_limit: U128,
+        label: String,
+    ) {
+        self.owner_call();
+        let (payee, stored_amount, asset_id) =
+            self.approve_stored(&id, &to, &asset, &amount, &why, &book);
+        self.remember_payee(payee, &asset_id, stored_amount, cap, daily_limit, label);
     }
 
     /// Owner: reject the escalation with short number `id` (AIR-081). `#[payable]`, exactly 1 yoctoNEAR from the owner (`owner_call`, the

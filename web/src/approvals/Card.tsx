@@ -11,8 +11,9 @@ import { Specimen, UntrustedInline } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
 import type { VerdictState } from '../components/verdict.ts';
 import { BookDiff } from './BookDiff.tsx';
+import { parseCanonicalDecimal } from '@airlock/runtime/money';
 import { buildCardModel, CardError } from './cardModel.ts';
-import type { ApproveArgs, CapLine, CardModel, CardRow, SourceChip } from './cardModel.ts';
+import type { ApproveArgs, CapLine, CardModel, CardRow, RememberArgs, SourceChip } from './cardModel.ts';
 import { MAX_FAILURES, canApprove, cardReducer, initialState } from './cardReducer.ts';
 import type { CardEvent, CardState } from './cardReducer.ts';
 import type { CardEvidence } from './evidence.ts';
@@ -36,6 +37,8 @@ export type CardProps = {
   /** Label per book key, for the diff sentence. A missing label leaves the sentence without one. */
   bookLabels?: Readonly<Record<string, string>>;
   onApprove(a: ApproveArgs): Promise<ApproveResult>;
+  /** The second action of the sheet (AIR-299): approve and enter the payee into the book. Absent: the sheet offers the plain approve only. */
+  onApproveAndRemember?(a: RememberArgs): Promise<ApproveResult>;
   onReject(id: string): Promise<ApproveResult>;
   /** Network and contract id of the R4-08 counter key. AIR-182 passes the real ones. */
   scope?: CounterScope;
@@ -47,7 +50,8 @@ export type CardProps = {
 
 const TX = /^[A-Za-z0-9]{1,64}$/;
 
-function stampFor(readOnly: RequestState, s: CardState): { state: VerdictState; line: string | null } {
+function stampFor(readOnly: RequestState, s: CardState, remembered: boolean): { state: VerdictState; line: string | null } {
+  if (s.kind === 'approved' && remembered) return { state: 'approved', line: 'Approved. Payee remembered.' };
   if (s.kind === 'approved') {
     return { state: 'approved', line: s.tx !== null && TX.test(s.tx) ? `Approved. Transaction ${s.tx}.` : 'Approved. Waiting for the chain.' };
   }
@@ -121,6 +125,38 @@ function sourceLineOf(row: CardRow, model: CardModel): ReactNode {
 
 const ARG_NAMES = ['to', 'asset', 'amount', 'why', 'book'] as const;
 
+// ---- the remember form (AIR-299) ----
+
+export type RememberField = 'cap' | 'daily' | 'label';
+export type RememberForm = { cap: string; daily: string; label: string; error: string | null };
+
+const LABEL_CHARS = /[^A-Za-z0-9 ._-]/g;
+
+/** The label the sheet starts with: the book label of the payee when it has one, else the account part of the stored payee key. */
+function defaultLabel(model: CardModel, labels: Readonly<Record<string, string>> | undefined): string {
+  const known = labels !== undefined && Object.hasOwn(labels, model.args.to) ? labels[model.args.to] : undefined;
+  const raw = typeof known === 'string' ? known : (model.args.to.split(':').pop() ?? '');
+  return raw.replace(LABEL_CHARS, '').slice(0, 40);
+}
+
+/** The arguments of the remember call from the form, or the sentence that says what is wrong. Amounts are BigInt end to end. */
+function rememberArgsOf(model: CardModel, form: RememberForm, decimals: number): { ok: true; args: RememberArgs } | { ok: false; error: string } {
+  let cap: bigint;
+  let daily: bigint;
+  let amount: bigint;
+  try {
+    amount = parseCanonicalDecimal(model.args.amount, decimals);
+    cap = parseCanonicalDecimal(form.cap.trim(), decimals);
+    daily = parseCanonicalDecimal(form.daily.trim(), decimals);
+  } catch {
+    return { ok: false, error: 'Enter the limits as plain numbers, for example 2.5.' };
+  }
+  if (cap < amount) return { ok: false, error: 'The per-payment cap cannot be below this payment.' };
+  if (daily < cap) return { ok: false, error: 'The daily limit cannot be below the per-payment cap.' };
+  if (form.label.length > 40 || /[^A-Za-z0-9 ._-]/.test(form.label)) return { ok: false, error: 'The label takes up to 40 letters, digits, spaces, dots, dashes and underscores.' };
+  return { ok: true, args: { ...model.args, cap: cap.toString(), daily_limit: daily.toString(), label: form.label } };
+}
+
 // ---- the presentational card ----
 
 export type CardViewProps = {
@@ -137,12 +173,17 @@ export type CardViewProps = {
   /** What the owner has typed in the forcing step (AIR-190); empty when absent. */
   forcingInput?: string;
   onForcingInput?(value: string): void;
+  /** The remember fields and action of the sheet (AIR-299); absent: the plain approve only. */
+  remember?: RememberForm & { onField(field: RememberField, value: string): void; onRemember(): void; unit: string };
+  /** The approve that just succeeded also remembered the payee. */
+  remembered?: boolean;
 };
 
-export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, onReject, rejectRef, sheetRejectRef, forcingInput = '', onForcingInput }: CardViewProps) {
+export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, onReject, rejectRef, sheetRejectRef, forcingInput = '', onForcingInput, remember, remembered = false }: CardViewProps) {
   const sheetTitleId = useId();
   const forcingId = useId();
-  const stamp = stampFor(readOnly, state);
+  const stamp = stampFor(readOnly, state, remembered);
+  const rememberIds = useId();
   const live = readOnly === 'Pending' && state.kind !== 'approved' && state.kind !== 'rejected';
   const approveOn = live && canApprove(state);
   const sheetOpen = approveOn && (state.kind === 'confirming' || state.kind === 'wallet_pending');
@@ -254,6 +295,27 @@ export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, 
                 />
               </div>
             ) : null}
+            {remember !== undefined ? (
+              <div className="card-remember" data-testid="remember-fields">
+                <label className="card-remember-label" htmlFor={`${rememberIds}-cap`}>
+                  {`Per-payment cap (${remember.unit})`}
+                </label>
+                <input id={`${rememberIds}-cap`} className="card-remember-input" data-testid="remember-cap" type="text" inputMode="decimal" value={remember.cap} onChange={(e) => remember.onField('cap', e.target.value)} autoComplete="off" spellCheck={false} disabled={waiting} />
+                <label className="card-remember-label" htmlFor={`${rememberIds}-daily`}>
+                  {`Daily limit (${remember.unit})`}
+                </label>
+                <input id={`${rememberIds}-daily`} className="card-remember-input" data-testid="remember-daily" type="text" inputMode="decimal" value={remember.daily} onChange={(e) => remember.onField('daily', e.target.value)} autoComplete="off" spellCheck={false} disabled={waiting} />
+                <label className="card-remember-label" htmlFor={`${rememberIds}-label`}>
+                  Label
+                </label>
+                <input id={`${rememberIds}-label`} className="card-remember-input" data-testid="remember-label" type="text" value={remember.label} onChange={(e) => remember.onField('label', e.target.value)} autoComplete="off" spellCheck={false} maxLength={40} disabled={waiting} />
+                {remember.error !== null ? (
+                  <p className="card-remember-error" data-testid="remember-error" role="alert">
+                    {remember.error}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             <div className="card-sheet-actions">
               <button ref={sheetRejectRef} type="button" className="card-btn card-btn-primary" data-testid="sheet-reject" disabled={waiting} onClick={onReject}>
                 Reject
@@ -261,6 +323,11 @@ export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, 
               <button type="button" className="card-btn card-btn-outline" data-testid="confirm-approve" disabled={waiting || !forcingMet} onClick={onConfirm}>
                 Approve
               </button>
+              {remember !== undefined ? (
+                <button type="button" className="card-btn card-btn-outline" data-testid="confirm-remember" disabled={waiting || !forcingMet} onClick={remember.onRemember}>
+                  Approve and trust this payee
+                </button>
+              ) : null}
               <button type="button" className="card-btn card-btn-quiet" data-testid="sheet-cancel" disabled={waiting} onClick={onCancel}>
                 Back
               </button>
@@ -291,11 +358,14 @@ function snapshot(p: CardProps): Snapshot {
 
 const errorName = (e: unknown): string | undefined => (e instanceof Error ? e.name : undefined);
 
-type LiveProps = Pick<CardProps, 'onApprove' | 'onReject'> & { model: CardModel; readOnly: RequestState; scope: CounterScope };
+type LiveProps = Pick<CardProps, 'onApprove' | 'onApproveAndRemember' | 'onReject'> & { model: CardModel; readOnly: RequestState; scope: CounterScope; decimals: number; bookLabels?: Readonly<Record<string, string>> };
 
-function LiveCard({ model, readOnly, scope, onApprove, onReject }: LiveProps) {
+function LiveCard({ model, readOnly, scope, onApprove, onApproveAndRemember, onReject, decimals, bookLabels }: LiveProps) {
   const [state, dispatch] = useReducer(cardReducer, undefined, () => initialState(readFailures(scope, model.no)));
   const [forcingInput, setForcingInput] = useState('');
+  // the daily limit follows the cap until the owner types in it
+  const [form, setForm] = useState<{ cap: string; daily: string | null; label: string; error: string | null }>(() => ({ cap: model.args.amount, daily: null, label: defaultLabel(model, bookLabels), error: null }));
+  const [remembered, setRemembered] = useState(false);
   const rejectRef = useRef<HTMLButtonElement>(null);
   const sheetRejectRef = useRef<HTMLButtonElement>(null);
   // one wallet call at a time: a second click while one is out does nothing
@@ -326,9 +396,36 @@ function LiveCard({ model, readOnly, scope, onApprove, onReject }: LiveProps) {
     else dispatch(result.kind === 'wallet' ? { type: 'WALLET_ERROR', name: result.name } : { type: 'CONTRACT_REFUSED', name: result.name });
   }
 
+  const remember =
+    onApproveAndRemember === undefined
+      ? undefined
+      : {
+          cap: form.cap,
+          daily: form.daily ?? form.cap,
+          label: form.label,
+          error: form.error,
+          unit: model.args.asset,
+          onField: (field: RememberField, value: string) => setForm((f) => ({ ...f, [field]: value, error: null })),
+          onRemember: () => {
+            if (model.forcing !== null && model.forcing.required && !forcingSatisfied(forcingInput, model.args.to)) return;
+            const parsed = rememberArgsOf(model, { cap: form.cap, daily: form.daily ?? form.cap, label: form.label, error: null }, decimals);
+            if (!parsed.ok) {
+              setForm((f) => ({ ...f, error: parsed.error }));
+              return;
+            }
+            setForcingInput('');
+            void call({ type: 'WALLET_SENT' }, () => onApproveAndRemember(parsed.args), (r) => {
+              setRemembered(true);
+              return { type: 'WALLET_OK', tx: r.tx };
+            });
+          },
+        };
+
   return (
     <CardView
       model={model}
+      remember={remember}
+      remembered={remembered}
       readOnly={readOnly}
       state={state}
       rejectRef={rejectRef}
@@ -362,5 +459,5 @@ export function Card(props: CardProps) {
       </section>
     );
   }
-  return <LiveCard model={snap.model} readOnly={props.view.state} scope={scope} onApprove={props.onApprove} onReject={props.onReject} />;
+  return <LiveCard model={snap.model} readOnly={props.view.state} scope={scope} onApprove={props.onApprove} onApproveAndRemember={props.onApproveAndRemember} onReject={props.onReject} decimals={props.asset.decimals} bookLabels={props.bookLabels} />;
 }

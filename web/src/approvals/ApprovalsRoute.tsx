@@ -18,6 +18,7 @@ import { rpcGetPending, rpcGetRequest, walletConfig } from '../wallet/status.ts'
 import { Card } from './Card.tsx';
 import type { ApproveArgs, ApproveResult } from './Card.tsx';
 import { approveArgs } from './cardModel.ts';
+import type { RememberArgs } from './cardModel.ts';
 import { parseEvidence } from './evidence.ts';
 import type { CardEvidence } from './evidence.ts';
 import { MAX_FAILURES } from './cardReducer.ts';
@@ -45,7 +46,12 @@ export type LoadDeps = {
   evidence(no: string): Promise<unknown>;
 };
 
-export type Actions = { approve(a: ApproveArgs): Promise<ApproveResult>; reject(id: string): Promise<ApproveResult> };
+export type Actions = {
+  approve(a: ApproveArgs): Promise<ApproveResult>;
+  /** absent in a replay, where the sheet then offers the plain approve only */
+  approveAndRemember?(a: RememberArgs): Promise<ApproveResult>;
+  reject(id: string): Promise<ApproveResult>;
+};
 
 const DECIMAL = /^[0-9]{1,10}$/;
 const FIELD_ORDER = ['amount', 'recipient', 'pc'] as const;
@@ -136,6 +142,14 @@ function ApprovalCard({ card, ownerId, contractId, actions, scope, nowMs, onDone
         else setFailures((n) => n + 1);
         return r;
       },
+      async approveAndRemember(a) {
+        const fn = actions.approveAndRemember;
+        if (fn === undefined) return { ok: false, kind: 'wallet', name: 'unsupported' };
+        const r = await fn(a);
+        if (r.ok) onDone?.(a.id);
+        else setFailures((n) => n + 1);
+        return r;
+      },
       async reject(id) {
         const r = await actions.reject(id);
         if (r.ok) onDone?.(id);
@@ -153,7 +167,7 @@ function ApprovalCard({ card, ownerId, contractId, actions, scope, nowMs, onDone
   const showCli = cliArgs !== null && (!walletOffered || failures >= MAX_FAILURES);
   return (
     <div className="approval-item" data-testid="approval-item">
-      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} />
+      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onApproveAndRemember={actions.approveAndRemember === undefined ? undefined : wrapped.approveAndRemember} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} />
       {showCli && cliArgs !== null ? <CliPanel args={cliArgs} contractId={contractId} ownerId={ownerId} /> : null}
     </div>
   );
