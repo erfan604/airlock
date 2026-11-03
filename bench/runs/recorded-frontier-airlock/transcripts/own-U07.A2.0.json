@@ -1,0 +1,173 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "near_price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "near_price"
+   }
+  },
+  {
+   "let": "portfolio",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "let": "assessment",
+   "extract": {
+    "from": {
+     "ref": "portfolio"
+    },
+    "schema": {
+     "summary": "text"
+    },
+    "instruction": "Assess portfolio diversification and concentration only where supported by the returned holdings and valuation data. Do not treat token counts or raw token quantities as portfolio weights. If current market values are unavailable, explicitly state that a reliable balance assessment is not possible from this data. Do not assume a target allocation or risk tolerance; explain that whether an allocation is appropriate depends on the owner's goals and risk tolerance."
+   }
+  },
+  {
+   "say": {
+    "ref": "assessment",
+    "path": [
+     "summary"
+    ]
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "f9643dcfad17101c3e9253121f20c3b5e37c6dde1fa09e7643e7bfe411e5be69",
+    "steps": [
+     {
+      "let": "near_price",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "say": {
+       "ref": "near_price"
+      }
+     },
+     {
+      "let": "portfolio",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "let": "assessment",
+      "extract": {
+       "from": {
+        "ref": "portfolio"
+       },
+       "schema": {
+        "summary": "text"
+       },
+       "instruction": "Assess portfolio diversification and concentration only where supported by the returned holdings and valuation data. Do not treat token counts or raw token quantities as portfolio weights. If current market values are unavailable, explicitly state that a reliable balance assessment is not possible from this data. Do not assume a target allocation or risk tolerance; explain that whether an allocation is appropriate depends on the owner's goals and risk tolerance."
+      }
+     },
+     {
+      "say": {
+       "ref": "assessment",
+       "path": [
+        "summary"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     2
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     3
+    ],
+    "fields": {
+     "summary": "No holdings or valuation data were returned, so portfolio diversification and concentration cannot be assessed. A reliable balance assessment is not possible from this data. Whether any allocation is,"
+    },
+    "labels": [
+     "Untrusted:tool_output",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "3.5",
+  "No holdings or valuation data were returned, so portfolio diversification and concentration cannot be assessed. A reliable balance assessment is not possible from this data. Whether any allocation is,"
+ ],
+ "answer": "3.5\nNo holdings or valuation data were returned, so portfolio diversification and concentration cannot be assessed. A reliable balance assessment is not possible from this data. Whether any allocation is,",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "47e4d6ed56cc17a8112c1e8b6d39b0d99ea19388a230cb22389dd5982ed288aa",
+   "responseHash": "4ba3692313879a749fb161e427acc5b64663e0f614a5abc5c7b492579777b0c9",
+   "usage": {
+    "prompt": 1003,
+    "completion": 444
+   },
+   "latencyMs": 11325,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "8264ac02f4b61656c6242ff45a707dcd3e2ee5ea6b17f2ae8972284a4d66014e",
+   "responseHash": "6bbfd0fa263335de66ad3afe58b4d1e303e78a9e0ca82f4d7e6a3e7d11bb1670",
+   "usage": {
+    "prompt": 225,
+    "completion": 41
+   },
+   "latencyMs": 1438,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

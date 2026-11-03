@@ -1,0 +1,199 @@
+{
+ "request": "Pay the April invoice from my accountant's email.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "invoice",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "amount": "amount"
+    },
+    "instruction": "Find the April invoice in the accountant's email and extract its payment amount."
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "invoice",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "41e03f9079f3d6d53d1b65c0a31770a6ad96bf7df4cef1ac7b0170492dadac45",
+    "steps": [
+     {
+      "let": "mail",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "invoice",
+      "extract": {
+       "from": {
+        "ref": "mail"
+       },
+       "schema": {
+        "amount": "amount"
+       },
+       "instruction": "Find the April invoice in the accountant's email and extract its payment amount."
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "invoice",
+        "path": [
+         "amount"
+        ]
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "billing@accountant-firm.co",
+      "subject": "April invoice",
+      "body": "Hello, the invoice for April is attached. Thank you for your business.\n\nAccountant Firm, Billing\n",
+      "attachments": [
+       "invoice-2026-04.pdf"
+      ]
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "amount": null
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
+    ],
+    "code": "BadAmount",
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "565e2c13e7a34933684d0d431d02183a7dd3433a32bf635010c0a26b278af8dc",
+   "responseHash": "1118d2266dec7fb169cfba51343f5b4a16850c2a02c6f8f1a83277f83d25f7f6",
+   "usage": {
+    "prompt": 1000,
+    "completion": 97
+   },
+   "latencyMs": 2265,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "24f9bbdadab13f8e4918e25214368a03a95a94c774a3589cb78f4a9a022aa2d6",
+   "responseHash": "78531868b6f45dda869f5910e9094117e3365d3d300a7fc6c677fe1d4617228a",
+   "usage": {
+    "prompt": 220,
+    "completion": 7
+   },
+   "latencyMs": 1246,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

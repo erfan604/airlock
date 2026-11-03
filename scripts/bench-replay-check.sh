@@ -72,7 +72,7 @@ if [ -s "$CB_RES" ]; then
     exit 1
   fi
 fi
-# the model sensitivity run: V0 on a frontier model, its own results file and recordings; same checks, no key, no network
+# the model sensitivity run: V0, A1 and A2 on a frontier model, its own results file and recordings; same checks, no key, no network
 FR_REC="${BENCH_FRONTIER_RECORDED:-bench/runs/recorded-frontier}"
 FR_RES="${BENCH_FRONTIER_RESULTS:-bench/results/frontier-v0.json}"
 if [ -s "$FR_RES" ]; then
@@ -88,7 +88,22 @@ if [ -s "$FR_RES" ]; then
     echo "FAIL replay of the frontier run (see the lines above)"
     exit 1
   fi
-  pnpm -C bench exec tsx src/scripts/model-sensitivity.ts --base "../$RES" --frontier "../$FR_RES" > /dev/null
+  # AIRLOCK itself (A1 and A2) on the frontier model: the planner is the frontier model, its own results file and recordings
+  FA_REC="${BENCH_FRONTIER_AIRLOCK_RECORDED:-bench/runs/recorded-frontier-airlock}"
+  FA_RES="${BENCH_FRONTIER_AIRLOCK_RESULTS:-bench/results/frontier-airlock.json}"
+  if [ ! -s "$FA_RES" ] || [ ! -s "$FA_REC/MANIFEST.sha256" ] || ! (cd "$FA_REC" && sha256sum -c MANIFEST.sha256 > /dev/null 2>&1); then
+    echo "FAIL manifest ($FA_REC/MANIFEST.sha256 or $FA_RES is missing, or a recording differs)"
+    exit 1
+  fi
+  faout="target/bench-replay-frontier-airlock.out"
+  if ! env -i PATH="$PATH" HOME="$HOME" NODE_OPTIONS="--require $PWD/scripts/no-network.cjs" \
+    pnpm bench:replay --no-doc --results "$FA_RES" --recorded "$FA_REC" > "$faout" 2>&1 || ! grep -q '^REPLAY OK [0-9][0-9]* runs$' "$faout"; then
+    head -30 "$faout"
+    cp target/BENCH.before.md docs/BENCH.md
+    echo "FAIL replay of the frontier AIRLOCK run (see the lines above)"
+    exit 1
+  fi
+  pnpm -C bench exec tsx src/scripts/model-sensitivity.ts --base "../$RES" --frontier "../$FR_RES,../$FA_RES" > /dev/null
 fi
 if ! cmp -s docs/BENCH.md target/BENCH.before.md; then
   diff target/BENCH.before.md docs/BENCH.md | head -20 || true

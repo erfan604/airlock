@@ -1,8 +1,9 @@
-// The model sensitivity table of docs/BENCH.md: how the unprotected agent V0 does on the final bench's model against a frontier model that is
-// not a TEE model, on the same attack and benign cases. The frontier runs are their own results file (bench/results/frontier-v0.json) with
-// their own recordings (bench/runs/recorded-frontier/); final.json is not touched. A pure function of the two results files and the cases:
+// The model sensitivity table of docs/BENCH.md: how the unprotected agent V0 and AIRLOCK's A1 and A2 do on the final bench's model against a
+// frontier model that is not a TEE model, on the same attack and benign cases. The frontier runs are their own results files
+// (bench/results/frontier-v0.json for V0, bench/results/frontier-airlock.json for A1 and A2, the planner on the frontier model and the
+// quarantine model unchanged) with their own recordings (bench/runs/recorded-frontier*/); final.json is not touched. A pure function of the two results files and the cases:
 // no date, no path. Run as
-//   pnpm -C bench exec tsx src/scripts/model-sensitivity.ts [--base <file>] [--frontier <file>] [--doc <file>] [--print]
+//   pnpm -C bench exec tsx src/scripts/model-sensitivity.ts [--base <file>] [--frontier <file>[,<file>...]] [--doc <file>] [--print]
 // Paths are relative to bench/. Without --print the block between the model-sensitivity SUITE markers of the doc is rewritten (exit 1 when a
 // marker is missing or duplicated).
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
@@ -31,29 +32,45 @@ const SHAPE_HEAD: Record<AttackShape, string> = {
 
 const line = (cells: readonly string[]): string => `| ${cells.join(' | ')} |`;
 
-function v0Of(r: ResultsFile): RunRecord[] {
-  return (r.runs as RunRecord[]).filter((x) => x.config === 'V0');
+const CONFIGS = ['V0', 'A1', 'A2'] as const;
+
+/** The V0, A1 and A2 rows of a results file. */
+function rowsOf(r: ResultsFile, config: string): RunRecord[] {
+  return (r.runs as RunRecord[]).filter((x) => x.config === config);
+}
+
+function parts(base: ResultsFile, frontier: readonly ResultsFile[]): Array<{ model: string; n: number; config: string; runs: RunRecord[]; meta: ResultsFile['case_meta'] }> {
+  const out: Array<{ model: string; n: number; config: string; runs: RunRecord[]; meta: ResultsFile['case_meta'] }> = [];
+  for (const file of [base, ...frontier]) {
+    for (const config of CONFIGS) {
+      const runs = rowsOf(file, config);
+      if (runs.length === 0) continue;
+      out.push({ model: file.meta.model, n: file.meta.n, config, runs, meta: file.case_meta });
+    }
+  }
+  return out;
 }
 
 /** The lines of the block, markers included. */
-export function sensitivityLines(base: ResultsFile, frontier: ResultsFile, cases: readonly Case[]): string[] {
+export function sensitivityLines(base: ResultsFile, frontier: readonly ResultsFile[], cases: readonly Case[]): string[] {
   const shapes = attackShapes(cases);
-  const models = [base, frontier].map((r) => ({ model: r.meta.model, n: r.meta.n, runs: v0Of(r), meta: r.case_meta }));
-  const label = (m: { model: string; n: number }): string => `${m.model} (n ${m.n})`;
+  const models = parts(base, frontier);
+  const label = (m: { model: string; n: number; config: string }): string => `${m.model} (n ${m.n}) ${m.config}`;
 
-  const head = ['Model', 'Attack runs', 'Attack success, all runs', ...GROUPS.map((g) => `Group ${g}`), 'Benign utility, no owner tap'];
+  const head = ['Model and design', 'Attack runs', 'Held without a task', 'Attack success, all runs', ...GROUPS.map((g) => `Group ${g}`), 'Benign utility, no owner tap'];
   const t1 = models.map((m) => {
     const attack = m.runs.filter((r) => r.kind === 'attack');
     return line([
       label(m),
       String(attack.length),
+      String(attack.filter((r) => r.status === 'NO_TASK').length),
       cell(attackSuccess(m.runs, 'none')),
       ...GROUPS.map((g) => cell(attackSuccess(attack.filter((r) => m.meta[r.case]?.group === g), 'none'))),
       cell(benignUtility(m.runs)),
     ]);
   });
 
-  const head2 = ['Model', 'Attacker paid', ...SHAPES.map((k) => SHAPE_HEAD[k])];
+  const head2 = ['Model and design', 'Attacker paid', ...SHAPES.map((k) => SHAPE_HEAD[k])];
   const t2 = models.map((m) => {
     const attack = m.runs.filter((r) => r.kind === 'attack');
     const hit = attack.filter((r) => r.attackSucceeded === true);
@@ -78,9 +95,10 @@ export function sensitivityLines(base: ResultsFile, frontier: ResultsFile, cases
   const cost = (r: ResultsFile): string => {
     return formatBaseUnits((r.runs as RunRecord[]).reduce((s, x) => s + toBaseUnits(x.costUsd, 9), 0n), 9);
   };
+  const costs = frontier.map((f) => `${f.meta.model} ${cost(f)} (${f.runs.length} runs, ${[...new Set((f.runs as RunRecord[]).map((x) => x.config))].join(' and ')})`).join(', ');
   return [
     BEGIN,
-    'Configuration V0 only (the unprotected agent), the same 39 cases and the same prompts. Every count is over all attack runs, with the 95% Wilson interval; the intervals of the smaller run are wide.',
+    'The unprotected agent V0 and AIRLOCK strict mode A1 and default mode A2, the same 39 cases and the same prompts. On the frontier model the planner (and the vanilla agent) is the frontier model and the quarantined extractor stays z-ai/glm-5.3-flash. Every count is over all attack runs, with the 95% Wilson interval; the intervals of the smaller run are wide. Held without a task counts attack runs where the planner produced no task for the owner request, so nothing ran.',
     '',
     line(head),
     line(head.map(() => '---')),
@@ -90,7 +108,7 @@ export function sensitivityLines(base: ResultsFile, frontier: ResultsFile, cases
     line(head2.map(() => '---')),
     ...t2,
     '',
-    `Recorded cost, USD: ${base.meta.model} ${cost(base)} (V0 and the other configurations, ${base.runs.length} runs), ${frontier.meta.model} ${cost(frontier)} (${frontier.runs.length} runs).`,
+    `Recorded cost, USD: ${base.meta.model} ${cost(base)} (V0 and the other configurations, ${base.runs.length} runs), ${costs}.`,
     END,
   ];
 }
@@ -110,7 +128,7 @@ const read = (file: string): ResultsFile => ResultsFileSchema.parse(JSON.parse(r
 
 function main(): number {
   const { values } = parseArgs({ args: process.argv.slice(2), options: { base: { type: 'string' }, frontier: { type: 'string' }, doc: { type: 'string' }, print: { type: 'boolean' } } });
-  const block = sensitivityLines(read(values.base ?? 'results/final.json'), read(values.frontier ?? 'results/frontier-v0.json'), loadCases(resolve('cases')));
+  const block = sensitivityLines(read(values.base ?? 'results/final.json'), (values.frontier ?? 'results/frontier-v0.json,results/frontier-airlock.json').split(',').map(read), loadCases(resolve('cases')));
   if (values.print === true) {
     console.log(block.join('\n'));
     return 0;

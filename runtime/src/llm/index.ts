@@ -5,7 +5,7 @@ export type { Complete, LlmOpts, LlmParams, LlmResult, Role } from './types.ts';
 export { canonicalJson } from './canon.ts';
 export { DEFAULT_MAX_TOKENS, hashOfBody, requestBody, requestHashOf } from './hash.ts';
 export type { RequestBody } from './hash.ts';
-export { TEE_MODELS, TEE_ROUTES, VANILLA_MODELS, assertModelAllowed, isStandInRoute, reasoningFields } from './models.ts';
+export { BENCH_FRONTIER_PLANNERS, BENCH_FRONTIER_PLANNER_ENV, TEE_MODELS, TEE_ROUTES, VANILLA_MODELS, assertModelAllowed, isStandInRoute, reasoningFields } from './models.ts';
 export { PRICES, costOf } from './prices.ts';
 export { parseChat } from './parse.ts';
 export type { ParseMeta } from './parse.ts';

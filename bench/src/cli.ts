@@ -10,7 +10,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { attestModel } from '@airlock/runtime/attest';
-import { loadModelsConfig } from '@airlock/runtime/llm';
+import { BENCH_FRONTIER_PLANNERS, BENCH_FRONTIER_PLANNER_ENV, loadModelsConfig } from '@airlock/runtime/llm';
 import { toBaseUnits } from '@airlock/runtime/money';
 import { compromiseCommand } from './assume-compromise/index.ts';
 import { BENCH_ROOT } from './runner/assets.ts';
@@ -213,6 +213,9 @@ async function runCommand(flags: Flags, io: Io): Promise<number> {
   const saved = { mode: process.env['LLM_MODE'], dir: process.env['LLM_RECORDINGS_DIR'] };
   process.env['LLM_MODE'] = 'record';
   process.env['LLM_RECORDINGS_DIR'] = resolve(outDir, 'llm');
+  // the model sensitivity run of AIRLOCK itself: a listed non-TEE planner is allowed for this process only (runtime/src/llm/models.ts)
+  const savedBench = process.env[BENCH_FRONTIER_PLANNER_ENV];
+  if (BENCH_FRONTIER_PLANNERS.includes(model)) process.env[BENCH_FRONTIER_PLANNER_ENV] = '1';
   const setup = loadModelsConfig();
   // the report endpoint is not billed; a missing key or a failed check is printed and stored, the run goes on (fail closed means the receipt says so)
   const att = io.deps.attest === undefined ? undefined : await io.deps.attest(model);
@@ -270,6 +273,8 @@ async function runCommand(flags: Flags, io: Io): Promise<number> {
     else process.env['LLM_MODE'] = saved.mode;
     if (saved.dir === undefined) delete process.env['LLM_RECORDINGS_DIR'];
     else process.env['LLM_RECORDINGS_DIR'] = saved.dir;
+    if (savedBench === undefined) delete process.env[BENCH_FRONTIER_PLANNER_ENV];
+    else process.env[BENCH_FRONTIER_PLANNER_ENV] = savedBench;
   }
 }
 
@@ -293,6 +298,15 @@ async function replayCommand(flags: Flags, io: Io): Promise<number> {
   }
   const block = str(flags['block']);
   if (block !== undefined && !NAME.test(block)) return usage(io);
+  // a recording of the bench-only frontier planner replays with the same switch the live run set
+  let planner = 'tee';
+  try {
+    const m = (JSON.parse(readFileSync(results, 'utf8')) as { meta?: { model?: unknown } }).meta?.model;
+    if (typeof m === 'string' && BENCH_FRONTIER_PLANNERS.includes(m)) planner = 'bench';
+  } catch {
+    // a missing or unreadable results file is reported by replay itself
+  }
+  if (planner === 'bench') process.env[BENCH_FRONTIER_PLANNER_ENV] = '1';
   return replay({ results, recorded, cases, deps: io.deps, doc: flags['no-doc'] === true ? null : io.paths.doc, ...(block === undefined ? {} : { block }), out: (l) => io.out(l) });
 }
 

@@ -5,7 +5,7 @@ import { readRecording, recordingsDir, writeRecording } from './cache.ts';
 import { recordCall } from './collect.ts';
 import { BadMode, LlmHttpError, MissingKey, NoRecording } from './errors.ts';
 import { DEFAULT_MAX_TOKENS, requestHashOf } from './hash.ts';
-import { FIXED_TEMPERATURE, assertModelAllowed, reasoningFields } from './models.ts';
+import { BENCH_FRONTIER_PLANNERS, FIXED_TEMPERATURE, assertModelAllowed, reasoningFields } from './models.ts';
 import { getLlmOverride } from './override.ts';
 import { parseChat } from './parse.ts';
 import type { Complete, LlmOpts, LlmResult } from './types.ts';
@@ -53,7 +53,9 @@ function wireBody(o: LlmOpts): Record<string, unknown> {
   };
   if (o.params?.temperature !== undefined && !FIXED_TEMPERATURE.includes(o.model)) body.temperature = o.params.temperature;
   if (o.params?.seed !== undefined) body.seed = o.params.seed;
-  if (o.jsonSchema !== undefined) {
+  // the frontier bench planner route rejects the plan schema in strict mode (400 for the open `args` objects): it gets the same prompt without
+  // response_format, and the reply goes through the same parse and checkPlan
+  if (o.jsonSchema !== undefined && !(o.role === 'planner' && BENCH_FRONTIER_PLANNERS.includes(o.model))) {
     body.response_format = { type: 'json_schema', json_schema: { name: SCHEMA_NAMES[o.role], strict: true, schema: o.jsonSchema } };
   }
   Object.assign(body, reasoningFields(o.model, o.params?.reasoning));

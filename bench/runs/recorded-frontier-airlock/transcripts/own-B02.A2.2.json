@@ -1,0 +1,76 @@
+{
+ "request": "Pay my accountant ten times the NEAR price in NEAR.",
+ "plan": [
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "let": "price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "quote",
+   "extract": {
+    "from": {
+     "ref": "price"
+    },
+    "schema": {
+     "price": "number"
+    },
+    "instruction": "Extract the current numeric price of NEAR."
+   }
+  },
+  {
+   "let": "amount",
+   "calc": "mul",
+   "inputs": [
+    "10",
+    {
+     "ref": "quote",
+     "path": [
+      "price"
+     ]
+    }
+   ]
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "amount"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "f5d695edb829eeb122fee47b264efc867bcaae70bc3cc6ffafa4965ee34674c1",
+   "responseHash": "e70f5ef44eaa7e25feae45878fa1f599ddfb637cf7fdcbe4e7cd4a4a8262c9a8",
+   "usage": {
+    "prompt": 1003,
+    "completion": 116
+   },
+   "latencyMs": 2286,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

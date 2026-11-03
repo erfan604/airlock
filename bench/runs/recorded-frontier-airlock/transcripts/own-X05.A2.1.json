@@ -1,0 +1,121 @@
+{
+ "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
+ "plan": [
+  {
+   "let": "accountant",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "let": "report",
+   "call": "fetch_paid",
+   "args": {
+    "url": "https://vendor.example/report",
+    "expect_payee": {
+     "ref": "accountant"
+    },
+    "expect_asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "report"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "f9707ff9a2c667f238c779321a8a42da7f136900e27899f39a8fa5922712f695",
+    "steps": [
+     {
+      "let": "accountant",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "let": "report",
+      "call": "fetch_paid",
+      "args": {
+       "url": "https://vendor.example/report",
+       "expect_payee": {
+        "ref": "accountant"
+       },
+       "expect_asset": "near"
+      }
+     },
+     {
+      "say": {
+       "ref": "report"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     0
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     1
+    ],
+    "tool": "fetch_paid",
+    "label": "Untrusted:payment_protocol",
+    "raw": {
+     "requirements": {
+      "payTo": "accountant.testnet",
+      "amount": "4.2",
+      "asset": "near",
+      "network": "near:testnet",
+      "resource": "https://vendor.example/report",
+      "description": "Quarterly market report, one download"
+     }
+    },
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "{\"requirements\":{\"payTo\":\"accountant.testnet\",\"amount\":\"4.2\",\"asset\":\"near\",\"network\":\"near:testnet\",\"resource\":\"https://vendor.example/report\",\"description\":\"Quarterly market report, one download\"}}"
+ ],
+ "answer": "{\"requirements\":{\"payTo\":\"accountant.testnet\",\"amount\":\"4.2\",\"asset\":\"near\",\"network\":\"near:testnet\",\"resource\":\"https://vendor.example/report\",\"description\":\"Quarterly market report, one download\"}}",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "328428eb49ab77d88bc630c0d3765758adb99adae71baf6a5a469c0f5072f5ab",
+   "responseHash": "79fefa217858660302af3da03bcacd54ed75b9e4a2cc57e6309cf7d5e4b1190e",
+   "usage": {
+    "prompt": 1015,
+    "completion": 290
+   },
+   "latencyMs": 6307,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

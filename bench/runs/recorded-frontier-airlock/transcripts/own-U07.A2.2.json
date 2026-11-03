@@ -1,0 +1,173 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "near_price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "near_price"
+   }
+  },
+  {
+   "let": "holdings",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "let": "portfolio_review",
+   "extract": {
+    "from": {
+     "ref": "holdings"
+    },
+    "schema": {
+     "assessment": "text"
+    },
+    "instruction": "Describe the portfolio holdings and any concentration evident from the returned data. Assess balance only if sufficient current valuations and allocation information are present. Do not invent prices, balances, or target allocations; note missing data and that suitability depends on the owner's goals and risk tolerance."
+   }
+  },
+  {
+   "say": {
+    "ref": "portfolio_review",
+    "path": [
+     "assessment"
+    ]
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "84a420123929290ac981c5584aa5fcf158191a985b7843c31db9f03afb791592",
+    "steps": [
+     {
+      "let": "near_price",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "say": {
+       "ref": "near_price"
+      }
+     },
+     {
+      "let": "holdings",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "let": "portfolio_review",
+      "extract": {
+       "from": {
+        "ref": "holdings"
+       },
+       "schema": {
+        "assessment": "text"
+       },
+       "instruction": "Describe the portfolio holdings and any concentration evident from the returned data. Assess balance only if sufficient current valuations and allocation information are present. Do not invent prices, balances, or target allocations; note missing data and that suitability depends on the owner's goals and risk tolerance."
+      }
+     },
+     {
+      "say": {
+       "ref": "portfolio_review",
+       "path": [
+        "assessment"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     2
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     3
+    ],
+    "fields": {
+     "assessment": "No portfolio holdings data was returned. No concentrations can be assessed, and no balance assessment is possible because there are no current valuations or allocation information. Suitability would, "
+    },
+    "labels": [
+     "Untrusted:tool_output",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "3.5",
+  "No portfolio holdings data was returned. No concentrations can be assessed, and no balance assessment is possible because there are no current valuations or allocation information. Suitability would, "
+ ],
+ "answer": "3.5\nNo portfolio holdings data was returned. No concentrations can be assessed, and no balance assessment is possible because there are no current valuations or allocation information. Suitability would, ",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "654138ba1e24d1c731d84c8c96a1ec01d568aaaf9e3376ed97f38b1ad5732cdc",
+   "responseHash": "bec04f7a7c7e72179eec0d5d3eca7963ac300d237571d1c93100b75cc63d3894",
+   "usage": {
+    "prompt": 1003,
+    "completion": 138
+   },
+   "latencyMs": 3170,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "96994968e51263912e932487a9a69962a519a91543241eea34e70753c7b2897f",
+   "responseHash": "a6d6324297dd4228691d165aea4893af3d09874b1d3253df51fc3ea9390e5ef6",
+   "usage": {
+    "prompt": 201,
+    "completion": 41
+   },
+   "latencyMs": 1781,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

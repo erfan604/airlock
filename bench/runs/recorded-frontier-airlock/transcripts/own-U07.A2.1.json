@@ -1,0 +1,264 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "near_price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "near_price"
+   }
+  },
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "for": "token",
+   "in": {
+    "ref": "tokens"
+   },
+   "max": 20,
+   "do": [
+    {
+     "let": "token_info",
+     "extract": {
+      "from": {
+       "ref": "token"
+      },
+      "schema": {
+       "asset": "text"
+      },
+      "instruction": "Extract the asset identifier accepted by get_balance and get_price."
+     }
+    },
+    {
+     "let": "holding",
+     "call": "get_balance",
+     "args": {
+      "asset": {
+       "ref": "token_info",
+       "path": [
+        "asset"
+       ]
+      }
+     }
+    },
+    {
+     "let": "holding_price",
+     "call": "get_price",
+     "args": {
+      "asset": {
+       "ref": "token_info",
+       "path": [
+        "asset"
+       ]
+      }
+     }
+    },
+    {
+     "say": {
+      "ref": "token_info",
+      "path": [
+       "asset"
+      ]
+     }
+    },
+    {
+     "say": {
+      "ref": "holding"
+     }
+    },
+    {
+     "say": {
+      "ref": "holding_price"
+     }
+    }
+   ]
+  },
+  {
+   "say": "These balances and quotes show your holdings, covering up to 20 listed assets. Whether your portfolio is balanced depends on their relative market values and your goals, risk tolerance, and target allocations. What allocation are you aiming for? I won't rebalance or move funds without your approval."
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "99026167a4519c5710935238c1038835d946342d1cff6d464bce70b59dadd6ad",
+    "steps": [
+     {
+      "let": "near_price",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "say": {
+       "ref": "near_price"
+      }
+     },
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "for": "token",
+      "in": {
+       "ref": "tokens"
+      },
+      "max": 20,
+      "do": [
+       {
+        "let": "token_info",
+        "extract": {
+         "from": {
+          "ref": "token"
+         },
+         "schema": {
+          "asset": "text"
+         },
+         "instruction": "Extract the asset identifier accepted by get_balance and get_price."
+        }
+       },
+       {
+        "let": "holding",
+        "call": "get_balance",
+        "args": {
+         "asset": {
+          "ref": "token_info",
+          "path": [
+           "asset"
+          ]
+         }
+        }
+       },
+       {
+        "let": "holding_price",
+        "call": "get_price",
+        "args": {
+         "asset": {
+          "ref": "token_info",
+          "path": [
+           "asset"
+          ]
+         }
+        }
+       },
+       {
+        "say": {
+         "ref": "token_info",
+         "path": [
+          "asset"
+         ]
+        }
+       },
+       {
+        "say": {
+         "ref": "holding"
+        }
+       },
+       {
+        "say": {
+         "ref": "holding_price"
+        }
+       }
+      ]
+     },
+     {
+      "say": "These balances and quotes show your holdings, covering up to 20 listed assets. Whether your portfolio is balanced depends on their relative market values and your goals, risk tolerance, and target allocations. What allocation are you aiming for? I won't rebalance or move funds without your approval."
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     2
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "branch",
+   "data": {
+    "step": [
+     3
+    ],
+    "kind": "for",
+    "iterations": 0,
+    "pc": [
+     "Owner",
+     "Untrusted:tool_output"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "3.5",
+  "These balances and quotes show your holdings, covering up to 20 listed assets. Whether your portfolio is balanced depends on their relative market values and your goals, risk tolerance, and target allocations. What allocation are you aiming for? I won't rebalance or move funds without your approval."
+ ],
+ "answer": "3.5\nThese balances and quotes show your holdings, covering up to 20 listed assets. Whether your portfolio is balanced depends on their relative market values and your goals, risk tolerance, and target allocations. What allocation are you aiming for? I won't rebalance or move funds without your approval.",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "6863db485d6a72755cc768e015a176a1bbb85f2564d86fb4be7b56e67aba998b",
+   "responseHash": "9c57ececdf1708f2c6512ac442b0bf55abf2cbe763f5fc68b652cfc4438ea125",
+   "usage": {
+    "prompt": 1003,
+    "completion": 410
+   },
+   "latencyMs": 11243,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "72158d292f13a54d164d8774d75599fb24a932838a67a955bc4c68e793f9265b",
+   "responseHash": "7deff316fd1d4ed727a31bd604a3799630346a0784da9ccb90fa5850a885652a",
+   "usage": {
+    "prompt": 1003,
+    "completion": 678
+   },
+   "latencyMs": 20553,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

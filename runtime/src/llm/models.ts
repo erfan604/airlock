@@ -11,6 +11,14 @@ export const TEE_MODELS = ['moonshotai/kimi-k3', 'Qwen/Qwen3.6-35B-A3B-FP8', 'Qw
  */
 export const VANILLA_MODELS = [...TEE_MODELS, 'x-ai/grok-4.7', 'openai/gpt-6.1-sol'] as const;
 
+/**
+ * Bench only: a non-TEE planner for the model sensitivity run of AIRLOCK itself (bench/results/frontier-airlock.json). The product
+ * planner stays on the TEE list; the planner role accepts this list only while `AIRLOCK_BENCH_FRONTIER_PLANNER=1`, which only the bench
+ * command sets (and only for a model on this list). The quarantine role never accepts it.
+ */
+export const BENCH_FRONTIER_PLANNERS: readonly string[] = ['openai/gpt-6.1-sol'];
+export const BENCH_FRONTIER_PLANNER_ENV = 'AIRLOCK_BENCH_FRONTIER_PLANNER';
+
 /** Models whose route rejects a temperature other than its default (HTTP 400 for 0.7): the request leaves `temperature` out. */
 export const FIXED_TEMPERATURE: readonly string[] = ['openai/gpt-6.1-sol'];
 
@@ -31,7 +39,8 @@ export function isStandInRoute(route: string): boolean {
  * alias, and this client sends canonical ids only.
  */
 export function assertModelAllowed(role: Role, model: string): void {
-  const allowed: readonly string[] = role === 'vanilla' ? VANILLA_MODELS : role === 'planner' || role === 'quarantine' ? TEE_MODELS : [];
+  const benchPlanner = role === 'planner' && process.env[BENCH_FRONTIER_PLANNER_ENV] === '1' ? BENCH_FRONTIER_PLANNERS : [];
+  const allowed: readonly string[] = role === 'vanilla' ? VANILLA_MODELS : role === 'planner' || role === 'quarantine' ? [...TEE_MODELS, ...benchPlanner] : [];
   if (typeof model !== 'string' || !allowed.includes(model)) throw new ModelNotAllowed(String(role), String(model));
 }
 

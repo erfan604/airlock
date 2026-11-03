@@ -394,6 +394,18 @@ test('allowlist: vanilla accepts grok and every TEE id', () => {
   assertModelAllowed('vanilla', 'x-ai/grok-4.7');
 });
 
+test('allowlist: the frontier planner is refused by default and accepted for the planner role only with the bench switch', () => {
+  assert.throws(() => assertModelAllowed('planner', 'openai/gpt-6.1-sol'), ModelNotAllowed);
+  process.env['AIRLOCK_BENCH_FRONTIER_PLANNER'] = '1';
+  try {
+    assertModelAllowed('planner', 'openai/gpt-6.1-sol');
+    assert.throws(() => assertModelAllowed('quarantine', 'openai/gpt-6.1-sol'), ModelNotAllowed);
+    assert.throws(() => assertModelAllowed('planner', 'x-ai/grok-4.7'), ModelNotAllowed);
+  } finally {
+    delete process.env['AIRLOCK_BENCH_FRONTIER_PLANNER'];
+  }
+});
+
 const REFUSED: [Role, string][] = [
   ['planner', 'zai-org/GLM-5.1-FP8'],
   ['planner', 'x-ai/grok-4.7'],
