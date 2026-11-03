@@ -141,3 +141,11 @@ test('approvals: no get_book read when every shown payee is in the book, and a f
   const fresh = { ...pending(1), book_status: 'new' };
   await assert.rejects(loadApprovals({ pending: async () => [fresh], view: chain(), evidence: evidenceOk }), /unexpected view get_book/);
 });
+
+test('approvals: the Verified panel shows under each card when attestations are given, and not otherwise (AIR-303)', async () => {
+  const data = await loadApprovals({ pending: async () => [pending(1), pending(2)], view: chain(), evidence: evidenceOk });
+  const att = { model: 'z-ai/glm-5.3-flash', nonce: 'a'.repeat(64), report_sha256: 'b'.repeat(64), verified_at: '2026-11-03T15:15:30.000Z', status: 'VERIFIED' as const, checks: [{ name: 'model.quote', ok: true, detail: 'x' }], signing_address: null, tcb_status: 'UpToDate', compose_hash: null, source: 'recorded' as const };
+  const withPanel = renderToStaticMarkup(<ApprovalsView data={data} {...viewProps} attestations={[att]} />);
+  assert.equal((withPanel.match(/data-testid="verified-panel"/g) ?? []).length, 2);
+  assert.ok(!renderToStaticMarkup(<ApprovalsView data={data} {...viewProps} />).includes('verified-panel'));
+});

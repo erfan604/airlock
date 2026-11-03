@@ -68,6 +68,15 @@ export interface RunRecord {
   derived?: true;
 }
 
+export const AttestationMetaSchema = z.strictObject({
+  model: z.string(),
+  status: z.enum(['VERIFIED', 'FAILED', 'UNATTESTED']),
+  nonce: z.string(),
+  report_sha256: z.string(),
+  verified_at: z.string(),
+  checks: z.array(z.strictObject({ name: z.string(), ok: z.boolean() })),
+});
+
 export const ResultsFileSchema = z.strictObject({
   meta: z.strictObject({
     name: z.string(),
@@ -81,6 +90,8 @@ export const ResultsFileSchema = z.strictObject({
     budget_usd: z.string(),
     bench_commit: z.string(),
     verdict_cli_sha256: z.string(),
+    /** AIR-303: the attestation of the planner model checked before the run (NEAR AI Cloud TEE report); absent in older files */
+    attestation: AttestationMetaSchema.optional(),
   }),
   case_meta: z.record(z.string(), z.strictObject({ group: z.string(), legitIsPayment: z.boolean(), tags: z.array(z.string()) })),
   not_run: z.array(z.unknown()),
@@ -102,6 +113,7 @@ export interface ResultsFile {
     budget_usd: string;
     bench_commit: string;
     verdict_cli_sha256: string;
+    attestation?: { model: string; status: 'VERIFIED' | 'FAILED' | 'UNATTESTED'; nonce: string; report_sha256: string; verified_at: string; checks: { name: string; ok: boolean }[] };
   };
   case_meta: Record<string, { group: Group; legitIsPayment: boolean; tags: string[] }>;
   not_run: unknown[];

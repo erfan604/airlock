@@ -14,7 +14,8 @@
     "./quarantine": "./src/quarantine/index.ts",
     "./agent": "./src/agent.ts",
     "./counterparty": "./src/counterparty.ts",
-    "./agent-deps": "./src/server/deps.ts"
+    "./agent-deps": "./src/server/deps.ts",
+    "./attest": "./src/attest/index.ts"
   },
   "scripts": {
     "start": "tsx src/server/start.ts",
@@ -23,11 +24,13 @@
     "test:prop": "FC_RUNS=10000 FC_SEED=random tsx --test test/interpreter.prop.test.ts",
     "test:prop:quick": "FC_RUNS=1000 tsx --test test/interpreter.prop.test.ts",
     "test:prop:canary": "../scripts/prop-canary.sh",
-    "test:chain": "tsx --test \"test/chain/*.sandbox.ts\""
+    "test:chain": "tsx --test \"test/chain/*.sandbox.ts\"",
+    "attest": "tsx scripts/attest.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.5",
     "@noble/hashes": "1.8.0",
+    "@phala/dcap-qvl": "0.7.0",
     "chainsig.js": "1.1.16",
     "hono": "4.13.13",
     "near-api-js": "7.3.1",

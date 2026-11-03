@@ -2,11 +2,12 @@
 // request. It never runs the planner, the extractor, the interpreter or the orchestrator, and it never calls ReplayTransport.submit. The clock is
 // the recording's own, so a demo started months later still sees a task that has not expired. No file under runtime/src/demo reads the process
 // environment, calls a model or opens an outbound connection: it listens and answers from files.
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { serve } from '@hono/node-server';
 import type { ServerType } from '@hono/node-server';
 import type { Hono } from 'hono';
+import type { Attestation } from '../attest/index.ts';
 import { ChainClient } from '../chain/near.ts';
 import { ReplayTransport } from '../chain/transport.ts';
 import type { AssetEntryViewJson, LedgersView, RequestView } from '../chain/types.ts';
@@ -152,6 +153,10 @@ export async function createReplayApp(o: Omit<ReplayServerOptions, 'port' | 'hos
     evidence.put(heldView.request_id, { requestHash: requestContentHash(heldView), sources: [{ field: 'amount', ...source }, { field: 'recipient', ...source }] });
   }
 
+  // AIR-303: the recorded attestation of the planner model, shown on the card as recorded (never re-verified in a replay)
+  const attestFile = join(dirname(o.chainDir), 'attest', 'z-ai_glm-5.3-flash.json');
+  const attestations: Attestation[] = existsSync(attestFile) ? [{ ...(JSON.parse(readFileSync(attestFile, 'utf8')) as Attestation), source: 'recorded' }] : [];
+
   const clock = Date.parse(files['b01-escalate'].recordedAt);
   const app = createApp({
     mode: 'replay',
@@ -162,6 +167,7 @@ export async function createReplayApp(o: Omit<ReplayServerOptions, 'port' | 'hos
     accessKeys: async () => null,
     evidence,
     runEvents: new GoldenRunSource(files.u01, files['b01-escalate']),
+    attestation: { current: () => attestations },
   });
 
   app.get('/replay/acts', requireSession, (c) => c.json({ acts }));

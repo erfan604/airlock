@@ -272,6 +272,24 @@ describe('AIR-220 runner', () => {
     assert.equal(results.meta.hooks, 'none');
   });
 
+  test('attestation (AIR-303): the live run prints ATTEST, stores the hash and result in meta', async () => {
+    install();
+    const root = tmp();
+    const lines: string[] = [];
+    const attest: NonNullable<RunnerDeps['attest']> = async (model) => ({ model, status: 'VERIFIED', nonce: 'c'.repeat(64), report_sha256: 'd'.repeat(64), verified_at: '2026-11-03T00:00:00.000Z', checks: [{ name: 'model.quote', ok: true }, { name: 'model.gpu', ok: true }] });
+    const code = await main(['run', '--model', MODEL, '--configs', 'V0', '--n', '1', '--cases', FIXTURE_CASES, '--budget-usd', '5', '--concurrency', '1', '--name', 'att'], io(root, lines, { attest }));
+    assert.equal(code, 0, lines.join('\n'));
+    assert.ok(lines.includes(`ATTEST VERIFIED ${MODEL} report_sha256 ${'d'.repeat(64)}`), lines.join('\n'));
+    const results = JSON.parse(readFileSync(join(root, 'results', 'att.json'), 'utf8')) as { meta: { attestation: { status: string; report_sha256: string; checks: unknown[] } } };
+    assert.equal(results.meta.attestation.status, 'VERIFIED');
+    assert.equal(results.meta.attestation.report_sha256, 'd'.repeat(64));
+    assert.equal(results.meta.attestation.checks.length, 2);
+    // a run with no attest seam stores no attestation field, as before
+    const plain = await main(['run', '--model', MODEL, '--configs', 'V0', '--n', '1', '--cases', FIXTURE_CASES, '--budget-usd', '5', '--concurrency', '1', '--name', 'noatt'], io(root, []));
+    assert.equal(plain, 0);
+    assert.equal('attestation' in (JSON.parse(readFileSync(join(root, 'results', 'noatt.json'), 'utf8')) as { meta: object }).meta, false);
+  });
+
   test('run counts and field outcomes', async () => {
     install();
     const s = await session();

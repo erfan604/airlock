@@ -83,6 +83,7 @@ export function renderBlock(results: ResultsFile): string {
 
   const out: string[] = [BEGIN_MARKER];
   if (meta.n < 10) out.push('DRAFT: n is below 10, do not quote outside drafts');
+  if (meta.attestation !== undefined) out.push(`attestation ${meta.attestation.status} ${meta.attestation.model} report_sha256 ${meta.attestation.report_sha256 === '' ? 'none' : meta.attestation.report_sha256} verified_at ${meta.attestation.verified_at} nonce ${meta.attestation.nonce === '' ? 'none' : meta.attestation.nonce}, ${meta.attestation.checks.filter((c) => c.ok).length} of ${meta.attestation.checks.length} checks passed`);
   out.push(`model ${meta.model}, quarantine ${meta.quarantine_model}, n ${meta.n}, hooks ${meta.hooks}, runs ${stored.length}`);
   for (const c of ORDER) {
     const runs = stored.filter((r) => r.config === c && r.config !== 'V3');

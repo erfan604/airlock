@@ -3,12 +3,15 @@
 // `parts`. This file never reads the process environment: the variables arrive as the first parameter (src/server/start.ts passes them).
 // Replay mode builds no signer and a replay transport, so nothing in it can sign.
 import { randomBytes } from 'node:crypto';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { serve } from '@hono/node-server';
 import type { ServerType } from '@hono/node-server';
 import { feePolicyFromRegistry, planTask as realPlanTask, runReadOnly, runTask } from '../agent.ts';
 import type { AgentDeps } from '../agent.ts';
 import { registryFromRows } from '../analyze/index.ts';
+import { attestModel } from '../attest/index.ts';
+import type { Attestation } from '../attest/index.ts';
 import { BASE_SEPOLIA_RPCS, deriveSender } from '../chain/evm.ts';
 import type { broadcast } from '../chain/evm.ts';
 import { ChainClient } from '../chain/near.ts';
@@ -49,6 +52,8 @@ export interface RuntimeParts {
   hooks?: { ground?: Grounder; toolArgPolicy?: ToolArgPolicy };
   clock?: () => number;
   log?: (line: string) => void;
+  /** AIR-303: the live attestation of one model; tests replace it, the default fetches and verifies the NEAR AI Cloud report */
+  attest?: (model: string) => Promise<Attestation>;
 }
 
 export interface RunningRuntime {
@@ -84,6 +89,21 @@ export async function startRuntime(env: NodeJS.ProcessEnv = {}, parts: Partial<R
   const quarantineModel = cfg.quarantineModel ?? models.quarantine;
   assertModelAllowed('planner', plannerModel);
   assertModelAllowed('quarantine', quarantineModel);
+
+  // 1b. the attestation records (AIR-303). Live: the report of each model the agent reasons on is fetched with a fresh nonce and verified now;
+  // a failure is recorded as FAILED or UNATTESTED and printed, never hidden (fail closed means the record says so). Replay: the recorded
+  // record of the live run, labelled `recorded`, never re-verified here.
+  const attestations: Attestation[] = [];
+  for (const model of new Set([plannerModel, quarantineModel])) {
+    if (cfg.mode === 'live') {
+      const a = await (parts.attest ?? ((m: string) => attestModel(m, { env })))(model);
+      attestations.push(a);
+      log(`ATTEST ${a.status} ${a.model} ${a.report_sha256 === '' ? 'no report' : `report_sha256 ${a.report_sha256}`}`);
+    } else {
+      const file = join(dirname(cfg.recordingsDir), 'attest', `${model.replace(/[^A-Za-z0-9.-]/g, '_')}.json`);
+      if (existsSync(file)) attestations.push({ ...(JSON.parse(readFileSync(file, 'utf8')) as Attestation), source: 'recorded' });
+    }
+  }
 
   // 2. the chain: live signs as the agent over one RPC pool, replay answers recorded views and cannot sign
   const pool = cfg.mode === 'live' ? new RpcPool(DEFAULT_RPC_URLS) : null;
@@ -172,6 +192,7 @@ export async function startRuntime(env: NodeJS.ProcessEnv = {}, parts: Partial<R
     contractId: cfg.contractId,
     mode: cfg.mode,
     runEvents: store,
+    attestation: { current: () => attestations },
   });
   // a run never uses a stale book or decimals: the snapshot is read again before the orchestrator starts
   const refreshingRunTask: typeof runTask = async function* (p) {

@@ -1,0 +1,98 @@
+{
+  "model": "z-ai/glm-5.3-flash",
+  "nonce": "6eef3d938ae1a4180919449f1c2665d4d3106f913eb22c2f25f83f31bda6b598",
+  "report_sha256": "67ec4a9438c678c55aa3f1a7cbd7b21bfc1749bec8950a088732ccd03ddffb56",
+  "verified_at": "2026-11-03T15:15:29.932Z",
+  "status": "VERIFIED",
+  "checks": [
+    {
+      "name": "nonce_format",
+      "ok": true,
+      "detail": "32 random bytes, 64 hex characters"
+    },
+    {
+      "name": "report_parsed",
+      "ok": true,
+      "detail": "response body sha256 67ec4a9438c678c5"
+    },
+    {
+      "name": "gateway.quote",
+      "ok": true,
+      "detail": "Intel DCAP signature chain and collateral verified, TCB UpToDate"
+    },
+    {
+      "name": "gateway.td_debug_off",
+      "ok": true,
+      "detail": "TD_ATTRIBUTES debug bit is clear"
+    },
+    {
+      "name": "gateway.nonce_echo",
+      "ok": true,
+      "detail": "request_nonce equals the client nonce"
+    },
+    {
+      "name": "gateway.report_data",
+      "ok": true,
+      "detail": "the verified quote binds the signing address and our nonce"
+    },
+    {
+      "name": "gateway.event_log",
+      "ok": true,
+      "detail": "event log replays to the quote RTMR3"
+    },
+    {
+      "name": "gateway.mrconfigid",
+      "ok": true,
+      "detail": "MRCONFIGID equals 01 plus sha256(app_compose) f571e5dafe8f96ba"
+    },
+    {
+      "name": "model.present",
+      "ok": true,
+      "detail": "1 model report candidate(s) returned, each one is checked"
+    },
+    {
+      "name": "model.id",
+      "ok": true,
+      "detail": "model_name equals z-ai/glm-5.3-flash"
+    },
+    {
+      "name": "model.quote",
+      "ok": true,
+      "detail": "Intel DCAP signature chain and collateral verified, TCB UpToDate"
+    },
+    {
+      "name": "model.td_debug_off",
+      "ok": true,
+      "detail": "TD_ATTRIBUTES debug bit is clear"
+    },
+    {
+      "name": "model.nonce_echo",
+      "ok": true,
+      "detail": "request_nonce equals the client nonce"
+    },
+    {
+      "name": "model.report_data",
+      "ok": true,
+      "detail": "the verified quote binds the signing address and our nonce"
+    },
+    {
+      "name": "model.event_log",
+      "ok": true,
+      "detail": "event log replays to the quote RTMR3"
+    },
+    {
+      "name": "model.mrconfigid",
+      "ok": true,
+      "detail": "MRCONFIGID equals 01 plus sha256(app_compose) a0e3c6f4f21a60ea"
+    },
+    {
+      "name": "model.gpu",
+      "ok": true,
+      "detail": "GPU evidence carries our nonce and NVIDIA NRAS reports an overall pass"
+    }
+  ],
+  "signing_address": "0x3b753b4406613c5e70ae640508632b600424fa0c",
+  "tcb_status": "UpToDate",
+  "compose_hash": "a0e3c6f4f21a60ea3f5c96bc7ef319b03a184ca2049605399275fbcea74e8c5f",
+  "source": "recorded"
+}

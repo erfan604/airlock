@@ -15,6 +15,7 @@ import { SessionGate } from '../wallet/SessionGate.tsx';
 import type { GateDeps } from '../wallet/SessionGate.tsx';
 import { PRIMARY_WALLET_ID } from '../wallet/snapshot.ts';
 import { rpcGetPending, rpcGetRequest, walletConfig } from '../wallet/status.ts';
+import type { Attestation } from '@airlock/runtime/attest';
 import { Card } from './Card.tsx';
 import type { ApproveArgs, ApproveResult } from './Card.tsx';
 import { approveArgs } from './cardModel.ts';
@@ -22,6 +23,7 @@ import type { RememberArgs } from './cardModel.ts';
 import { counterpartyOf, parseEvidence } from './evidence.ts';
 import type { CardEvidence } from './evidence.ts';
 import { MAX_FAILURES } from './cardReducer.ts';
+import { VerifiedPanel } from './VerifiedPanel.tsx';
 import { readFailures } from './failures.ts';
 import type { CounterScope } from './failures.ts';
 
@@ -128,9 +130,11 @@ export type ApprovalsViewProps = {
   nowMs?: string;
   /** called after an approve or a reject that the chain confirmed */
   onDone?(id: string): void;
+  /** AIR-303: the attestation records of GET /api/attestation; the `Verified` panel shows under each card when there are any */
+  attestations?: readonly Attestation[];
 };
 
-function ApprovalCard({ card, ownerId, contractId, actions, scope, nowMs, onDone }: { card: CardData } & Omit<ApprovalsViewProps, 'data'>) {
+function ApprovalCard({ card, ownerId, contractId, actions, scope, nowMs, onDone, attestations }: { card: CardData } & Omit<ApprovalsViewProps, 'data'>) {
   const no = card.view.id ?? '';
   const [failures, setFailures] = useState(() => readFailures(scope ?? { network: 'testnet', contractId }, no));
   const walletOffered = allowedWallet(PRIMARY_WALLET_ID) !== null;
@@ -169,11 +173,12 @@ function ApprovalCard({ card, ownerId, contractId, actions, scope, nowMs, onDone
     <div className="approval-item" data-testid="approval-item">
       <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onApproveAndRemember={actions.approveAndRemember === undefined ? undefined : wrapped.approveAndRemember} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} />
       {showCli && cliArgs !== null ? <CliPanel args={cliArgs} contractId={contractId} ownerId={ownerId} /> : null}
+      {attestations !== undefined ? <VerifiedPanel attestations={attestations} /> : null}
     </div>
   );
 }
 
-export function ApprovalsView({ data, ownerId, contractId, actions, scope, nowMs, onDone }: ApprovalsViewProps) {
+export function ApprovalsView({ data, ownerId, contractId, actions, scope, nowMs, onDone, attestations }: ApprovalsViewProps) {
   const reveal = revealInstruction(PRIMARY_WALLET_ID);
   if (data.cards.length === 0) {
     return (
@@ -194,7 +199,7 @@ export function ApprovalsView({ data, ownerId, contractId, actions, scope, nowMs
         </p>
       ) : null}
       {data.cards.map((c) => (
-        <ApprovalCard key={c.view.request_id} card={c} ownerId={ownerId} contractId={contractId} actions={actions} scope={scope} nowMs={nowMs} onDone={onDone} />
+        <ApprovalCard key={c.view.request_id} card={c} ownerId={ownerId} contractId={contractId} actions={actions} scope={scope} nowMs={nowMs} onDone={onDone} attestations={attestations} />
       ))}
       {data.more > 0 ? (
         <p className="approvals-more" data-testid="approvals-more">{`${data.more} more held`}</p>
@@ -205,7 +210,7 @@ export function ApprovalsView({ data, ownerId, contractId, actions, scope, nowMs
 
 // ---- the live route ----
 
-export type ApprovalsDeps = { contractId: string; load(): Promise<ApprovalsData>; actions: Actions; nowMs?: string };
+export type ApprovalsDeps = { contractId: string; load(): Promise<ApprovalsData>; actions: Actions; nowMs?: string; /** AIR-303: GET /api/attestation; a failure shows no panel */ attestations?(): Promise<Attestation[]> };
 
 export function liveDeps(): ApprovalsDeps {
   const cfg = walletConfig();
@@ -223,6 +228,12 @@ export function liveDeps(): ApprovalsDeps {
         },
       }),
     actions: makeApprove({ wallet: currentWallet, contractId: cfg.contractId, read }),
+    attestations: async () => {
+      const res = await fetch('/api/attestation', { credentials: 'same-origin' });
+      if (!res.ok) return [];
+      const body = (await res.json()) as { attestations?: Attestation[] };
+      return Array.isArray(body.attestations) ? body.attestations : [];
+    },
   };
 }
 
@@ -238,6 +249,11 @@ function ApprovalsPage({ ownerId, deps }: { ownerId: string; deps: ApprovalsDeps
   const [data, setData] = useState<ApprovalsData | null>(null);
   const [error, setError] = useState(false);
   const [acted] = useState(() => new Set<string>());
+  const [attestations, setAttestations] = useState<Attestation[] | undefined>(undefined);
+
+  useEffect(() => {
+    deps.attestations?.().then(setAttestations, () => setAttestations(undefined));
+  }, [deps]);
 
   const load = useCallback(() => {
     deps
@@ -276,7 +292,7 @@ function ApprovalsPage({ ownerId, deps }: { ownerId: string; deps: ApprovalsDeps
           The list could not be refreshed. What you see may be out of date.
         </p>
       ) : null}
-      <ApprovalsView data={data} ownerId={ownerId} contractId={deps.contractId} actions={deps.actions} nowMs={deps.nowMs} onDone={onDone} />
+      <ApprovalsView data={data} ownerId={ownerId} contractId={deps.contractId} actions={deps.actions} nowMs={deps.nowMs} onDone={onDone} attestations={attestations} />
     </>
   );
 }

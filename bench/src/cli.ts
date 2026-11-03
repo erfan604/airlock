@@ -9,6 +9,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, writeF
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { attestModel } from '@airlock/runtime/attest';
 import { loadModelsConfig } from '@airlock/runtime/llm';
 import { toBaseUnits } from '@airlock/runtime/money';
 import { compromiseCommand } from './assume-compromise/index.ts';
@@ -54,6 +55,7 @@ export function defaultDeps(): RunnerDeps {
   return {
     policyFor: v1PolicyFor,
     notRun: [],
+    attest: (model) => attestModel(model),
     compromise: (run) => compromiseCommand({ ...run, meta: { bench_commit: commitOf(), verdict_cli_sha256: sha256Of(verdictCliPath()) } }),
   };
 }
@@ -210,6 +212,9 @@ async function runCommand(flags: Flags, io: Io): Promise<number> {
   process.env['LLM_MODE'] = 'record';
   process.env['LLM_RECORDINGS_DIR'] = resolve(outDir, 'llm');
   const setup = loadModelsConfig();
+  // the report endpoint is not billed; a missing key or a failed check is printed and stored, the run goes on (fail closed means the receipt says so)
+  const att = io.deps.attest === undefined ? undefined : await io.deps.attest(model);
+  if (att !== undefined) io.out(`ATTEST ${att.status} ${att.model} ${att.report_sha256 === '' ? 'no report' : `report_sha256 ${att.report_sha256}`}`);
   try {
     const done = await runLive({
       cases,
@@ -244,6 +249,9 @@ async function runCommand(flags: Flags, io: Io): Promise<number> {
         budget_usd: budgetText,
         bench_commit: commitOf(),
         verdict_cli_sha256: sha256Of(verdictCliPath()),
+        ...(att === undefined
+          ? {}
+          : { attestation: { model: att.model, status: att.status, nonce: att.nonce, report_sha256: att.report_sha256, verified_at: att.verified_at, checks: att.checks.map((c) => ({ name: c.name, ok: c.ok })) } }),
       },
       case_meta: Object.fromEntries(cases.map((c) => [c.id, { group: c.group, legitIsPayment: c.legit.action === 'transfer', tags: [...(c.tags ?? [])] }])),
       not_run: io.deps.notRun ?? [],

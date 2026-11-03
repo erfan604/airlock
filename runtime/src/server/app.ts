@@ -5,6 +5,8 @@ import { Hono } from 'hono';
 import type { ChainClient } from '../chain/near.ts';
 import type { EvidenceStore } from '../evidence.ts';
 import type { AccessKeyReader } from './access-keys.ts';
+import { mountAttestation } from './attestation.ts';
+import type { AttestationSource } from './attestation.ts';
 import { mountEvidence } from './evidence.ts';
 import { SessionStore, mountSessionRoutes } from './session.ts';
 import type { SessionLimits } from './session.ts';
@@ -22,6 +24,8 @@ export interface AppDeps {
   contractId: string;
   mode: 'live' | 'replay';
   runEvents?: RunEventSource;
+  /** AIR-303: the attestation records served at GET /api/attestation; absent means one UNATTESTED record */
+  attestation?: AttestationSource;
   /** lowers or raises the two challenge limits; tests only (the defaults are the pinned 20 per 60 s and 1,000 outstanding) */
   limits?: SessionLimits;
 }
@@ -69,6 +73,7 @@ export function createApp(deps: AppDeps): Hono {
   mountSessionRoutes(app, deps, store);
   mountSse(app, deps.runEvents ?? emptyRunEvents);
   mountEvidence(app, deps.chain, deps.evidence);
+  mountAttestation(app, deps.attestation, deps.clock);
   return app;
 }
 
