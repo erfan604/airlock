@@ -73,7 +73,9 @@ try {
   const baseUrl = (server.resolvedUrls?.local[0] ?? '').replace(/\/$/, '');
   if (!baseUrl) throw new Error('the preview server has no URL');
 
-  browser = await chromium.launch();
+  // Installed Google Chrome (patched stable) with the sandbox on, not Playwright's bundled Chromium (156.0.8078.4 in 1.64.1 lags the
+  // 156.0.8078.73 security fixes, and Playwright turns the sandbox off unless asked). Set E2E_BUNDLED_CHROMIUM=1 where Chrome is missing (CI).
+  browser = await chromium.launch(process.env.E2E_BUNDLED_CHROMIUM === '1' ? { chromiumSandbox: true } : { channel: 'chrome', chromiumSandbox: true });
   const context = await browser.newContext({ viewport: { width: 375, height: AUDIT_HEIGHT } });
   const page = await context.newPage();
   page.on('console', (msg) => {
