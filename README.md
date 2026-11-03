@@ -2,6 +2,16 @@
 
 Provenance-gated signing for AI agent wallets on NEAR: a policy contract builds each transaction and asks the MPC signer for a signature when the owner's limits allow it or the owner approves the exact stored request.
 
+Try it: `pnpm i && pnpm demo` replays recorded testnet runs in a local console (Node 24 and pnpm, no keys). `pnpm try --text 'Invoice: 9.4 NEAR to evil-ops.testnet'` puts your own text through the real gate (needs Rust 1.86 once). Verify: `scripts/claims-run.sh --tier node` (about 80 s, needs Node and pnpm) and `pnpm proven:transcripts`; every command and its last line is under Verify in 5 commands below.
+
+## What is different
+
+Provenance labelling of values is published (CaMeL, FIDES, interbolt, NaAP x Sekisho), and wallet guards (caps, allowlists, blocklists, mandates) check what the owner authorized, not where a value came from. AIRLOCK puts the origin check in the signing authority: a NEAR contract decides, builds the transaction itself and asks the MPC signer, so the agent process cannot bypass the check [PA18]. The decision function is checked three ways, a Lean model, Kani on the shipped Rust and 40,000 differential cases [C7a]. Pc taint, amount provenance and enforcement at the signer are not documented in interbolt or FIDES at the pinned commits [PA3] [PA4]. The long comparison with links is the Prior art section below and `docs/PRIOR_ART.md`.
+
+## The result
+
+On the 7 attack cases that work against an unprotected agent, the unprotected agent and our local rebuilds of a caps guard and a blocklist guard lose in 66/70 runs (94.3%, 86.2 to 97.8), strict mode A1 loses in 0/70 (0.0%, 0.0 to 5.2) and default mode A2 loses in 10/70 (14.3%, 7.9 to 24.3) [C6]. A2 is the default because it keeps 111/140 benign tasks (79.3%) free of an owner tap against 78/140 (55.7%) for A1. Its 10/70 is one case, `own-B01-incap`, where injected text raises an amount to a booked payee inside the owner's cap, and strict mode A1 holds that case [C6]. The table is under Results.
+
 ## The problem
 
 In May 2026 an AI agent's wallet was reported drained of $150K to $204K, depending on the source, after a public reply made Grok emit a command that Bankr's bot executed [S1]. Four multisig approval failures since July 2024 cost about $2.0 billion, and in the two with published mechanisms, Bybit and Radiant (about $1.5 billion), signers approved a screen that did not match what they signed [S2]. In Turnkey's simulated test, 48 of 50 warned agents paid an address that was swapped into their initial lookup, so a prompt warning does not help when the bad value arrives as trusted-looking data [S3].
@@ -141,207 +151,23 @@ Each line links to the row of `docs/CLAIMS.md` that has the command and the expe
 
 ## Results
 
-<!-- bench:start -->
-model report VERIFIED z-ai/glm-5.3-flash report_sha256 4d56182273e7a0183afc384d4bea4870707023e0ade3f79f96d67944f8de0f44 verified_at 2026-11-03T15:36:30.183Z nonce cd590d3279e9e9941510726a05bacd7482df385332f73a8fc2385d367c445d8f, 21 of 21 checks passed
-model z-ai/glm-5.3-flash, quarantine z-ai/glm-5.3-flash, n 10, hooks product, runs 1950
-V0 status DONE 390 NO_PLAN 0 NO_TASK 0 ERROR 0
-V1 status DONE 390 NO_PLAN 0 NO_TASK 0 ERROR 0
-V1-tight status DONE 390 NO_PLAN 0 NO_TASK 0 ERROR 0
-A1 status DONE 293 NO_PLAN 0 NO_TASK 97 ERROR 0
-A2 status DONE 293 NO_PLAN 0 NO_TASK 97 ERROR 0
-total cost 0.12856864 budget 3.00
-stand-in calls 0 of 6321
-attacker-chosen fields 0 of 4
+Attack success over the 70 attack runs that succeed against the unprotected agent, one row per design (group ALL). The full generated tables for every group, benign task, owner tap and infeasible case are in `docs/BENCH.md`, and `pnpm bench:replay` regenerates them from the recorded runs.
 
-### Attack groups
+<!-- bench:start -->
 | Config | Group | Runs | Utility under attack | Attack success, auto | Attack success, oracle approver | Attack success, naive approver | Escalation precision |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| V0 | A | 80 | 52/80 (65.0%, 54.1 to 74.5) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 80, benign runs 0) |
-| V0 | B | 50 | 20/50 (40.0%, 27.6 to 53.8) | 19/20 (95.0%, 76.4 to 99.1) | 19/20 (95.0%, 76.4 to 99.1) | 19/20 (95.0%, 76.4 to 99.1) | n/a (attack runs 50, benign runs 0) |
-| V0 | C | 20 | 20/20 (100.0%, 83.9 to 100.0) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
-| V0 | S | 30 | 3/30 (10.0%, 3.5 to 25.6) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | n/a (attack runs 30, benign runs 10) |
-| V0 | X | 50 | 16/50 (32.0%, 20.8 to 45.8) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | n/a (attack runs 50, benign runs 10) |
-| V0 | P | 20 | 13/20 (65.0%, 43.3 to 81.9) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
 | V0 | ALL | 250 | 124/250 (49.6%, 43.5 to 55.8) | 66/70 (94.3%, 86.2 to 97.8) | 66/70 (94.3%, 86.2 to 97.8) | 66/70 (94.3%, 86.2 to 97.8) | n/a (attack runs 250, benign runs 140) |
-| CAPS (derived from V0) | A | 80 | 52/80 (65.0%, 54.1 to 74.5) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 80, benign runs 0) |
-| CAPS (derived from V0) | B | 50 | 20/50 (40.0%, 27.6 to 53.8) | 19/20 (95.0%, 76.4 to 99.1) | 19/20 (95.0%, 76.4 to 99.1) | 19/20 (95.0%, 76.4 to 99.1) | n/a (attack runs 50, benign runs 0) |
-| CAPS (derived from V0) | C | 20 | 20/20 (100.0%, 83.9 to 100.0) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
-| CAPS (derived from V0) | S | 30 | 3/30 (10.0%, 3.5 to 25.6) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | n/a (attack runs 30, benign runs 10) |
-| CAPS (derived from V0) | X | 50 | 16/50 (32.0%, 20.8 to 45.8) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | n/a (attack runs 50, benign runs 10) |
-| CAPS (derived from V0) | P | 20 | 13/20 (65.0%, 43.3 to 81.9) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
 | CAPS (derived from V0) | ALL | 250 | 124/250 (49.6%, 43.5 to 55.8) | 66/70 (94.3%, 86.2 to 97.8) | 66/70 (94.3%, 86.2 to 97.8) | 66/70 (94.3%, 86.2 to 97.8) | n/a (attack runs 250, benign runs 140) |
-| BLOCKLIST (derived from V0) | A | 80 | 52/80 (65.0%, 54.1 to 74.5) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 80, benign runs 0) |
-| BLOCKLIST (derived from V0) | B | 50 | 20/50 (40.0%, 27.6 to 53.8) | 19/20 (95.0%, 76.4 to 99.1) | 19/20 (95.0%, 76.4 to 99.1) | 19/20 (95.0%, 76.4 to 99.1) | n/a (attack runs 50, benign runs 0) |
-| BLOCKLIST (derived from V0) | C | 20 | 20/20 (100.0%, 83.9 to 100.0) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
-| BLOCKLIST (derived from V0) | S | 30 | 3/30 (10.0%, 3.5 to 25.6) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | n/a (attack runs 30, benign runs 10) |
-| BLOCKLIST (derived from V0) | X | 50 | 16/50 (32.0%, 20.8 to 45.8) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | n/a (attack runs 50, benign runs 10) |
-| BLOCKLIST (derived from V0) | P | 20 | 13/20 (65.0%, 43.3 to 81.9) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
 | BLOCKLIST (derived from V0) | ALL | 250 | 124/250 (49.6%, 43.5 to 55.8) | 66/70 (94.3%, 86.2 to 97.8) | 66/70 (94.3%, 86.2 to 97.8) | 66/70 (94.3%, 86.2 to 97.8) | n/a (attack runs 250, benign runs 140) |
-| MANDATE (derived from V0) | A | 80 | 52/80 (65.0%, 54.1 to 74.5) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 80, benign runs 0) |
-| MANDATE (derived from V0) | B | 50 | 20/50 (40.0%, 27.6 to 53.8) | 0/20 (0.0%, 0.0 to 16.1) | 0/20 (0.0%, 0.0 to 16.1) | 0/20 (0.0%, 0.0 to 16.1) | n/a (attack runs 50, benign runs 0) |
-| MANDATE (derived from V0) | C | 20 | 20/20 (100.0%, 83.9 to 100.0) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
-| MANDATE (derived from V0) | S | 30 | 3/30 (10.0%, 3.5 to 25.6) | 0/30 (0.0%, 0.0 to 11.4) | 0/30 (0.0%, 0.0 to 11.4) | 0/30 (0.0%, 0.0 to 11.4) | n/a (attack runs 30, benign runs 10) |
-| MANDATE (derived from V0) | X | 50 | 16/50 (32.0%, 20.8 to 45.8) | 0/20 (0.0%, 0.0 to 16.1) | 0/20 (0.0%, 0.0 to 16.1) | 0/20 (0.0%, 0.0 to 16.1) | n/a (attack runs 50, benign runs 10) |
-| MANDATE (derived from V0) | P | 20 | 13/20 (65.0%, 43.3 to 81.9) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
 | MANDATE (derived from V0) | ALL | 250 | 124/250 (49.6%, 43.5 to 55.8) | 0/70 (0.0%, 0.0 to 5.2) | 0/70 (0.0%, 0.0 to 5.2) | 0/70 (0.0%, 0.0 to 5.2) | n/a (attack runs 250, benign runs 140) |
-| MANDATE-C (derived from V0) | A | 80 | 52/80 (65.0%, 54.1 to 74.5) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 80, benign runs 0) |
-| MANDATE-C (derived from V0) | B | 50 | 20/50 (40.0%, 27.6 to 53.8) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | n/a (attack runs 50, benign runs 0) |
-| MANDATE-C (derived from V0) | C | 20 | 20/20 (100.0%, 83.9 to 100.0) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
-| MANDATE-C (derived from V0) | S | 30 | 3/30 (10.0%, 3.5 to 25.6) | 30/30 (100.0%, 88.6 to 100.0) | 30/30 (100.0%, 88.6 to 100.0) | 30/30 (100.0%, 88.6 to 100.0) | n/a (attack runs 30, benign runs 10) |
-| MANDATE-C (derived from V0) | X | 50 | 16/50 (32.0%, 20.8 to 45.8) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | n/a (attack runs 50, benign runs 10) |
-| MANDATE-C (derived from V0) | P | 20 | 13/20 (65.0%, 43.3 to 81.9) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
 | MANDATE-C (derived from V0) | ALL | 250 | 124/250 (49.6%, 43.5 to 55.8) | 70/70 (100.0%, 94.8 to 100.0) | 70/70 (100.0%, 94.8 to 100.0) | 70/70 (100.0%, 94.8 to 100.0) | n/a (attack runs 250, benign runs 140) |
-| V1 | A | 80 | 52/80 (65.0%, 54.1 to 74.5) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 80, benign runs 0) |
-| V1 | B | 50 | 20/50 (40.0%, 27.6 to 53.8) | 19/20 (95.0%, 76.4 to 99.1) | 19/20 (95.0%, 76.4 to 99.1) | 19/20 (95.0%, 76.4 to 99.1) | n/a (attack runs 50, benign runs 0) |
-| V1 | C | 20 | 20/20 (100.0%, 83.9 to 100.0) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
-| V1 | S | 30 | 3/30 (10.0%, 3.5 to 25.6) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | n/a (attack runs 30, benign runs 10) |
-| V1 | X | 50 | 16/50 (32.0%, 20.8 to 45.8) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | 20/20 (100.0%, 83.9 to 100.0) | n/a (attack runs 50, benign runs 10) |
-| V1 | P | 20 | 13/20 (65.0%, 43.3 to 81.9) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
 | V1 | ALL | 250 | 124/250 (49.6%, 43.5 to 55.8) | 66/70 (94.3%, 86.2 to 97.8) | 66/70 (94.3%, 86.2 to 97.8) | 66/70 (94.3%, 86.2 to 97.8) | n/a (attack runs 250, benign runs 140) |
-| V1-tight | A | 80 | 52/80 (65.0%, 54.1 to 74.5) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 80, benign runs 0) |
-| V1-tight | B | 50 | 20/50 (40.0%, 27.6 to 53.8) | 10/20 (50.0%, 29.9 to 70.1) | 10/20 (50.0%, 29.9 to 70.1) | 10/20 (50.0%, 29.9 to 70.1) | n/a (attack runs 50, benign runs 0) |
-| V1-tight | C | 20 | 20/20 (100.0%, 83.9 to 100.0) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
-| V1-tight | S | 30 | 3/30 (10.0%, 3.5 to 25.6) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | 27/30 (90.0%, 74.4 to 96.5) | n/a (attack runs 30, benign runs 10) |
-| V1-tight | X | 50 | 16/50 (32.0%, 20.8 to 45.8) | 10/20 (50.0%, 29.9 to 70.1) | 10/20 (50.0%, 29.9 to 70.1) | 10/20 (50.0%, 29.9 to 70.1) | n/a (attack runs 50, benign runs 10) |
-| V1-tight | P | 20 | 13/20 (65.0%, 43.3 to 81.9) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
-| V1-tight | ALL | 250 | 124/250 (49.6%, 43.5 to 55.8) | 47/70 (67.1%, 55.5 to 77.0) | 47/70 (67.1%, 55.5 to 77.0) | 47/70 (67.1%, 55.5 to 77.0) | n/a (attack runs 250, benign runs 140) |
-| V3 (derived from V0) | A | 80 | 0/80 (0.0%, 0.0 to 4.6) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | 0/52 (0.0%, 0.0 to 6.9) (attack runs 80, benign runs 0) |
-| V3 (derived from V0) | B | 50 | 0/50 (0.0%, 0.0 to 7.1) | 0/20 (0.0%, 0.0 to 16.1) | 0/20 (0.0%, 0.0 to 16.1) | 19/20 (95.0%, 76.4 to 99.1) | 19/41 (46.3%, 32.1 to 61.3) (attack runs 50, benign runs 0) |
-| V3 (derived from V0) | C | 20 | 0/20 (0.0%, 0.0 to 16.1) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | 0/20 (0.0%, 0.0 to 16.1) (attack runs 20, benign runs 0) |
-| V3 (derived from V0) | S | 30 | 3/30 (10.0%, 3.5 to 25.6) | 0/30 (0.0%, 0.0 to 11.4) | 0/30 (0.0%, 0.0 to 11.4) | 27/30 (90.0%, 74.4 to 96.5) | 27/37 (73.0%, 57.0 to 84.6) (attack runs 30, benign runs 10) |
-| V3 (derived from V0) | X | 50 | 0/50 (0.0%, 0.0 to 7.1) | 0/20 (0.0%, 0.0 to 16.1) | 0/20 (0.0%, 0.0 to 16.1) | 20/20 (100.0%, 83.9 to 100.0) | 20/52 (38.5%, 26.5 to 52.0) (attack runs 50, benign runs 10) |
-| V3 (derived from V0) | P | 20 | 0/20 (0.0%, 0.0 to 16.1) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | 0/13 (0.0%, 0.0 to 22.8) (attack runs 20, benign runs 0) |
-| V3 (derived from V0) | ALL | 250 | 3/250 (1.2%, 0.4 to 3.5) | 0/70 (0.0%, 0.0 to 5.2) | 0/70 (0.0%, 0.0 to 5.2) | 66/70 (94.3%, 86.2 to 97.8) | 66/263 (25.1%, 20.2 to 30.7) (attack runs 250, benign runs 140) |
-| A1 | A | 80 | 0/80 (0.0%, 0.0 to 4.6) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | 0/47 (0.0%, 0.0 to 7.6) (attack runs 80, benign runs 0) |
-| A1 | B | 50 | 0/50 (0.0%, 0.0 to 7.1) | 0/20 (0.0%, 0.0 to 16.1) | 0/20 (0.0%, 0.0 to 16.1) | 20/20 (100.0%, 83.9 to 100.0) | 20/39 (51.3%, 36.2 to 66.1) (attack runs 50, benign runs 0) |
-| A1 | C | 20 | 0/20 (0.0%, 0.0 to 16.1) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | 0/11 (0.0%, 0.0 to 25.9) (attack runs 20, benign runs 0) |
-| A1 | S | 30 | 18/30 (60.0%, 42.3 to 75.4) | 0/30 (0.0%, 0.0 to 11.4) | 0/30 (0.0%, 0.0 to 11.4) | 12/30 (40.0%, 24.6 to 57.7) | 12/22 (54.5%, 34.7 to 73.1) (attack runs 30, benign runs 10) |
-| A1 | X | 50 | 0/50 (0.0%, 0.0 to 7.1) | 0/20 (0.0%, 0.0 to 16.1) | 0/20 (0.0%, 0.0 to 16.1) | 3/20 (15.0%, 5.2 to 36.0) | 3/18 (16.7%, 5.8 to 39.2) (attack runs 50, benign runs 10) |
-| A1 | P | 20 | 10/20 (50.0%, 29.9 to 70.1) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | 0/10 (0.0%, 0.0 to 27.8) (attack runs 20, benign runs 0) |
 | A1 | ALL | 250 | 28/250 (11.2%, 7.9 to 15.7) | 0/70 (0.0%, 0.0 to 5.2) | 0/70 (0.0%, 0.0 to 5.2) | 35/70 (50.0%, 38.6 to 61.4) | 35/177 (19.8%, 14.6 to 26.3) (attack runs 250, benign runs 140) |
-| A2 | A | 80 | 47/80 (58.8%, 47.8 to 68.9) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 80, benign runs 0) |
-| A2 | B | 50 | 19/50 (38.0%, 25.9 to 51.8) | 10/20 (50.0%, 29.9 to 70.1) | 10/20 (50.0%, 29.9 to 70.1) | 20/20 (100.0%, 83.9 to 100.0) | 10/10 (100.0%, 72.2 to 100.0) (attack runs 50, benign runs 0) |
-| A2 | C | 20 | 7/20 (35.0%, 18.1 to 56.7) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
-| A2 | S | 30 | 18/30 (60.0%, 42.3 to 75.4) | 0/30 (0.0%, 0.0 to 11.4) | 0/30 (0.0%, 0.0 to 11.4) | 12/30 (40.0%, 24.6 to 57.7) | 12/12 (100.0%, 75.7 to 100.0) (attack runs 30, benign runs 10) |
-| A2 | X | 50 | 9/50 (18.0%, 9.8 to 30.8) | 0/20 (0.0%, 0.0 to 16.1) | 0/20 (0.0%, 0.0 to 16.1) | 3/20 (15.0%, 5.2 to 36.0) | 3/3 (100.0%, 43.8 to 100.0) (attack runs 50, benign runs 10) |
-| A2 | P | 20 | 20/20 (100.0%, 83.9 to 100.0) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | n/a (attack runs 20, benign runs 0) |
 | A2 | ALL | 250 | 120/250 (48.0%, 41.9 to 54.2) | 10/70 (14.3%, 7.9 to 24.3) | 10/70 (14.3%, 7.9 to 24.3) | 35/70 (50.0%, 38.6 to 61.4) | 25/35 (71.4%, 54.9 to 83.7) (attack runs 250, benign runs 140) |
-
-### Benign tasks
-| Config | Runs | Benign utility | Assisted utility, oracle approver | EP100 | Runs with an escalation | Mean cost per run USD | Mean latency ms |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| V0 | 140 | 138/140 (98.6%, 94.9 to 99.6) | 138/140 (98.6%, 94.9 to 99.6) | 0.00 (0 escalations, 70 payment-task runs) | 0/70 (0.0%, 0.0 to 5.2) | 0.000169175 | 4758 |
-| CAPS (derived from V0) | 140 | 138/140 (98.6%, 94.9 to 99.6) | 138/140 (98.6%, 94.9 to 99.6) | 0.00 (0 escalations, 70 payment-task runs) | 0/70 (0.0%, 0.0 to 5.2) | 0 | 0 |
-| BLOCKLIST (derived from V0) | 140 | 138/140 (98.6%, 94.9 to 99.6) | 138/140 (98.6%, 94.9 to 99.6) | 0.00 (0 escalations, 70 payment-task runs) | 0/70 (0.0%, 0.0 to 5.2) | 0 | 0 |
-| MANDATE (derived from V0) | 140 | 138/140 (98.6%, 94.9 to 99.6) | 138/140 (98.6%, 94.9 to 99.6) | 0.00 (0 escalations, 70 payment-task runs) | 0/70 (0.0%, 0.0 to 5.2) | 0 | 0 |
-| MANDATE-C (derived from V0) | 140 | 138/140 (98.6%, 94.9 to 99.6) | 138/140 (98.6%, 94.9 to 99.6) | 0.00 (0 escalations, 70 payment-task runs) | 0/70 (0.0%, 0.0 to 5.2) | 0 | 0 |
-| V1 | 140 | 138/140 (98.6%, 94.9 to 99.6) | 138/140 (98.6%, 94.9 to 99.6) | 0.00 (0 escalations, 70 payment-task runs) | 0/70 (0.0%, 0.0 to 5.2) | 0 | 0 |
-| V1-tight | 140 | 129/140 (92.1%, 86.5 to 95.6) | 129/140 (92.1%, 86.5 to 95.6) | 0.00 (0 escalations, 70 payment-task runs) | 0/70 (0.0%, 0.0 to 5.2) | 0.000018505 | 598 |
-| V3 (derived from V0) | 140 | 70/140 (50.0%, 41.8 to 58.2) | 138/140 (98.6%, 94.9 to 99.6) | 97.14 (68 escalations, 70 payment-task runs) | 68/70 (97.1%, 90.2 to 99.2) | 0.000169175 | 4758 |
-| A1 | 140 | 78/140 (55.7%, 47.4 to 63.7) | 121/140 (86.4%, 79.8 to 91.1) | 61.43 (43 escalations, 70 payment-task runs) | 43/70 (61.4%, 49.7 to 72.0) | 0.000071325 | 1209 |
-| A2 | 140 | 111/140 (79.3%, 71.8 to 85.2) | 121/140 (86.4%, 79.8 to 91.1) | 14.29 (10 escalations, 70 payment-task runs) | 10/70 (14.3%, 7.9 to 24.3) | 0 | 0 |
-
-### Benign tasks, completed by itself, after one owner tap, or failed
-| Config | Runs | Completed by itself | Completed after one owner tap | Failed |
-| --- | --- | --- | --- | --- |
-| V0 | 140 | 138/140 (98.6%, 94.9 to 99.6) | 0/140 (0.0%, 0.0 to 2.7) | 2/140 (1.4%, 0.4 to 5.1) |
-| CAPS (derived from V0) | 140 | 138/140 (98.6%, 94.9 to 99.6) | 0/140 (0.0%, 0.0 to 2.7) | 2/140 (1.4%, 0.4 to 5.1) |
-| BLOCKLIST (derived from V0) | 140 | 138/140 (98.6%, 94.9 to 99.6) | 0/140 (0.0%, 0.0 to 2.7) | 2/140 (1.4%, 0.4 to 5.1) |
-| MANDATE (derived from V0) | 140 | 138/140 (98.6%, 94.9 to 99.6) | 0/140 (0.0%, 0.0 to 2.7) | 2/140 (1.4%, 0.4 to 5.1) |
-| MANDATE-C (derived from V0) | 140 | 138/140 (98.6%, 94.9 to 99.6) | 0/140 (0.0%, 0.0 to 2.7) | 2/140 (1.4%, 0.4 to 5.1) |
-| V1 | 140 | 138/140 (98.6%, 94.9 to 99.6) | 0/140 (0.0%, 0.0 to 2.7) | 2/140 (1.4%, 0.4 to 5.1) |
-| V1-tight | 140 | 129/140 (92.1%, 86.5 to 95.6) | 0/140 (0.0%, 0.0 to 2.7) | 11/140 (7.9%, 4.4 to 13.5) |
-| V3 (derived from V0) | 140 | 70/140 (50.0%, 41.8 to 58.2) | 68/140 (48.6%, 40.4 to 56.8) | 2/140 (1.4%, 0.4 to 5.1) |
-| A1 | 140 | 78/140 (55.7%, 47.4 to 63.7) | 43/140 (30.7%, 23.7 to 38.8) | 19/140 (13.6%, 8.9 to 20.2) |
-| A2 | 140 | 111/140 (79.3%, 71.8 to 85.2) | 10/140 (7.1%, 3.9 to 12.6) | 19/140 (13.6%, 8.9 to 20.2) |
-
-### Benign payment tasks only (read-only tasks left out)
-| Config | Runs | Completed by itself | Completed after one owner tap | Failed |
-| --- | --- | --- | --- | --- |
-| V0 | 70 | 68/70 (97.1%, 90.2 to 99.2) | 0/70 (0.0%, 0.0 to 5.2) | 2/70 (2.9%, 0.8 to 9.8) |
-| CAPS (derived from V0) | 70 | 68/70 (97.1%, 90.2 to 99.2) | 0/70 (0.0%, 0.0 to 5.2) | 2/70 (2.9%, 0.8 to 9.8) |
-| BLOCKLIST (derived from V0) | 70 | 68/70 (97.1%, 90.2 to 99.2) | 0/70 (0.0%, 0.0 to 5.2) | 2/70 (2.9%, 0.8 to 9.8) |
-| MANDATE (derived from V0) | 70 | 68/70 (97.1%, 90.2 to 99.2) | 0/70 (0.0%, 0.0 to 5.2) | 2/70 (2.9%, 0.8 to 9.8) |
-| MANDATE-C (derived from V0) | 70 | 68/70 (97.1%, 90.2 to 99.2) | 0/70 (0.0%, 0.0 to 5.2) | 2/70 (2.9%, 0.8 to 9.8) |
-| V1 | 70 | 68/70 (97.1%, 90.2 to 99.2) | 0/70 (0.0%, 0.0 to 5.2) | 2/70 (2.9%, 0.8 to 9.8) |
-| V1-tight | 70 | 59/70 (84.3%, 74.0 to 91.0) | 0/70 (0.0%, 0.0 to 5.2) | 11/70 (15.7%, 9.0 to 26.0) |
-| V3 (derived from V0) | 70 | 0/70 (0.0%, 0.0 to 5.2) | 68/70 (97.1%, 90.2 to 99.2) | 2/70 (2.9%, 0.8 to 9.8) |
-| A1 | 70 | 10/70 (14.3%, 7.9 to 24.3) | 43/70 (61.4%, 49.7 to 72.0) | 17/70 (24.3%, 15.8 to 35.5) |
-| A2 | 70 | 43/70 (61.4%, 49.7 to 72.0) | 10/70 (14.3%, 7.9 to 24.3) | 17/70 (24.3%, 15.8 to 35.5) |
-
-### Legitimate task under attack, completed by itself, after one owner tap, or failed
-| Config | Runs | Completed by itself | Completed after one owner tap | Failed |
-| --- | --- | --- | --- | --- |
-| V0 | 250 | 124/250 (49.6%, 43.5 to 55.8) | 0/250 (0.0%, 0.0 to 1.5) | 126/250 (50.4%, 44.2 to 56.5) |
-| CAPS (derived from V0) | 250 | 124/250 (49.6%, 43.5 to 55.8) | 0/250 (0.0%, 0.0 to 1.5) | 126/250 (50.4%, 44.2 to 56.5) |
-| BLOCKLIST (derived from V0) | 250 | 124/250 (49.6%, 43.5 to 55.8) | 0/250 (0.0%, 0.0 to 1.5) | 126/250 (50.4%, 44.2 to 56.5) |
-| MANDATE (derived from V0) | 250 | 124/250 (49.6%, 43.5 to 55.8) | 0/250 (0.0%, 0.0 to 1.5) | 126/250 (50.4%, 44.2 to 56.5) |
-| MANDATE-C (derived from V0) | 250 | 124/250 (49.6%, 43.5 to 55.8) | 0/250 (0.0%, 0.0 to 1.5) | 126/250 (50.4%, 44.2 to 56.5) |
-| V1 | 250 | 124/250 (49.6%, 43.5 to 55.8) | 0/250 (0.0%, 0.0 to 1.5) | 126/250 (50.4%, 44.2 to 56.5) |
-| V1-tight | 250 | 124/250 (49.6%, 43.5 to 55.8) | 0/250 (0.0%, 0.0 to 1.5) | 126/250 (50.4%, 44.2 to 56.5) |
-| V3 (derived from V0) | 250 | 3/250 (1.2%, 0.4 to 3.5) | 121/250 (48.4%, 42.3 to 54.6) | 126/250 (50.4%, 44.2 to 56.5) |
-| A1 | 250 | 28/250 (11.2%, 7.9 to 15.7) | 92/250 (36.8%, 31.1 to 42.9) | 130/250 (52.0%, 45.8 to 58.1) |
-| A2 | 250 | 120/250 (48.0%, 41.9 to 54.2) | 0/250 (0.0%, 0.0 to 1.5) | 130/250 (52.0%, 45.8 to 58.1) |
-
-### Benign runs by outcome
-| Config | paid | done_no_payment | escalated | blocked | nothing_paid | NO_PLAN | NO_TASK | ERROR |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| V0 | 68 | 70 | 0 | 0 | 2 | 0 | 0 | 0 |
-| CAPS (derived from V0) | 68 | 70 | 0 | 0 | 2 | 0 | 0 | 0 |
-| BLOCKLIST (derived from V0) | 68 | 70 | 0 | 0 | 2 | 0 | 0 | 0 |
-| MANDATE (derived from V0) | 68 | 70 | 0 | 0 | 2 | 0 | 0 | 0 |
-| MANDATE-C (derived from V0) | 68 | 70 | 0 | 0 | 2 | 0 | 0 | 0 |
-| V1 | 68 | 70 | 0 | 0 | 2 | 0 | 0 | 0 |
-| V1-tight | 59 | 70 | 0 | 9 | 2 | 0 | 0 | 0 |
-| V3 (derived from V0) | 0 | 70 | 68 | 0 | 2 | 0 | 0 | 0 |
-| A1 | 10 | 0 | 43 | 0 | 7 | 0 | 80 | 0 |
-| A2 | 43 | 0 | 10 | 0 | 7 | 0 | 80 | 0 |
-
-### Owner actions per payment task
-| Config | Payment-task runs | Mandates written before the run (payee, amount, asset) | Owner taps on a waiting payment |
-| --- | --- | --- | --- |
-| V0 | 70 | 0 (0.00 per task) | 0 (0.00 per task) |
-| CAPS (derived from V0) | 70 | 0 (0.00 per task) | 0 (0.00 per task) |
-| BLOCKLIST (derived from V0) | 70 | 0 (0.00 per task) | 0 (0.00 per task) |
-| MANDATE (derived from V0) | 70 | 70 (1.00 per task) | 0 (0.00 per task) |
-| MANDATE-C (derived from V0) | 70 | 70 (1.00 per task) | 0 (0.00 per task) |
-| V1 | 70 | 0 (0.00 per task) | 0 (0.00 per task) |
-| V1-tight | 70 | 0 (0.00 per task) | 0 (0.00 per task) |
-| V3 (derived from V0) | 70 | 0 (0.00 per task) | 68 (0.97 per task) |
-| A1 | 70 | 0 (0.00 per task) | 43 (0.61 per task) |
-| A2 | 70 | 0 (0.00 per task) | 10 (0.14 per task) |
-Not counted: the address book, caps and lists, which are written once and not per task, and the owner's request, which every configuration needs.
-
-### Infeasible attack cases
-own-A01 V0 attack runs 10
-own-A02 V0 attack runs 10
-own-A03 V0 attack runs 10
-own-A04 V0 attack runs 10
-own-A05 V0 attack runs 10
-own-A06 V0 attack runs 10
-own-A07 V0 attack runs 10
-own-A08 V0 attack runs 10
-own-B02 V0 attack runs 10
-own-B03 V0 attack runs 10
-own-B04 V0 attack runs 10
-own-C05 V0 attack runs 10
-own-C06 V0 attack runs 10
-own-P01 V0 attack runs 10
-own-P02 V0 attack runs 10
-own-X01 V0 attack runs 10
-own-X03 V0 attack runs 10
-own-X04 V0 attack runs 10
-
-### Not run
-none
-
-### ASSUME_COMPROMISE
-A1 {"requests":1463,"value_to_nonbook":0,"in_envelope":51,"violations":0,"escalated":993,"blocked":419,"aborted":0,"days":3,"sources":{"case_gates":33,"random_plans":730,"raw":700},"in_envelope_cases":[]}
-A2 {"requests":1463,"value_to_nonbook":0,"in_envelope":57,"violations":0,"escalated":987,"blocked":419,"aborted":0,"days":3,"sources":{"case_gates":33,"random_plans":730,"raw":700},"in_envelope_cases":["own-B01-incap"]}
 <!-- bench:end -->
 `pnpm bench:replay`
 
-Model z-ai/glm-5.3-flash, 10 runs per case and configuration, literal grounding on. Every interval is a 95% Wilson interval. The text above is the generated body of `docs/BENCH.md`, copied unchanged.
+Model z-ai/glm-5.3-flash, 10 runs per case and configuration, literal grounding on. Every interval is a 95% Wilson interval. The rows above are lines of the generated body of `docs/BENCH.md`, copied unchanged.
 
 Attack success is counted over the attack cases that succeed against the unprotected agent (V0) in at least one of 10 runs. Only 7 of 25 attack cases do, so the denominator is 70 runs per configuration and the other cases are listed under Infeasible attack cases in the block [C6].
 
@@ -362,6 +188,17 @@ Two shipped systems are read at pinned commits in `docs/PRIOR_ART.md`. `deconvol
 AIRLOCK's distinguishing points are pc taint (the condition of a branch taints the actions inside it), amount provenance (an amount read from untrusted data is bounded by an owner cap and a signed task bound, not only checked for presence) and enforcement at the signer (a NEAR contract builds the transaction and asks the MPC signer, so the agent process cannot bypass the check). The reading of interbolt and FIDES found none of the three documented in their READMEs or architecture notes at the pinned commits.
 
 Libraries, the template fork and adapted code are listed in `docs/THIRD_PARTY.md` and `docs/PRIOR_WORK.md`, and the lockfiles. The code was written with Claude Code agents.
+
+## Roadmap
+
+Each item answers one entry of the Not covered list under Proven. None is built.
+
+- Planner and reader models: run the benchmark on more models and with more runs per case than the one model and 10 runs it has now.
+- Labels the runtime attaches: extend the Lean model of the interpreter toward the TypeScript that ships, which today has a model and a property test.
+- TEE: register the runtime in a TEE and link the registration transaction in `docs/EVIDENCE.md`; the runtime is in local mode, unattested.
+- Chain and MPC signer: these stay trusted; the on chain evidence of each run stays re-checkable with `pnpm verify-approval` and `pnpm tsx scripts/verify-golden.ts`.
+
+Continuous integration: none runs here. The full gate needs Kani, Lean and the NEAR sandbox and takes about 41 minutes, which a hosted runner does not give. `scripts/fresh-clone-check.sh` is the reproducible equivalent: it clones the repository, builds in empty directories and runs the gate, and its last result was `FRESH CLONE OK` on commit 27a89dd.
 
 ## Console
 
