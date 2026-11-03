@@ -51,7 +51,7 @@ export default defineConfig([
   },
   {
     // the parser of untrusted evidence, the trace store (its `raw` fields) and the fixture routes build Untrusted values
-    files: ['src/approvals/evidence.ts', 'src/task/traceStore.ts', 'src/fixtures/**/*.{ts,tsx}'],
+    files: ['src/approvals/evidence.ts', 'src/task/traceStore.ts', 'src/challenge/model.ts', 'src/fixtures/**/*.{ts,tsx}'],
     rules: { 'no-restricted-imports': ['error', { patterns: [revealOnly] }] },
   },
   {

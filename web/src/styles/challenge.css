@@ -1,0 +1,323 @@
+/* The Steal this agent page (AIR-301). A flat ledger on the console tokens: hairlines between sections, no boxed stat tiles, no gradient fills,
+   no glow. The one big thing is the sentence that counts. Colour carries the verdict word and the door beside it, never a badge. Long values
+   wrap: nothing here may push the page wider than the viewport at 320 px. */
+.challenge {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 56rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.ch-head {
+  display: grid;
+  gap: var(--space-3);
+}
+.ch-title {
+  font-family: var(--font-system);
+  font-weight: 700;
+  font-size: 40px;
+  line-height: 44px;
+  letter-spacing: -0.03em;
+}
+.ch-lede,
+.ch-help,
+.ch-note,
+.ch-fine {
+  margin: 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.ch-lede {
+  max-width: 40rem;
+  font-size: 18px;
+  line-height: 28px;
+}
+.ch-help,
+.ch-note {
+  font-size: 15px;
+  line-height: 22px;
+}
+.ch-note {
+  color: var(--ink);
+}
+.ch-fine {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-3);
+  max-width: 40rem;
+}
+.ch-banner {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--signal);
+  border-radius: var(--radius-l);
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0.02em;
+  color: var(--signal);
+  overflow-wrap: anywhere;
+}
+.ch-banner-alarm {
+  border-color: var(--alarm);
+  color: var(--alarm);
+}
+.ch-code {
+  font-family: var(--font-data);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+/* the ledger: one sentence, set large, with the numbers in the data face */
+.ch-ledger {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.ch-count {
+  margin: 0;
+  font-family: var(--font-system);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 38px;
+  letter-spacing: -0.02em;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+@media (min-width: 720px) {
+  .ch-count {
+    font-size: 40px;
+    line-height: 52px;
+  }
+}
+.ch-num {
+  display: inline-block;
+  font-family: var(--font-data);
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.04em;
+  animation: land 380ms var(--ease-out) backwards;
+}
+.ch-num-stolen {
+  color: var(--clear);
+}
+.ch-num-alarm {
+  color: var(--alarm);
+}
+.ch-pulse {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+}
+.ch-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.ch-dot-live {
+  background: var(--clear);
+  animation: ch-beat 2.4s ease-in-out infinite;
+}
+@keyframes ch-beat {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+
+/* the two doors: side by side once there is room, divided by a hairline, not boxed */
+.ch-doors {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+@media (min-width: 880px) {
+  .ch-doors {
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .ch-doors > .ch-door:first-child {
+    padding-right: var(--space-6);
+    border-right: 1px solid var(--hair);
+  }
+  .ch-doors > .ch-door:last-child {
+    padding-left: var(--space-6);
+  }
+}
+.ch-door {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.ch-door-title {
+  font-family: var(--font-system);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 28px;
+  letter-spacing: -0.01em;
+}
+.ch-form,
+.ch-own {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.ch-own-tx {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.ch-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  min-width: 0;
+}
+.ch-facts dt {
+  font-family: var(--font-data);
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 20px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.ch-facts dd {
+  margin: 0;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* the feed: rows on hairlines, newest on top, a new one slides in */
+.ch-feed {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.ch-rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--hair);
+  min-width: 0;
+}
+.ch-row {
+  --tone: var(--ink-2);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--hair);
+  min-width: 0;
+  --door-ink: var(--tone);
+}
+.ch-row-fresh {
+  animation: slide-in 320ms var(--ease-out) backwards;
+}
+.ch-row-allowed {
+  --tone: var(--clear);
+}
+.ch-row-held {
+  --tone: var(--signal);
+}
+.ch-row-blocked {
+  --tone: var(--alarm);
+}
+.ch-row-stopped {
+  --tone: var(--ink-3);
+}
+.ch-row-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ch-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+.ch-row-word {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.08em;
+  color: var(--tone);
+}
+.ch-row-term,
+.ch-row-amount {
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+.ch-row-why {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.ch-row-input {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.ch-row-meta {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 11px;
+  line-height: 18px;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.ch-tx {
+  color: var(--info);
+}
+@media (min-width: 720px) {
+  .ch-row {
+    grid-template-columns: auto 1fr minmax(12rem, 16rem);
+    align-items: start;
+  }
+  .ch-row-meta {
+    grid-column: 3;
+    display: grid;
+    justify-items: end;
+    text-align: right;
+  }
+}

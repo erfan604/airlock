@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import type { ReactElement } from 'react';
 import { ApprovalsRoute } from './approvals/ApprovalsRoute.tsx';
 import { ProvenPage } from './proven/ProvenPage.tsx';
+import { ChallengeView } from './challenge/ChallengeView.tsx';
 import { ReplayAware } from './replay/ReplayAware.tsx';
 import { TaskPage } from './task/TaskPage.tsx';
 
@@ -11,4 +12,6 @@ export const ROUTES: Record<string, () => ReactElement> = {
   '/': () => createElement(ReplayAware, { live: () => createElement(TaskPage) }),
   '/proven': () => createElement(ProvenPage),
   '/approvals': () => createElement(ReplayAware, { live: () => createElement(ApprovalsRoute) }),
+  // AIR-301: the public Steal this agent page; it reads the challenge service and needs no session
+  '/challenge': () => createElement(ChallengeView),
 };
