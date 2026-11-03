@@ -12,35 +12,15 @@ import { deriveBaselines } from '../baselines/derive.ts';
 import { loadCases } from '../runner/cases.ts';
 import { ResultsFileSchema } from '../runner/record.ts';
 import type { RunRecord } from '../runner/record.ts';
-import { cell } from '../stats/format.ts';
-import { row } from '../stats/metrics.ts';
+import { GAP_NOTE, gapTable, tableLines } from '../report/tables.ts';
 
 export const BEGIN = '<!-- BEGIN SUITE structural-gaps -->';
 export const END = '<!-- END SUITE structural-gaps -->';
-const COLUMNS = ['V0', 'CAPS', 'BLOCKLIST', 'MANDATE', 'MANDATE-C', 'A1', 'A2'] as const;
 
-const byCode = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
-
-/** The lines of the block, markers included. */
+/** The lines of the block, markers included. The rows come from `gapTable`, which the console's Bench page also reads (AIR-192). */
 export function gapLines(stored: readonly RunRecord[], derived: readonly RunRecord[]): string[] {
-  const all = [...stored, ...derived];
-  const ids = [...new Set(stored.filter((r) => r.kind === 'attack').map((r) => r.case))].sort(byCode);
-  const lines = [
-    BEGIN,
-    'Attacker paid, runs of 10 per design (Wilson 95% interval). V0, A1 and A2 are recorded runs; CAPS, BLOCKLIST, MANDATE and MANDATE-C are derived from the recorded V0 runs. A case where V0 shows 0 is one the model did not follow, so no guard can be told from another on it.',
-    '',
-    `| Case | ${COLUMNS.join(' | ')} |`,
-    `| --- | ${COLUMNS.map(() => '---').join(' | ')} |`,
-  ];
-  for (const id of ids) {
-    const cells = COLUMNS.map((config) => {
-      const runs = all.filter((r) => r.case === id && r.config === config && r.kind === 'attack');
-      return runs.length === 0 ? 'n/a' : cell(row(runs.filter((r) => r.attackSucceeded === true).length, runs.length));
-    });
-    lines.push(`| ${id} | ${cells.join(' | ')} |`);
-  }
-  lines.push(END);
-  return lines;
+  const t = gapTable(stored, derived);
+  return [BEGIN, GAP_NOTE, '', ...tableLines(t), END];
 }
 
 /** Rewrites the lines between the two markers; throws when a marker is missing or duplicated. */

@@ -4,5 +4,6 @@ import './card.tsx';
 import './preview.tsx';
 import './wallet.tsx';
 import './task.tsx';
+import './bench.tsx';
 
 export { getFixture, listFixtures } from './registry.ts';

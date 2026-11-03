@@ -1,0 +1,306 @@
+/* The Bench page (AIR-192). Tokens only. The chart is a grid: a name, then three panels that share one 0 to 100 scale; under 900 px each row
+   stacks and every cell names its column, so nothing needs a sideways scroll. Stripes mark only the attack markers (outside content). */
+.bench {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 72rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.bench-title {
+  margin: 0;
+}
+.bench-h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+.bench-h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.bench-header,
+.bench-note,
+.bench-empty {
+  margin: 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.bench-header {
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink-3);
+}
+.bench-draft {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--signal);
+  border-radius: var(--radius-m);
+  color: var(--signal);
+  font-family: var(--font-data);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.bench-block,
+.bench-sub {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.bench-detail > summary {
+  cursor: pointer;
+  padding: var(--space-2) 0;
+}
+.bench-detail[open] > summary {
+  margin-bottom: var(--space-3);
+}
+
+/* the dot and whisker */
+.dw {
+  display: block;
+  padding: 0 8px;
+  min-width: 0;
+}
+.dw-svg {
+  display: block;
+  overflow: visible;
+}
+.dw-track {
+  stroke: var(--hair);
+  stroke-width: 1;
+}
+.dw-tick {
+  stroke: var(--hair);
+  stroke-width: 1;
+}
+.dw-whisker {
+  stroke: var(--ink-2);
+  stroke-width: 2;
+}
+.dw-cap {
+  stroke: var(--ink-2);
+  stroke-width: 2;
+}
+.dw-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+/* the five-way chart */
+.bc {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.bc-head {
+  display: none;
+}
+.bc-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+}
+.bc-li {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.bc-row {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-l);
+  background: var(--raised);
+}
+.bc-name {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+}
+.bc-config {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink);
+}
+.bc-sub {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink-3);
+}
+.bc-cell {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.bc-cell::before {
+  content: attr(data-label);
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.bc-text {
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.bc-gate {
+  margin: var(--space-2) 0;
+  padding: var(--space-2) 0;
+  border-top: 4px solid var(--edge);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.bc-residual {
+  margin: 0;
+  padding: 0 var(--space-4);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.bc-residual-key {
+  margin-right: var(--space-2);
+  font-family: var(--font-data);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+@media (min-width: 900px) {
+  .bc-head,
+  .bc-row {
+    grid-template-columns: 9.5rem repeat(3, minmax(0, 1fr));
+    column-gap: var(--space-5);
+    align-items: center;
+  }
+  .bc-head {
+    display: grid;
+    padding: 0 var(--space-4);
+  }
+  .bc-col {
+    display: grid;
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .bc-col em {
+    font-style: normal;
+    font-weight: 400;
+    color: var(--ink-3);
+  }
+  .bc-cell::before {
+    display: none;
+  }
+  .bc-row {
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+}
+
+/* the tables: a real table from 900 px, a card per row below */
+.bt-wrap {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.bt {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 20px;
+}
+.bt thead {
+  display: none;
+}
+.bt tbody,
+.bt tr,
+.bt td {
+  display: block;
+  min-width: 0;
+}
+.bt tr {
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-m);
+  background: var(--raised);
+}
+.bt td {
+  padding: var(--space-1) 0;
+  overflow-wrap: anywhere;
+}
+.bt td::before {
+  content: attr(data-label);
+  display: block;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.bt-cell {
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink);
+}
+@media (min-width: 900px) {
+  .bt thead {
+    display: table-header-group;
+  }
+  .bt tbody {
+    display: table-row-group;
+  }
+  .bt tr {
+    display: table-row;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+  .bt td,
+  .bt th {
+    display: table-cell;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--hair);
+    vertical-align: top;
+    text-align: left;
+  }
+  .bt td::before {
+    display: none;
+  }
+  .bt th {
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    vertical-align: bottom;
+  }
+  .bt-stat {
+    min-width: 11rem;
+  }
+}
