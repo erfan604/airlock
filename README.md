@@ -42,7 +42,7 @@ Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean (the mainta
 
 ## Verify everything
 
-Needs Rust 1.86, Kani 0.68 and Lean 4.35 (`scripts/doctor.sh` checks them). `scripts/check.sh full` ends with `ALL GREEN (full)`: contract sandbox tests, Kani proofs, Lean theorems, the differential test, the runtime tests and the web build. `scripts/claims-run.sh --offline` runs every command of `docs/CLAIMS.md`, one row at a time.
+Needs Rust 1.86 with the `wasm32-unknown-unknown` target, `cargo-near` 0.22, Kani 0.68, Lean 4.35 (through elan), `gitleaks`, Homebrew LLVM (`brew install llvm gitleaks`, the contract's C dependencies build to wasm with its clang), Python 3 and Node 24 with pnpm (`scripts/doctor.sh` checks them). A full run on a clean machine downloads the NEAR sandbox node (`neard`) and several GB of Cargo build output. `scripts/check.sh full` ends with `ALL GREEN (full)`: contract sandbox tests, Kani proofs, Lean theorems, the differential test, the runtime tests and the web build. `scripts/claims-run.sh --offline` runs every command of `docs/CLAIMS.md`, one row at a time.
 
 The console and the runtime server have a scripted security pass: `source scripts/env.sh && scripts/security-pass.sh` builds the console and runs 14 checks (session tests, no CORS, the replay mode branch, no secret in logs, the Content-Security-Policy header, no HTML sinks, the `Untrusted` and `Specimen` allow-lists, URL attributes, the hostile-text browser tests, secrets in the bundle and in the docs, and the dependency audit). `scripts/security-pass.sh --selftest` plants 15 failures and requires each to fail. Findings and fixes are in `docs/SECURITY_PASS.md`.
 
