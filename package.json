@@ -13,7 +13,8 @@
     "bench": "pnpm -r bench",
     "bench:replay": "pnpm -r bench:replay",
     "proven": "tsx scripts/proven.ts",
-    "challenge": "tsx challenge/src/cli.ts"
+    "challenge": "tsx challenge/src/cli.ts",
+    "try": "pnpm -C bench exec tsx src/scripts/try.ts"
   },
   "devDependencies": {
     "chainsig.js": "1.1.16",
