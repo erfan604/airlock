@@ -1,0 +1,75 @@
+/* The /proven page (AIR-302). Tokens only; long theorem names wrap, nothing may push the page wider than the viewport at 320 px. */
+.proven {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 48rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.proven-title {
+  margin: 0;
+}
+.proven-lede,
+.proven-recheck,
+.proven-meta,
+.proven-proofs {
+  margin: 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.proven-recheck {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-l);
+  color: var(--ink);
+}
+.proven-block {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.proven-h2 {
+  margin: 0;
+}
+.proven-list {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.proven-entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-4);
+}
+.proven-entry {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-l);
+  background: var(--raised);
+  min-width: 0;
+}
+.proven-says {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.proven-key {
+  color: var(--ink-3);
+  margin-right: var(--space-2);
+}
+.proven-name {
+  display: inline-block;
+  margin: 0 var(--space-2) var(--space-1) 0;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}

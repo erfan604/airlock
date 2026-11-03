@@ -6,6 +6,12 @@ Provenance-gated signing for AI agent wallets on NEAR: a policy contract builds 
 
 In May 2026 an AI agent's wallet was reported drained of $150K to $204K, depending on the source, after a public reply made Grok emit a command that Bankr's bot executed [S1]. Four multisig approval failures since July 2024 cost about $2.0 billion, and in the two with published mechanisms, Bybit and Radiant (about $1.5 billion), signers approved a screen that did not match what they signed [S2]. In Turnkey's simulated test, 48 of 50 warned agents paid an address that was swapped into their initial lookup, so a prompt warning does not help when the bad value arrives as trusted-looking data [S3].
 
+## Proven
+
+The payment gate is one small function, the verdict, and it is checked three ways: Lean theorems about a model of it [C7b], a Kani model check of the shipped Rust over every input each harness admits [C5], and a differential test in which the Lean model and the Rust code return the same answer on 40,000 generated cases [C7a]. In plain words, an allowed payment goes only to an address-book payee that the owner, the book or the policy named, inside the owner's caps, daily limit and task bound, and an amount read from untrusted text must also fit that payee's cap and untrusted budget [C5].
+
+Not covered: the planner and reader models, the labels the runtime attaches to values, the TEE, the chain and the MPC signer, and the TypeScript interpreter (Lean covers a model of it and a property test covers the code). Each entry with its bound and its own not-covered line is in `docs/PROVEN.md`, and the console shows the same list at `/proven`. Recheck it with one command, `pnpm proven` (Rust 1.86, Kani 0.68 and Lean 4.35, about 5 minutes), which prints one line per entry and ends with `PROVEN OK <n> of <n>`.
+
 ## Try it in 2 minutes
 
 `pnpm demo` needs Node 24 and pnpm only: no Rust and no keys. It replays recorded testnet runs and says so.

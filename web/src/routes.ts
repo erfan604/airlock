@@ -3,10 +3,12 @@
 import { createElement } from 'react';
 import type { ReactElement } from 'react';
 import { ApprovalsRoute } from './approvals/ApprovalsRoute.tsx';
+import { ProvenPage } from './proven/ProvenPage.tsx';
 import { ReplayAware } from './replay/ReplayAware.tsx';
 import { TaskPage } from './task/TaskPage.tsx';
 
 export const ROUTES: Record<string, () => ReactElement> = {
   '/': () => createElement(ReplayAware, { live: () => createElement(TaskPage) }),
+  '/proven': () => createElement(ProvenPage),
   '/approvals': () => createElement(ReplayAware, { live: () => createElement(ApprovalsRoute) }),
 };
