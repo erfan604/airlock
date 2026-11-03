@@ -13,7 +13,7 @@ import { build } from './compose.ts';
 import { resolveAddress } from './address.ts';
 import { FastNearKeySource } from './fastnear.ts';
 import { KeyWatcher } from './watcher.ts';
-import { listen } from './listen.ts';
+import { listen, freePortOr } from './listen.ts';
 import type { PublicTask } from './publictask.ts';
 import { createChallengeApp } from './server.ts';
 import { RecordedEngine, recordedCases, recordedModel } from './engines/recorded.ts';
@@ -105,8 +105,10 @@ async function main(argv: string[]): Promise<number> {
     clock: Date.now,
     ...(publicTask === null ? {} : { publicTask: () => (publicTask as PublicTask).current() }),
   });
-  await listen(app, cfg.port, cfg.host);
-  console.log(`challenge ${cfg.mode} listening http://${cfg.host}:${String(cfg.port)} (door a ${cfg.mode === 'live' ? 'open' : 'shut'})`);
+  // CHALLENGE_PORT named: strict. Unnamed: 8788 when free, else a free port from the OS (the line below prints the real one).
+  const port = process.env['CHALLENGE_PORT'] !== undefined && process.env['CHALLENGE_PORT'].trim() !== '' ? cfg.port : await freePortOr(cfg.port, cfg.host);
+  const bound = await listen(app, port, cfg.host);
+  console.log(`challenge ${cfg.mode} listening http://${cfg.host}:${String(bound.port)} (door a ${cfg.mode === 'live' ? 'open' : 'shut'})`);
   return -1;
 }
 

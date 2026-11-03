@@ -24,13 +24,15 @@ export interface DemoArgs {
   exitWhenReady: boolean;
   golden: string;
   chain: string;
-  /** the two ports; the defaults are the documented ones, the flags exist for a machine where they are taken */
+  /** the two ports; the defaults are tried first and replaced by a free port when taken, unless the flag named the port (then it is strict) */
   consolePort: number;
   runtimePort: number;
+  consoleExplicit: boolean;
+  runtimeExplicit: boolean;
 }
 
 export function parseArgs(argv: readonly string[]): DemoArgs | null {
-  const out: DemoArgs = { open: true, exitWhenReady: false, golden: join(ROOT, 'bench', 'golden'), chain: join(ROOT, 'runtime', 'recordings', 'chain'), consolePort: 4173, runtimePort: 8787 };
+  const out: DemoArgs = { open: true, exitWhenReady: false, golden: join(ROOT, 'bench', 'golden'), chain: join(ROOT, 'runtime', 'recordings', 'chain'), consolePort: 4173, runtimePort: 8787, consoleExplicit: false, runtimeExplicit: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--no-open') out.open = false;
@@ -39,6 +41,7 @@ export function parseArgs(argv: readonly string[]): DemoArgs | null {
       out[a === '--golden' ? 'golden' : 'chain'] = resolve(argv[++i] as string);
     } else if ((a === '--console-port' || a === '--runtime-port') && /^[0-9]{1,5}$/.test(argv[i + 1] ?? '')) {
       out[a === '--console-port' ? 'consolePort' : 'runtimePort'] = JSON.parse(argv[++i] as string) as number;
+      out[a === '--console-port' ? 'consoleExplicit' : 'runtimeExplicit'] = true;
     } else return null;
   }
   return out;
@@ -70,8 +73,43 @@ async function ready(consoleUrl: string): Promise<boolean> {
   }
 }
 
-/** True when something already answers on 127.0.0.1:<port>; the demo says so at once instead of waiting 90 s for a foreign server. */
-function portBusy(port: number): Promise<boolean> {
+/** True when 127.0.0.1:<port> cannot be bound by a new listener (a listener of any address family on it, or a bind refusal). */
+function bindFails(port: number): Promise<boolean> {
+  return new Promise((resolveFails) => {
+    const srv = net.createServer();
+    srv.once('error', () => resolveFails(true));
+    srv.listen({ host: '127.0.0.1', port, exclusive: true }, () => srv.close(() => resolveFails(false)));
+  });
+}
+
+/** Asks the OS for a free loopback port (port 0). */
+export function osFreePort(): Promise<number> {
+  return new Promise((resolvePort, reject) => {
+    const srv = net.createServer();
+    srv.once('error', reject);
+    srv.listen({ host: '127.0.0.1', port: 0, exclusive: true }, () => {
+      const port = (srv.address() as net.AddressInfo).port;
+      srv.close(() => resolvePort(port));
+    });
+  });
+}
+
+/** The default port when free, else a free port from the OS that is not one of `avoid`. */
+export async function pickPort(preferred: number, avoid: readonly number[] = []): Promise<number> {
+  if (!avoid.includes(preferred) && !(await portBusy(preferred))) return preferred;
+  for (;;) {
+    const port = await osFreePort();
+    if (!avoid.includes(port)) return port;
+  }
+}
+
+/** True when something already answers on, or holds, 127.0.0.1:<port>; the demo says so at once instead of waiting 90 s for a foreign server. */
+export async function portBusy(port: number): Promise<boolean> {
+  if (await bindFails(port)) return true;
+  return connectable(port);
+}
+
+function connectable(port: number): Promise<boolean> {
   return new Promise((resolveBusy) => {
     const sock = net.connect({ host: '127.0.0.1', port });
     sock.setTimeout(1000);
@@ -93,12 +131,15 @@ export async function main(argv: readonly string[]): Promise<number> {
     console.log('usage: pnpm demo [--no-open] [--exit-when-ready] [--golden <dir>] [--chain <dir>] [--console-port <n>] [--runtime-port <n>]');
     return 2;
   }
-  for (const [flag, port] of [['--console-port', args.consolePort], ['--runtime-port', args.runtimePort]] as const) {
-    if (await portBusy(port)) {
+  // an explicit port is strict (taken: stop at once); an unnamed one is the default when free, else a free port from the OS
+  for (const [flag, port, explicit] of [['--console-port', args.consolePort, args.consoleExplicit], ['--runtime-port', args.runtimePort, args.runtimeExplicit]] as const) {
+    if (explicit && (await portBusy(port))) {
       console.log(`port ${String(port)} is already in use: stop what holds it or pass ${flag} <free port>`);
       return 1;
     }
   }
+  if (!args.consoleExplicit) args.consolePort = await pickPort(args.consolePort, args.runtimeExplicit ? [args.runtimePort] : []);
+  if (!args.runtimeExplicit) args.runtimePort = await pickPort(args.runtimePort, [args.consolePort]);
   const started = Date.now();
   const consoleUrl = `http://127.0.0.1:${args.consolePort}`;
   const runtimeOrigin = `http://127.0.0.1:${args.runtimePort}`;

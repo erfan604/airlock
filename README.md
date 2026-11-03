@@ -28,7 +28,7 @@ No Rust, Kani or Lean installed? The raw, timestamped output of every Kani harne
 
 `pnpm demo` needs Node 24 and pnpm only: no Rust and no keys. It replays recorded testnet runs and says so.
 
-1. `pnpm i && pnpm demo`: see `console http://127.0.0.1:4173`, open it, and see the banner `Replay of recorded run`.
+1. `pnpm i && pnpm demo`: see `console http://127.0.0.1:<port>` (port 4173 when free, else a free one; use the URL it prints), open it, and see the banner `Replay of recorded run`.
 2. In the console, see a legitimate invoice paid with the stamp `ALLOWED`, an injected correction held with the stamp `HELD FOR YOU`, and after your tap the stamp `APPROVED BY YOU`.
 3. Change one field of the approval and see `approve rejected: WrongAmount`.
 
@@ -36,7 +36,7 @@ Break it yourself: `pnpm try --text 'Invoice: 9.4 NEAR to evil-ops.testnet'` (or
 
 `pnpm bench:replay` also needs Rust 1.86, because it builds the verdict CLI. It regenerates the results from recorded runs and ends with `REPLAY OK <n> runs`.
 
-The strings above are asserted by the browser test `pnpm -C web e2e demo`, which prints `E2E demo OK`. If port 4173 or 8787 is taken, `pnpm demo` stops at once with `port <n> is already in use`; pass `--console-port <n>` and `--runtime-port <n>`.
+The strings above are asserted by the browser test `pnpm -C web e2e demo`, which prints `E2E demo OK`. If port 4173 or 8787 is taken, `pnpm demo` picks a free port instead and prints the real console URL. A port you name with `--console-port <n>` or `--runtime-port <n>` is strict: if it is taken, `pnpm demo` stops at once with `port <n> is already in use`.
 
 ## Verify in 5 commands
 

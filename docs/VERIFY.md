@@ -20,7 +20,7 @@ What can be checked with which tools, how long each command takes and the last l
 | 4 | T3 | `scripts/check.sh full` | about 360 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
 
-1. Replays recorded testnet runs and says so; no keys. The time is the demo part on a warm install (the install is not timed). If port 4173 or 8787 is taken it stops with `port <n> is already in use`; pass `--console-port` and `--runtime-port`.
+1. Replays recorded testnet runs and says so; no keys. The time is the demo part on a warm install (the install is not timed). If port 4173 or 8787 is taken it picks a free port and prints the real `console http://127.0.0.1:<port>`; a port named with `--console-port` or `--runtime-port` is strict and stops with `port <n> is already in use` when taken.
 2. A claim whose tool is missing prints `SKIP <id> needs <tool>` and is not a failure; a claim whose tool is present and whose command fails prints `FAIL <id>`. Rows marked pending are listed as `PENDING` and never run.
 3. Builds the verdict CLI, so it needs Rust 1.86.
 4. The maintainer gate. Rust, Kani 0.68 and Lean 4.35; `scripts/doctor.sh` checks the toolchain.
