@@ -23,6 +23,8 @@ const allowed: AllowedPayout = {
   windowStartMs: T0,
   windowEndMs: T0 + 40n * 60n * 1000n,
   maxSlippageBps: 100n,
+  // the one fee recipient 1Click adds itself to unauthenticated quotes (recorded), at most 25 basis points
+  allowedFees: [{ recipient: rec.quoteRequest.appFees[0].recipient, maxFeeBps: 25 }],
 };
 const sent = (): Record<string, unknown> => ({ ...rec.quoteRequest });
 const run = (r: Record<string, any>, s: Record<string, unknown> = sent(), a: AllowedPayout = allowed) => checkQuote(a, s, r, { expectDry: true });
@@ -86,6 +88,18 @@ test('other assets are refused', () => {
 test('a dry quote that carries a deposit address, or a non-dry request, is refused', () => {
   refused((r) => { r.quote.depositAddress = 'bc1qattacker'; }, 'UnexpectedDepositAddress');
   refused((r, s) => { r.quoteRequest.dry = false; s['dry'] = false; }, 'NotDry');
+});
+test('an echoed request that adds a fee recipient we did not allow is refused (AIR-231 adaptive round)', () => {
+  refused((r) => { r.quoteRequest.appFees = [...r.quoteRequest.appFees, { recipient: 'd4'.repeat(32), fee: 5000 }]; }, 'UnexpectedFee');
+  refused((r) => { r.quoteRequest.appFees = [{ recipient: 'd4'.repeat(32), fee: 1 }]; }, 'UnexpectedFee');
+  refused((r) => { r.quoteRequest.appFees[0].fee = 26; }, 'UnexpectedFee');
+  refused((r) => { r.quoteRequest.appFees = [{ ...r.quoteRequest.appFees[0], payout: 'x' }]; }, 'RequestEchoMismatch');
+  const none: AllowedPayout = { ...allowed, allowedFees: [] };
+  refused((r) => { void r; }, 'UnexpectedFee', none);
+});
+test('an echoed request with a key we neither sent nor know as a server default is refused', () => {
+  refused((r) => { r.quoteRequest.referral = 'x'; }, 'RequestEchoMismatch');
+  refused((r) => { r.quoteRequest.insured = true; }, 'RequestEchoMismatch');
 });
 test('a malformed quote (amount as a number, missing fields) is refused', () => {
   refused((r) => { r.quote.amountOut = 5000000; }, 'MalformedQuote');

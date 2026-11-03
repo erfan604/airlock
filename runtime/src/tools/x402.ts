@@ -20,6 +20,19 @@ export class X402PayeeMismatch extends Error {
   }
 }
 
+/** The requirement is priced in another asset than the plan pays in (AIR-231): an amount means nothing without its unit. The message is fixed. */
+export class X402AssetMismatch extends Error {
+  constructor() {
+    super('x402: the asset of the server is not the asset the plan pays in');
+    this.name = 'X402AssetMismatch';
+  }
+}
+
+/** Without `expect_asset`, a requirement served on near:testnet must be priced in `near`; other networks are checked only when the plan names the asset. */
+function assetFitsNetwork(network: string, asset: string): boolean {
+  return network !== 'near:testnet' || asset === 'near';
+}
+
 /** The network of the server has no payee key scheme (only near:testnet and eip155:<chain id> have one). The message is fixed. */
 export class X402NetworkError extends Error {
   constructor() {
@@ -70,7 +83,7 @@ function payeeKeyOf(network: string, payTo: string): string {
 
 /**
  * `args.url` must be a string; a url the world has no server for answers `{ requirements: null }` (an unknown server says nothing, like
- * fetch_url returning an empty page). A hit returns a copy of the stored server. `args.expect_payee`, when present, must be a string and
+ * fetch_url returning an empty page). A hit returns a copy of the stored server. `args.expect_asset`, when present, must equal the server's asset exactly (without it a near:testnet server must price in near), else this throws X402AssetMismatch. `args.expect_payee`, when present, must be a string and
  * the server must name that payee on its own network, else this throws.
  */
 export function fetchPaid(world: World, args: Readonly<Record<string, unknown>>): FetchPaidResult {
@@ -83,9 +96,19 @@ export function fetchPaid(world: World, args: Readonly<Record<string, unknown>>)
     expectPayee = wanted;
   }
 
+  let expectAsset: string | undefined;
+  if (Object.hasOwn(args, 'expect_asset')) {
+    const wanted = args['expect_asset'];
+    if (typeof wanted !== 'string') throw new ToolArgError('fetch_paid: argument expect_asset must be a string');
+    expectAsset = wanted;
+  }
+
   const stored = Object.hasOwn(world.paid402, url) ? world.paid402[url] : undefined;
   if (stored === undefined) return { requirements: null };
   const server = structuredClone(stored);
+  // the amount is only meaningful with its asset: a requirement in another asset never reaches the plan (exact comparison, no folding)
+  const { asset, network } = server.requirements;
+  if (expectAsset === undefined ? !assetFitsNetwork(network, asset) : asset !== expectAsset) throw new X402AssetMismatch();
   if (expectPayee !== undefined && payeeKeyOf(server.requirements.network, server.requirements.payTo) !== expectPayee) {
     throw new X402PayeeMismatch();
   }

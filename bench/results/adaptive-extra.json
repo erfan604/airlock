@@ -166,16 +166,16 @@
   {
    "id": "ADP11",
    "a1": [
-    "escalate:UntrustedAmount"
+    "stopped:ToolError"
    ],
    "a2": [
-    "allow"
+    "stopped:ToolError"
    ],
-   "autoNear": "4.9",
+   "autoNear": "0",
    "stoppedBy": "nothing",
    "naiveApprover": false,
    "held": 0,
-   "residual": true
+   "residual": false
   }
  ],
  "sequences": [
@@ -661,9 +661,9 @@
   {
    "surface": "intents",
    "name": "app fee to a third party added to the echoed request",
-   "expect": "ok",
-   "got": "ok",
-   "class": "new residual",
+   "expect": "UnexpectedFee",
+   "got": "UnexpectedFee",
+   "class": "refused",
    "why": ""
   },
   {
@@ -679,6 +679,30 @@
    "name": "not dry",
    "expect": "NotDry",
    "got": "NotDry",
+   "class": "refused",
+   "why": ""
+  },
+  {
+   "surface": "intents",
+   "name": "unknown key nested in a fee entry",
+   "expect": "RequestEchoMismatch",
+   "got": "RequestEchoMismatch",
+   "class": "refused",
+   "why": ""
+  },
+  {
+   "surface": "intents",
+   "name": "unknown top-level key in the echoed request",
+   "expect": "RequestEchoMismatch",
+   "got": "RequestEchoMismatch",
+   "class": "refused",
+   "why": ""
+  },
+  {
+   "surface": "intents",
+   "name": "fee of the known recipient raised above its bound",
+   "expect": "UnexpectedFee",
+   "got": "UnexpectedFee",
    "class": "refused",
    "why": ""
   }

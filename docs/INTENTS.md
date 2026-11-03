@@ -21,6 +21,8 @@ address at all (1Click docs), so the deposit binding below is exercised by a rec
 | SlippageTooWide | the requested slippage or the quote's own spread exceeds the bound in basis points |
 | RefundNotOurs | the refund address is not in our set, or is not on the origin chain |
 | DeadlineOutsideWindow | the deadline is outside the authorization window |
+| UnexpectedFee | the echoed request names a fee recipient that is not on the allowed list, or a fee above that recipient's bound in basis points (1Click adds its own fee recipient to unauthenticated quotes; it is pinned) |
+| RequestEchoMismatch | also: a key of the echoed request that was neither sent nor a known server default, or a fee entry with an unknown key |
 | UnexpectedDepositAddress, MissingDepositAddress | a dry quote carries a deposit address, or a non-dry one has none |
 
 A pass returns a record with the allowed request id, the deposit address (null for a dry quote) and a SHA-256 binding over request id, deposit address,

@@ -364,6 +364,7 @@ async function probeRows(spec: z.infer<typeof Surfaces>, problems: string[]): Pr
     windowStartMs: t0,
     windowEndMs: t0 + 40n * 60n * 1000n,
     maxSlippageBps: 100n,
+    allowedFees: [{ recipient: '5880ad2b362620fadf759cbceb1cd5737ce8c6ed7fb8e9942881e6731f9247dd', maxFeeBps: 25 }],
   };
   for (const c of spec.intents) {
     const response = structuredClone(rec);

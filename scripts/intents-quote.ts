@@ -20,6 +20,8 @@ const allowed: AllowedPayout = {
   windowStartMs: now,
   windowEndMs: now + 40n * 60n * 1000n,
   maxSlippageBps: 100n,
+  // the one fee recipient 1Click adds to unauthenticated quotes (recorded 2026-11-03), at most 25 basis points
+  allowedFees: [{ recipient: '5880ad2b362620fadf759cbceb1cd5737ce8c6ed7fb8e9942881e6731f9247dd', maxFeeBps: 25 }],
 };
 
 console.log(`intents: ${INTENTS_LABEL}`);

@@ -10,7 +10,7 @@ import { PlanRejected, checkPlan, isTrusted, isValueTrusted, labelsToBits } from
 import { run } from '../src/interpreter/index.ts';
 import type { Proposed, RunResult } from '../src/interpreter/index.ts';
 import { ToolArgError, fixtureTools } from '../src/tools/fixtures.ts';
-import { X402NetworkError, X402PayeeMismatch, fetchPaid } from '../src/tools/x402.ts';
+import { X402AssetMismatch, X402NetworkError, X402PayeeMismatch, fetchPaid } from '../src/tools/x402.ts';
 import { EMPTY_WORLD, X402Server } from '../src/tools/world.ts';
 import type { World } from '../src/tools/world.ts';
 import { abortOf, decimalsOf, okOf, stubBook, stubExtract } from './helpers/interp.ts';
@@ -384,4 +384,24 @@ test('fetchPaid is a pure function of the world: the same call twice gives equal
   const world = worldOf(fixture('vendor-clean'));
   assert.deepEqual(fetchPaid(world, { url: URL }), fetchPaid(world, { url: URL }));
   assert.deepEqual(fetchPaid(world, { url: URL, expect_payee: 'near:accountant.testnet' }), { requirements: fixture('vendor-clean').requirements });
+});
+
+// ---- AIR-231 adaptive round: the amount of a requirement is only meaningful with its asset ----
+test('ADP11: a requirement priced in another asset than the plan pays in is refused, so no amount crosses units', async () => {
+  const other = fixture('adp-x402-asset-mismatch');
+  assert.notEqual(other.requirements.asset, 'near');
+  const aborted = abortOf(await exec(PAY, other));
+  assert.equal(aborted.cause.code, 'ToolError');
+  const erc20 = abortOf(await exec(PAY, inline({ asset: 'evm:84532:erc20:0x036cbd53842c5426634e7929541ec2318f3dcf7e' })));
+  assert.equal(erc20.cause.code, 'ToolError');
+});
+
+test('the asset a plan expects is exact when expect_asset names it, and by default a near:testnet server must price in near', async () => {
+  const withExpect = (asset: string) => [PAYEE, { let: 'pay', call: 'fetch_paid', args: { url: URL, expect_asset: asset } }, TRANSFER({ ref: 'payee' })];
+  assert.equal((await proposalOf(withExpect('near'), fixture('vendor-clean'))).amount, 4200000000000000000000000n);
+  assert.equal(abortOf(await exec(withExpect('NEAR'), fixture('vendor-clean'))).cause.code, 'ToolError');
+  assert.equal(abortOf(await exec(withExpect('evm:1:native'), fixture('vendor-clean'))).cause.code, 'ToolError');
+  assert.equal(abortOf(await exec(withExpect('near'), fixture('vendor-asset-unknown'))).cause.code, 'ToolError');
+  assert.throws(() => fetchPaid(worldOf(fixture('adp-x402-asset-mismatch')), { url: URL }), X402AssetMismatch);
+  assert.throws(() => fetchPaid(worldOf(fixture('vendor-clean')), { url: URL, expect_asset: 5 }), ToolArgError);
 });

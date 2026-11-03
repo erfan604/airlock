@@ -29,6 +29,8 @@ export interface AllowedPayout {
   windowEndMs: bigint;
   /** The widest slippage accepted, in basis points (1/100 of a percent); the request and the quote must both stay within it. */
   maxSlippageBps: bigint;
+  /** The fee recipients the echoed `appFees` may name, each with its largest fee in basis points. Default none: any fee entry is refused. */
+  allowedFees?: readonly { recipient: string; maxFeeBps: number }[];
 }
 
 export const REASONS = [
@@ -46,6 +48,7 @@ export const REASONS = [
   'DeadlineOutsideWindow',
   'UnexpectedDepositAddress',
   'MissingDepositAddress',
+  'UnexpectedFee',
 ] as const;
 export type Reason = (typeof REASONS)[number];
 
@@ -113,6 +116,16 @@ export function buildQuoteRequest(allowed: AllowedPayout, dry: boolean, deadline
   };
 }
 
+const ECHOED: readonly string[] = ['swapType', 'originAsset', 'depositType', 'destinationAsset', 'amount', 'refundTo', 'refundType', 'recipient', 'recipientType', 'deadline', 'slippageTolerance'];
+
+/** The defaults 1Click adds to the echo of a request, each with the only value we accept (recorded 2026-11-03). */
+const SERVER_DEFAULTS: Readonly<Record<string, (v: unknown) => boolean>> = {
+  depositMode: (v) => v === 'SIMPLE',
+  confidentiality: (v) => v === 'public',
+  insured: (v) => v === false,
+  quoteWaitingTimeMs: (v) => typeof v === 'number' && Number.isInteger(v) && v >= 0,
+};
+
 function sameAddress(a: string, b: string): boolean {
   const evm = /^0x[0-9a-fA-F]{40}$/;
   return evm.test(a) && evm.test(b) ? a.toLowerCase() === b.toLowerCase() : a === b;
@@ -136,8 +149,28 @@ export function checkQuote(allowed: AllowedPayout, sent: Readonly<Record<string,
 
   if (q.dry !== opts.expectDry || sent['dry'] !== opts.expectDry) return refuse('NotDry');
   // the response echoes the request: a quote for a request we did not send (a proxy or a swapped body) is refused
-  for (const key of ['swapType', 'originAsset', 'depositType', 'destinationAsset', 'amount', 'refundTo', 'refundType', 'recipient', 'recipientType', 'deadline', 'slippageTolerance']) {
+  for (const key of ECHOED) {
     if (!Object.hasOwn(sent, key) || sent[key] !== (q as Record<string, unknown>)[key]) return refuse('RequestEchoMismatch');
+  }
+
+  // every other key of the echoed request is a server default we know, or a refusal: an extra key is a field we never asked for
+  for (const [key, value] of Object.entries(q)) {
+    if (key === 'appFees' || key === 'dry' || ECHOED.includes(key)) continue;
+    const want = SERVER_DEFAULTS[key];
+    if (want === undefined || !want(value)) return refuse('RequestEchoMismatch');
+  }
+  // fees: we ask for none, so an entry passes only when its recipient is on the allowed list and its fee is within that recipient's bound
+  const fees = (q as Record<string, unknown>)['appFees'];
+  if (fees !== undefined) {
+    if (!Array.isArray(fees)) return refuse('RequestEchoMismatch');
+    for (const fee of fees as unknown[]) {
+      if (typeof fee !== 'object' || fee === null || Array.isArray(fee)) return refuse('RequestEchoMismatch');
+      const keys = Object.keys(fee).sort();
+      if (keys.length !== 2 || keys[0] !== 'fee' || keys[1] !== 'recipient') return refuse('RequestEchoMismatch');
+      const { recipient, fee: bps } = fee as { recipient: unknown; fee: unknown };
+      const ok = (allowed.allowedFees ?? []).some((a) => a.recipient === recipient && typeof bps === 'number' && Number.isInteger(bps) && bps >= 0 && bps <= a.maxFeeBps); // money-lint-allow: basis points, a bounded config value, never an amount
+      if (!ok) return refuse('UnexpectedFee');
+    }
   }
 
   if (!sameAddress(q.recipient, allowed.payee)) return refuse('RecipientMismatch');

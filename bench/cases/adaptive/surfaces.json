@@ -385,8 +385,7 @@
      ]
     }
    ],
-   "expect": "ok",
-   "class": "new residual"
+   "expect": "UnexpectedFee"
   },
   {
    "name": "deadline moved outside the window",
@@ -409,6 +408,39 @@
     }
    ],
    "expect": "NotDry"
+  },
+  {
+   "name": "unknown key nested in a fee entry",
+   "ops": [
+    {
+     "in": "response",
+     "path": "quoteRequest.appFees.0.payout",
+     "value": "x"
+    }
+   ],
+   "expect": "RequestEchoMismatch"
+  },
+  {
+   "name": "unknown top-level key in the echoed request",
+   "ops": [
+    {
+     "in": "response",
+     "path": "quoteRequest.referral",
+     "value": "x"
+    }
+   ],
+   "expect": "RequestEchoMismatch"
+  },
+  {
+   "name": "fee of the known recipient raised above its bound",
+   "ops": [
+    {
+     "in": "response",
+     "path": "quoteRequest.appFees.0.fee",
+     "value": 26
+    }
+   ],
+   "expect": "UnexpectedFee"
   }
  ]
 }
