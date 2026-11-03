@@ -74,7 +74,8 @@ export const AttestationMetaSchema = z.strictObject({
   nonce: z.string(),
   report_sha256: z.string(),
   verified_at: z.string(),
-  checks: z.array(z.strictObject({ name: z.string(), ok: z.boolean() })),
+  /** `detail` is stored for failing rows only (AIR-309: the seen hashes of a pin miss) */
+  checks: z.array(z.strictObject({ name: z.string(), ok: z.boolean(), detail: z.string().optional() })),
 });
 
 export const ResultsFileSchema = z.strictObject({
@@ -113,7 +114,7 @@ export interface ResultsFile {
     budget_usd: string;
     bench_commit: string;
     verdict_cli_sha256: string;
-    attestation?: { model: string; status: 'VERIFIED' | 'FAILED' | 'UNATTESTED'; nonce: string; report_sha256: string; verified_at: string; checks: { name: string; ok: boolean }[] };
+    attestation?: { model: string; status: 'VERIFIED' | 'FAILED' | 'UNATTESTED'; nonce: string; report_sha256: string; verified_at: string; checks: { name: string; ok: boolean; detail?: string }[] };
   };
   case_meta: Record<string, { group: Group; legitIsPayment: boolean; tags: string[] }>;
   not_run: unknown[];

@@ -110,29 +110,41 @@ async function quoteChecks(
     if (v.mr_config_id !== expected) throw new Error('MRCONFIGID of the verified quote differs from the hash of app_compose');
     return `MRCONFIGID equals 01 plus sha256(app_compose) ${hash.slice(0, 16)}`;
   }));
+  // AIR-309: a pin miss stores what was seen (the values of the Intel-verified quote), so a new build can be reviewed from the record alone
+  const seenOs = `seen mr_td ${v.mr_td} rtmr0 ${v.rtmr0} rtmr1 ${v.rtmr1} rtmr2 ${v.rtmr2}`;
+  const quoteCompose = ((): string => {
+    const id = Buffer.from(v.mr_config_id, 'hex');
+    return id.length === 48 ? id.subarray(1, 33).toString('hex') : '';
+  })();
   checks.push(await row(p('os_measurements'), () => {
-    const info = asObject(report.info);
-    const tcb = asObject(jsonIfText(info?.tcb_info));
-    if (tcb === null) throw new Error('no info.tcb_info to compare with the quote');
-    if (pins === undefined) throw new Error('no pinned measurements are configured for this report');
-    const fields = [['mrtd', 'mr_td'], ['rtmr0', 'rtmr0'], ['rtmr1', 'rtmr1'], ['rtmr2', 'rtmr2']] as const;
-    for (const [reportKey, pinKey] of fields) {
-      const fromQuote = v[pinKey];
-      const claimed = tcb[reportKey];
-      if (typeof claimed !== 'string' || claimed.toLowerCase() !== fromQuote) throw new Error(`${reportKey} in the report differs from the verified quote`);
-      const list = pins[pinKey];
-      if (!Array.isArray(list) || list.length === 0) throw new Error(`no pinned ${reportKey} allowlist`);
-      if (!list.includes(fromQuote)) throw new Error(`${reportKey} ${fromQuote} is not in the pinned allowlist`);
+    try {
+      const info = asObject(report.info);
+      const tcb = asObject(jsonIfText(info?.tcb_info));
+      if (tcb === null) throw new Error('no info.tcb_info to compare with the quote');
+      if (pins === undefined) throw new Error('no pinned measurements are configured for this report');
+      const fields = [['mrtd', 'mr_td'], ['rtmr0', 'rtmr0'], ['rtmr1', 'rtmr1'], ['rtmr2', 'rtmr2']] as const;
+      for (const [reportKey, pinKey] of fields) {
+        const fromQuote = v[pinKey];
+        const claimed = tcb[reportKey];
+        if (typeof claimed !== 'string' || claimed.toLowerCase() !== fromQuote) throw new Error(`${reportKey} in the report differs from the verified quote`);
+        const list = pins[pinKey];
+        if (!Array.isArray(list) || list.length === 0) throw new Error(`no pinned ${reportKey} allowlist`);
+        if (!list.includes(fromQuote)) throw new Error(`${reportKey} ${fromQuote} is not in the pinned allowlist`);
+      }
+      return 'MRTD and RTMR0 to 2 equal the report and are in the pinned allowlist';
+    } catch (e) {
+      throw new Error(`${msg(e)}; ${seenOs}`);
     }
-    return 'MRTD and RTMR0 to 2 equal the report and are in the pinned allowlist';
   }));
   checks.push(await row(p('compose_pin'), () => {
     const list = pins?.compose_hash;
-    if (!Array.isArray(list) || list.length === 0) throw new Error('no pinned compose hash allowlist is configured');
-    const id = Buffer.from(v.mr_config_id, 'hex');
-    const hash = id.length === 48 ? id.subarray(1, 33).toString('hex') : '';
-    if (!list.includes(hash)) throw new Error(`compose hash ${hash} is not in the pinned allowlist`);
-    return `compose hash ${hash.slice(0, 16)} is pinned`;
+    try {
+      if (!Array.isArray(list) || list.length === 0) throw new Error('no pinned compose hash allowlist is configured');
+      if (!list.includes(quoteCompose)) throw new Error(`compose hash ${quoteCompose} is not in the pinned allowlist`);
+    } catch (e) {
+      throw new Error(`${msg(e)}; seen compose_hash ${quoteCompose}`);
+    }
+    return `compose hash ${quoteCompose.slice(0, 16)} is pinned`;
   }));
   return { checks, quote };
 }

@@ -284,6 +284,12 @@ describe('AIR-220 runner', () => {
     assert.equal(results.meta.attestation.status, 'VERIFIED');
     assert.equal(results.meta.attestation.report_sha256, 'd'.repeat(64));
     assert.equal(results.meta.attestation.checks.length, 2);
+    // AIR-309: a failing row keeps its detail (the seen hashes), a passing row stores none
+    const failing: NonNullable<RunnerDeps['attest']> = async (model) => ({ model, status: 'FAILED', nonce: 'c'.repeat(64), report_sha256: 'd'.repeat(64), verified_at: '2026-11-03T00:00:00.000Z', checks: [{ name: 'model.quote', ok: true, detail: 'fine' }, { name: 'model.compose_pin', ok: false, detail: `compose hash ${'e'.repeat(64)} is not pinned; seen compose_hash ${'e'.repeat(64)}` }] });
+    assert.equal(await main(['run', '--model', MODEL, '--configs', 'V0', '--n', '1', '--cases', FIXTURE_CASES, '--budget-usd', '5', '--concurrency', '1', '--name', 'attfail'], io(root, [], { attest: failing })), 0);
+    const f = JSON.parse(readFileSync(join(root, 'results', 'attfail.json'), 'utf8')) as { meta: { attestation: { checks: { name: string; ok: boolean; detail?: string }[] } } };
+    assert.deepEqual(f.meta.attestation.checks[0], { name: 'model.quote', ok: true });
+    assert.ok(f.meta.attestation.checks[1]!.detail?.includes('e'.repeat(64)));
     // a run with no attest seam stores no attestation field, as before
     const plain = await main(['run', '--model', MODEL, '--configs', 'V0', '--n', '1', '--cases', FIXTURE_CASES, '--budget-usd', '5', '--concurrency', '1', '--name', 'noatt'], io(root, []));
     assert.equal(plain, 0);

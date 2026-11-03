@@ -156,6 +156,9 @@ and `x-no-aliasing: true`, and every check passed (21 rows, run offline again by
 - cost: the report endpoint is not billed, so the live check spent usd 0.00 of the NEAR AI credit (plan/LLM_BUDGET.md ledger)
 - scope: this is evidence about the model TEE instance that answered the report request. It is not a signature on any single completion, and the report does not name which instance serves a later completion (docs.near.ai, model-attestations and verification-policy pages). Facts and URLs: research repo `notes/nearai_attestation_2026-11-03.md`.
 
+Build sample (AIR-309, 2026-11-03 17:14Z): `pnpm -C runtime attest --sample 10` fetched and verified 10 reports in sequence, each with its own nonce. All 10 were VERIFIED
+and all 10 were one build, so no pin was rotated. Model build: compose hash a0e3c6f4f21a60ea3f5c96bc7ef319b03a184ca2049605399275fbcea74e8c5f, MRTD df4d77c8...891b, RTMR0 bc122d14...7590, RTMR2 bd67ab75...1a71. Gateway build: compose hash f571e5dafe8f96baf116a271b4be9cba228b447dd6ebe502bbda81ede7bcc7ce. A pin miss now stores the seen MRTD, RTMR0 to 2 and compose hash in the row detail, in the runtime record and in a bench run's metadata. The earlier unpinned compose hash (bench run of 16:41Z) was not stored and is still unknown.
+
 The final bench run (AIR-227, 2026-11-03) repeated the check on the same model before its first call and stored the result in the run's metadata, which the line of the bench block that starts with `model report` copies:
 
 - verified at: 2026-11-03T15:36:30.183Z

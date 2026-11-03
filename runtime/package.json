@@ -25,7 +25,8 @@
     "test:prop:quick": "FC_RUNS=1000 tsx --test test/interpreter.prop.test.ts",
     "test:prop:canary": "../scripts/prop-canary.sh",
     "test:chain": "tsx --test \"test/chain/*.sandbox.ts\"",
-    "attest": "tsx scripts/attest.ts"
+    "attest": "tsx scripts/attest.ts",
+    "attest-rotate": "tsx scripts/attest-rotate.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.5",

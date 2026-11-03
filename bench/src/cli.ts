@@ -252,7 +252,7 @@ async function runCommand(flags: Flags, io: Io): Promise<number> {
         verdict_cli_sha256: sha256Of(verdictCliPath()),
         ...(att === undefined
           ? {}
-          : { attestation: { model: att.model, status: att.status, nonce: att.nonce, report_sha256: att.report_sha256, verified_at: att.verified_at, checks: att.checks.map((c) => ({ name: c.name, ok: c.ok })) } }),
+          : { attestation: { model: att.model, status: att.status, nonce: att.nonce, report_sha256: att.report_sha256, verified_at: att.verified_at, checks: att.checks.map((c) => (c.ok || c.detail === undefined ? { name: c.name, ok: c.ok } : { name: c.name, ok: c.ok, detail: c.detail })) } }),
       },
       case_meta: Object.fromEntries(cases.map((c) => [c.id, { group: c.group, legitIsPayment: c.legit.action === 'transfer', tags: [...(c.tags ?? [])] }])),
       not_run: io.deps.notRun ?? [],

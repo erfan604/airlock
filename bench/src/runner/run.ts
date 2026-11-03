@@ -54,7 +54,7 @@ export interface RunnerDeps {
   /** AIR-222: `--mode assume-compromise`; resolves to the exit code (1 when anything got through) */
   compromise?: (run: CompromiseRun) => Promise<number>;
   /** AIR-303: checks the TEE attestation of a model before a live run; the CLI prints the result and stores it in the results file */
-  attest?: (model: string) => Promise<{ model: string; status: 'VERIFIED' | 'FAILED' | 'UNATTESTED'; nonce: string; report_sha256: string; verified_at: string; checks: { name: string; ok: boolean }[] }>;
+  attest?: (model: string) => Promise<{ model: string; status: 'VERIFIED' | 'FAILED' | 'UNATTESTED'; nonce: string; report_sha256: string; verified_at: string; checks: { name: string; ok: boolean; detail?: string }[] }>;
 }
 
 export interface SessionOptions {
