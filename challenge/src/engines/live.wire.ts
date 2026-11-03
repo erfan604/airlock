@@ -16,6 +16,7 @@ import { nearViewAccount } from '../../../scripts/lib/preflight.ts';
 // @ts-expect-error task-key.mjs is plain JavaScript without declarations
 import { signMessage } from '../../../scripts/task-key.mjs';
 import type { LiveConfig } from '../config.ts';
+import { DEFAULT_PUBLIC_TASK, PublicTask } from '../publictask.ts';
 import { LiveEngine } from './live.ts';
 
 export interface LiveParts {
@@ -24,6 +25,8 @@ export interface LiveParts {
   floatProbe(): Promise<bigint>;
   /** the payee keys of the policy's address book now */
   bookKeys(): Promise<ReadonlySet<string>>;
+  /** the owner-signed task door (b) publishes, rotated before it expires; null when the book has no accountant payee */
+  publicTask: PublicTask | null;
 }
 
 export async function liveParts(cfg: LiveConfig): Promise<LiveParts> {
@@ -60,8 +63,19 @@ export async function liveParts(cfg: LiveConfig): Promise<LiveParts> {
     newTaskId: () => `ch-${randomBytes(8).toString('hex')}`,
     limits,
   });
+  const book = await chain.getBook();
+  const payee = book.map(([key]) => key).find((key) => /^near:accountant\./.test(key));
+  const publicTask =
+    payee === undefined
+      ? null
+      : new PublicTask(
+          { ownerAccount: cfg.ownerAccount, agentAccount: cfg.agentAccount, policyAccount: cfg.policyAccount, payee, ...DEFAULT_PUBLIC_TASK },
+          (task) => Promise.resolve((signMessage(seed, ownerTaskBorsh(task)) as Buffer).toString('base64')),
+          Date.now,
+        );
   return {
     engine,
+    publicTask,
     floatProbe: async () => (await nearViewAccount(cfg.policyAccount)).amount,
     bookKeys: async () => new Set((await chain.getBook()).map(([key]) => key)),
   };

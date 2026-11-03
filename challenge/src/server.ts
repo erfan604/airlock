@@ -13,6 +13,7 @@ import { z } from 'zod';
 import type { ChallengeConfig } from './config.ts';
 import type { AdmissionControl } from './limits.ts';
 import type { AttemptLog } from './log.ts';
+import type { PublishedTask } from './publictask.ts';
 import type { Challenge } from './service.ts';
 import type { Refusal } from './types.ts';
 import { visitorKey } from './visitor.ts';
@@ -29,6 +30,8 @@ export interface ServerDeps {
   /** the secret random salt of today (visitor.ts DailySalt), never derived from the date */
   salt(): string;
   clock(): number;
+  /** door (b): the owner-signed task published next to the key (publictask.ts), or null when none is configured */
+  publicTask?: () => Promise<PublishedTask | null>;
 }
 
 const STATUS: Record<Refusal, 400 | 413 | 429 | 502 | 503> = {
@@ -76,8 +79,9 @@ export function createChallengeApp(deps: ServerDeps): Hono {
     await next();
   });
 
-  app.get('/api/challenge/state', (c) =>
-    c.json({
+  app.get('/api/challenge/state', async (c) => {
+    const task = deps.publicTask === undefined || cfg.key === null ? null : await deps.publicTask();
+    return c.json({
       mode: cfg.mode,
       doorTextOpen: cfg.mode === 'live',
       board: log.scoreboard(),
@@ -92,9 +96,10 @@ export function createChallengeApp(deps: ServerDeps): Hono {
         llmSpentUsd: deps.admission.spentUsd(),
       },
       key: cfg.key,
+      task,
       now: new Date(deps.clock()).toISOString(),
-    }),
-  );
+    });
+  });
 
   app.get('/api/challenge/attempts', (c) => {
     const q = c.req.query('limit');

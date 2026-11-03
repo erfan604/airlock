@@ -44,12 +44,22 @@ export type Board = {
 
 export type PublishedKey = { account: string; publicKey: string; secretKey: string | null; receiver: string; methods: string[]; allowance: string | null };
 
+/** The owner-signed task door (b) publishes next to the key (challenge/src/publictask.ts). No secret: a signature over a bound. */
+export type PublishedTask = {
+  task: { task_id: string; expires_ms: number; [k: string]: unknown };
+  task_sig: string;
+  issuedAt: string;
+  expiresAt: string;
+  permits: { payee: string; asset: string; maxTotal: string; maxActions: number; agent: string; contract: string; ttlMinutes: number };
+};
+
 export type ChallengeState = {
   mode: 'recorded' | 'live';
   doorTextOpen: boolean;
   board: Board;
   limits: { perVisitor: { max: number; perSeconds: number }; global: { max: number; perSeconds: number }; dailyMax: number; maxChars: number };
   key: PublishedKey | null;
+  task?: PublishedTask | null;
   now: string;
 };
 

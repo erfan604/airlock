@@ -14,6 +14,7 @@ import { resolveAddress } from './address.ts';
 import { FastNearKeySource } from './fastnear.ts';
 import { KeyWatcher } from './watcher.ts';
 import { listen } from './listen.ts';
+import type { PublicTask } from './publictask.ts';
 import { createChallengeApp } from './server.ts';
 import { RecordedEngine, recordedCases, recordedModel } from './engines/recorded.ts';
 import { runSelftest } from './selftest.ts';
@@ -42,6 +43,7 @@ async function main(argv: string[]): Promise<number> {
   let floatProbe: (() => Promise<bigint | null>) | null = null;
   let bookKeys: (() => Promise<ReadonlySet<string>>) | null = null;
   let seeder: RecordedEngine | null = null;
+  let publicTask: PublicTask | null = null;
   const cases = recordedCases(ROOT);
   const models = loadModelsConfig();
   const recorded = new RecordedEngine({ cases, verdictCli: verdictCliPath(), model: models.planner, quarantineModel: models.quarantine, temperature: models.temperature, seed: models.seed });
@@ -52,6 +54,7 @@ async function main(argv: string[]): Promise<number> {
       engine = parts.engine;
       floatProbe = parts.floatProbe;
       bookKeys = parts.bookKeys;
+      publicTask = parts.publicTask;
     } catch (e) {
       console.error(`live mode did not start: ${e instanceof Error ? e.message.slice(0, 160) : 'failed'}`);
       return 2;
@@ -100,6 +103,7 @@ async function main(argv: string[]): Promise<number> {
     },
     salt: () => salt.current(),
     clock: Date.now,
+    ...(publicTask === null ? {} : { publicTask: () => (publicTask as PublicTask).current() }),
   });
   await listen(app, cfg.port, cfg.host);
   console.log(`challenge ${cfg.mode} listening http://${cfg.host}:${String(cfg.port)} (door a ${cfg.mode === 'live' ? 'open' : 'shut'})`);

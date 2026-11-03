@@ -10,7 +10,7 @@ import { VerdictStamp } from '../components/VerdictStamp.tsx';
 import { liveChallengeApi } from './api.ts';
 import type { AttemptResult, ChallengeApi } from './api.ts';
 import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, previewOf, reasonWords, refusalWords, sentenceOf, shortSource, stateOf } from './model.ts';
-import type { Attempt, ChallengeState } from './model.ts';
+import type { Attempt, ChallengeState, PublishedTask } from './model.ts';
 
 const FEED = 50;
 
@@ -96,7 +96,28 @@ function KeyFacts({ state }: { state: ChallengeState | null }) {
           <dd>{k.secretKey === null ? 'not published yet' : <code className="ch-code" data-testid="key-secret">{k.secretKey}</code>}</dd>
         </dl>
       )}
+      {state?.task === undefined || state.task === null ? null : <TaskFacts task={state.task} />}
     </section>
+  );
+}
+
+function TaskFacts({ task }: { task: PublishedTask }) {
+  const p = task.permits;
+  return (
+    <div data-testid="task-facts">
+      <h3 className="ch-door-title">The owner's signed task</h3>
+      <p className="ch-help" data-testid="task-explain">
+        A call to <code className="ch-code">submit_batch</code> also needs a task signed by the owner. A compromised agent would hold one, so here is one. It lets the agent pay {p.payee} up to {p.maxTotal} {p.asset} in total, in at most {String(p.maxActions)} requests, until {task.expiresAt} (a new task replaces it before it expires). Anything else is outside what the owner signed: another payee, a larger amount, a replay or a call after expiry. Try it; the board shows what the contract answers.
+      </p>
+      <dl className="ch-facts">
+        <dt>Task id</dt>
+        <dd><code className="ch-code">{task.task.task_id}</code></dd>
+        <dt>Expires</dt>
+        <dd>{task.expiresAt}</dd>
+      </dl>
+      <p className="ch-help">Pass these as the <code className="ch-code">task</code> and <code className="ch-code">task_sig</code> arguments, with your requests as <code className="ch-code">reqs</code>:</p>
+      <pre className="ch-code" data-testid="task-json">{JSON.stringify({ task: task.task, task_sig: task.task_sig }, null, 2)}</pre>
+    </div>
   );
 }
 

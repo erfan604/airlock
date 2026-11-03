@@ -26,3 +26,13 @@ export function signerFromCredentials(path: string, expectedAccountId: string): 
     throw new Error('credentials private_key is not a valid ed25519 key');
   }
 }
+
+/** A signer from an `ed25519:<base58>` secret key held in the process (the challenge's published key); the text never reaches a message. */
+export function signerFromSecret(secret: string): KeyPairSigner {
+  if (!secret.startsWith('ed25519:')) throw new Error('not an ed25519 secret key');
+  try {
+    return KeyPairSigner.fromSecretKey(secret as KeyPairString);
+  } catch {
+    throw new Error('not a valid ed25519 secret key');
+  }
+}
