@@ -35,6 +35,8 @@ export const DEFAULT_DEMO_POLICY = 'policy-v2.erfan-airlock.testnet';
 export const MAX_PENDING = 3;
 export const MAX_HOUR_ESCALATIONS = 5;
 export const APPROVAL_WAIT_MS = 600_000;
+/** how long to wait for approve-cli.sh's txid file once the request reads Executed, before asking at the terminal */
+export const TXID_WAIT_MS = 60_000;
 const POLL_MS = 3000;
 const HASH = /^[A-Za-z0-9]{20,100}$/;
 const WRONG_AMOUNT = 'approve rejected: WrongAmount';
@@ -345,7 +347,12 @@ async function liveRun(io: DemoIo, args: Args, twinAtStart: GoldenRun | null): P
   io.out(`ACT 2 B01 escalated OverTaskBound pending ${no}`);
   io.out(`WAIT the owner approves request ${no}: POLICY=${io.contractId} scripts/approve-cli.sh ${no} --run (type yes), or the console wallet at /approvals; up to ${APPROVAL_WAIT_MS / 60_000} minutes`);
   await waitExecuted(io, no);
+  // approve-cli.sh writes target/approve-<no>.txid only after its transaction returns, which can be after the request reads Executed
   let approval = io.approvalTx(no);
+  for (let waited = 0; approval === null && waited < TXID_WAIT_MS; waited += POLL_MS) {
+    await io.sleep(POLL_MS);
+    approval = io.approvalTx(no);
+  }
   if (approval === null) {
     io.out('ASK paste the approval transaction hash');
     approval = await io.askApprovalTx();
