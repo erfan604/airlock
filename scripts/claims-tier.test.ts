@@ -99,7 +99,7 @@ test('--tier node runs the none and node rows and skips the rows above the tier 
     const res = runWith(root, ALL_TOOLS, ['--tier', 'node']);
     assert.equal(res.code, 0, dump(res));
     assert.deepEqual(line(res, 'PASS ').map((l) => l.split(' ')[1]), ['C1', 'C2']);
-    assert.deepEqual(line(res, 'SKIP '), ['SKIP C3 needs rust', 'SKIP C4 needs kani', 'SKIP C5 needs lean', 'SKIP C6 needs rust', 'SKIP C7 needs network', 'SKIP C8 needs keys']);
+    assert.deepEqual(line(res, 'SKIP '), ['SKIP C3 outside tier node (needs rust)', 'SKIP C4 outside tier node (needs kani)', 'SKIP C5 outside tier node (needs lean)', 'SKIP C6 outside tier node (needs rust)', 'SKIP C7 needs network', 'SKIP C8 needs keys']);
     assert.deepEqual(line(res, 'PENDING '), ['PENDING C9 AIR-228']);
     assert.equal(res.last, 'CLAIMS TIER node OK 2 run, 6 skipped');
   });
@@ -110,7 +110,7 @@ test('--tier rust adds the rust rows, a row that lists rust and lean waits for l
     const res = runWith(root, ALL_TOOLS, ['--tier', 'rust']);
     assert.equal(res.code, 0, dump(res));
     assert.deepEqual(line(res, 'PASS ').map((l) => l.split(' ')[1]), ['C1', 'C2', 'C3']);
-    assert.deepEqual(line(res, 'SKIP '), ['SKIP C4 needs kani', 'SKIP C5 needs lean', 'SKIP C6 needs lean', 'SKIP C7 needs network', 'SKIP C8 needs keys']);
+    assert.deepEqual(line(res, 'SKIP '), ['SKIP C4 outside tier rust (needs kani)', 'SKIP C5 outside tier rust (needs lean)', 'SKIP C6 outside tier rust (needs lean)', 'SKIP C7 needs network', 'SKIP C8 needs keys']);
     assert.equal(res.last, 'CLAIMS TIER rust OK 3 run, 5 skipped');
   });
 });
@@ -186,11 +186,18 @@ test('the first missing tool in the order of the cell is the one named', () => {
   });
 });
 
-test('the tier is checked before the PATH: a row above the tier is skipped with the tool present', () => {
-  withRepo(table([row('C5', 'lean')]), (root) => {
-    const res = runWith(root, ALL_TOOLS, ['--tier', 'rust']);
-    assert.deepEqual(line(res, 'SKIP '), ['SKIP C5 needs lean']);
-    assert.equal(res.last, 'CLAIMS TIER rust OK 0 run, 1 skipped');
+test('a row above the tier with its tool on the PATH says outside tier, never that the tool is missing', () => {
+  withRepo(table([row('C5', 'lean'), row('C3', 'rust')]), (root) => {
+    const res = runWith(root, ALL_TOOLS, ['--tier', 'node']);
+    assert.deepEqual(line(res, 'SKIP '), ['SKIP C5 outside tier node (needs lean)', 'SKIP C3 outside tier node (needs rust)']);
+    assert.equal(res.last, 'CLAIMS TIER node OK 0 run, 2 skipped');
+  });
+});
+
+test('a row above the tier with its tool missing from the PATH says needs <tool>', () => {
+  withRepo(table([row('C3', 'rust')]), (root) => {
+    const res = runWith(root, ['node', 'pnpm'], ['--tier', 'node']);
+    assert.deepEqual(line(res, 'SKIP '), ['SKIP C3 needs rust']);
   });
 });
 

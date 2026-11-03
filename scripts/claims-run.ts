@@ -7,7 +7,8 @@
 //   --network  only the rows with Needs network
 //   --tier     every row, each one run or skipped: node runs Needs none and node, rust adds rust, full adds kani and lean. A row that
 //              is outside the tier, or whose tool is not on the PATH (command -v), prints SKIP <id> needs <tool> (the first missing
-//              tool in the order the cell lists them) and is not a failure. --network added to --tier runs the network rows too
+//              tool in the order the cell lists them) when the tool is not on the PATH, or SKIP <id> outside tier <tier> (needs <tool>) when
+//             the tool is there but the tier leaves the row out and is not a failure. --network added to --tier runs the network rows too
 // Needs: none (Node and pnpm only, counts as node), network, keys (listed, never run), or a comma separated list of node, rust, kani,
 // lean. node needs the binaries node and pnpm, rust cargo, kani kani, lean lake.
 //
@@ -242,11 +243,12 @@ function execute(row: Row): { reasons: string[]; seconds: number; tail: string[]
   return { reasons, seconds, tail: reasons.length > 0 ? tailOf(output) : [] };
 }
 
-// The first tool of the row that the tier excludes or the PATH lacks, or null when the row can run.
+// What stops the row from running, or null when it can run. The first tool of the row (in the order the cell lists them) that is not on
+// the PATH gives "needs <tool>". A tool that is on the PATH but outside the selected tier gives "outside tier <tier> (needs <tool>)".
 function missingTool(tools: string[], tier: string): string | null {
   for (const t of tools) {
-    if (!(TIERS[tier] ?? []).includes(t)) return t;
-    for (const b of BINS[t] ?? []) if (!onPath(b.bin)) return b.shown;
+    for (const b of BINS[t] ?? []) if (!onPath(b.bin)) return 'needs ' + b.shown;
+    if (!(TIERS[tier] ?? []).includes(t)) return 'outside tier ' + tier + ' (needs ' + t + ')';
   }
   return null;
 }
@@ -283,7 +285,7 @@ function main(): number {
   };
   const skip = (row: Row, what: string): void => {
     skipped++;
-    out('SKIP ' + row.id + ' needs ' + what);
+    out('SKIP ' + row.id + ' ' + what);
   };
 
   for (const row of readRows(text)) {
@@ -305,13 +307,13 @@ function main(): number {
       continue;
     }
     if (kind === 'keys') {
-      skip(row, 'keys');
+      skip(row, 'needs keys');
       continue;
     }
     if (mode.kind === 'tier') {
       if (kind === 'network') {
         if (!mode.network) {
-          skip(row, 'network');
+          skip(row, 'needs network');
           continue;
         }
       } else {

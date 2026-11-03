@@ -1,6 +1,13 @@
 # Verify
 
-What can be checked with which tools, how long each command takes and the last line it prints. Every claim of the README has a row in `docs/CLAIMS.md` with its command and expected output.
+Three things worth a look first:
+- Steal this agent: the agent's function-call key and an owner-signed task are published on NEAR testnet, every attempt is on chain and stolen is 0 NEAR so far. Results: "Steal this agent (live)" in `docs/EVIDENCE.md`; `pnpm challenge` serves the board.
+- Hosted demo: the static replay console, built with `pnpm build:static` (not published yet, so build it locally with that command; see `docs/HOSTED_DEMO.md`).
+- Proof transcripts: `pnpm proven:transcripts` (needs Node and pnpm) checks the committed Kani, Lean and differential output in `docs/evidence/`.
+
+Rust: `pnpm try --text` and `pnpm bench:replay` need Rust 1.86. Check with `cargo --version`.
+
+What can be checked with which tools, how long each command takes and the last line it prints. Every claim of the README has a row in `docs/CLAIMS.md` with its command and expected output (checked by `scripts/claims-lint.ts`, which resolves every tag).
 
 | Tier | Needs | What it covers |
 | --- | --- | --- |
@@ -21,7 +28,7 @@ What can be checked with which tools, how long each command takes and the last l
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
 
 1. Replays recorded testnet runs and says so; no keys. The time is the demo part on a warm install (the install is not timed). If port 4173 or 8787 is taken it picks a free port and prints the real `console http://127.0.0.1:<port>`; a port named with `--console-port` or `--runtime-port` is strict and stops with `port <n> is already in use` when taken.
-2. A claim whose tool is missing prints `SKIP <id> needs <tool>` and is not a failure; a claim whose tool is present and whose command fails prints `FAIL <id>`. Rows marked pending are listed as `PENDING` and never run.
+2. A claim whose tool is missing prints `SKIP <id> needs <tool>` and is not a failure; a row that is only outside the selected tier prints `SKIP <id> outside tier <tier> (needs <tool>)` even when the tool is installed; a claim whose tool is present and whose command fails prints `FAIL <id>`. Rows marked pending are listed as `PENDING` and never run.
 3. Builds the verdict CLI, so it needs Rust 1.86.
 4. The maintainer gate. Rust, Kani 0.68 and Lean 4.35; `scripts/doctor.sh` checks the toolchain.
 5. Read only; no key and no signing.
