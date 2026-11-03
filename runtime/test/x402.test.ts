@@ -131,7 +131,7 @@ test('X02: PAY on vendor-amount-high proposes 9.4 NEAR with the same labels (the
 
 // ---- 6: X03 ----
 test('X03: asset and network come back as data, and no plan can use them as the action asset', async () => {
-  const result = okOf(await exec(FETCH_ONLY, fixture('vendor-asset-unknown')));
+  const result = okOf(await exec([{ let: 'pay', call: 'fetch_paid', args: { url: URL, expect_asset: 'evm:1:native' } }], fixture('vendor-asset-unknown')));
   const call = result.trace.find((e) => e.kind === 'call');
   assert.ok(call !== undefined);
   const raw = call.data['raw'] as { requirements: Record<string, string> };
@@ -211,16 +211,16 @@ function assertCleanProposalWithExpect(p: Proposed): void {
 test('expect_payee: an EVM server with an upper-case payTo passes with the lower-case key', async () => {
   const digits = 'd8da6bf26964af9d7eed9e03e53415d37aa96045';
   const tools = fixtureTools(worldOf(inline({ payTo: `0x${digits.toUpperCase()}`, network: 'eip155:84532', asset: 'evm:84532:native' })));
-  const out = await tools.call('fetch_paid', { url: URL, expect_payee: `evm:84532:0x${digits}` });
+  const out = await tools.call('fetch_paid', { url: URL, expect_asset: 'evm:84532:native', expect_payee: `evm:84532:0x${digits}` });
   assert.equal((out.raw as { requirements: Requirements }).requirements.network, 'eip155:84532');
   assert.equal(out.label, TOOL_LABEL);
   // a bare address without the 0x prefix is the same payee
   const bare = fixtureTools(worldOf(inline({ payTo: digits, network: 'eip155:84532' })));
   assert.equal((await bare.call('fetch_paid', { url: URL, expect_payee: `evm:84532:0x${digits}` })).label, TOOL_LABEL);
   // another chain id in the key is another payee
-  await assert.rejects(tools.call('fetch_paid', { url: URL, expect_payee: `evm:1:0x${digits}` }), X402PayeeMismatch);
+  await assert.rejects(tools.call('fetch_paid', { url: URL, expect_asset: 'evm:84532:native', expect_payee: `evm:1:0x${digits}` }), X402PayeeMismatch);
   // a different address is another payee
-  await assert.rejects(tools.call('fetch_paid', { url: URL, expect_payee: `evm:84532:0x${'ab'.repeat(20)}` }), X402PayeeMismatch);
+  await assert.rejects(tools.call('fetch_paid', { url: URL, expect_asset: 'evm:84532:native', expect_payee: `evm:84532:0x${'ab'.repeat(20)}` }), X402PayeeMismatch);
 });
 
 test('expect_payee: a payTo that is already a key must match the scheme and the chain id of the network', async () => {
@@ -392,11 +392,14 @@ test('ADP11: a requirement priced in another asset than the plan pays in is refu
   assert.notEqual(other.requirements.asset, 'near');
   const aborted = abortOf(await exec(PAY, other));
   assert.equal(aborted.cause.code, 'ToolError');
+  // an eip155 requirement consumed by a NEAR transfer crosses units: refused without an expect_asset that names it
+  assert.equal(abortOf(await exec(PAY, fixture('vendor-asset-unknown'))).cause.code, 'ToolError');
+  assert.equal(abortOf(await exec(PAY, inline({ network: 'eip155:84532', asset: 'evm:84532:native' }))).cause.code, 'ToolError');
   const erc20 = abortOf(await exec(PAY, inline({ asset: 'evm:84532:erc20:0x036cbd53842c5426634e7929541ec2318f3dcf7e' })));
   assert.equal(erc20.cause.code, 'ToolError');
 });
 
-test('the asset a plan expects is exact when expect_asset names it, and by default a near:testnet server must price in near', async () => {
+test('the asset a plan expects is exact when expect_asset names it, and by default it is near', async () => {
   const withExpect = (asset: string) => [PAYEE, { let: 'pay', call: 'fetch_paid', args: { url: URL, expect_asset: asset } }, TRANSFER({ ref: 'payee' })];
   assert.equal((await proposalOf(withExpect('near'), fixture('vendor-clean'))).amount, 4200000000000000000000000n);
   assert.equal(abortOf(await exec(withExpect('NEAR'), fixture('vendor-clean'))).cause.code, 'ToolError');

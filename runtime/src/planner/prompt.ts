@@ -54,7 +54,7 @@ const TOOL_LINES = [
   'list_tokens: no arguments',
   'get_tx_history: no arguments',
   'read_paste: no arguments',
-  'fetch_paid: {"url": VALUE} and optionally "expect_payee": VALUE',
+  'fetch_paid: {"url": VALUE} and optionally "expect_payee": VALUE and "expect_asset": VALUE (the asset the payment moves, default "near")',
   'get_balance: {"asset": VALUE}',
   'get_price: {"asset": VALUE}',
   'address_book: no arguments',
