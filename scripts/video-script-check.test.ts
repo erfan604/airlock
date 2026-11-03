@@ -550,6 +550,16 @@ test('number: BENCH tags that name no row or no header line fail with tag, and w
   });
 });
 
+test('number: a derived baseline row is named without its note, and its numbers are checked against its own row', () => {
+  withTree((t) => {
+    editFile(t, 'docs/BENCH.md', (s) => s.replace('| V1-tight | ALL |', '| CAPS (derived from V0) | ALL | 10 | 4/10 (40.0%, 16.8 to 68.7) | 7/10 (70.0%, 39.7 to 89.2) | 7/10 (70.0%, 39.7 to 89.2) | 7/10 (70.0%, 39.7 to 89.2) | n/a |\n| V1-tight | ALL |'));
+    swap(t, '[BENCH:V1-tight/ALL] capped baseline: 2 of 10 attack runs succeed', '[BENCH:CAPS/ALL] capped baseline: 7 of 10 attack runs succeed');
+    expectOk(run(t));
+    swap(t, '[BENCH:CAPS/ALL] capped baseline: 7 of 10 attack runs succeed', '[BENCH:CAPS/ALL] capped baseline: 2 of 10 attack runs succeed');
+    expectOnly(run(t), ['number']);
+  });
+});
+
 test('voice: a VOICE line whose text differs from its CAP fails', () => {
   withTree((t) => {
     addVoice(t, [], { cue: 'S04e', text: 'Fixture stamp one on the March invoice' });

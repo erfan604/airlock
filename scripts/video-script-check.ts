@@ -643,8 +643,14 @@ function loadBench(ctx: Ctx): Bench | null {
       const cells = splitRow(line);
       if (cells[0] === 'Config' && cells[1] === 'Group') table = 'attack';
       else if (cells[0] === 'Config' && cells[1] === 'Runs') table = 'benign';
-      else if (table === 'attack') rows.set((cells[0] ?? '') + '/' + (cells[1] ?? ''), line);
-      else if (table === 'benign') rows.set((cells[0] ?? '') + '/benign', line);
+      else if (table === 'attack' || table === 'benign') {
+        const suffix = table === 'attack' ? '/' + (cells[1] ?? '') : '/benign';
+        const name = cells[0] ?? '';
+        rows.set(name + suffix, line);
+        // a derived baseline is named in a tag without its note: CAPS (derived from V0) is [BENCH:CAPS/ALL]
+        const bare = name.replace(/ \(derived from [^)]*\)$/, '');
+        if (bare !== name && !rows.has(bare + suffix)) rows.set(bare + suffix, line);
+      }
     }
   }
   return { rows, meta, outside };
