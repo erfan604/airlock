@@ -37,6 +37,24 @@ if [ -z "$n" ]; then
   echo "FAIL replay (no REPLAY OK line)"
   exit 1
 fi
+# the baseline cases of AIR-306 have their own results file and recordings (final.json stays at 39 cases); same checks, no key, no network
+EXTRA_REC="${BENCH_EXTRA_RECORDED:-bench/runs/recorded-baselines}"
+EXTRA_RES="${BENCH_EXTRA_RESULTS:-bench/results/baselines-extra.json}"
+if [ -s "$EXTRA_RES" ]; then
+  if [ ! -s "$EXTRA_REC/MANIFEST.sha256" ] || ! (cd "$EXTRA_REC" && sha256sum -c MANIFEST.sha256 > /dev/null 2>&1); then
+    echo "FAIL manifest ($EXTRA_REC/MANIFEST.sha256 is missing or a recording differs)"
+    exit 1
+  fi
+  xout="target/bench-replay-extra.out"
+  if ! env -i PATH="$PATH" HOME="$HOME" NODE_OPTIONS="--require $PWD/scripts/no-network.cjs" \
+    pnpm bench:replay --no-doc --results "$EXTRA_RES" --recorded "$EXTRA_REC" > "$xout" 2>&1 || ! grep -q '^REPLAY OK [0-9][0-9]* runs$' "$xout"; then
+    head -30 "$xout"
+    cp target/BENCH.before.md docs/BENCH.md
+    echo "FAIL replay of the baseline cases (see the lines above)"
+    exit 1
+  fi
+  pnpm -C bench exec tsx src/scripts/structural-gaps.ts --results "../$EXTRA_RES" > /dev/null
+fi
 if ! cmp -s docs/BENCH.md target/BENCH.before.md; then
   diff target/BENCH.before.md docs/BENCH.md | head -20 || true
   cp target/BENCH.before.md docs/BENCH.md
