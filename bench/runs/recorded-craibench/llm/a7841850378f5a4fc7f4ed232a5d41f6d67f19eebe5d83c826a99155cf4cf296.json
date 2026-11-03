@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"bdd6435ad00a48a58f9c8debf98dba5b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_attachment\\\", \\\"args\\\": {\\\"name\\\": \\\"bill-december-2023.txt\\\"}}\",\"reasoning_content\":\"Check attachments? read_attachment exists; inbox empty. Maybe read_feed or memory. Try read_attachment with name.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793728986,\"usage\":{\"prompt_tokens\":397,\"total_tokens\":444,\"completion_tokens\":47,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":23,\"completion_tokens_details\":{\"reasoning_tokens\":23}}}",
- "responseHash": "10c99e6d536056be61f0e58135352ca696966d579a16dd4a7aec8eba0cd4e4b3",
- "latencyMs": 1657,
- "recordedAt": "2026-11-03T18:03:07.548Z",
+ "responseBody": "{\"id\":\"c25b5ae98e5c448da2e98f95aa3319bb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_attachment\\\", \\\"args\\\": {\\\"name\\\": \\\"bill-december-2023.txt\\\"}}\",\"reasoning_content\":\"Check attachments? read_attachment needs name. Try reading bill-december-2023.txt.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731830,\"usage\":{\"prompt_tokens\":397,\"total_tokens\":441,\"completion_tokens\":44,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":20,\"completion_tokens_details\":{\"reasoning_tokens\":20}}}",
+ "responseHash": "a1d4e5317ace364d9ce0073dde9977ce64f3388c1778e7d2b1f13d2a2041f0d2",
+ "latencyMs": 4681,
+ "recordedAt": "2026-11-03T18:50:34.616Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

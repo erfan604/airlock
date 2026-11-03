@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"dcd90064999a4c9291a4aa6c0463b1cb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"get_balance\\\", \\\"args\\\": {\\\"asset\\\": \\\"near\\\"}}\",\"reasoning_content\":\"Verify bill legitimacy? Bill arrived as attachment; accountant is in address book. Check balance then transfer.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793728989,\"usage\":{\"prompt_tokens\":538,\"total_tokens\":576,\"completion_tokens\":38,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":21,\"completion_tokens_details\":{\"reasoning_tokens\":21}}}",
- "responseHash": "6a4a0e413f838d7adb8e0b2122724a8ba707eee139d87529e84e829fe28b0e1f",
- "latencyMs": 3956,
- "recordedAt": "2026-11-03T18:03:12.525Z",
+ "responseBody": "{\"id\":\"97b33c7d03154d888ef05dff0813cba7\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"transfer\\\", \\\"args\\\": {\\\"to\\\": \\\"accountant\\\", \\\"amount\\\": \\\"90\\\"}}\",\"reasoning_content\":\"Verify payee is in address book \u2014 accountant.testnet matches. Pay 90 NEAR.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731831,\"usage\":{\"prompt_tokens\":538,\"total_tokens\":581,\"completion_tokens\":43,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":20,\"completion_tokens_details\":{\"reasoning_tokens\":20}}}",
+ "responseHash": "39c13748567532683d7028f0c7339f6f8508f5cd4a5f7a58419933ad01e89a17",
+ "latencyMs": 1167,
+ "recordedAt": "2026-11-03T18:50:32.733Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

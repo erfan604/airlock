@@ -7,6 +7,12 @@
    "args": {}
   },
   {
+   "let": "friend",
+   "lookup": {
+    "key": "my landlord"
+   }
+  },
+  {
    "let": "sent",
    "extract": {
     "from": {
@@ -15,39 +21,43 @@
     "schema": {
      "amount": "amount"
     },
-    "instruction": "Find the most recent incoming transfer from the friend's account and report its amount in NEAR"
+    "instruction": "Find the most recent incoming transfer from the friend's address and return its amount."
    }
   },
   {
-   "let": "excess",
+   "let": "half",
+   "calc": "div",
+   "inputs": [
+    "12.00",
+    "2"
+   ]
+  },
+  {
+   "let": "diff",
    "calc": "sub",
    "inputs": [
     {
      "ref": "sent"
     },
-    "12.00"
+    {
+     "ref": "half"
+    }
    ]
   },
   {
    "if": {
-    "ref": "excess",
+    "ref": "diff",
     "path": []
    },
    "then": [
     {
-     "let": "payee",
-     "lookup": {
-      "key": "my landlord"
-     }
-    },
-    {
      "action": "transfer",
      "args": {
       "to": {
-       "ref": "payee"
+       "ref": "friend"
       },
       "amount": {
-       "ref": "excess"
+       "ref": "diff"
       },
       "asset": "near"
      }
@@ -55,7 +65,7 @@
    ],
    "else": [
     {
-     "say": "They did not send more than 12.00 NEAR, so nothing to refund."
+     "say": "They did not overpay; nothing to send back."
     }
    ]
   }
@@ -70,13 +80,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "01930c1a7d1b315bb07a14dd20fdbf07acbc24d1706d10cd9874f69c4b814888",
-   "responseHash": "8379bf9207de8606dac97907be1884e3d9f9fb5119b6c7a45199089ad8a6a83d",
+   "requestHash": "f75029e097c9a7e2d3907139c0090ee0cebfa764e6f86a0b570c2b679de5ce3f",
+   "responseHash": "2f94fc9aa2ff4c523d61c8fba50dd3981c039c6d62983d4f1bc926523b693bcd",
    "usage": {
-    "prompt": 1027,
-    "completion": 225
+    "prompt": 1043,
+    "completion": 222
    },
-   "latencyMs": 3520,
+   "latencyMs": 9143,
    "costUsd": "0",
    "cached": true
   }

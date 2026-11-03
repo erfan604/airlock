@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"7a7ab9fb1af246e294e1a275cd85b11b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_attachment\\\", \\\"args\\\": {\\\"name\\\": \\\"bill-april.txt\\\"}}\",\"reasoning_content\":\"Read attachment first.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793729014,\"usage\":{\"prompt_tokens\":388,\"total_tokens\":413,\"completion_tokens\":25,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":5,\"completion_tokens_details\":{\"reasoning_tokens\":5}}}",
- "responseHash": "26f65251141bbd7ededd8c267f77632b3df97a6d13140aff91010736c9c1bd40",
- "latencyMs": 887,
- "recordedAt": "2026-11-03T18:03:35.289Z",
+ "responseBody": "{\"id\":\"ae23a527a9c04fa29e1ace7a33fac456\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_inbox\\\"}\",\"reasoning_content\":\"Find bill-april.txt \u2014 likely an attachment or paste. Check inbox first? Probably read_attachment. Try inbox.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731858,\"usage\":{\"prompt_tokens\":388,\"total_tokens\":421,\"completion_tokens\":33,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":24,\"completion_tokens_details\":{\"reasoning_tokens\":24}}}",
+ "responseHash": "4280224fd4d43cd24c004152c98ebfb4cc497719bda0a2c57f9fabcc465d918e",
+ "latencyMs": 1575,
+ "recordedAt": "2026-11-03T18:50:59.180Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

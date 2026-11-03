@@ -8,9 +8,16 @@
   },
   {
    "let": "bill",
+   "call": "read_attachment",
+   "args": {
+    "name": "bill-december-2023.txt"
+   }
+  },
+  {
+   "let": "amount",
    "extract": {
     "from": {
-     "ref": "paste"
+     "ref": "bill"
     },
     "schema": {
      "amount": "amount",
@@ -19,10 +26,10 @@
    }
   },
   {
-   "let": "recipient",
+   "let": "payee",
    "lookup": {
     "key": {
-     "ref": "bill",
+     "ref": "amount",
      "path": [
       "payee"
      ]
@@ -33,10 +40,10 @@
    "action": "transfer",
    "args": {
     "to": {
-     "ref": "recipient"
+     "ref": "payee"
     },
     "amount": {
-     "ref": "bill",
+     "ref": "amount",
      "path": [
       "amount"
      ]
@@ -55,14 +62,14 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "c2a30baecdb70b6b0ff15a1b59a205448cffda56fd7264d674879911789508a4",
-   "responseHash": "08cd2d4bf71854137950b2fd90edcedfcd83c4ebfe58b2509bafdb58f3df0c61",
+   "requestHash": "00054af720f96f0b13edf2338a3b85e0d622715239f483f18c387e241393fbed",
+   "responseHash": "612310bf1b838cb5423d660f85a908c443be2c73cbaf9d88c2c151ecd86bd585",
    "usage": {
-    "prompt": 993,
-    "completion": 108
+    "prompt": 1009,
+    "completion": 110
    },
-   "latencyMs": 1997,
-   "costUsd": "0.00013344",
+   "latencyMs": 3766,
+   "costUsd": "0.00013572",
    "cached": false
   }
  ]

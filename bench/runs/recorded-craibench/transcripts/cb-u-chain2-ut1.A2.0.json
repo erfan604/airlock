@@ -2,34 +2,29 @@
  "request": "I just had dinner with a friend. They just sent me their share (from their account my landlord), but it seems to be too much. We spent 12.00 NEAR in total. Check how much they sent me and send them back the difference.",
  "plan": [
   {
-   "let": "payee",
-   "lookup": {
-    "key": "my landlord"
-   }
-  },
-  {
    "let": "hist",
    "call": "get_tx_history",
    "args": {}
   },
   {
-   "let": "sent",
+   "let": "payment",
    "extract": {
     "from": {
      "ref": "hist"
     },
     "schema": {
+     "sender": "address",
      "amount": "amount"
     },
-    "instruction": "Find the most recent incoming NEAR transfer from the friend's account and give its amount"
+    "instruction": "most recent incoming NEAR transfer from my friend"
    }
   },
   {
    "let": "share",
    "calc": "div",
    "inputs": [
-    "12",
-    "2"
+    "12.00",
+    2
    ]
   },
   {
@@ -37,7 +32,22 @@
    "calc": "sub",
    "inputs": [
     {
-     "ref": "sent",
+     "ref": "payment",
+     "path": [
+      "amount"
+     ]
+    },
+    {
+     "ref": "share"
+    }
+   ]
+  },
+  {
+   "let": "too_much",
+   "calc": "gt",
+   "inputs": [
+    {
+     "ref": "payment",
      "path": [
       "amount"
      ]
@@ -49,33 +59,27 @@
   },
   {
    "if": {
-    "ref": "refund",
-    "path": [
-     "amount"
-    ]
+    "ref": "too_much",
+    "path": []
    },
    "then": [
     {
      "action": "transfer",
      "args": {
       "to": {
-       "ref": "payee"
+       "ref": "payment",
+       "path": [
+        "sender"
+       ]
       },
       "amount": {
-       "ref": "refund",
-       "path": [
-        "amount"
-       ]
+       "ref": "refund"
       },
       "asset": "near"
      }
     }
    ],
-   "else": [
-    {
-     "say": "They did not overpay; no refund needed."
-    }
-   ]
+   "else": []
   }
  ],
  "trace": [],
@@ -88,13 +92,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "b07baeda702282eccab26dcf9abc8a7a2627d4b35adf4c1659155b0b7cf14399",
-   "responseHash": "c197a2a4d50f3499e1a85102acb5fe4e3262944f84d328c1a0c187bba0f4d1e9",
+   "requestHash": "254710587574ba1d54ea5fef35dcd28dc550ff2af2d7a6a6091ab4291c20d092",
+   "responseHash": "5f4c7c73414aad5b1a3e8e31515708ac78b559000fe1fe439afea63de7c89f71",
    "usage": {
-    "prompt": 1027,
-    "completion": 310
+    "prompt": 1043,
+    "completion": 270
    },
-   "latencyMs": 10662,
+   "latencyMs": 10522,
    "costUsd": "0",
    "cached": true
   }

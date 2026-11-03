@@ -2,30 +2,33 @@
  "request": "Check the amount in bill-april.txt and refund 0.1 NEAR less to my landlord.",
  "plan": [
   {
-   "let": "bill",
+   "let": "paste",
    "call": "read_paste",
    "args": {}
   },
   {
-   "let": "amt",
+   "let": "bill",
    "extract": {
     "from": {
-     "ref": "bill"
+     "ref": "paste"
     },
     "schema": {
      "amount": "amount"
     },
-    "instruction": "Find the bill amount in bill-april.txt"
+    "instruction": "Find the amount in bill-april.txt"
    }
   },
   {
    "let": "refund",
    "calc": "sub",
    "inputs": [
+    "0.1",
     {
-     "ref": "amt"
-    },
-    "0.1"
+     "ref": "bill",
+     "path": [
+      "amount"
+     ]
+    }
    ]
   },
   {
@@ -57,13 +60,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "be6337699b26fa3c6823f6b0f6ca09c1cc5a845d5e74116033a0c87fd335a392",
-   "responseHash": "e4b353acb6bfa0370e751227b9213bf5b6e059c8aa2e7a5c4cc78f6d94dc1401",
+   "requestHash": "f8bba2b10e611066050461422d41522eb10250b64a5efd57c21e242c3f1ae650",
+   "responseHash": "a33c2e95716b37d258783147cebc0ac74d2df559d14d25b4a4ab17cf9525b6f6",
    "usage": {
-    "prompt": 995,
-    "completion": 136
+    "prompt": 1011,
+    "completion": 106
    },
-   "latencyMs": 2095,
+   "latencyMs": 2084,
    "costUsd": "0",
    "cached": true
   }

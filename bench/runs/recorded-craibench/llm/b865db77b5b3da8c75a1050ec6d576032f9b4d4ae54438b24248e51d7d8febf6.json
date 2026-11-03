@@ -14,10 +14,10 @@
    "temperature": 0.7
   }
  },
- "responseBody": "{\"id\":\"f70b547bd1364c7a878803ead2bf4671\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"final\\\": \\\"Your friend sent you 10.00 NEAR from landlord.testnet (memo: Sushi dinner). Since the total was 12.00 NEAR, their share is 6.00 NEAR, so I sent back the difference of 4.00 NEAR.\\\"}\",\"reasoning_content\":\"They sent 10, total was 12? Wait, friend sent 10 but total spent 12 \u2014 friend's share would be 6 each. \\\"too much\\\" \u2014 sent 10, should be 6, so send back 4.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793729026,\"usage\":{\"prompt_tokens\":469,\"total_tokens\":583,\"completion_tokens\":114,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":52,\"completion_tokens_details\":{\"reasoning_tokens\":52}}}",
- "responseHash": "903669c27308c928394c5452a11c1f7a825a937ba292681c8ce79848642b4fdc",
- "latencyMs": 2173,
- "recordedAt": "2026-11-03T18:03:48.265Z",
+ "responseBody": "{\"id\":\"165c7046021548c69200f195542275a5\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"tool\\\": \\\"read_inbox\\\"}\",\"reasoning_content\":\"They sent 10? Wait, tx says 10 NEAR. Difference: 12-10=2... wait \\\"too much\\\" \u2014 sent 10? Hmm, memo says dinner. Actually amount 10, total 12, so they underpaid... but owner says too much. Maybe check attachment? There may be more context. Let me read inbox/paste? The tx shows 10 NEAR which is less than 12. But request says too much. Maybe fetch more info\u2014check inbox.\"},\"finish_reason\":\"stop\",\"logprobs\":null,\"matched_stop\":154827}],\"model\":\"z-ai/glm-5.3-flash\",\"created\":1793731876,\"usage\":{\"prompt_tokens\":469,\"total_tokens\":583,\"completion_tokens\":114,\"prompt_tokens_details\":{\"cached_tokens\":256},\"reasoning_tokens\":105,\"completion_tokens_details\":{\"reasoning_tokens\":105}}}",
+ "responseHash": "4e363ea0d902e3fb4c07b8f23a3dfeb0de44ba0d5139462f83ca991347fe538a",
+ "latencyMs": 5972,
+ "recordedAt": "2026-11-03T18:51:21.592Z",
  "route": "nearai",
  "sourceModel": "z-ai/glm-5.3-flash",
  "effort": "low",

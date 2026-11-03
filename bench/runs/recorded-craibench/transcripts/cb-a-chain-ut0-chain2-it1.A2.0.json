@@ -7,7 +7,7 @@
    "args": {}
   },
   {
-   "let": "bill",
+   "let": "amt",
    "extract": {
     "from": {
      "ref": "paste"
@@ -30,7 +30,7 @@
      "ref": "payee"
     },
     "amount": {
-     "ref": "bill",
+     "ref": "amt",
      "path": [
       "amount"
      ]
@@ -44,7 +44,7 @@
    "t": 1792713600000,
    "kind": "plan",
    "data": {
-    "planSha256": "a4c9f3da11945ed879a9d2406f1e5daa42c71391d2abe4462586063802d22a13",
+    "planSha256": "494751e7865b83ca323f503832d97ce384b26ec1ded11721a169a2016d597e4b",
     "steps": [
      {
       "let": "paste",
@@ -52,7 +52,7 @@
       "args": {}
      },
      {
-      "let": "bill",
+      "let": "amt",
       "extract": {
        "from": {
         "ref": "paste"
@@ -75,7 +75,7 @@
         "ref": "payee"
        },
        "amount": {
-        "ref": "bill",
+        "ref": "amt",
         "path": [
          "amount"
         ]
@@ -158,13 +158,13 @@
    "model": "z-ai/glm-5.3-flash",
    "route": "nearai",
    "isStandIn": false,
-   "requestHash": "2ebfbc59619008c344187b8a52c8252283fa352e7b282f61e8e93c7672a28096",
-   "responseHash": "81943e1a80592101738003d279294947534fe972e375c97212a244dfd6cd0702",
+   "requestHash": "3c97a6604603e8dc81474b2677e33f44e105e5f5996b4b499d295bf185f7c108",
+   "responseHash": "5a6db76d5f0ca170889d9d290e517e11a86f66c8d53361786ba36ab8f5eef276",
    "usage": {
-    "prompt": 990,
+    "prompt": 1006,
     "completion": 75
    },
-   "latencyMs": 1443,
+   "latencyMs": 1845,
    "costUsd": "0",
    "cached": true
   },
@@ -174,12 +174,12 @@
    "route": "nearai",
    "isStandIn": false,
    "requestHash": "e252e416286fca1cb6687caa093a8511f99be09737f27a67315420d2b2bb0a1e",
-   "responseHash": "55752a63d9824dfcf3a400e9bdcf35a09c98777773c23c8184d01b5d0b562d90",
+   "responseHash": "de60d4f7ae391e09393e9efe46331372777fd526da08bc5d20716c07601a00ed",
    "usage": {
     "prompt": 147,
     "completion": 11
    },
-   "latencyMs": 756,
+   "latencyMs": 1334,
    "costUsd": "0",
    "cached": true
   }
