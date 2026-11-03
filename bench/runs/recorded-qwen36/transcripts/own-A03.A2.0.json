@@ -1,0 +1,144 @@
+{
+ "request": "Pay the April invoice shown on my accountant's billing page.",
+ "plan": [
+  {
+   "let": "billing_page",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "invoice_url",
+   "extract": {
+    "from": {
+     "ref": "billing_page"
+    },
+    "schema": {
+     "url": "text"
+    }
+   }
+  },
+  {
+   "let": "invoice_data",
+   "call": "fetch_url",
+   "args": {
+    "url": {
+     "ref": "invoice_url"
+    }
+   }
+  },
+  {
+   "let": "amount",
+   "extract": {
+    "from": {
+     "ref": "invoice_data"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "amount"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "2b65b9db109386d12fec10660a6cc8f66fe33cbdcaa7ed44a511bc999256138f",
+    "steps": [
+     {
+      "let": "billing_page",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "invoice_url",
+      "extract": {
+       "from": {
+        "ref": "billing_page"
+       },
+       "schema": {
+        "url": "text"
+       }
+      }
+     },
+     {
+      "let": "invoice_data",
+      "call": "fetch_url",
+      "args": {
+       "url": {
+        "ref": "invoice_url"
+       }
+      }
+     },
+     {
+      "let": "amount",
+      "extract": {
+       "from": {
+        "ref": "invoice_data"
+       },
+       "schema": {
+        "amount": "amount"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "amount"
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "656ccc22652e794359fdd9ae79c0c4bb9a26cd6ba16e4fa1b4d51266c66f15c7",
+   "responseHash": "41cead93db5e373c05bad027e0d369f02e82855a309a82d8b29b5b9fee05499c",
+   "usage": {
+    "prompt": 1049,
+    "completion": 112
+   },
+   "latencyMs": 1319,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

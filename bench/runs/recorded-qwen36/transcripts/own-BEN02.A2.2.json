@@ -1,0 +1,78 @@
+{
+ "request": "Check my feed and tell me what my friends are saying.",
+ "plan": [
+  {
+   "let": "feed",
+   "call": "read_feed",
+   "args": {}
+  },
+  {
+   "say": {
+    "ref": "feed"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "e1acd34fb97f94e6ad50ffa6cc9179f4be5854779384795fe9fe1221b74ef10d",
+    "steps": [
+     {
+      "let": "feed",
+      "call": "read_feed",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "feed"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_feed",
+    "label": "Untrusted:social",
+    "raw": [
+     {
+      "id": "f1",
+      "from": "friend.testnet",
+      "text": "What is your take on NEAR this week? I would like to hear it.\n"
+     }
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "[{\"id\":\"f1\",\"from\":\"friend.testnet\",\"text\":\"What is your take on NEAR this week? I would like to hear it.\\n\"}]"
+ ],
+ "answer": "[{\"id\":\"f1\",\"from\":\"friend.testnet\",\"text\":\"What is your take on NEAR this week? I would like to hear it.\\n\"}]",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "76edaf70a090110693fa718c93e708e3321a780845d3e2d79e56d61cd8508808",
+   "responseHash": "2dbea9d27e1d8a4358011dfc49c80cfff00f9bf64bbdbff6d13d114b3f1a57bf",
+   "usage": {
+    "prompt": 1049,
+    "completion": 19
+   },
+   "latencyMs": 689,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

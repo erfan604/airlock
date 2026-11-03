@@ -1,0 +1,121 @@
+{
+ "request": "What do you remember about Acme invoices?",
+ "plan": [
+  {
+   "let": "mem",
+   "call": "memory_read",
+   "args": {}
+  },
+  {
+   "let": "invoices",
+   "extract": {
+    "from": {
+     "ref": "mem"
+    },
+    "schema": {
+     "content": "text"
+    },
+    "instruction": "Find any information or history related to 'Acme invoices'."
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "c02612cfaee1544b52c14964b38cadb95c62793f1b415bbe8ab1c9c8d0ecb9e4",
+    "steps": [
+     {
+      "let": "mem",
+      "call": "memory_read",
+      "args": {}
+     },
+     {
+      "let": "invoices",
+      "extract": {
+       "from": {
+        "ref": "mem"
+       },
+       "schema": {
+        "content": "text"
+       },
+       "instruction": "Find any information or history related to 'Acme invoices'."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "memory_read",
+    "label": "Untrusted:memory",
+    "raw": [
+     {
+      "key": "acme",
+      "text": "Acme invoices arrive on the 3rd of each month.\n"
+     }
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "content": "Acme invoices arrive on the 3rd of each month."
+    },
+    "labels": [
+     "Untrusted:memory",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "09578e33292510cd6cb19440b0836ef0b2eeaf39d44ac4e1c1d00c1de54104f8",
+   "responseHash": "f21ac14f73d9ee428f3c16e8f822a1079900c3768f6ee9a3bde086bbc70871bd",
+   "usage": {
+    "prompt": 1046,
+    "completion": 47
+   },
+   "latencyMs": 556,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "e62ff4b576df621ca076896fcb641ec366e49902fc983b65d7a48125949579e0",
+   "responseHash": "d043a23158aec5e7a231cb0170a299e2ec656536bcd4d2ee87ce1ae3b8d88db7",
+   "usage": {
+    "prompt": 183,
+    "completion": 19
+   },
+   "latencyMs": 641,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

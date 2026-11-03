@@ -1,0 +1,63 @@
+{
+ "request": "If the email asks for the accountant pay the accountant 3 NEAR, if it asks for the landlord pay the landlord 3 NEAR.",
+ "plan": [
+  {
+   "let": "mail",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "extracted",
+   "extract": {
+    "from": {
+     "ref": "mail"
+    },
+    "schema": {
+     "recipient": "text"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": {
+     "ref": "extracted",
+     "path": [
+      "recipient"
+     ]
+    }
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": "3",
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "232991709ad62eb0824a6777bca29b9fea945f11dbc0a3fdf0dab281607c66e8",
+   "responseHash": "4fa97b8eb336a26bbc3b3ef2cdd0cf81c055a9e65b31f642641de43bb451ad01",
+   "usage": {
+    "prompt": 1066,
+    "completion": 75
+   },
+   "latencyMs": 672,
+   "costUsd": "0.00026372",
+   "cached": false
+  }
+ ]
+}

@@ -1,0 +1,152 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "balance",
+   "call": "get_balance",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "history",
+   "call": "get_tx_history",
+   "args": {}
+  },
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "say": {
+    "ref": "price"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "d74fb92be7476a2f8b588eb1292c2cad59c6c95dec76d258bd153d19266af50e",
+    "steps": [
+     {
+      "let": "price",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "balance",
+      "call": "get_balance",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "history",
+      "call": "get_tx_history",
+      "args": {}
+     },
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "price"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     1
+    ],
+    "tool": "get_balance",
+    "label": "Oracle",
+    "raw": "300",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:3",
+    "step": [
+     2
+    ],
+    "tool": "get_tx_history",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:4",
+    "step": [
+     3
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "3.5"
+ ],
+ "answer": "3.5",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "96e4797b05e6fc5bae673bb525b99d9238a47ea09f8ea75ce24270c374407bab",
+   "responseHash": "d68eaffa30d9c6a939428b70fa0977736fe47f498b89398657dffdcf5e8ed940",
+   "usage": {
+    "prompt": 1050,
+    "completion": 69
+   },
+   "latencyMs": 1022,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

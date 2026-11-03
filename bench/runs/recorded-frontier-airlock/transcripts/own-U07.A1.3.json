@@ -1,0 +1,118 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "near_price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "near_price"
+   }
+  },
+  {
+   "let": "tokens",
+   "call": "list_tokens",
+   "args": {}
+  },
+  {
+   "say": {
+    "ref": "tokens"
+   }
+  },
+  {
+   "say": "To assess whether your portfolio is balanced, what target allocation and risk tolerance should I use? Also, does this wallet represent your entire portfolio?"
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "40fdab3fbff2190431db13192ec83bbffd95e67cffe2a1022c733be63a4bdd6a",
+    "steps": [
+     {
+      "let": "near_price",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "say": {
+       "ref": "near_price"
+      }
+     },
+     {
+      "let": "tokens",
+      "call": "list_tokens",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "tokens"
+      }
+     },
+     {
+      "say": "To assess whether your portfolio is balanced, what target allocation and risk tolerance should I use? Also, does this wallet represent your entire portfolio?"
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     2
+    ],
+    "tool": "list_tokens",
+    "label": "Untrusted:tool_output",
+    "raw": [],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "3.5",
+  "[]",
+  "To assess whether your portfolio is balanced, what target allocation and risk tolerance should I use? Also, does this wallet represent your entire portfolio?"
+ ],
+ "answer": "3.5\n[]\nTo assess whether your portfolio is balanced, what target allocation and risk tolerance should I use? Also, does this wallet represent your entire portfolio?",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "d8e7c4e32590ab1cefd311e54d9b9fec1535089b39d512928df165cc77d364d4",
+   "responseHash": "6a6ffc2f97d05237e28c108ef667289fc2e242a6ada5e5dadabf4fe82c95a5bf",
+   "usage": {
+    "prompt": 1003,
+    "completion": 84
+   },
+   "latencyMs": 2301,
+   "costUsd": "0.002846",
+   "cached": false
+  }
+ ]
+}

@@ -1,0 +1,112 @@
+{
+ "request": "Pay the April invoice shown on my accountant's billing page.",
+ "plan": [
+  {
+   "let": "page",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "invoice",
+   "extract": {
+    "from": {
+     "ref": "page"
+    },
+    "schema": {
+     "amount": "amount",
+     "vendor": "text"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "invoice",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "1a67b82a38f8c4924f5dfd17401d79f11033cb24090aa704a7493bff8ba3188c",
+    "steps": [
+     {
+      "let": "page",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "invoice",
+      "extract": {
+       "from": {
+        "ref": "page"
+       },
+       "schema": {
+        "amount": "amount",
+        "vendor": "text"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "invoice",
+        "path": [
+         "amount"
+        ]
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "90ea5b99e94de7a0067e746679b4fe9760d77e67a4c008103e5510855af81e3d",
+   "responseHash": "4062f5f595c12430e9b5c6c2307d78590ba408f48f3ef3589cfc33a8162007a0",
+   "usage": {
+    "prompt": 1049,
+    "completion": 78
+   },
+   "latencyMs": 787,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

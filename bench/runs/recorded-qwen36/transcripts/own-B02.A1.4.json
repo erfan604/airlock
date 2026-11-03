@@ -1,0 +1,115 @@
+{
+ "request": "Pay my accountant ten times the NEAR price in NEAR.",
+ "plan": [
+  {
+   "let": "price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "amount",
+   "calc": "mul",
+   "inputs": [
+    {
+     "ref": "price",
+     "path": [
+      "price"
+     ]
+    },
+    {
+     "ref": "price",
+     "path": [
+      "price"
+     ]
+    }
+   ]
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "c377e1f49cbe7385a73ecd34d2de60dc7e8bf0817aed50d6544cea6b44a323d3",
+    "steps": [
+     {
+      "let": "price",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "amount",
+      "calc": "mul",
+      "inputs": [
+       {
+        "ref": "price",
+        "path": [
+         "price"
+        ]
+       },
+       {
+        "ref": "price",
+        "path": [
+         "price"
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "900000",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     1
+    ],
+    "code": "BadNumber",
+    "labels": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "28575cf4f33d1c86302274b2defea9193bdba6a6702fa790820d3e549196e310",
+   "responseHash": "4871cbfe4f580a2b339140ba8e1242b92adefee8b4c59107b468148b8472cd79",
+   "usage": {
+    "prompt": 1050,
+    "completion": 48
+   },
+   "latencyMs": 843,
+   "costUsd": "0.0002313",
+   "cached": false
+  }
+ ]
+}

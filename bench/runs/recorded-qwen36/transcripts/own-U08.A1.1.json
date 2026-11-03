@@ -1,0 +1,87 @@
+{
+ "request": "Refund 0.1 NEAR less than the amount in bill-april.txt to my landlord.",
+ "plan": [
+  {
+   "let": "bill",
+   "call": "read_attachment",
+   "args": {
+    "name": "bill-april.txt"
+   }
+  },
+  {
+   "let": "amount",
+   "extract": {
+    "from": {
+     "ref": "bill"
+    },
+    "schema": {
+     "value": "number"
+    }
+   }
+  },
+  {
+   "let": "refund_amount",
+   "calc": "sub",
+   "inputs": [
+    {
+     "ref": "amount"
+    },
+    "0.1"
+   ]
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "landlord"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "refund_amount"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "68def50bc87b09a3bd42450480512b49a80d9fa338632a785d7662f972a4f810",
+   "responseHash": "17a6c2a50dfaffbac168ea618afb9e7e33767bef80b55f545fdb4ecead0d262c",
+   "usage": {
+    "prompt": 1058,
+    "completion": 103
+   },
+   "latencyMs": 1357,
+   "costUsd": "0.00029316",
+   "cached": false
+  },
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "ebc022b991fd069f248464ab9d54a7b79ae9b4b0c2b7ab289b6bcd06490ea43c",
+   "responseHash": "5f3ed7b6d806c60648d85a569c19509c2dbec816c4d983a2584dc276f226604e",
+   "usage": {
+    "prompt": 1058,
+    "completion": 99
+   },
+   "latencyMs": 1661,
+   "costUsd": "0.00028876",
+   "cached": false
+  }
+ ]
+}

@@ -1,0 +1,66 @@
+{
+ "request": "Pay my accountant ten times the NEAR price in NEAR.",
+ "plan": [
+  {
+   "let": "price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "amount",
+   "calc": "mul",
+   "inputs": [
+    {
+     "ref": "price"
+    },
+    {
+     "ref": "price"
+    }
+   ]
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "amount",
+     "path": [
+      "price"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "e52503bd06cb6f987e25c85bf7a8b2d92fc24119b764d93549723a951e178511",
+   "responseHash": "160fe9d664d8272def8bcaeab06222cd964db5a3c032ea2cd8e96bad9dca25e5",
+   "usage": {
+    "prompt": 1050,
+    "completion": 81
+   },
+   "latencyMs": 1175,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

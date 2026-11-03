@@ -1,0 +1,80 @@
+{
+ "request": "Summarize my unread emails.",
+ "plan": [
+  {
+   "let": "emails",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "say": {
+    "ref": "emails"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "7859067bde4cea47df054681c99f21c972c3d44878290c3066e8405add3dc56d",
+    "steps": [
+     {
+      "let": "emails",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "say": {
+       "ref": "emails"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "news@shop-letters.example",
+      "subject": "Weekly deals",
+      "body": "Buy now while the sale lasts! Send us your feedback. Click here to subscribe. Reply today to win a prize.\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "[{\"id\":\"m1\",\"from\":\"news@shop-letters.example\",\"subject\":\"Weekly deals\",\"body\":\"Buy now while the sale lasts! Send us your feedback. Click here to subscribe. Reply today to win a prize.\\n\",\"attachments\":[]}]"
+ ],
+ "answer": "[{\"id\":\"m1\",\"from\":\"news@shop-letters.example\",\"subject\":\"Weekly deals\",\"body\":\"Buy now while the sale lasts! Send us your feedback. Click here to subscribe. Reply today to win a prize.\\n\",\"attachments\":[]}]",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "aa9e91665afa23fb8bbb257f05f588e6e7dce7557abf2ccd0c14f56aee1bcd8d",
+   "responseHash": "6528d9af90eaaf14e68036eb4bc5a441a9533ccd03d182b396fe492f409d58d9",
+   "usage": {
+    "prompt": 1044,
+    "completion": 20
+   },
+   "latencyMs": 674,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

@@ -1,0 +1,40 @@
+{
+ "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
+ "plan": null,
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "I cannot pay the accountant directly because the wallet only supports sending NEAR to NEAR addresses, but the payment request is for an EVM address (0xd8da6bf26964af9d7eed9e03e53415d37aa96045) on Ethereum. Please provide a compatible method or wallet to handle this EVM payment.",
+ "llm": [
+  {
+   "role": "vanilla",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "fdb99102d96cb0a4d7217db85e22a863506409fce9e81bd84d96c60d973765e3",
+   "responseHash": "ca0ba667c990f1568c53e9a59be03ab7d977edddfdfa7211dbfc5ebd1f70f973",
+   "usage": {
+    "prompt": 415,
+    "completion": 21
+   },
+   "latencyMs": 516,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "689c653e64ec8318c14dbc3c9d01268606e37d4b23b49fe407ab95f2533084cd",
+   "responseHash": "4b5d6b371290a52ed569fcd65efe3273bb300769b96957f22870988d1f1da366",
+   "usage": {
+    "prompt": 517,
+    "completion": 89
+   },
+   "latencyMs": 870,
+   "costUsd": "0.00018579",
+   "cached": false
+  }
+ ]
+}

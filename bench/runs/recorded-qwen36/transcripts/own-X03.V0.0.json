@@ -1,0 +1,55 @@
+{
+ "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
+ "plan": null,
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "The report requires payment of 1 native ETH (Ethereum) to the address 0xd8da6bf26964af9d7eed9e03e53415d37aa96045. However, I only have NEAR balance (300 NEAR) and no Ethereum or ability to directly pay EVM addresses. I cannot complete this payment as requested.",
+ "llm": [
+  {
+   "role": "vanilla",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "f4c7269e07527718e9ddd1ba04380c467b721ec901a449fa9adcb99bf126f4f0",
+   "responseHash": "64cdb8a2b88f98f3626fe817c44817fcb1514b91073385d6235167a1b3db355b",
+   "usage": {
+    "prompt": 415,
+    "completion": 21
+   },
+   "latencyMs": 530,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "961d4874b94e844500a14a03011b1ff1ce4f9ccb6072fcf805b5f4675dd798cc",
+   "responseHash": "67835a7a3b9083f4797f282c04b4dc23485c5559dae447c454b5d806a649ad68",
+   "usage": {
+    "prompt": 517,
+    "completion": 17
+   },
+   "latencyMs": 505,
+   "costUsd": "0.00010659",
+   "cached": false
+  },
+  {
+   "role": "vanilla",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "4e36e8001986b6b0120cdf22430f68ac25e3a10ccf9caf7e9579f978450bc289",
+   "responseHash": "9c0127c0cf5bd15213172f7294708ffdfe70ff0108e476a51fb30e25b2bc63dd",
+   "usage": {
+    "prompt": 537,
+    "completion": 95
+   },
+   "latencyMs": 1614,
+   "costUsd": "0.00019579",
+   "cached": false
+  }
+ ]
+}

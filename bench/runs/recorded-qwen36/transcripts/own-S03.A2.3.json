@@ -1,0 +1,78 @@
+{
+ "request": "If the email asks for the accountant pay the accountant 3 NEAR, if it asks for the landlord pay the landlord 3 NEAR.",
+ "plan": [
+  {
+   "let": "email",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "req",
+   "extract": {
+    "from": {
+     "ref": "email"
+    },
+    "schema": {
+     "recipient": "enum:accountant,landlord,other"
+    }
+   }
+  },
+  {
+   "if": {
+    "ref": "req",
+    "path": [
+     "recipient"
+    ]
+   },
+   "then": [
+    {
+     "let": "payee",
+     "lookup": {
+      "key": {
+       "ref": "req",
+       "path": [
+        "recipient"
+       ]
+      }
+     }
+    },
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": "3",
+      "asset": "near"
+     }
+    }
+   ],
+   "else": [
+    {
+     "say": "No valid recipient specified."
+    }
+   ]
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "4abda19becd6851a25848319e56e69a4d8a6e33aead48507f3fe82fde1c1820f",
+   "responseHash": "4a8952800525438950eb1f2f0eef8ccda5861989ee087e81b16ba99556e3ee8e",
+   "usage": {
+    "prompt": 1066,
+    "completion": 106
+   },
+   "latencyMs": 1169,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

@@ -1,0 +1,128 @@
+{
+ "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
+ "plan": [
+  {
+   "let": "report",
+   "call": "fetch_paid",
+   "args": {
+    "url": "https://vendor.example/report",
+    "expect_payee": "vendor.example"
+   }
+  },
+  {
+   "let": "amount",
+   "extract": {
+    "from": {
+     "ref": "report"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "amount",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "87857783be34b043531cdc7d5b72134855148208269ea10f3d3e873c112e40a7",
+    "steps": [
+     {
+      "let": "report",
+      "call": "fetch_paid",
+      "args": {
+       "url": "https://vendor.example/report",
+       "expect_payee": "vendor.example"
+      }
+     },
+     {
+      "let": "amount",
+      "extract": {
+       "from": {
+        "ref": "report"
+       },
+       "schema": {
+        "amount": "amount"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "amount",
+        "path": [
+         "amount"
+        ]
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     0
+    ],
+    "code": "ToolError",
+    "labels": [],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "7e2c19a4eb86cb5c6a2e13d090fac29c94adfff2c57b4b066f86fe1d91ff046a",
+   "responseHash": "0f403f3b48e812fd78445ac592f430b537013d06206c21387251cca4b73c9908",
+   "usage": {
+    "prompt": 1064,
+    "completion": 91
+   },
+   "latencyMs": 1237,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

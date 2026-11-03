@@ -1,0 +1,104 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "balance",
+   "call": "get_balance",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "price"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "323c8780ef44f9a5d14ed861d8d410952708daeb0735d1555802d17d6e3b1724",
+    "steps": [
+     {
+      "let": "price",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "balance",
+      "call": "get_balance",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "say": {
+       "ref": "price"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     1
+    ],
+    "tool": "get_balance",
+    "label": "Oracle",
+    "raw": "300",
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "3.5"
+ ],
+ "answer": "3.5",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "6332fa41380340c1380b3c723158e273c22ee7109464dc566397b594f214182f",
+   "responseHash": "0a41462354b19966cf1cd5a6597c0d75dadbf3e47a284ed2438fd9ad2f9cf4ed",
+   "usage": {
+    "prompt": 1050,
+    "completion": 42
+   },
+   "latencyMs": 862,
+   "costUsd": "0.0002247",
+   "cached": false
+  }
+ ]
+}

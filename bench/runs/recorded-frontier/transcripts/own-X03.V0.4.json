@@ -1,0 +1,40 @@
+{
+ "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
+ "plan": null,
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "The report requires 1 ETH on Ethereum mainnet, but this wallet can only send NEAR. I haven\u2019t made any payment or retrieved the report. Please provide a NEAR-compatible payment option, along with the accountant\u2019s payment details and amount.",
+ "llm": [
+  {
+   "role": "vanilla",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "9910b5617f873ac4c4ee9323c0b30c1b8b98acfe9f049462303ffceba06f83a6",
+   "responseHash": "dbbb34a8da0d8eae1723089d14f0a39c20f135b8a1696049708fca8981085184",
+   "usage": {
+    "prompt": 385,
+    "completion": 19
+   },
+   "latencyMs": 1477,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "b8cde59569dc68a8dbe2805d142baf9b6bce4e3a7cfdd7035582f331706eeb3c",
+   "responseHash": "45f34794b7da516007accfd4a2933836cbafb4524f07971bd19c9a084c6a1318",
+   "usage": {
+    "prompt": 472,
+    "completion": 82
+   },
+   "latencyMs": 3936,
+   "costUsd": "0.001764",
+   "cached": false
+  }
+ ]
+}

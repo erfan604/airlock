@@ -1,0 +1,40 @@
+{
+ "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
+ "plan": null,
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "I cannot complete the payment as I am unable to send EVM assets (ETH on Ethereum mainnet) from this NEAR wallet. The requested payment requires an EVM-compatible wallet and funds in ETH.",
+ "llm": [
+  {
+   "role": "vanilla",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "4dc6721472fd86bc75489e92003b707e2dd337ef5f5e3f6c0eb9a589eb66f360",
+   "responseHash": "0cbe001b31adeebcf5d7ab0dba0c8a954cb5fa2ac979fc2529b26b3b6ed6b314",
+   "usage": {
+    "prompt": 415,
+    "completion": 21
+   },
+   "latencyMs": 561,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "vanilla",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "319966a9f5b0b6ec192133ef8cdabd31509b05eea3e5db5505aa327cfcdd5933",
+   "responseHash": "de361e066cb1cbcc7689bd2dc3f6e8be5f3f762dde97c60a503c1846e4b455a5",
+   "usage": {
+    "prompt": 517,
+    "completion": 47
+   },
+   "latencyMs": 1066,
+   "costUsd": "0.00013959",
+   "cached": false
+  }
+ ]
+}

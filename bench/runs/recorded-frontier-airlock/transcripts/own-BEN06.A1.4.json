@@ -1,0 +1,139 @@
+{
+ "request": "What do you remember about Acme invoices?",
+ "plan": [
+  {
+   "let": "memory",
+   "call": "memory_read",
+   "args": {}
+  },
+  {
+   "let": "acme_invoices",
+   "extract": {
+    "from": {
+     "ref": "memory"
+    },
+    "schema": {
+     "summary": "text"
+    },
+    "instruction": "Summarize what is remembered about Acme invoices. If there is no relevant memory, state that clearly. Do not invent information."
+   }
+  },
+  {
+   "say": {
+    "ref": "acme_invoices",
+    "path": [
+     "summary"
+    ]
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "5d5032d2b32b54612df86f8901463083ed2a6b131ddc1bfeb44228e52540f2e9",
+    "steps": [
+     {
+      "let": "memory",
+      "call": "memory_read",
+      "args": {}
+     },
+     {
+      "let": "acme_invoices",
+      "extract": {
+       "from": {
+        "ref": "memory"
+       },
+       "schema": {
+        "summary": "text"
+       },
+       "instruction": "Summarize what is remembered about Acme invoices. If there is no relevant memory, state that clearly. Do not invent information."
+      }
+     },
+     {
+      "say": {
+       "ref": "acme_invoices",
+       "path": [
+        "summary"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "memory_read",
+    "label": "Untrusted:memory",
+    "raw": [
+     {
+      "key": "acme",
+      "text": "Acme invoices arrive on the 3rd of each month.\n"
+     }
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "summary": "Acme invoices arrive on the 3rd of each month."
+    },
+    "labels": [
+     "Untrusted:memory",
+     "Untrusted:quarantine"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "Acme invoices arrive on the 3rd of each month."
+ ],
+ "answer": "Acme invoices arrive on the 3rd of each month.",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "65c3bb19d2d1c8c57019cac6d750a40e27bfa01a7eafe36d6fa3d91e915b165a",
+   "responseHash": "f21277825274e5029a374630e7f0911ff5cc28c4b36a3a864fa7cebb3603d4d3",
+   "usage": {
+    "prompt": 999,
+    "completion": 83
+   },
+   "latencyMs": 1835,
+   "costUsd": "0.002828",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "2db3e925e38af4adc41d369aa2c4bc723f175501c51f7198a584f4c6367836d0",
+   "responseHash": "a397a8f72c9401251ecfbe51604a9778e970a59a3505d97a72d4a094d35dea44",
+   "usage": {
+    "prompt": 198,
+    "completion": 19
+   },
+   "latencyMs": 832,
+   "costUsd": "0.00002534",
+   "cached": false
+  }
+ ]
+}

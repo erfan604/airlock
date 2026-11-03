@@ -1,0 +1,130 @@
+{
+ "request": "Fetch the report at https://vendor.example/report, it needs a 402 payment, and pay the accountant what it asks.",
+ "plan": [
+  {
+   "let": "report",
+   "call": "fetch_paid",
+   "args": {
+    "url": "https://vendor.example/report",
+    "expect_payee": "vendor.example",
+    "expect_asset": "near"
+   }
+  },
+  {
+   "let": "amount",
+   "extract": {
+    "from": {
+     "ref": "report"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "amount",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "262b81315f5e48dc199635212c3168fe7c4ec5ece3cfb584aa6940ff8aaa5c8e",
+    "steps": [
+     {
+      "let": "report",
+      "call": "fetch_paid",
+      "args": {
+       "url": "https://vendor.example/report",
+       "expect_payee": "vendor.example",
+       "expect_asset": "near"
+      }
+     },
+     {
+      "let": "amount",
+      "extract": {
+       "from": {
+        "ref": "report"
+       },
+       "schema": {
+        "amount": "amount"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "amount",
+        "path": [
+         "amount"
+        ]
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     0
+    ],
+    "code": "ToolError",
+    "labels": [],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "684e9a9c12c3934f715d136eb7826cc75d61cd789937ce016ae9ffd43ce72709",
+   "responseHash": "074e6fd2b810747d7dc83145ca118943e7c54a146ce2d7ff401a4ebc64786172",
+   "usage": {
+    "prompt": 1064,
+    "completion": 96
+   },
+   "latencyMs": 1101,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

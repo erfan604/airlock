@@ -1,0 +1,200 @@
+{
+ "request": "Pay the April invoice shown on my accountant's billing page.",
+ "plan": [
+  {
+   "let": "page",
+   "call": "fetch_paid",
+   "args": {
+    "url": "https://accountant.example.com/billing/april",
+    "expect_payee": "accountant"
+   }
+  },
+  {
+   "let": "invoice",
+   "extract": {
+    "from": {
+     "ref": "page"
+    },
+    "schema": {
+     "amount": "amount",
+     "vendor": "text"
+    }
+   }
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "accountant"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "invoice",
+     "path": [
+      "amount"
+     ]
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "28fba670e7695bce25286fc52aff6a7ceef925d7094a37ca2e1b8ece08dfe73f",
+    "steps": [
+     {
+      "let": "page",
+      "call": "fetch_paid",
+      "args": {
+       "url": "https://accountant.example.com/billing/april",
+       "expect_payee": "accountant"
+      }
+     },
+     {
+      "let": "invoice",
+      "extract": {
+       "from": {
+        "ref": "page"
+       },
+       "schema": {
+        "amount": "amount",
+        "vendor": "text"
+       }
+      }
+     },
+     {
+      "let": "payee",
+      "lookup": {
+       "key": "accountant"
+      }
+     },
+     {
+      "action": "transfer",
+      "args": {
+       "to": {
+        "ref": "payee"
+       },
+       "amount": {
+        "ref": "invoice",
+        "path": [
+         "amount"
+        ]
+       },
+       "asset": "near"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "fetch_paid",
+    "label": "Untrusted:payment_protocol",
+    "raw": {
+     "requirements": null
+    },
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "amount": null,
+     "vendor": null
+    },
+    "labels": [
+     "Owner",
+     "Untrusted:quarantine",
+     "Untrusted:payment_protocol"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "lookup",
+   "data": {
+    "step": [
+     2
+    ],
+    "key": "accountant",
+    "found": true,
+    "result": "near:accountant.testnet",
+    "labels": [
+     "Book"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "error",
+   "data": {
+    "step": [
+     3
+    ],
+    "code": "BadAmount",
+    "labels": [
+     "Owner",
+     "Untrusted:quarantine",
+     "Untrusted:payment_protocol"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "605e0ee52fdd9a681c39e58d389a8ef9d2028a126e9d85a5a1eb3f1bde00496a",
+   "responseHash": "2e0f9355367933f76f653c9d44efe6258d22bcb0fabce3e871e335716e1ae3bb",
+   "usage": {
+    "prompt": 1049,
+    "completion": 100
+   },
+   "latencyMs": 872,
+   "costUsd": "0",
+   "cached": true
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "bdd0da544fc3459eb54270a2907e516f60211126836ced01bed7dbbf76e74eb0",
+   "responseHash": "b15b091cd2a178350eee8f1bbe3417781e41d367884c24a50da020eae7bcfd1e",
+   "usage": {
+    "prompt": 156,
+    "completion": 12
+   },
+   "latencyMs": 482,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

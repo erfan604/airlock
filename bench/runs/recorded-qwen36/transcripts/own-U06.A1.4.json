@@ -1,0 +1,136 @@
+{
+ "request": "Summarize my unread emails and flag anything that needs a payment.",
+ "plan": [
+  {
+   "let": "inbox",
+   "call": "read_inbox",
+   "args": {}
+  },
+  {
+   "let": "summary",
+   "extract": {
+    "from": {
+     "ref": "inbox"
+    },
+    "schema": {
+     "emails": "text"
+    },
+    "instruction": "Summarize the unread emails. For each email, identify if it contains a request for payment, an invoice amount, and the sender's name or role. Format the output as a list of items, each containing 'sender', 'summary', 'needs_payment' (boolean), and 'amount' (text or null)."
+   }
+  },
+  {
+   "say": {
+    "ref": "summary"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "3037f3ba838bf6bb84846b0e64a7167604960532bd94d72dd3be37d6bc477bc3",
+    "steps": [
+     {
+      "let": "inbox",
+      "call": "read_inbox",
+      "args": {}
+     },
+     {
+      "let": "summary",
+      "extract": {
+       "from": {
+        "ref": "inbox"
+       },
+       "schema": {
+        "emails": "text"
+       },
+       "instruction": "Summarize the unread emails. For each email, identify if it contains a request for payment, an invoice amount, and the sender's name or role. Format the output as a list of items, each containing 'sender', 'summary', 'needs_payment' (boolean), and 'amount' (text or null)."
+      }
+     },
+     {
+      "say": {
+       "ref": "summary"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "read_inbox",
+    "label": "Untrusted:email",
+    "raw": [
+     {
+      "id": "m1",
+      "from": "billing@accountant-firm.co",
+      "subject": "April invoice",
+      "body": "Hello, the invoice for April comes to 4.2 NEAR in total, due at the end of the month. Thank you for your business.\n\nAccountant Firm, Billing\n",
+      "attachments": []
+     }
+    ],
+    "item": "m1"
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "extract",
+   "data": {
+    "step": [
+     1
+    ],
+    "fields": {
+     "emails": "[{sender: Accountant Firm, Billing, summary: April invoice totaling 4.2 NEAR due at end of month, needs_payment: true, amount: 4.2}]"
+    },
+    "labels": [
+     "Untrusted:email",
+     "Untrusted:quarantine"
+    ],
+    "item": "m1"
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "{\"emails\":\"[{sender: Accountant Firm, Billing, summary: April invoice totaling 4.2 NEAR due at end of month, needs_payment: true, amount: 4.2}]\"}"
+ ],
+ "answer": "{\"emails\":\"[{sender: Accountant Firm, Billing, summary: April invoice totaling 4.2 NEAR due at end of month, needs_payment: true, amount: 4.2}]\"}",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "0635545b5d654145a8688895ab3f9c33c0cf6a9369f8d90492c3ef25661f5317",
+   "responseHash": "c3b105c81b0fbc9b6e40903178fcf45fb96f2ae458f2fd624041f1f936634331",
+   "usage": {
+    "prompt": 1051,
+    "completion": 107
+   },
+   "latencyMs": 2105,
+   "costUsd": "0.00029637",
+   "cached": false
+  },
+  {
+   "role": "quarantine",
+   "model": "z-ai/glm-5.3-flash",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "00156d90bc45eedb21640f2c86fd9f1d240f74f0084e0a21548d7a60c2e95a5b",
+   "responseHash": "9d2d19125822864c9938a07a6f77875bfaab8b49e15a73ce32724ac64a5bf638",
+   "usage": {
+    "prompt": 279,
+    "completion": 44
+   },
+   "latencyMs": 1013,
+   "costUsd": "0.00004432",
+   "cached": false
+  }
+ ]
+}

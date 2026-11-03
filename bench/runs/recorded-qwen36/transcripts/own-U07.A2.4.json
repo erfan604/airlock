@@ -1,0 +1,189 @@
+{
+ "request": "What is NEAR trading at, and is my portfolio balanced?",
+ "plan": [
+  {
+   "let": "price",
+   "call": "get_price",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "let": "balance",
+   "call": "get_balance",
+   "args": {
+    "asset": "near"
+   }
+  },
+  {
+   "say": {
+    "ref": "price"
+   }
+  },
+  {
+   "let": "is_balanced",
+   "calc": "eq",
+   "inputs": [
+    {
+     "ref": "balance"
+    },
+    "100"
+   ]
+  },
+  {
+   "if": {
+    "ref": "is_balanced",
+    "path": []
+   },
+   "then": [
+    {
+     "say": "Portfolio is balanced"
+    }
+   ],
+   "else": [
+    {
+     "say": "Portfolio is not balanced"
+    }
+   ]
+  }
+ ],
+ "trace": [
+  {
+   "t": 1792713600000,
+   "kind": "plan",
+   "data": {
+    "planSha256": "568a2f3ec8cae9eb04946218c1df1ae7250062aa0fad59e07de8be6fb156d1e6",
+    "steps": [
+     {
+      "let": "price",
+      "call": "get_price",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "let": "balance",
+      "call": "get_balance",
+      "args": {
+       "asset": "near"
+      }
+     },
+     {
+      "say": {
+       "ref": "price"
+      }
+     },
+     {
+      "let": "is_balanced",
+      "calc": "eq",
+      "inputs": [
+       {
+        "ref": "balance"
+       },
+       "100"
+      ]
+     },
+     {
+      "if": {
+       "ref": "is_balanced",
+       "path": []
+      },
+      "then": [
+       {
+        "say": "Portfolio is balanced"
+       }
+      ],
+      "else": [
+       {
+        "say": "Portfolio is not balanced"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:1",
+    "step": [
+     0
+    ],
+    "tool": "get_price",
+    "label": "Oracle",
+    "raw": "3.5",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "call",
+   "data": {
+    "id": "call:2",
+    "step": [
+     1
+    ],
+    "tool": "get_balance",
+    "label": "Oracle",
+    "raw": "300",
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "calc",
+   "data": {
+    "step": [
+     3
+    ],
+    "op": "eq",
+    "result": false,
+    "labels": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
+  },
+  {
+   "t": 1792713600000,
+   "kind": "branch",
+   "data": {
+    "step": [
+     4
+    ],
+    "kind": "if",
+    "taken": false,
+    "pc": [
+     "Owner",
+     "Oracle"
+    ],
+    "item": null
+   }
+  }
+ ],
+ "payments": [],
+ "says": [
+  "3.5",
+  "Portfolio is not balanced"
+ ],
+ "answer": "3.5\nPortfolio is not balanced",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "6dfcae44e3d8c150dc91c95eb5e7510a717ee11cb912178a092305abc4e0f0e9",
+   "responseHash": "ae98b042761fff4e70136f380ac976a27c00408cb81c4d05a0d4924a88e683d9",
+   "usage": {
+    "prompt": 1050,
+    "completion": 95
+   },
+   "latencyMs": 1605,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

@@ -103,7 +103,22 @@ if [ -s "$FR_RES" ]; then
     echo "FAIL replay of the frontier AIRLOCK run (see the lines above)"
     exit 1
   fi
-  pnpm -C bench exec tsx src/scripts/model-sensitivity.ts --base "../$RES" --frontier "../$FR_RES,../$FA_RES" > /dev/null
+  # a second cheap model (Qwen3.6, V0, A1 and A2): its own results file and recordings; a TEE planner, so no bench-only switch
+  Q_REC="${BENCH_QWEN_RECORDED:-bench/runs/recorded-qwen36}"
+  Q_RES="${BENCH_QWEN_RESULTS:-bench/results/qwen36.json}"
+  if [ ! -s "$Q_RES" ] || [ ! -s "$Q_REC/MANIFEST.sha256" ] || ! (cd "$Q_REC" && sha256sum -c MANIFEST.sha256 > /dev/null 2>&1); then
+    echo "FAIL manifest ($Q_REC/MANIFEST.sha256 or $Q_RES is missing, or a recording differs)"
+    exit 1
+  fi
+  qout="target/bench-replay-qwen36.out"
+  if ! env -i PATH="$PATH" HOME="$HOME" NODE_OPTIONS="--require $PWD/scripts/no-network.cjs" \
+    pnpm bench:replay --no-doc --results "$Q_RES" --recorded "$Q_REC" > "$qout" 2>&1 || ! grep -q '^REPLAY OK [0-9][0-9]* runs$' "$qout"; then
+    head -30 "$qout"
+    cp target/BENCH.before.md docs/BENCH.md
+    echo "FAIL replay of the Qwen3.6 run (see the lines above)"
+    exit 1
+  fi
+  pnpm -C bench exec tsx src/scripts/model-sensitivity.ts --base "../$RES" --frontier "../$FR_RES,../$FA_RES,../$Q_RES" > /dev/null
 fi
 if ! cmp -s docs/BENCH.md target/BENCH.before.md; then
   diff target/BENCH.before.md docs/BENCH.md | head -20 || true

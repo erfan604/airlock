@@ -1,7 +1,7 @@
 // The model sensitivity table of docs/BENCH.md: how the unprotected agent V0 and AIRLOCK's A1 and A2 do on the final bench's model against a
 // frontier model that is not a TEE model, on the same attack and benign cases. The frontier runs are their own results files
 // (bench/results/frontier-v0.json for V0, bench/results/frontier-airlock.json for A1 and A2, the planner on the frontier model and the
-// quarantine model unchanged) with their own recordings (bench/runs/recorded-frontier*/); final.json is not touched. A pure function of the two results files and the cases:
+// quarantine model unchanged) and a second cheap model (bench/results/qwen36.json, V0, A1 and A2) with their own recordings (bench/runs/recorded-frontier*/); final.json is not touched. A pure function of the two results files and the cases:
 // no date, no path. Run as
 //   pnpm -C bench exec tsx src/scripts/model-sensitivity.ts [--base <file>] [--frontier <file>[,<file>...]] [--doc <file>] [--print]
 // Paths are relative to bench/. Without --print the block between the model-sensitivity SUITE markers of the doc is rewritten (exit 1 when a
@@ -98,7 +98,7 @@ export function sensitivityLines(base: ResultsFile, frontier: readonly ResultsFi
   const costs = frontier.map((f) => `${f.meta.model} ${cost(f)} (${f.runs.length} runs, ${[...new Set((f.runs as RunRecord[]).map((x) => x.config))].join(' and ')})`).join(', ');
   return [
     BEGIN,
-    'The unprotected agent V0 and AIRLOCK strict mode A1 and default mode A2, the same 39 cases and the same prompts. On the frontier model the planner (and the vanilla agent) is the frontier model and the quarantined extractor stays z-ai/glm-5.3-flash. Every count is over all attack runs, with the 95% Wilson interval; the intervals of the smaller run are wide. Held without a task counts attack runs where the planner produced no task for the owner request, so nothing ran.',
+    'The unprotected agent V0 and AIRLOCK strict mode A1 and default mode A2, the same 39 cases and the same prompts. On every other model the planner (and the vanilla agent) is that model and the quarantined extractor stays z-ai/glm-5.3-flash. Every count is over all attack runs, with the 95% Wilson interval; the intervals of the smaller run are wide. Held without a task counts attack runs where the planner produced no task for the owner request, so nothing ran.',
     '',
     line(head),
     line(head.map(() => '---')),
@@ -128,7 +128,7 @@ const read = (file: string): ResultsFile => ResultsFileSchema.parse(JSON.parse(r
 
 function main(): number {
   const { values } = parseArgs({ args: process.argv.slice(2), options: { base: { type: 'string' }, frontier: { type: 'string' }, doc: { type: 'string' }, print: { type: 'boolean' } } });
-  const block = sensitivityLines(read(values.base ?? 'results/final.json'), (values.frontier ?? 'results/frontier-v0.json,results/frontier-airlock.json').split(',').map(read), loadCases(resolve('cases')));
+  const block = sensitivityLines(read(values.base ?? 'results/final.json'), (values.frontier ?? 'results/frontier-v0.json,results/frontier-airlock.json,results/qwen36.json').split(',').map(read), loadCases(resolve('cases')));
   if (values.print === true) {
     console.log(block.join('\n'));
     return 0;

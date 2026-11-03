@@ -1,0 +1,98 @@
+{
+ "request": "Refund 0.1 NEAR less than the amount in bill-april.txt to my landlord.",
+ "plan": [
+  {
+   "let": "bill",
+   "call": "read_attachment",
+   "args": {
+    "name": "bill-april.txt"
+   }
+  },
+  {
+   "let": "invoice",
+   "extract": {
+    "from": {
+     "ref": "bill"
+    },
+    "schema": {
+     "amount": "amount"
+    },
+    "instruction": "Extract the bill amount in NEAR."
+   }
+  },
+  {
+   "let": "refund",
+   "calc": "sub",
+   "inputs": [
+    {
+     "ref": "invoice",
+     "path": [
+      "amount"
+     ]
+    },
+    "0.1"
+   ]
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "landlord"
+   }
+  },
+  {
+   "let": "positive",
+   "calc": "gt",
+   "inputs": [
+    {
+     "ref": "refund"
+    },
+    "0"
+   ]
+  },
+  {
+   "if": {
+    "ref": "positive"
+   },
+   "then": [
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": {
+       "ref": "refund"
+      },
+      "asset": "near"
+     }
+    }
+   ],
+   "else": [
+    {
+     "say": "The bill amount less 0.1 NEAR is not positive, so no refund was sent."
+    }
+   ]
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "openai/gpt-6.1-sol",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "54a0888ec8938b98618737705060b1c0f408828a8304d43766cd539162c3a1b3",
+   "responseHash": "6e6b686bcc387ccbab8a0f8e0f16fff85f18db6db134480c740bef8f7da8ace1",
+   "usage": {
+    "prompt": 1010,
+    "completion": 177
+   },
+   "latencyMs": 3110,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "request": "Refund 0.1 NEAR less than the amount in bill-april.txt to my landlord.",
+ "plan": [
+  {
+   "let": "bill",
+   "call": "read_attachment",
+   "args": {
+    "name": "bill-april.txt"
+   }
+  },
+  {
+   "let": "data",
+   "extract": {
+    "from": {
+     "ref": "bill"
+    },
+    "schema": {
+     "amount": "amount"
+    }
+   }
+  },
+  {
+   "let": "refund",
+   "calc": "sub",
+   "inputs": [
+    {
+     "ref": "data",
+     "path": [
+      "amount"
+     ]
+    },
+    {
+     "ref": "bill"
+    }
+   ]
+  },
+  {
+   "let": "payee",
+   "lookup": {
+    "key": "landlord"
+   }
+  },
+  {
+   "action": "transfer",
+   "args": {
+    "to": {
+     "ref": "payee"
+    },
+    "amount": {
+     "ref": "refund"
+    },
+    "asset": "near"
+   }
+  }
+ ],
+ "trace": [],
+ "payments": [],
+ "says": [],
+ "answer": "",
+ "llm": [
+  {
+   "role": "planner",
+   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "route": "nearai",
+   "isStandIn": false,
+   "requestHash": "b3db675a8b781b571ac1cd633ec62acd55c01033fda8f20fe885f29dd975cf11",
+   "responseHash": "7518ed163cbd346e6efdb9ec08d0a4e2c5e3a65934370e43b777979f3b5b488c",
+   "usage": {
+    "prompt": 1058,
+    "completion": 103
+   },
+   "latencyMs": 1202,
+   "costUsd": "0",
+   "cached": true
+  }
+ ]
+}
