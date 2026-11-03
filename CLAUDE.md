@@ -4,6 +4,9 @@ AIRLOCK = provenance-gated signing for AI agent wallets on NEAR. Read `docs/ARCH
 before touching `contracts/` or `runtime/src/interpreter/`. The security claims live in README "Claims"; every change
 must keep the test that proves each claim green.
 
+## Verify
+The five commands and their last lines are in `docs/VERIFY.md`: `pnpm i && pnpm demo --no-open --exit-when-ready`, `scripts/claims-run.sh --tier node`, `pnpm bench:replay`, `scripts/check.sh full` and `scripts/claims-run.sh --network`. A missing tool prints `SKIP <id> needs <tool>`. To use the Lean language server, copy `.mcp.json.example` to `.mcp.json`.
+
 ## Commands
 - Ticket clock (the Nov 2 and Nov 5 checkpoints decide cuts from measured hours): when you start a ticket run
   `python3 "$AIRLOCK_RESEARCH/kit/scripts/clock.py" start AIR-xxx --dir "$AIRLOCK_RESEARCH/plan/tickets"`, and when its acceptance checks pass

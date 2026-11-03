@@ -1,1 +1,2 @@
 G4 2026-11-02 OUT tracks ["security","agents","open"] evidence none consequence TEE out of the build, runtime ships in local mode (D22); AIR-200 and AIR-273 cut, requires_tee stays false
+D27 2026-11-03 CI none: no workflow runs in this repository, because a workflow that has never run on Linux is worth less than the stated absence of one; the gate is `scripts/check.sh full` and its last run is recorded in docs/EVIDENCE.md. `.mcp.json` is `.mcp.json.example` so a fresh clone starts no server on its own.

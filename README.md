@@ -22,13 +22,37 @@ Not covered: the planner and reader models, the labels the runtime attaches to v
 
 `pnpm bench:replay` also needs Rust 1.86, because it builds the verdict CLI. It regenerates the results from recorded runs and ends with `REPLAY OK <n> runs`.
 
-TODO(AIR-255): the strings above are copied from the pinned demo contract (AIR-246); AIR-255 greps each against the real demo output and corrects or deletes any that is missing.
+The strings above are asserted by the browser test `pnpm -C web e2e demo`, which prints `E2E demo OK`. If port 4173 or 8787 is taken, `pnpm demo` stops at once with `port <n> is already in use`; pass `--console-port <n>` and `--runtime-port <n>`.
+
+## Verify in 5 commands
+
+| # | Tier | Command | Time | Last line |
+| --- | --- | --- | --- | --- |
+| 1 | T1 | `pnpm i && pnpm demo --no-open --exit-when-ready` | about 5 s | `ready in <n>s` |
+| 2 | T1 | `scripts/claims-run.sh --tier node` | about 80 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
+| 3 | T2 | `pnpm bench:replay` | about 60 s | `REPLAY OK <n> runs` |
+| 4 | T3 | `scripts/check.sh full` | about 360 s | `ALL GREEN (full` |
+| 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
+
+Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean (the maintainer gate), T4 plus read only RPC. A row whose tool is missing prints `SKIP <id> needs <tool>`. Details in `docs/VERIFY.md`. No continuous integration runs here: the gate is `scripts/check.sh full`.
 
 ## Verify everything
 
 Needs Rust 1.86, Kani 0.68 and Lean 4.35 (`scripts/doctor.sh` checks them). `scripts/check.sh full` ends with `ALL GREEN (full)`: contract sandbox tests, Kani proofs, Lean theorems, the differential test, the runtime tests and the web build. `scripts/claims-run.sh --offline` runs every command of `docs/CLAIMS.md`, one row at a time.
 
 The console and the runtime server have a scripted security pass: `source scripts/env.sh && scripts/security-pass.sh` builds the console and runs 14 checks (session tests, no CORS, the replay mode branch, no secret in logs, the Content-Security-Policy header, no HTML sinks, the `Untrusted` and `Specimen` allow-lists, URL attributes, the hostile-text browser tests, secrets in the bundle and in the docs, and the dependency audit). `scripts/security-pass.sh --selftest` plants 15 failures and requires each to fail. Findings and fixes are in `docs/SECURITY_PASS.md`.
+
+## More commands
+
+Each line is a command, what it needs and the last line it prints. Labels: recorded means a stored run is replayed, live means the network is used.
+
+- `pnpm demo:live --dry-run`: recorded, no keys, ends with `DEMO LIVE DRY RUN OK`. Without `--dry-run` it is live and needs funded testnet accounts and a model key (see Try it on NEAR testnet).
+- `pnpm challenge --selftest`: recorded, needs Rust 1.86 for the verdict CLI, ends with `CHALLENGE OK attempts 39 stolen 0` [C13]. `pnpm challenge` serves the board in recorded mode; live mode is set up by the owner with `scripts/challenge-setup.sh`.
+- `pnpm demo:intents`: recorded dry quote, no keys, ends with `intents: nothing signed, no funds moved` [C14]. `pnpm demo:intents --live` asks 1Click for one fresh dry quote (read only, mainnet prices).
+- `pnpm verify-approval <tx hash>`: live read only RPC, prints `PASS (digest, approver, args, effect)` for an owner approval, for example `Fk8G1sGrJZ6wKDwH6CmpnA5gz1HJLMNaEaFjkKcDSSCk`.
+- `pnpm -C runtime exec tsx --test test/attest.test.ts`: recorded, checks the stored model report offline, prints `# fail 0` [C15]. `pnpm -C runtime attest` fetches a fresh report and needs `NEARAI_API_KEY`.
+- `pnpm -C runtime exec tsx --test test/counterparty.test.ts`: no keys, prints `# fail 0`; it covers the `counterparty_new` and `counterparty_unverified` notes on a card.
+- `pnpm proven`: see Proven above; it needs Rust, Kani and Lean.
 
 ## Try it on NEAR testnet
 
@@ -39,15 +63,15 @@ The console and the runtime server have a scripted security pass: `source script
 
 The golden runs are `bench/golden/u01.json` (U01, submit `53GuKRQxh6w5yBf4ZCzgBYH3QpHwLUNXiq9yCdrDr7ug`), `b01-escalate.json` (submit `7vJhDpZzkuRwWYSntPqvNGqZmXNJcdRbeDP8hUTCW6rs`), `b01-approve.json` (owner approve `Fk8G1sGrJZ6wKDwH6CmpnA5gz1HJLMNaEaFjkKcDSSCk`) and `tamper.json` (the tampered approve `5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj`, reverted with `approve rejected: WrongAmount`) [C8b]. Their chain reads are recorded under `runtime/recordings/chain/`. `pnpm tsx scripts/verify-golden.ts` re-checks every hash against the chain and prints `PASS` per entry. The CONTRACTOR run reuses the AIR-165 transaction above. There is no golden run of the vanilla or allowlist twin losing money: that case did not occur live, and none is claimed.
 
-The agent's key. The agent account `erfan-agent.testnet` runs under a function-call key limited to the policy account's `submit_batch` method, with an unlimited gas allowance, because every call buys its gas up front and a capped allowance would lock the agent out. That key cannot move NEAR, add keys or call owner methods. It does not limit what the agent submits: the agent can still send any request, and the contract's verdict is the control. The account also holds one full-access key that was used for setup, and `list-keys` shows both. Check with `near account list-keys erfan-agent.testnet network-config testnet now`.
+The agent's key. The agent account `erfan-agent.testnet` holds two function-call keys, each limited to `submit_batch` on one policy account: the golden runs' policy account with an unlimited gas allowance (every call buys its gas up front, and a capped allowance would lock the agent out), and the live demo's account `policy-v2.erfan-airlock.testnet` with a capped allowance. Neither key can move NEAR, add keys or call owner methods. It does not limit what the agent submits: the agent can still send any request, and the contract's verdict is the control. The account also holds one full-access key that was used for setup, and `list-keys` shows all three. Check with `near account list-keys erfan-agent.testnet network-config testnet now`.
 
 ## What the agent's key can do
 
 Checked on testnet on 2026-11-03 with `near account list-keys erfan-agent.testnet network-config testnet now` (or the RPC call `view_access_key_list`).
 
-- Receiver: the policy account `policy.erfan-airlock.testnet`, and no other account.
+- Receiver: one function-call key names `policy.erfan-airlock.testnet` and one names `policy-v2.erfan-airlock.testnet` (the account of the live demo, `pnpm demo:live`); neither names any other account.
 - Methods: `submit_batch`, and no other method.
-- Allowance: unlimited. Every call buys its gas up front, and a capped allowance would lock the agent out when it runs low.
+- Allowance: unlimited on the key for the original account, capped on the key for the demo account (about 5 NEAR when checked). Every call buys its gas up front, and a capped allowance would lock the agent out when it runs low.
 - It can: send requests to `submit_batch`. The contract's verdict decides each one: allow, escalate to you, or block. A request to a payee outside your book never passes on its own, and the card for it carries the counterparty note (`counterparty_new` when the account or address has no history, `counterparty_unverified` when it could not be checked). The note is a hint added by the runtime, not an input of the verdict.
 - It cannot: attach a deposit, so it cannot move NEAR from the agent account through this key. It cannot add or delete keys, deploy code, call any other contract, or call an owner method (`approve`, `reject`, the book, the limits, `revoke_agent`), because the contract answers an owner method only to the owner.
 - Not covered by the key: the agent account also holds a separate full-access key from setup, which is not the function-call key and is not handed to anyone. The key limits where a call can go, not what the agent submits.
@@ -89,7 +113,7 @@ The runtime is in local mode (unattested): no TEE registration transaction is li
 
 Each line links to the row of `docs/CLAIMS.md` that has the command and the expected output.
 
-- [C1a] A Lean model of the plan interpreter satisfies noninterference; the TypeScript interpreter is covered by a property test. Pending: AIR-030.
+- [C1a] A Lean model of the plan interpreter satisfies noninterference; the TypeScript interpreter is covered by a property test [C1a].
 - [C1b] Over 10,000 generated plans, untrusted text cannot choose a recipient, trigger a payment or move an amount above the owner's bounds without approval: `pnpm -C runtime test:prop` [C1b].
 - [C2a] The contract builds the EVM transaction bytes, so the signature covers the recipient and amount the verdict saw [C2a].
 - [C2b] A real MPC signature assembles to the derived sender: `pnpm tsx scripts/mpc-smoke.ts --check-fixture` [C2b].
@@ -99,13 +123,16 @@ Each line links to the row of `docs/CLAIMS.md` that has the command and the expe
 - [C5] The verdict is model-checked with Kani within stated harness assumptions and bounds, listed in `docs/harnesses.md` [C5].
 - [C6] The benchmark reports attack success and utility with Wilson intervals, K1 and K2 separate. Pending: AIR-228 [C6].
 - [C7a] The payment gate is checked three ways, following AWS's Cedar method: a Lean 4 theorem, Kani on the contract's Rust, and 40,000 differential tests. These cover the gate and our interpreter model, not the LLM, TEE or chain [C7a].
-- [C7b] The Lean theorems of the verdict model pass the axiom audit. Pending: AIR-030 [C7b].
+- [C7b] The Lean theorems of the verdict model pass the axiom audit. [C7b].
 - [C8a] An approval binds recipient, asset and amount [C8a].
 - [C8b] A tampered approve reverts on chain: `pnpm tsx scripts/verify-golden.ts --file bench/golden/tamper.json` [C8b].
 - [C9] The ledgers are cumulative, and a batch decides no more than the same requests one by one [C9].
 - [C10] Real testnet payments are linked in `docs/EVIDENCE.md` and re-checked by `pnpm tsx scripts/verify-golden.ts` [C10].
-- [C11] The replay demo runs with no keys. Pending: AIR-246 [C11].
+- [C11] The replay demo runs with no keys [C11].
 - [C12] Exact amounts, UTC time and the plumbing classes are pinned as tests [C12].
+- [C13] The challenge service replays the 39 recorded bench attacks through the real verdict path and steals nothing; this is its recorded mode, a live run is not claimed here [C13].
+- [C14] The NEAR Intents quote leg checks a dry quote against the allowed payment and signs nothing; recorded live dry quote, mainnet prices, no funds move [C14].
+- [C15] The model report of the planner passes its checks offline against a stored fixture of one live fetch; it covers the instance that answered that request and no single completion [C15].
 
 ## Results
 
