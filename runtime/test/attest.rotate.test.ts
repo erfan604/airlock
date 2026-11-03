@@ -85,6 +85,7 @@ test('rotation adds the build and logs date, report hash and reason when only th
     m.rtmr2 = ['22'.repeat(48)];
     m.compose_hash = ['33'.repeat(32)];
   });
+  const oldBefore = JSON.stringify(old);
   const { policy: next, entry } = await rotate(old, fx.raw_body);
   const m = (next.models as any)[fx.model];
   assert.deepEqual(m.compose_hash, ['33'.repeat(32), real.compose_hash]);
@@ -94,7 +95,9 @@ test('rotation adds the build and logs date, report hash and reason when only th
   assert.equal(entry.date, now.toISOString());
   assert.deepEqual((next._rotate_log as unknown[]).at(-1), entry);
   assert.equal(next._rotate, policy._rotate);
-  assert.equal(JSON.stringify(old).includes(real.compose_hash), false);
+  // rotation returns a new policy and never mutates its input (the committed log may already name the hash)
+  assert.equal(JSON.stringify(old), oldBefore);
+  assert.equal(((old.models as any)[fx.model].compose_hash as string[]).includes(real.compose_hash), false);
   assert.equal((await verify(next)).status, 'VERIFIED');
 });
 
