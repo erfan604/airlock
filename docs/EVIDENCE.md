@@ -156,6 +156,13 @@ and `x-no-aliasing: true`, and every check passed (21 rows, run offline again by
 - cost: the report endpoint is not billed, so the live check spent usd 0.00 of the NEAR AI credit (plan/LLM_BUDGET.md ledger)
 - scope: this is evidence about the model TEE instance that answered the report request. It is not a signature on any single completion, and the report does not name which instance serves a later completion (docs.near.ai, model-attestations and verification-policy pages). Facts and URLs: research repo `notes/nearai_attestation_2026-11-03.md`.
 
+The final bench run (AIR-227, 2026-11-03) repeated the check on the same model before its first call and stored the result in the run's metadata, which the line of the bench block that starts with `model report` copies:
+
+- verified at: 2026-11-03T15:36:30.183Z
+- nonce: cd590d3279e9e9941510726a05bacd7482df385332f73a8fc2385d367c445d8f
+- report sha256 (of the raw response body): 4d56182273e7a0183afc384d4bea4870707023e0ade3f79f96d67944f8de0f44
+- result: every one of the 21 checks passed
+
 ## Video links
 
 https://testnet.nearblocks.io/txns/5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG
