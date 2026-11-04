@@ -31,6 +31,10 @@ No TEE registration transaction is recorded here: the runtime runs in local mode
 | 2026-11-03 | U01 | allowed - | https://testnet.nearblocks.io/txns/6XaB7gpdo9rvCoupNnLM7WHudfnhnAwVhdquy2RzGqB5 | 37798c2cfbd13767d9e6a1e601dd7a19e7f1b0ffe3672c22be7941f4112025c0:0 | policy-v2.erfan-airlock.testnet |
 | 2026-11-03 | B01 | escalated OverTaskBound | https://testnet.nearblocks.io/txns/ED95Qh2t1rvAUmkG2ZkDrrz3pdQ32LB9oY3AAWteqESp | 3042a8d518331ffc9c031dadc168cf03a1a318031032985669bf95f18ea857c6:0 | policy-v2.erfan-airlock.testnet |
 | 2026-11-03 | B01 | approved by the owner (yes relayed by the coordinator under D23, scripts/approve-cli.sh 1 with its run flag) | https://testnet.nearblocks.io/txns/4A9ErvQsLTSZ2Dgj4xzT5ZPGk8nsAXWKDCgs2FQAbtVR | request 1 | policy-v2.erfan-airlock.testnet |
+| 2026-11-04 | U01 | allowed - | https://testnet.nearblocks.io/txns/VY29iWQWdALDRN5tU899mYDetRFziimQHatLDThFjo5 | a2fe68fc50c832f3dc72b8e3991c7531467aad93236daff88d62d1bfcbb8f400:0 | policy-v2.erfan-airlock.testnet |
+| 2026-11-04 | B01 | escalated OverTaskBound | https://testnet.nearblocks.io/txns/2GopXekFGPXWEtvJj9UU5M4GVh8TWzxErLWUEwomyS1t | d9b4c1779c50491b426ee8e6d3c3551c64836671d4fdbd2e22d190dd234f8d10:0 | policy-v2.erfan-airlock.testnet |
+| 2026-11-04 | B01 | approved by the owner (yes relayed by the coordinator under D23, scripts/approve-cli.sh 2 with its run flag) | https://testnet.nearblocks.io/txns/EnvcfoiiruQDauNn7xiB3Vu3JMXdHoBc5opsUhU2GaAC | request 2 | policy-v2.erfan-airlock.testnet |
+| 2026-11-04 | B01 | tampered approve (amount 9.4 sent as 4.2) reverted: approve rejected: WrongAmount, request 3 still pending (scripts/demo-tamper.ts 3) | https://testnet.nearblocks.io/txns/C3yC8sgP5U1Kjm2EcQ8NcmgBY5S74pAv5WXQG93YGy6M | request 3 | policy-v2.erfan-airlock.testnet |
 
 The amounts of the AIR-165 cases are fixed in `scripts/e2e/cases.ts`: U01 pays 4.2 NEAR to an in-book payee and is allowed, B01 asks for 9.4 NEAR, which is over the task bound, and CONTRACTOR pays 0.02 ETH on Base Sepolia.
 

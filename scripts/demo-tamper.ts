@@ -1,7 +1,7 @@
 // AIR-182: the tamper demo. `tsx scripts/demo-tamper.ts <no>` (Erfan runs it: it needs his keychain). It reads the pending request <no> from
 // the chain, sends `approve` with ONE of the five card values changed, and shows that the contract refused it and the request is still
 // pending with its stored amount. The value that changes is the amount: 4.2, or 9.4 when the stored amount text is already 4.2.
-// Reads go through RPC (web/src/chain/rpc.ts), the one transaction through the near CLI as an argument array (no shell).
+// Reads go through RPC (web/src/chain/rpc.ts), the one transaction is signed by the near CLI (argument array, no shell) and sent through RPC send_tx.
 // Env: NEAR (the binary, default near), OWNER and POLICY (default: fixtures/accounts.testnet.json), AIRLOCK_RPC_URLS (comma list, default the
 // NEAR testnet nodes of plan/STACK.md), AIRLOCK_TX_POLLS (default 6) and AIRLOCK_POLL_MS (default 2000) for the transaction lookup.
 // Exit 0 and `TAMPER REVERTED <hash> approve rejected: WrongAmount` when the contract refused; 1 for anything else; 2 for a bad argument.
@@ -78,21 +78,39 @@ async function main(): Promise<number> {
   const storedAmount = stored.display.amount_decimal;
   const tampered = { id: stored.id, to: stored.payee, asset: stored.display.asset_symbol, amount: storedAmount === '4.2' ? '9.4' : '4.2', why: stored.reason, book: stored.book_status };
 
+  // near-cli-rs 0.30 prints no "Transaction ID" when the call fails, which is the whole point here. So near only signs (`display`) and the
+  // signed transaction goes out through RPC send_tx, whose outcome carries the hash and the failure either way.
   const near = process.env.NEAR ?? 'near';
   const run = spawnSync(
     near,
-    ['contract', 'call-function', 'as-transaction', policy, 'approve', 'json-args', JSON.stringify(tampered), 'prepaid-gas', `${APPROVE_PREPAID_TGAS} Tgas`, 'attached-deposit', '1 yoctoNEAR', 'sign-as', owner, 'network-config', 'testnet', 'sign-with-keychain', 'send'],
+    ['contract', 'call-function', 'as-transaction', policy, 'approve', 'json-args', JSON.stringify(tampered), 'prepaid-gas', `${APPROVE_PREPAID_TGAS} Tgas`, 'attached-deposit', '1 yoctoNEAR', 'sign-as', owner, 'network-config', 'testnet', 'sign-with-keychain', 'display'],
     { encoding: 'utf8' },
   );
-  const output = `${run.stdout ?? ''}${run.stderr ?? ''}`;
-  const hash = /Transaction ID: ([A-Za-z0-9]{1,64})/.exec(output)?.[1];
-  if (hash === undefined) {
+  const output = `${run.stdout ?? ''}${run.stderr ?? ''}`.replace(/\x1b\[[0-9;]*m/g, '');
+  const signed = /Signed transaction \(serialized as base64\):\s*([A-Za-z0-9+/=]{40,})/.exec(output)?.[1];
+  if (signed === undefined) {
     console.log(output);
-    console.error('no "Transaction ID" in the output of near. Paste the hash from its summary into: scripts/golden.ts tamper --tamper-tx <hash>');
+    console.error('near did not print a signed transaction');
     return 1;
   }
-
-  const failure = await txFailureText(rpcUrls, owner, hash);
+  let hash: string | undefined;
+  let failure: string | null = null;
+  try {
+    const sent = (await rpcCall({ rpcUrls }, 'send_tx', { signed_tx_base64: signed, wait_until: 'FINAL' })) as {
+      status?: unknown;
+      transaction?: { hash?: string };
+      receipts_outcome?: { outcome?: { status?: unknown } }[];
+    } | null;
+    hash = sent?.transaction?.hash;
+    if (sent !== null && sent.status !== undefined) failure = [JSON.stringify(sent.status), ...(sent.receipts_outcome ?? []).map((r) => JSON.stringify(r.outcome?.status ?? null))].join(' ');
+  } catch (e) {
+    console.error(`send_tx: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  if (hash === undefined) {
+    console.error('send_tx returned no transaction hash');
+    return 1;
+  }
+  if (failure === null) failure = await txFailureText(rpcUrls, owner, hash);
   if (failure === null) {
     console.error(`could not read transaction ${hash} from RPC`);
     return 1;
