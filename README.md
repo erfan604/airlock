@@ -56,7 +56,7 @@ The strings above are asserted by the browser test `pnpm -C web e2e demo`, which
 | 4 | T3 | `scripts/check.sh full` | about 360 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
 
-Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean (the maintainer gate), T4 plus read only RPC. A row whose tool is missing prints `SKIP <id> needs <tool>`. Details in `docs/VERIFY.md`. A hosted job (`.github/workflows/quick-tier.yml`) runs the T1 tier on every push to main; the full gate is `scripts/check.sh full`, run locally.
+Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean (the maintainer gate), T4 plus read only RPC. Row 4's time is with a warm Cargo cache; on a clean machine a full run takes about 41 minutes. A row whose tool is missing prints `SKIP <id> needs <tool>`. Details in `docs/VERIFY.md`. A hosted job (`.github/workflows/quick-tier.yml`) runs the T1 tier on every push to main; the full gate is `scripts/check.sh full`, run locally.
 
 ## Verify everything
 
@@ -84,7 +84,7 @@ Each line is a command, what it needs and the last line it prints. Labels: recor
 3. `pnpm tsx scripts/e2e-testnet.ts U01` runs a legitimate NEAR payment, and `pnpm tsx scripts/e2e-testnet.ts B01` runs the escalation case. Approve it with `scripts/approve-cli.sh <pending id> --run`, which the owner key signs; the agent key cannot approve.
 4. The transactions of the live runs are linked in `docs/EVIDENCE.md` (the section Testnet end to end and the section Owner approval, live): U01 paid 4.2 NEAR, B01 was escalated and then owner-approved and paid 9.4 NEAR, and the CONTRACTOR case paid 0.02 ETH on Base Sepolia through the MPC signer in transaction `0x943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63` [C10].
 
-The golden runs are `bench/golden/u01.json` (U01, submit `53GuKRQxh6w5yBf4ZCzgBYH3QpHwLUNXiq9yCdrDr7ug`), `b01-escalate.json` (submit `7vJhDpZzkuRwWYSntPqvNGqZmXNJcdRbeDP8hUTCW6rs`), `b01-approve.json` (owner approve `Fk8G1sGrJZ6wKDwH6CmpnA5gz1HJLMNaEaFjkKcDSSCk`) and `tamper.json` (the tampered approve `5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj`, reverted with `approve rejected: WrongAmount`) [C8b]. Their chain reads are recorded under `runtime/recordings/chain/`. `pnpm tsx scripts/verify-golden.ts` re-checks every hash against the chain and prints `PASS` per entry. The CONTRACTOR run reuses the AIR-165 transaction above. There is no golden run of the vanilla or allowlist twin losing money: that case did not occur live, and none is claimed.
+The golden runs are `bench/golden/u01.json` (U01, submit `53GuKRQxh6w5yBf4ZCzgBYH3QpHwLUNXiq9yCdrDr7ug`), `b01-escalate.json` (submit `7vJhDpZzkuRwWYSntPqvNGqZmXNJcdRbeDP8hUTCW6rs`), `b01-approve.json` (owner approve `Fk8G1sGrJZ6wKDwH6CmpnA5gz1HJLMNaEaFjkKcDSSCk`) and `tamper.json` (the tampered approve `5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj`, reverted with `approve rejected: WrongAmount`) [C8b]. Their chain reads are recorded under `runtime/recordings/chain/`. `pnpm tsx scripts/verify-golden.ts` re-checks every hash against the chain and prints `PASS` per entry. The CONTRACTOR run reuses the AIR-165 transaction above. There is no golden run of the vanilla or allowlist twin losing money: that case did not occur live, and none is claimed. The one live attempt, three runs of the vanilla twin on the B01 email on 2026-11-04, paid 0 of 3 (`docs/EVIDENCE.md`).
 
 The agent's key. The agent account `erfan-agent.testnet` holds two function-call keys, each limited to `submit_batch` on one policy account: the golden runs' policy account with an unlimited gas allowance (every call buys its gas up front, and a capped allowance would lock the agent out), and the live demo's account `policy-v2.erfan-airlock.testnet` with a capped allowance. Neither key can move NEAR, add keys or call owner methods. It does not limit what the agent submits: the agent can still send any request, and the contract's verdict is the control. The account also holds one full-access key that was used for setup, and `list-keys` shows all three. Check with `near account list-keys erfan-agent.testnet network-config testnet now`.
 
@@ -224,7 +224,7 @@ Libraries, the template fork and adapted code are listed in `docs/THIRD_PARTY.md
 
 Each item answers one entry of the Not covered list under Proven. None is built.
 
-- Planner and reader models: run the benchmark on more models and with more runs per case than the one model and 10 runs it has now.
+- Planner and reader models: run the benchmark on more models and with more runs per case; today it has three models, 10 runs per case on the cheap model and 5 on the other two.
 - Labels the runtime attaches: extend the Lean model of the interpreter toward the TypeScript that ships, which today has a model and a property test.
 - TEE: register the runtime in a TEE and link the registration transaction in `docs/EVIDENCE.md`; the runtime is in local mode, unattested.
 - Chain and MPC signer: these stay trusted; the on chain evidence of each run stays re-checkable with `pnpm verify-approval` and `pnpm tsx scripts/verify-golden.ts`.
@@ -237,7 +237,7 @@ The owner console is a dark NEAR-themed React app with CSS motion and the Mona S
 
 ## Deployed ids and hashes
 
-Copied from `docs/EVIDENCE.md`: policy contract `policy.erfan-airlock.testnet`, code hash `2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC` (hex `1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805`, equal to the sha256 of the committed `res/airlock_policy.wasm`), deploy transaction `5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG`, commit `dfbe646`. The derived EVM address is `0x16C089aAd87dEcf4eAaa4a4AFEB5926BcD11B410`.
+Copied from `docs/EVIDENCE.md`: policy contract `policy.erfan-airlock.testnet`, code hash `2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC` (hex `1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805`, equal to the sha256 of the committed `res/airlock_policy.wasm`), deploy transaction `5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG`, commit `dfbe646`. The derived EVM address is `0x16C089aAd87dEcf4eAaa4a4AFEB5926BcD11B410`. The live demo (`pnpm demo:live`) and the x402 payment use `policy-v2.erfan-airlock.testnet`, code hash `6t3BqYViYKiXBv4DL6KtutafGRWKUmJf8yGYa3uH9DX4` (its deploys are listed in `docs/EVIDENCE.md`), derived EVM address `0x2a4e1c4e9968f35cffeb649de0d3cd3a45cceee8` for the native ETH path.
 
 ## Repo map
 
