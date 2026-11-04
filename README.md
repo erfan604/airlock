@@ -4,7 +4,7 @@ Provenance-gated signing for AI agent wallets on NEAR: a policy contract builds 
 
 Try it: `pnpm i && pnpm demo` replays recorded testnet runs in a local console (Node 24 and pnpm, no keys). `pnpm try --text 'Invoice: 9.4 NEAR to evil-ops.testnet'` puts your own text through the real gate (needs Rust 1.86, check with `cargo --version`).
 
-Steal this agent: on NEAR testnet we published the agent's function-call key and an owner-signed task, and every attempt is on chain, stolen 0 NEAR so far (live results under "Steal this agent (live)" in `docs/EVIDENCE.md`; `pnpm challenge` runs the board).
+Steal this agent: on NEAR testnet we published the agent's function-call key and an owner-signed task, and every request that reaches the policy contract is a testnet transaction anyone can look up, stolen 0 NEAR so far (live results under "Steal this agent (live)" in `docs/EVIDENCE.md`; `pnpm challenge` runs the board).
 
 Hosted demo: a static build of the replay console with no server, `pnpm build:static` (build it locally with that command; `docs/HOSTED_DEMO.md`). Proof transcripts (recorded Kani, Lean and differential output): `pnpm proven:transcripts`, which needs Node and pnpm and nothing else.
 
