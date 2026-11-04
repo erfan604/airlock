@@ -43,11 +43,14 @@ fi
 if [ -n "${REPO:-}" ]; then
   T=$(mktemp -d); trap 'rm -rf "$T" "$H"' EXIT
   for kind in issue pr; do
-    if ! gh "$kind" list --repo "$REPO" --state all --limit 5000 --json number,title,body,comments \
-         --jq '.[] | "#\(.number)\t\(.title)\t\(.body)\t\([.comments[].body] | join(" "))"' > "$T/$kind.txt"; then
+    if ! gh "$kind" list --repo "$REPO" --state all --limit 5000 --json number,title,body,comments > "$T/$kind.json"; then
       echo "ERROR: could not list ${kind}s for $REPO (gh failed); nothing was screened there"; hits=1; continue
     fi
-    n=$(wc -l < "$T/$kind.txt" | tr -d ' ')
+    # count items, not lines: bodies contain newlines, so a line count overstates the number of issues (AIR-254 saw 15383)
+    if ! n=$(jq 'length' "$T/$kind.json") || ! jq -r '.[] | "#\(.number)\t\(.title)\t\(.body)\t\([.comments[].body] | join(" "))"' \
+         "$T/$kind.json" > "$T/$kind.txt"; then
+      echo "ERROR: could not parse the ${kind} list for $REPO; nothing was screened there"; hits=1; continue
+    fi
     [ "$n" -lt 5000 ] || { echo "ERROR: $n ${kind}s returned, the 5000 limit may have truncated the list"; hits=1; }
     scan "GITHUB ${kind}s" < "$T/$kind.txt"
   done
