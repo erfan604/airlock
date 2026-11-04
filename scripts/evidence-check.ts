@@ -60,6 +60,9 @@ const HEADINGS = [
   '## Deployed ids and hashes', '## Real MPC (AIR-102)', '## Testnet end to end (AIR-165)', '## Golden runs (AIR-166)', '## Wallet matrix',
   '## Toolchain', '## Differential', '## Video links', '## Model choice',
 ];
+// Optional row: the account that now holds the committed wasm after a redeploy to a new account. The code checks (on-chain code
+// hash, deploy transaction receiver) use it; the golden files and the real MPC signer derivation stay tied to 'Policy contract account'.
+const CURRENT_LABEL = 'Current policy contract account';
 const DEPLOYED_ROWS = [
   'Policy contract account', 'Code hash (base58)', 'Wasm sha256', 'Deploy transaction', 'Derived Base Sepolia address',
   'MPC contract version', 'MPC contract code hash',
@@ -367,6 +370,10 @@ async function runChecks(env: Env, report: Report): Promise<number> {
   const policyCell = rowVal('Policy contract account') ?? '';
   const policyToken = /nearblocks\.io\/address\/([a-z0-9._-]+)/.exec(rowsOf('Policy contract account')[0]?.raw ?? '')?.[1] ?? policyCell.split(/\s+/)[0] ?? '';
   const policy = ACCOUNT_RE.test(policyToken) ? policyToken : null;
+  const curRow = rowsOf(CURRENT_LABEL)[0];
+  const curToken = curRow === undefined ? '' : (/nearblocks\.io\/address\/([a-z0-9._-]+)/.exec(curRow.raw)?.[1] ?? (rowValue(curRow) ?? '').split(/\s+/)[0] ?? '');
+  // the account the committed wasm is deployed to: the current row when the file has one, else the policy account row
+  const codeAccount = curRow === undefined ? policy : (ACCOUNT_RE.test(curToken) ? curToken : null);
 
   // 3. code
   const wasm = env.bytes(WASM_PATH);
@@ -392,13 +399,13 @@ async function runChecks(env: Env, report: Report): Promise<number> {
     else report('PASS', 'code hash row', wasmB58);
   });
   await guarded('on-chain code hash', async () => {
-    if (policy === null) return report('FAIL', 'on-chain code hash', 'no valid Policy contract account row');
+    if (codeAccount === null) return report('FAIL', 'on-chain code hash', 'no valid ' + (curRow === undefined ? 'Policy contract account' : CURRENT_LABEL) + ' row');
     if (wasmB58 === null) return report('FAIL', 'on-chain code hash', WASM_PATH + ' is missing');
-    const r = await rpcFirst(env, NEAR_RPCS, 'query', { request_type: 'view_account', finality: 'final', account_id: policy });
-    if (!r.ok) return report('FAIL', 'on-chain code hash', 'no node answered view_account for ' + policy + ' (' + r.reason + ')');
+    const r = await rpcFirst(env, NEAR_RPCS, 'query', { request_type: 'view_account', finality: 'final', account_id: codeAccount });
+    if (!r.ok) return report('FAIL', 'on-chain code hash', 'no node answered view_account for ' + codeAccount + ' (' + r.reason + ')');
     const onChain = String(r.result.code_hash ?? '');
-    if (onChain === wasmB58) report('PASS', 'on-chain code hash', policy + ' ' + onChain);
-    else report('FAIL', 'on-chain code hash', policy + ' holds ' + onChain + ', the committed wasm is ' + wasmB58);
+    if (onChain === wasmB58) report('PASS', 'on-chain code hash', codeAccount + ' ' + onChain);
+    else report('FAIL', 'on-chain code hash', codeAccount + ' holds ' + onChain + ', the committed wasm is ' + wasmB58);
   });
   await guarded('golden contractId', () => {
     const names = env.list('bench/golden').filter((n) => n.endsWith('.json')).sort();
@@ -464,8 +471,8 @@ async function runChecks(env: Env, report: Report): Promise<number> {
     if (tx === undefined) return report('FAIL', 'deploy transaction', 'transaction ' + h + ' could not be read');
     const hashes = deployedHashes(tx);
     if (txFailed(tx)) report('FAIL', 'deploy transaction', h + ' failed');
-    else if (policy === null) report('FAIL', 'deploy transaction', 'no valid Policy contract account row');
-    else if (tx.receiver !== policy) report('FAIL', 'deploy transaction', 'receiver is ' + tx.receiver + ', the policy account is ' + policy);
+    else if (codeAccount === null) report('FAIL', 'deploy transaction', 'no valid ' + (curRow === undefined ? 'Policy contract account' : CURRENT_LABEL) + ' row');
+    else if (tx.receiver !== codeAccount) report('FAIL', 'deploy transaction', 'receiver is ' + tx.receiver + ', the policy account is ' + codeAccount);
     else if (hashes.length === 0) report('FAIL', 'deploy transaction', 'no DeployContract action in ' + h);
     else if (wasmHex === null) report('FAIL', 'deploy transaction', WASM_PATH + ' is missing');
     else if (!hashes.includes(wasmHex)) report('FAIL', 'deploy transaction', 'deploys code hash ' + hashes.join(', ') + ', the committed wasm is ' + wasmHex);

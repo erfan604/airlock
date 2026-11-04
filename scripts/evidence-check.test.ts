@@ -221,6 +221,29 @@ test('view_account failing on every node fails the chain check', () => {
   });
 });
 
+test('a Current policy contract account row moves the code checks to the redeployed account, the golden files stay on the policy account row', () => {
+  const V2 = 'policy-v2.fixture-owner.testnet';
+  const addRow = (w: World) => evidence(w, (s) => swap(s, '| Policy contract account | NEAR testnet | ' + POLICY + ' |',
+    '| Policy contract account | NEAR testnet | ' + POLICY + ' |\n| Current policy contract account | NEAR testnet | ' + V2 + ' | 2026-11-03 |'));
+  withWorld((w) => {   // no node knows the new account: the chain check asks for it, not for the old one
+    addRow(w);
+    const r = run(w);
+    assertFails(r, /^FAIL on-chain code hash: no node answered view_account for policy-v2\.fixture-owner\.testnet/);
+    assert.match(r.out, /^PASS golden contractId/m);
+  });
+  withWorld((w) => {   // a node holding the wasm digest under the new account passes the chain check
+    addRow(w);
+    rules(w, (rs) => {
+      const v = rule(rs, 'view-policy');
+      rs.push({ id: 'view-v2', url: v.url, match: (v.match ?? []).map((m) => m.split(POLICY).join(V2)), body: v.body });
+    });
+    const r = run(w);
+    assert.match(r.out, /^PASS on-chain code hash \(policy-v2\.fixture-owner\.testnet /m, r.out);
+    assert.match(r.out, /^PASS golden contractId/m);
+    assertFails(r, /^FAIL deploy transaction: receiver is policy\.fixture-owner\.testnet, the policy account is policy-v2\.fixture-owner\.testnet/);
+  });
+});
+
 test('a golden file with another contract id fails and names the file; a tree with no golden files fails', () => {
   withWorld((w) => {
     edit(w, 'bench/golden/tamper.json', (s) => swap(s, '"policy.fixture-owner.testnet"', '"policy-old.fixture-owner.testnet"'));

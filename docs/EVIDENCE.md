@@ -86,10 +86,11 @@ Testnet, 2026-11-02 (weather GOOD): `GAS TESTNET batch3 ... need=115.617` ([tx](
 
 | What | Network | Id / hash / link | Date |
 | --- | --- | --- | --- |
-| Policy contract account | NEAR testnet | policy.erfan-airlock.testnet | 2026-11-02 |
-| Code hash (base58) | NEAR testnet | 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC | 2026-11-02 |
-| Wasm sha256 | local | 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 (`contracts/airlock-policy/res/airlock_policy.wasm`, the on-chain code hash converted from base58 equals it) | 2026-11-02 |
-| Deploy transaction | NEAR testnet | https://testnet.nearblocks.io/txns/5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG | 2026-11-02 |
+| Policy contract account | NEAR testnet | policy.erfan-airlock.testnet (first deploy: the account of the golden runs and of the real MPC signature, code hash 2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC, tx [5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG](https://testnet.nearblocks.io/txns/5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG)) | 2026-11-02 |
+| Current policy contract account | NEAR testnet | policy-v2.erfan-airlock.testnet (holds the committed wasm, redeployed in AIR-299) | 2026-11-03 |
+| Code hash (base58) | NEAR testnet | 6t3BqYViYKiXBv4DL6KtutafGRWKUmJf8yGYa3uH9DX4 | 2026-11-03 |
+| Wasm sha256 | local | 575d8750295481beb399afaa572111139773a6ee108b85e9999f990158d98f3f (`contracts/airlock-policy/res/airlock_policy.wasm`, the on-chain code hash converted from base58 equals it) | 2026-11-02 |
+| Deploy transaction | NEAR testnet | https://testnet.nearblocks.io/txns/5i7bAY6hYiqfCUYKzhaKDGMwHdc8Z1tnhsj1RHtAHwYE | 2026-11-03 |
 | Derived Base Sepolia address | Base Sepolia | 0x16C089aAd87dEcf4eAaa4a4AFEB5926BcD11B410 | 2026-11-02 |
 | MPC contract version | NEAR testnet | v1.signer-prod.testnet version 3.18.0 (`fixtures/mpc-expected.json`) | 2026-11-02 |
 | MPC contract code hash | NEAR testnet | CpGX8ywXJwvWPgZFDDCTCuPJBHF7BATT51gSfc3APERJ (`fixtures/mpc-expected.json`) | 2026-11-02 |
