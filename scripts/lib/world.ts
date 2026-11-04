@@ -92,7 +92,8 @@ export async function runPreflight(pf: PreflightIo, w: WorldIo): Promise<Line[]>
     }),
   );
 
-  for (const [name, account] of [['twin vanilla', w.twins.vanilla], ['twin allowlist', w.twins.allowlist]] as const) {
+  // only the vanilla twin spends NEAR live (golden.ts twin); the allowlist baseline is derived offline (docs/BENCH.md), so its account is not checked
+  for (const [name, account] of [['twin vanilla', w.twins.vanilla]] as const) {
     out.push(
       await guarded(name, async () => {
         const { amount } = await w.viewAccount(account);

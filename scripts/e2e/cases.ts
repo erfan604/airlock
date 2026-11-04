@@ -37,6 +37,8 @@ export function isCaseId(value: string): value is CaseId {
   return (CASE_IDS as readonly string[]).includes(value);
 }
 
-// Worst-case Base Sepolia fee for one transfer: the registry caps max_gas 100,000 at max_fee_per_gas 50 gwei, so 0.005 ETH. The derived
-// address must hold the case amount plus this, not the payee's whole cap (AIR-165, 2026-11-02; AIR-166's preflight uses it too).
-export const EVM_FEE_RESERVE_WEI = 100_000n * 50_000_000_000n;
+// Worst-case Base Sepolia fee for one transfer as the agent signs it: feePolicyFromRegistry (runtime/src/agent.ts) uses gas_limit 21,000 at
+// the registry's max_fee_per_gas of 50 gwei, so 0.00105 ETH. The node needs value plus gas_limit times max fee, so the derived address must
+// hold the case amount plus this, not the payee's whole cap (AIR-165, 2026-11-02; AIR-166's preflight uses it too). Until 2026-11-04 this
+// used the registry's max_gas of 100,000 (0.005 ETH), which no transfer the agent signs can reach.
+export const EVM_FEE_RESERVE_WEI = 21_000n * 50_000_000_000n;

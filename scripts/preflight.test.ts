@@ -79,19 +79,18 @@ const lines = async (over: Partial<Knobs> = {}): Promise<Line[]> => {
 };
 const level = (ls: Line[], name: string): string => ls.find((l) => l.name === name)?.level ?? 'MISSING';
 
-test('a ready world prints eleven lines, none FAIL, and the six pinned lines are PASS', async () => {
+test('a ready world prints ten lines, none FAIL, and the six pinned lines are PASS', async () => {
   const ls = await lines();
-  assert.equal(ls.length, 11);
-  assert.deepEqual(ls.map((l) => l.name), ['policy balance', 'derived address', 'twin vanilla', 'twin allowlist', 'agent key', 'untrusted budget', 'pending', 'nonce', 'mpc', 'base rpc', 'near rpc']);
+  assert.equal(ls.length, 10);
+  assert.deepEqual(ls.map((l) => l.name), ['policy balance', 'derived address', 'twin vanilla', 'agent key', 'untrusted budget', 'pending', 'nonce', 'mpc', 'base rpc', 'near rpc']);
   assert.ok(ls.every((l) => l.level === 'PASS'), ls.map(formatLine).join('\n'));
 });
 
 test('each threshold is a FAIL naming its check', async () => {
   const cases: Array<[string, Partial<Knobs>]> = [
     ['policy balance', { policy: near('25.9') }], // 24.9 spendable after the 1 NEAR margin
-    ['derived address', { derived: (ETH * 249n) / 10000n }], // 0.0249 ETH, under 0.02 plus the 0.005 fee reserve
+    ['derived address', { derived: (ETH * 210n) / 10000n }], // 0.021 ETH, under 0.02 plus the 0.00105 fee reserve
     ['twin vanilla', { twinVanilla: near('19.9') }],
-    ['twin allowlist', { twinAllow: near('19.9') }],
     ['agent key', { allowance: '1000' }],
     ['untrusted budget', { accountantBudget: near('4.1').toString() }],
     ['untrusted budget', { contractorBudget: (ETH / 100n - 1n).toString() }],
