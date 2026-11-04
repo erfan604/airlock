@@ -1,0 +1,25 @@
+[package]
+name = "airlock-verdict-wasm"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.86"
+description = "The airlock-verdict function compiled to WebAssembly for the console's Try page: extern C exports only, no dependencies beyond the verdict crate"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+airlock-verdict = { path = "../airlock-verdict" }
+
+# Small and reproducible: no debug info, no symbols, one codegen unit, abort on panic (the verdict cannot panic).
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+debug = false
+strip = true
+
+[profile.dev]
+panic = "abort"

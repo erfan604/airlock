@@ -24,7 +24,7 @@ const moneyBan = { selector: "CallExpression[callee.name=/^(Number|parseInt|pars
 const wrapOnly = {
   group: ['**/untrusted', '**/untrusted.ts'],
   importNames: ['wrapUntrusted'],
-  message: 'wrapUntrusted is allowed only in src/approvals/evidence.ts, src/task/traceStore.ts and src/fixtures/.',
+  message: 'wrapUntrusted is allowed only in src/approvals/evidence.ts, src/task/traceStore.ts, src/challenge/model.ts, src/try/model.ts and src/fixtures/.',
 };
 const revealOnly = {
   group: ['**/untrusted', '**/untrusted.ts'],
@@ -51,7 +51,7 @@ export default defineConfig([
   },
   {
     // the parser of untrusted evidence, the trace store (its `raw` fields) and the fixture routes build Untrusted values
-    files: ['src/approvals/evidence.ts', 'src/task/traceStore.ts', 'src/challenge/model.ts', 'src/fixtures/**/*.{ts,tsx}'],
+    files: ['src/approvals/evidence.ts', 'src/task/traceStore.ts', 'src/challenge/model.ts', 'src/try/model.ts', 'src/fixtures/**/*.{ts,tsx}'],
     rules: { 'no-restricted-imports': ['error', { patterns: [revealOnly] }] },
   },
   {

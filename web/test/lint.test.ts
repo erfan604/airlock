@@ -43,6 +43,8 @@ test('lint: wrapUntrusted is allowed only in the evidence parser, the trace stor
   assert.deepEqual(await ruleIds(code, 'src/task/traceStore.ts'), []);
   assert.ok((await ruleIds(code, 'src/challenge/ChallengeView.tsx')).includes('no-restricted-imports'));
   assert.deepEqual(await ruleIds(code, 'src/challenge/model.ts'), []);
+  assert.deepEqual(await ruleIds(code, 'src/try/model.ts'), []);
+  assert.ok((await ruleIds(code, 'src/try/TryPage.tsx')).includes('no-restricted-imports'));
   assert.deepEqual(await ruleIds(code, 'src/fixtures/x.tsx'), []);
 });
 
