@@ -4,7 +4,7 @@
 #          (2,000 vectors), vector consumers, command guard self-test, commit rules, gitleaks. Budget 120 s warm (measure
 #          again after AIR-061 and record the number here).
 # full:    quick plus Kani, Lean, axiom audit, differential (40,000 vectors), contract wasm build and sandbox suites (two
-#          neard versions), web build and the toolchain pin table. Run before a push, a gate or a claim.
+#          neard versions), web build plus every browser e2e suite (web-e2e) and the toolchain pin table. Run before a push, a gate or a claim.
 # nightly: full plus the long runs. None are planned after the 2026-10-21 scope cut, so nightly equals full; the one million
 #          vector differential (scripts/diff-verdict.sh --nightly) is run once by hand before Freeze.
 # Every step is a row of the table printed at the end (name, seconds, ok, FAIL or SKIP). A failing step does not stop the run,
@@ -119,6 +119,20 @@ lean_proofs() {
   return "$bad"
 }
 
+# Every browser e2e suite (AIR-183): the fixtures sweep plus each web/e2e/<name>.e2e.ts, against a fresh dist and dist-static. All suites
+# run even when one fails, so the output names every failure.
+web_e2e() {
+  local bad=0 n f out rc
+  quiet pnpm -C web build || return 1
+  quiet pnpm -C web build:static || return 1
+  for n in fixtures $(cd web/e2e && for f in *.e2e.ts; do echo "${f%.e2e.ts}"; done); do
+    out=$(cd web && npx tsx e2e/run.ts "$n" 2>&1) && rc=0 || rc=$?
+    printf '%s\n' "$out" | tail -15
+    [ "$rc" -eq 0 ] || bad=1
+  done
+  return "$bad"
+}
+
 evidence_pins() {
   if scripts/evidence-pins.sh > target/pins.md; then echo "wrote target/pins.md"; return 0; fi
   grep MISMATCH target/pins.md || cat target/pins.md
@@ -194,7 +208,8 @@ if [ "$MODE" != quick ]; then
   # AIR-066 allows exactly I01 and I05 to have no test until AIR-108 writes them; AIR-108 deletes the flag (a protected edit)
   step_if scripts/invariant-map.sh invariants invariants scripts/invariant-map.sh   # AIR-066
   step_if scripts/bench-replay-check.sh bench-replay bench-replay scripts/bench-replay-check.sh   # AIR-228
-  step_if web/package.json web web quiet pnpm -C web build
+  # replaces the plain web build: the e2e suites need that build anyway. About 80 s, so it lives in full, not quick.
+  step_if web/e2e/run.ts web web-e2e web_e2e
   step evidence-pins evidence_pins
 fi
 

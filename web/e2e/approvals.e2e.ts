@@ -96,6 +96,8 @@ const run: E2E = async ({ page, baseUrl }) => {
   await audit(page, 'session-gate with the refusal');
 
   // the real route, in a build without VITE_CONTRACT_ID: it says so instead of showing a blank page
+  // the route probes GET /session to learn the mode (ReplayAware); with no runtime the preview proxy answers 502, so answer it here
+  await page.route('**/session', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"accountId":null}' }));
   await page.goto(`${baseUrl}/approvals`, { waitUntil: 'networkidle' });
   await page.locator('main').waitFor();
   await audit(page, '/approvals');

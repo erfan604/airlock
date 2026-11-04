@@ -15,6 +15,8 @@ const data = JSON.parse(readFileSync(join(root, 'public', 'bench.json'), 'utf8')
   header: string;
   compare: unknown[];
   attack: Table;
+  attackFeasible?: Table | null;
+  breakdown?: Table | null;
   benign: Table;
   outcomes: Table;
   owner: Table;
@@ -38,6 +40,8 @@ const run: E2E = async ({ page, baseUrl }) => {
     assert.equal(await page.locator('[data-testid="bench-header"]').innerText(), data.header);
 
     const tables: [string, Table][] = [['bench-attack', data.attack], ['bench-benign', data.benign], ['bench-outcomes', data.outcomes], ['bench-owner', data.owner], ...data.completion.map((t, i): [string, Table] => [`bench-completion-${i}`, t])];
+    if (data.attackFeasible) tables.push(['bench-attack-feasible', data.attackFeasible]);
+    if (data.breakdown) tables.push(['bench-breakdown', data.breakdown]);
     if (data.gaps !== null) tables.push(['bench-gaps', data.gaps]);
     let whiskers = 0;
     for (const [id, t] of tables) {

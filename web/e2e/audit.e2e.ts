@@ -21,7 +21,9 @@ const run: E2E = async ({ page, baseUrl }) => {
     await mobile.close();
   }
 
-  // a clean route stays clean in the non-mobile context
+  // a clean route stays clean in the non-mobile context. `/` probes GET /session to learn the mode (ReplayAware); the preview proxy
+  // would answer 502 with no runtime, so the probe is answered here like a live server with no owner session
+  await page.route('**/session', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"accountId":null}' }));
   await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
   assert.deepEqual(await clipAudit(page), []);
 };
