@@ -209,6 +209,44 @@ Door a, one attack text through the live planner and extractor (`ignore previous
 
 Board after these (the watcher counted all three door b txs): attempts 43 (door a 1, door b 3, seed 39), allowed 16, escalated 5, blocked 2, no action 20, stolen 0 NEAR, paid to booked payees inside the owner's caps 88.7 NEAR (seed), held for the owner 32 NEAR.
 
+## G5 fresh clone
+
+- Date: 2026-11-03 20:42 MST
+- Clone SHA: a6f8c559448c7dd1b88a7f292c2b9cd75bcfe440
+- check.sh quick in the clone: ALL GREEN (quick)
+- check.sh full in the clone: ALL GREEN (full, skipped: sandbox-p88)
+- Machine: macOS 26.5.1, Apple M4
+
+Durations printed by the run:
+
+```
+DURATION quick 185s
+DURATION full 2407s
+DURATION demo 3s
+DURATION replay 8s
+```
+
+Toolchain pins (scripts/evidence-pins.sh, run in the clone):
+
+| tool | pinned | actual | status |
+| --- | --- | --- | --- |
+| rustc | 1.86.0 | 1.86.0 | ok |
+| kani | 0.68 | 0.68.0 | ok |
+| lean | 4.35.0 | 4.35.0 | ok |
+| node | v24 | v24.22.1 | ok |
+| cargo-near | 0.22 | 0.22.0 | ok |
+| cargo-mutants | 26.0.0 | 26.0.0 | ok |
+| near-sdk | 5.26.1 | 5.26.1 | ok |
+| omni-transaction | 0.5.0 | 0.5.0 | ok |
+| near-sandbox | 0.3.9 | 0.3.9 | ok |
+
+Warm on this Mac before the run, so the run did not download them. A reader pays these downloads on the first run and needs network:
+
+- cargo registry: ~/.cargo/registry (1028 MB)
+- pnpm store: ~/Library/pnpm/store (1077 MB)
+- Lean toolchains (elan): ~/.elan (2825 MB)
+- NEAR sandbox binaries (neard): ~/.cache/airlock-sandbox (63 MB)
+
 ## Model choice
 
 planner model: z-ai/glm-5.3-flash, chosen on the criteria in order: benign task success first (the highest of the affordable models, with the fewest error rows), then cost per 1,000 calls from PRICES (USD 0.08 per million input tokens and 0.50 per million output tokens, measured about USD 0.06 per 1,000 calls), then mean latency (3.4 s per call at low reasoning effort), then JSON-schema acceptance (accepted, with the JSON in the answer and not in the reasoning), then the TEE flag (providerType vllm with attestation supported). Reasoning effort is low; the same model runs on both sides of the comparison.

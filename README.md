@@ -52,8 +52,8 @@ The strings above are asserted by the browser test `pnpm -C web e2e demo`, which
 | --- | --- | --- | --- | --- |
 | 1 | T1 | `pnpm i && pnpm demo --no-open --exit-when-ready` | about 5 s | `ready in <n>s` |
 | 2 | T1 | `scripts/claims-run.sh --tier node` | about 80 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
-| 3 | T2 | `pnpm bench:replay` | about 60 s | `REPLAY OK <n> runs` |
-| 4 | T3 | `scripts/check.sh full` | about 360 s | `ALL GREEN (full` |
+| 3 | T2 | `pnpm bench:replay` | about 8 s | `REPLAY OK <n> runs` |
+| 4 | T3 | `scripts/check.sh full` | about 2407 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
 
 Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean (the maintainer gate), T4 plus read only RPC. Row 4's time is with a warm Cargo cache; on a clean machine a full run takes about 41 minutes. A row whose tool is missing prints `SKIP <id> needs <tool>`. Details in `docs/VERIFY.md`. A hosted job (`.github/workflows/quick-tier.yml`) runs the T1 tier on every push to main; the full gate is `scripts/check.sh full`, run locally.

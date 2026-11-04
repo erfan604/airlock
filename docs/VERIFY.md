@@ -23,8 +23,8 @@ What can be checked with which tools, how long each command takes and the last l
 | --- | --- | --- | --- | --- |
 | 1 | T1 | `pnpm i && pnpm demo --no-open --exit-when-ready` | about 5 s | `ready in <n>s` |
 | 2 | T1 | `scripts/claims-run.sh --tier node` | about 80 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
-| 3 | T2 | `pnpm bench:replay` | about 60 s | `REPLAY OK <n> runs` |
-| 4 | T3 | `scripts/check.sh full` | about 360 s | `ALL GREEN (full` |
+| 3 | T2 | `pnpm bench:replay` | about 8 s | `REPLAY OK <n> runs` |
+| 4 | T3 | `scripts/check.sh full` | about 2407 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
 
 1. Replays recorded testnet runs and says so; no keys. The time is the demo part on a warm install (the install is not timed). If port 4173 or 8787 is taken it picks a free port and prints the real `console http://127.0.0.1:<port>`; a port named with `--console-port` or `--runtime-port` is strict and stops with `port <n> is already in use` when taken.
