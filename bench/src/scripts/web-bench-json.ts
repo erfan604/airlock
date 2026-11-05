@@ -14,6 +14,7 @@ import { BEGIN_MARKER, END_MARKER } from '../report/render.ts';
 import { benchTables, gapTable, tableLines } from '../report/tables.ts';
 import type { BenchTables, Table } from '../report/tables.ts';
 import { BEGIN as GAP_BEGIN, END as GAP_END } from './structural-gaps.ts';
+import { RESULTS_FILE as REDTEAM_RESULTS, redteamTable } from './redteam-report.ts';
 import { loadCases } from '../runner/cases.ts';
 import { ResultsFileSchema } from '../runner/record.ts';
 import type { ResultsFile, RunRecord } from '../runner/record.ts';
@@ -50,7 +51,16 @@ export function checkAgainst(t: BenchTables, markdown: string): string | null {
   return t.gaps === null ? null : firstMissing(rowLines(t.gaps), between(markdown, GAP_BEGIN, GAP_END));
 }
 
-function build(values: { results?: string; gaps?: string; fixture?: boolean }): BenchTables {
+/** The red-team summary of AIR-314 from bench/results/redteam.json (null when the file is absent). */
+function redteam(): Table | null {
+  try {
+    return redteamTable(JSON.parse(readFileSync(REDTEAM_RESULTS, 'utf8')) as Parameters<typeof redteamTable>[0]);
+  } catch {
+    return null;
+  }
+}
+
+function build(values: { results?: string; gaps?: string; fixture?: boolean }): BenchTables & { redteam?: Table | null } {
   // the helper's case_meta types the group as a string; its groups are the runner's
   if (values.fixture === true) return benchTables(resultsOf(fixtureRuns()) as unknown as ResultsFile);
   const results = readResults(values.results ?? 'results/latest.json');
@@ -62,7 +72,7 @@ function build(values: { results?: string; gaps?: string; fixture?: boolean }): 
     const stored = extra.runs as RunRecord[];
     gaps = gapTable(stored, deriveBaselines(stored, loadCases(resolve('cases'))));
   }
-  return benchTables(results, baselines, gaps, cases);
+  return { ...benchTables(results, baselines, gaps, cases), redteam: redteam() };
 }
 
 function main(): number {

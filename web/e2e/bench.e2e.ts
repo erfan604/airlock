@@ -22,6 +22,7 @@ const data = JSON.parse(readFileSync(join(root, 'public', 'bench.json'), 'utf8')
   owner: Table;
   completion: Table[];
   gaps: Table | null;
+  redteam?: Table | null;
 };
 
 const run: E2E = async ({ page, baseUrl }) => {
@@ -43,6 +44,7 @@ const run: E2E = async ({ page, baseUrl }) => {
     if (data.attackFeasible) tables.push(['bench-attack-feasible', data.attackFeasible]);
     if (data.breakdown) tables.push(['bench-breakdown', data.breakdown]);
     if (data.gaps !== null) tables.push(['bench-gaps', data.gaps]);
+    if (data.redteam) tables.push(['bench-redteam', data.redteam]);
     let whiskers = 0;
     for (const [id, t] of tables) {
       const cells = await page.locator(`[data-testid="${id}"] tbody td .bt-cell`).evaluateAll((els) => els.map((e) => e.textContent ?? ''));

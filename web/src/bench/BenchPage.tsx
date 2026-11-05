@@ -132,6 +132,7 @@ export function BenchView({ data }: { data: BenchData | null }) {
         ...(data.attackFeasible === undefined || data.attackFeasible === null ? [] : [{ t: data.attackFeasible, id: 'bench-attack-feasible' }]),
         { t: data.benign, id: 'bench-benign' },
         { t: data.outcomes, id: 'bench-outcomes' },
+        ...(data.redteam === undefined || data.redteam === null ? [] : [{ t: data.redteam, id: 'bench-redteam' }]),
       ].map(({ t, id }) => (
         <details key={id} className="bench-block bench-detail" data-testid={`${id}-details`}>
           <summary className="bench-h2">{t.title}</summary>

@@ -2154,7 +2154,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_batch_of_four_reverts",
       "attack": "a batch of four requests to stretch one call",
-      "expect": "revert: batch size 1 to 3"
+      "expect": "revert: batch size 1 to 3",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-02",
@@ -2162,7 +2164,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_same_index_twice_in_one_batch_charges_once",
       "attack": "the same request twice in one batch to be paid twice",
-      "expect": "the second answers the stored outcome; one charge, one action"
+      "expect": "the second answers the stored outcome; one charge, one action",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-03",
@@ -2170,7 +2174,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_two_allows_in_one_batch_share_the_task_bound",
       "attack": "two payments in one batch that each fit the bound but not together",
-      "expect": "allowed, then escalated OverTaskBound"
+      "expect": "allowed, then escalated OverTaskBound",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-04",
@@ -2178,7 +2184,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_unknown_label_bit_reverts",
       "attack": "label bit 15, which no name maps to",
-      "expect": "revert: unknown label bit"
+      "expect": "revert: unknown label bit",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-05",
@@ -2186,7 +2194,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_asset_payee_mismatch_reverts",
       "attack": "an EVM asset with a NEAR payee key",
-      "expect": "revert: asset does not match payee"
+      "expect": "revert: asset does not match payee",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-06",
@@ -2194,7 +2204,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_ft_lane_reverts",
       "attack": "a NEP-141 asset id on a lane that is not shipped",
-      "expect": "revert: lane not shipped"
+      "expect": "revert: lane not shipped",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-07",
@@ -2202,7 +2214,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_index_past_max_actions_reverts",
       "attack": "an action index past the task's max_actions",
-      "expect": "revert: task actions exhausted"
+      "expect": "revert: task actions exhausted",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-08",
@@ -2210,7 +2224,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_plan_hash_mismatch_reverts",
       "attack": "a request under another plan than the one the owner signed",
-      "expect": "revert: plan hash mismatch"
+      "expect": "revert: plan hash mismatch",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-09",
@@ -2218,7 +2234,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_replay_with_changed_amount_reverts",
       "attack": "resubmitting an allowed request id with a larger amount",
-      "expect": "revert: request mismatch"
+      "expect": "revert: request mismatch",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-10",
@@ -2226,7 +2244,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_lying_runtime_owner_labels_capped_by_task_bound",
       "attack": "a lying runtime labels every value Owner",
-      "expect": "a payee outside the task escalates OutsideTask; a book payee above the bound escalates OverTaskBound"
+      "expect": "a payee outside the task escalates OutsideTask; a book payee above the bound escalates OverTaskBound",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-11",
@@ -2234,7 +2254,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_uppercase_payee_key_reverts",
       "attack": "an uppercase twin of a book key",
-      "expect": "revert, nothing stored"
+      "expect": "revert, nothing stored",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-12",
@@ -2242,7 +2264,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_evm_params_on_near_lane_reverts",
       "attack": "EVM fee parameters on a NEAR request",
-      "expect": "revert: evm params not allowed"
+      "expect": "revert: evm params not allowed",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-CON-13",
@@ -2250,7 +2274,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_con_book_add_by_agent_reverts",
       "attack": "the agent adds a payee to the book",
-      "expect": "revert (owner only), book unchanged"
+      "expect": "revert (owner only), book unchanged",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-01",
@@ -2258,7 +2284,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_changed_amount_reverts",
       "attack": "approve with a different amount than the stored request",
-      "expect": "revert: approve rejected: WrongAmount"
+      "expect": "revert: approve rejected: WrongAmount",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-02",
@@ -2266,7 +2294,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_changed_payee_reverts",
       "attack": "approve naming another payee",
-      "expect": "revert: approve rejected: WrongRecipient"
+      "expect": "revert: approve rejected: WrongRecipient",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-03",
@@ -2274,7 +2304,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_replayed_approve_reverts",
       "attack": "the same approve twice",
-      "expect": "revert: NotPending"
+      "expect": "revert: NotPending",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-04",
@@ -2282,7 +2314,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_after_expiry_reverts",
       "attack": "approve at the expiry time",
-      "expect": "revert: approve rejected: Expired"
+      "expect": "revert: approve rejected: Expired",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-05",
@@ -2290,7 +2324,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_after_task_revoked_reverts",
       "attack": "approve after the owner revoked the task",
-      "expect": "revert: approve rejected: TaskRevoked"
+      "expect": "revert: approve rejected: TaskRevoked",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-06",
@@ -2298,7 +2334,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_by_agent_reverts",
       "attack": "the agent approves its own escalation",
-      "expect": "revert (owner only), still Pending"
+      "expect": "revert (owner only), still Pending",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-07",
@@ -2306,7 +2344,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_wrong_why_reverts",
       "attack": "approve with a reason the card did not show",
-      "expect": "revert: approve rejected: WrongReason"
+      "expect": "revert: approve rejected: WrongReason",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-08",
@@ -2314,7 +2354,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_after_reject_reverts",
       "attack": "approve after a reject",
-      "expect": "revert: NotPending"
+      "expect": "revert: NotPending",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-09",
@@ -2322,7 +2364,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_while_paused_reverts",
       "attack": "approve while the contract is paused",
-      "expect": "revert: approve rejected: Limit:Paused"
+      "expect": "revert: approve rejected: Limit:Paused",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-10",
@@ -2330,7 +2374,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_remembered_payee_has_no_untrusted_budget",
       "attack": "approve and remember a payee with a high cap, then send it an amount read from data",
-      "expect": "the remembered entry has budget 0: the next data amount escalates UntrustedAmount"
+      "expect": "the remembered entry has budget 0: the next data amount escalates UntrustedAmount",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-APPR-11",
@@ -2338,7 +2384,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_appr_remember_cannot_set_cap_below_amount",
       "attack": "remember with a cap below the approved amount",
-      "expect": "revert: remember rejected: CapBelowAmount, nothing stored"
+      "expect": "revert: remember rejected: CapBelowAmount, nothing stored",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-TASK-01",
@@ -2346,7 +2394,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_task_expired_task_reverts",
       "attack": "a request under a task at its expiry time",
-      "expect": "revert: task expired"
+      "expect": "revert: task expired",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-TASK-02",
@@ -2354,7 +2404,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_task_revoked_task_reverts",
       "attack": "the next action of a task the owner revoked",
-      "expect": "revert: task revoked"
+      "expect": "revert: task revoked",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-TASK-03",
@@ -2362,7 +2414,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_task_raised_bound_breaks_the_signature",
       "attack": "the owner's signature with a raised bound",
-      "expect": "revert: bad task signature"
+      "expect": "revert: bad task signature",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-TASK-04",
@@ -2370,7 +2424,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_task_second_task_meets_the_payee_daily_limit",
       "attack": "a second task to the same payee on the same day",
-      "expect": "allowed, then escalated OverPayeeLimit"
+      "expect": "allowed, then escalated OverPayeeLimit",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-TASK-05",
@@ -2378,7 +2434,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_task_other_agent_cannot_use_the_task",
       "attack": "another allowed agent submits under this agent's task",
-      "expect": "revert: wrong agent"
+      "expect": "revert: wrong agent",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-TASK-06",
@@ -2386,7 +2444,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_task_bound_not_reusable_after_allow",
       "attack": "a later call reuses a spent task bound",
-      "expect": "escalated OverTaskBound"
+      "expect": "escalated OverTaskBound",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-DOS-01",
@@ -2394,7 +2454,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_dos_three_rejects_lock_escalations_but_allows_still_pass",
       "attack": "three junk escalations the owner rejects",
-      "expect": "escalations blocked EscalationsLocked until reset; payments inside the limits still allowed"
+      "expect": "escalations blocked EscalationsLocked until reset; payments inside the limits still allowed",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-DOS-02",
@@ -2402,7 +2464,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_dos_pending_full_blocks_escalations_but_allows_still_pass",
       "attack": "three junk escalations left pending",
-      "expect": "a fourth escalation blocked PendingFull; payments inside the limits still allowed"
+      "expect": "a fourth escalation blocked PendingFull; payments inside the limits still allowed",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-DOS-03",
@@ -2410,7 +2474,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_dos_reset_keeps_the_hourly_budget",
       "attack": "spend the hourly escalation budget, then the owner resets",
-      "expect": "still blocked EscalationBudget until the next UTC hour"
+      "expect": "still blocked EscalationBudget until the next UTC hour",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-DOS-04",
@@ -2418,7 +2484,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_dos_junk_request_burns_one_action",
       "attack": "a request the gate blocks",
-      "expect": "it uses one of the task's actions; the rest still work"
+      "expect": "it uses one of the task's actions; the rest still work",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-DOS-05",
@@ -2426,7 +2494,9 @@
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_dos_expire_by_anyone_keeps_the_reject_streak",
       "attack": "a stranger expires a pending escalation",
-      "expect": "the slot frees, the streak neither grows nor clears, no lock"
+      "expect": "the slot frees, the streak neither grows nor clears, no lock",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-DOS-06",
@@ -2434,7 +2504,9 @@
       "file": "runtime/test/redteam.test.ts",
       "test": "rt_dos_first_mail_takes_the_only_action",
       "attack": "the attacker's mail is listed before the real invoice in a one-payment task",
-      "expect": "the plan runs once per mail; the first mail takes action index 0 and the real invoice gets NeedsAnotherTask (availability; the amount is still bounded by the cap, budget and task)"
+      "expect": "the plan runs once per mail; the first mail takes action index 0 and the real invoice gets NeedsAnotherTask (availability; the amount is still bounded by the cap, budget and task)",
+      "before": null,
+      "fix": null
     },
     {
       "id": "RT-GRD-19",
@@ -2442,7 +2514,9 @@
       "file": "challenge/test/redteam.test.ts",
       "test": "rt_grd_live_challenge_grounds_planner_literals",
       "attack": "a planner literal the owner never typed, in the live challenge engine",
-      "expect": "the amount is Owner plus Unresolved, as on the product server, so the verdict holds it"
+      "expect": "the amount is Owner plus Unresolved, as on the product server, so the verdict holds it",
+      "before": "the live engine ran without the grounder: the literal was Owner only, so a planner literal the owner never typed could auto-execute inside the signed task bound",
+      "fix": "a9725d9"
     }
   ]
 }

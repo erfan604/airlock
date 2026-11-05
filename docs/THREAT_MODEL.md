@@ -69,6 +69,9 @@ Cases are the `own-` ids in `bench/cases/own-abc.jsonl` and `bench/cases/own-sxp
 - Group P, look-alike payees: `own-P01` (look-alike key from history), `own-P02` (look-alike of the accountant).
 The adaptive and benign cases that sit beside these are in `bench/cases/should/` and `bench/cases/utility.jsonl`. They measure utility and escalation precision and are not attack groups.
 
+## Red-team campaign (AIR-314)
+`docs/REDTEAM.md` records 179 offline attacks on A1 and A2 in fifteen families (amount encodings, payee look-alikes, salami, book poisoning, owner-request poisoning, asset and chain confusion, memo and why-field injection, approval abuse, task-bound reuse, escalation DoS, arithmetic laundering, interpreter edges, quarantine extractor tricks, contract edges, literal grounding), each with its expected and actual result. With a fully hijacked reader, attacker-written plans and a lying runtime, no case paid a payee outside the book, paid a recipient read from data, or paid an amount read from data past the K2 envelope; strict mode auto-executed nothing an attacker chose. One gap was fixed (the live challenge engine ran without the literal grounder, commit a9725d9). The availability limits it pinned are in docs/KNOWN_LIMITATIONS.md: an attacker can block the owner's payments that need a tap (the escalation lock, the pending queue and the hourly budget, which the owner's reset does not clear), and a mail listed before the real invoice takes a one-payment task's action.
+
 ## Assumptions
 - The owner's device, wallet keys and local task key are not compromised.
 - NEAR consensus holds, and fewer than the threshold of MPC nodes are compromised.
@@ -84,7 +87,7 @@ The adaptive and benign cases that sit beside these are in `bench/cases/should/`
 - An owner who is socially engineered into typing an attacker's address. AIRLOCK trusts the owner's own words.
 - An owner who approves a truthfully displayed bad payment without reading it.
 - Theft or compromise of the owner's wallet keys, device or local task key.
-- Side channels that CaMeL acknowledges (timing and exceptions), and the availability channel: an attacker can cause escalations.
+- Side channels that CaMeL acknowledges (timing and exceptions), and the availability channel: an attacker can cause escalations, and through the flood limits it can block the owner's own payments that need a tap for up to the rest of a UTC hour, or until the owner decides the pending requests or resets a lock (docs/KNOWN_LIMITATIONS.md, `RT-DOS-01` to `RT-DOS-03`).
 - Evidence injection: fabricated facts that steer a decision inside the owner's limits, such as a fake price or news item (arXiv 2610.26438). AIRLOCK bounds where values come from and how much can move, not whether a trusted-looking fact is true.
 - Host operator powers: the host can delay, drop and replay traffic and read the environment, including environment variables.
 - Broadcast and ordering of signed EVM transactions happen off chain. An issued signature stays valid until its nonce is used, and pause does not revoke it (claim C2 in docs/CLAIMS.md).

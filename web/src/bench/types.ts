@@ -22,6 +22,8 @@ export type BenchData = {
   owner: Table;
   gaps: Table | null;
   residual: Residual | null;
+  /** AIR-314: the red-team summary per attack family; absent in older files */
+  redteam?: Table | null;
 };
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -52,6 +54,8 @@ export function parseBench(raw: unknown): BenchData | null {
   const { attackFeasible, breakdown } = raw;
   if (!(attackFeasible === undefined || attackFeasible === null || isTable(attackFeasible))) return null;
   if (!(breakdown === undefined || breakdown === null || isTable(breakdown))) return null;
+  const { redteam } = raw;
+  if (!(redteam === undefined || redteam === null || isTable(redteam))) return null;
   if (!(residual === null || (isObj(residual) && isStr(residual['text'])))) return null;
   return raw as unknown as BenchData;
 }

@@ -221,6 +221,8 @@
   "test": "rt_grd_live_challenge_grounds_planner_literals",
   "file": "challenge/test/redteam.test.ts",
   "attack": "a planner literal the owner never typed, in the live challenge engine",
-  "expect": "the amount is Owner plus Unresolved, as on the product server, so the verdict holds it"
+  "expect": "the amount is Owner plus Unresolved, as on the product server, so the verdict holds it",
+  "before": "the live engine ran without the grounder: the literal was Owner only, so a planner literal the owner never typed could auto-execute inside the signed task bound",
+  "fix": "a9725d9"
  }
 ]

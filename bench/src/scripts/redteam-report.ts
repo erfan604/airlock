@@ -27,6 +27,7 @@ import { VerdictCliBackend } from '../runner/backend.ts';
 import { bookRowsOf, loadCases } from '../runner/cases.ts';
 import type { Case } from '../runner/cases.ts';
 import { gatePath } from '../runner/gate.ts';
+import type { Table } from '../report/tables.ts';
 import { tagOf } from './check-cases.ts';
 
 export const DOC_FILE = join(BENCH_ROOT, '..', 'docs', 'REDTEAM.md');
@@ -220,6 +221,9 @@ const ContractCase = z.strictObject({
   file: z.enum(['contracts/airlock-policy/src/redteam.rs', 'runtime/test/redteam.test.ts', 'challenge/test/redteam.test.ts']).optional(),
   attack: z.string(),
   expect: z.string(),
+  /** for a case that got through: what happened before the fix, and the fix commit */
+  before: z.string().optional(),
+  fix: z.string().regex(/^[0-9a-f]{7,40}$/).optional(),
 });
 type ContractSpec = z.infer<typeof ContractCase>;
 
@@ -230,6 +234,8 @@ export interface ContractRow {
   test: string;
   attack: string;
   expect: string;
+  before: string | null;
+  fix: string | null;
 }
 
 const RUST_TESTS = 'contracts/airlock-policy/src/redteam.rs';
@@ -250,7 +256,7 @@ function contractRows(specs: readonly ContractSpec[], problems: string[]): Contr
     for (const t of named) if (!defined.has(t)) problems.push(`MISSING test ${t} in ${file}`);
     for (const t of defined) if (!named.has(t)) problems.push(`UNLISTED test ${t} in ${file}`);
   }
-  return specs.map((s) => ({ id: s.id, family: familyOf(s.id), file: s.file ?? RUST_TESTS, test: s.test, attack: s.attack, expect: s.expect }));
+  return specs.map((s) => ({ id: s.id, family: familyOf(s.id), file: s.file ?? RUST_TESTS, test: s.test, attack: s.attack, expect: s.expect, before: s.before ?? null, fix: s.fix ?? null }));
 }
 
 // ---------------------------------------------------------------- rendering
@@ -298,10 +304,58 @@ export function renderBlock(r: Report): string {
   lines.push('| Id | Function | What it tries | Expected | Result |', '| --- | --- | --- | --- | --- |');
   for (const p of r.probes) lines.push(`| ${p.id} | ${p.fn} | ${cell(p.note)} | ${cell(p.expect)} | ${cell(p.got)} |`);
   lines.push('', '### Contract, orchestrator and challenge cases (`contracts/airlock-policy/src/redteam.rs` in process, `runtime/test/redteam.test.ts`, `challenge/test/redteam.test.ts`)', '');
-  lines.push('| Id | Test | What it tries | Expected |', '| --- | --- | --- | --- |');
-  for (const c of r.contract) lines.push(`| ${c.id} | \`${c.test}\`${c.file === TS_TESTS ? ' (runtime)' : c.file === CHALLENGE_TESTS ? ' (challenge)' : ''} | ${cell(c.attack)} | ${cell(c.expect)} |`);
+  lines.push('| Id | Test | What it tries | Expected (after) | Before | Fix commit |', '| --- | --- | --- | --- | --- | --- |');
+  for (const c of r.contract) {
+    const where = c.file === TS_TESTS ? ' (runtime)' : c.file === CHALLENGE_TESTS ? ' (challenge)' : '';
+    lines.push(`| ${c.id} | \`${c.test}\`${where} | ${cell(c.attack)} | ${cell(c.expect)} | ${cell(c.before ?? 'same')} | ${c.fix ?? 'none'} |`);
+  }
   lines.push('', END);
   return lines.join('\n');
+}
+
+/** The per-family summary the site's Bench page shows (web/public/bench.json `redteam`), from the stored results. */
+export function redteamTable(stored: { gate: GateRow[]; probes: ProbeRow[]; contract: ContractRow[] }): Table {
+  const head = [
+    'Family',
+    'Cases',
+    'Gate: held for the owner',
+    'Gate: refused before any request',
+    'Gate: A2 paid inside the K2 envelope, A1 held',
+    'Gate: paid in A1 and A2 by design',
+    'Probes and tests: result as expected',
+    'Got through before a fix',
+  ];
+  const rows: Table['rows'] = [];
+  const keys = ['n', 'held', 'stopped', 'k2', 'design', 'unit', 'fixed'] as const;
+  const all: Record<(typeof keys)[number], number> = { n: 0, held: 0, stopped: 0, k2: 0, design: 0, unit: 0, fixed: 0 };
+  const line = (label: string, v: Record<(typeof keys)[number], number>): Table['rows'][number] => ({ cells: [label, ...keys.map((k) => String(v[k]))], whiskers: head.map(() => null) });
+  for (const [fam, name] of Object.entries(FAMILIES)) {
+    const g = stored.gate.filter((x) => x.family === fam);
+    const p = stored.probes.filter((x) => x.family === fam);
+    const c = stored.contract.filter((x) => x.family === fam);
+    const n = g.length + p.length + c.length;
+    if (n === 0) continue;
+    const fixed = c.filter((x) => x.fix !== null).length;
+    const v = {
+      n,
+      held: g.filter((x) => x.outcome === 'held').length,
+      stopped: g.filter((x) => x.outcome === 'stopped').length,
+      k2: g.filter((x) => x.outcome === 'k2').length,
+      design: g.filter((x) => x.outcome === 'by design').length,
+      unit: p.length + c.length,
+      fixed,
+    };
+    for (const k of keys) all[k] += v[k];
+    rows.push(line(`${fam} ${name}`, v));
+  }
+  rows.push(line('all', all));
+  return {
+    title: `Red team: ${all.n} attack cases on A1 and A2 (AIR-314)`,
+    note: 'Offline: a fully hijacked reader, attacker-written plans, a lying runtime and direct contract calls, with no model and no spend. A probe or test that pins a known limit counts as a result as expected. Every case with its expected and actual result is in docs/REDTEAM.md.',
+    head,
+    kinds: head.map(() => null),
+    rows,
+  };
 }
 
 export function renderResults(r: Report): string {
