@@ -23,6 +23,9 @@ export async function checkLanding(page: Page, baseUrl: string): Promise<void> {
   assert.equal(await id('fig-honest', page).locator('.fig-big').innerText(), '44 of 70');
   assert.equal(await id('cta-try', page).getAttribute('href'), '/try');
   assert.equal(await id('cta-replay', page).getAttribute('href'), '/replay');
+  // AIR-312: the hired-agent section links the Try page in the hired world
+  assert.ok((await id('landing-hire', page).innerText()).includes('is the task bound.'));
+  assert.equal(await id('cta-hired', page).getAttribute('href'), '/try?s=hired');
 }
 
 async function verdictOf(page: Page): Promise<{ state: string | null; guard: string | null }> {

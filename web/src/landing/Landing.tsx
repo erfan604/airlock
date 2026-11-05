@@ -124,6 +124,44 @@ function Numbers({ facts }: { facts: Facts | null | 'loading' }) {
   );
 }
 
+const HIRE_MAP = [
+  { theirs: 'The job budget', ours: 'the task bound', says: 'The agent cannot pay out more than the job pays it.' },
+  { theirs: "The job's payees", ours: 'the address book', says: "Inference, tools and the poster's refund account; nothing else is a known payee." },
+  { theirs: 'The job post and every other agent', ours: 'outside text', says: 'A payee they pick waits for the owner; an amount they pick is paid only up to the cap the owner set, and strict mode holds every one.' },
+];
+
+/** AIR-312: the Swarm-for-Hire mapping, in plain words, with the link that opens the Try page in the hired-agent world. */
+function Hire() {
+  return (
+    <section className="hire" aria-labelledby="hire-title" data-testid="landing-hire">
+      <div className="hire-intro">
+        <h2 id="hire-title" className="land-h2">
+          Built for agents you hire
+        </h2>
+        <p className="land-p">
+          In a Swarm-for-Hire, anyone posts a job, an agent takes it and pays for its own inference out of the job payment, and it reads text written by the poster and by other agents. AIRLOCK reads that setup the same way it reads a bill:
+        </p>
+      </div>
+      <dl className="hire-map">
+        {HIRE_MAP.map((m) => (
+          <div key={m.theirs} className="hire-row">
+            <dt className="hire-theirs">{m.theirs}</dt>
+            <dd className="hire-ours">
+              <span className="hire-is">{`is ${m.ours}.`}</span> {m.says}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className="case-more">
+        <a href={url('try?s=hired')} data-testid="cta-hired">
+          Try it with an agent you hired
+        </a>
+        : an inflated inference bill from another agent, a job post that grabs the budget. It runs on the shipped verdict in your browser; it is a scenario, not a benchmarked case.
+      </p>
+    </section>
+  );
+}
+
 const STEPS = [
   { title: 'Labels travel with values', body: 'Every value your agent handles carries where it came from: your own words, your address book, or outside text such as an email. No model sets a label.' },
   { title: 'The NEAR contract runs the verdict', body: 'The contract reads the labels, your book and your limits, and answers allow, hold for you, or block. The decision is a small pure function with no model in it.' },
@@ -211,6 +249,7 @@ export function Landing() {
       <div className="land-body">
         <HeadlineCase />
         <Numbers facts={facts} />
+        <Hire />
         <How />
         <Proven />
         <footer className="land-foot">

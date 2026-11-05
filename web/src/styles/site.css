@@ -559,6 +559,51 @@ h1 {
   color: var(--ink-3);
 }
 
+/* built for agents you hire: their term, then ours, on one ruled row each */
+.hire {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+.hire-intro {
+  display: grid;
+  gap: var(--space-3);
+}
+.hire-map {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--hair);
+}
+.hire-row {
+  display: grid;
+  gap: var(--space-1) var(--space-6);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--hair);
+}
+@media (min-width: 900px) {
+  .hire-row {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
+    align-items: baseline;
+  }
+}
+.hire-theirs {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.hire-ours {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.hire-is {
+  color: var(--xray);
+  font-weight: 600;
+}
+
 /* how it works: a track with three stops, the origin trail in cyan */
 .how {
   display: grid;

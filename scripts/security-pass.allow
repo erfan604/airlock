@@ -9,8 +9,8 @@
 ^web/src/challenge/ChallengeView\.tsx:[0-9]+:.*href=\{url\}
 # AIR-310: the static build's page links: `url()` puts the build's base path in front of a route from the constant list STATIC_LINKS.
 ^web/src/static/StaticPages\.tsx:[0-9]+:.*href=\{url\((l\.path|'')\)\}
-# AIR-311: a link to a route of this app: `url()` puts the build's base path in front of a string literal route (letters only).
-^web/src/[A-Za-z/]+\.tsx:[0-9]+:.*href=\{url\('[a-z]*'\)\}
+# AIR-311: a link to a route of this app: `url()` puts the build's base path in front of a string literal route (letters only, AIR-312 adds an optional ?s=<letters>).
+^web/src/[A-Za-z/]+\.tsx:[0-9]+:.*href=\{url\('[a-z]*(\?s=[a-z]+)?'\)\}
 # AIR-311: the console tabs: `url()` in front of a route from the constant NAV list of the same file.
 ^web/src/shell/SiteNav\.tsx:[0-9]+:.*href=\{url\(n\.path\)\}
 # AIR-311: the landing loop and its poster: same-origin media files named by string literals in the same file.
