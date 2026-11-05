@@ -153,7 +153,7 @@ The existing `policy.erfan-airlock.testnet` entry of `fixtures/accounts.testnet.
 
 ## Differential
 
-`scripts/diff-verdict.sh --commit` on 2026-11-02 at commit de29b93 printed `identical on 40000 cases`. No larger run was made. Of the 40,000 generated cases 886 (2.21%) are Allow, which is a skew of the generator towards blocked inputs; the count per verdict is in `docs/evidence/diff-verdict.txt`.
+`scripts/diff-verdict.sh --commit` on 2026-11-02 at commit de29b93 printed `identical on 40000 cases`. No larger run was made. Of the 40,000 generated cases 886 (2.21%) are Allow, so the run exercises the hold and block paths far more than Allow; the count per verdict is in `docs/evidence/diff-verdict.txt`.
 
 ## Private reasoning attestation (AIR-303)
 
