@@ -8,7 +8,9 @@ publishing is outward facing and needs the owner's yes for the exact host and co
 
 | Page | Static copy |
 | --- | --- |
-| `/` | the three recorded acts: invoice paid, correction held with the real approval card, the replayed approval, the tampered approve |
+| `/` | the overview: what AIRLOCK does, the doctored-amount case, the bench numbers from `bench.json`, how it works, what is and is not proven |
+| `/try` | the playground: preset emails or your own, a stand-in agent (pattern matching, not a model), and the verdict crate compiled to `verdict.wasm`, run in the browser |
+| `/replay` | the three recorded acts: invoice paid, correction held with the real approval card, the replayed approval, the tampered approve |
 | `/bench` | the recorded bench results (`bench.json`) |
 | `/proven` | the proven claims (`docs/proven.json`) |
 | `/challenge` | says it needs the challenge service and lists the commands (`pnpm challenge`, `pnpm try`) |
@@ -31,7 +33,7 @@ The screenshots of the e2e are in `web/audit/static-*.png`. `pnpm build:static` 
 and `fixtures/world.jsonl`, so it shows what is committed.
 
 The policy is in the page as a meta tag and, for hosts that read it, in `dist-static/_headers`: scripts from `'self'` only, no inline script, no
-remote host, `'wasm-unsafe-eval'` so the Try page can compile its own `verdict.wasm` (WebAssembly only, no JavaScript eval), media from `'self'`, `frame-ancestors 'none'` in the header form. A host that ignores `_headers` (GitHub Pages) still enforces the meta tag.
+remote host, `'wasm-unsafe-eval'` so the Try page can compile its own `verdict.wasm` (WebAssembly only, no JavaScript eval), media from `'self'` through `default-src`, `frame-ancestors 'none'` in the header form. A host that ignores `_headers` (GitHub Pages) still enforces the meta tag.
 
 ## Publish to Cloudflare Pages (recommended)
 
@@ -48,7 +50,7 @@ pnpm build:static && npx wrangler pages deploy web/dist-static --project-name ai
 ```
 
 The URL is `https://airlock-demo.pages.dev`. `_headers` is honored, so the full policy applies. Cost: the free plan is enough. Static requests and
-bandwidth are not metered, the limits are 500 builds per month (a direct upload counts none), 20,000 files and 25 MiB per file; this site is about 35 files and under 1 MB.
+bandwidth are not metered, the limits are 500 builds per month (a direct upload counts none), 20,000 files and 25 MiB per file; this site is about 45 files and under 3 MB, half of it the two hero loops.
 To take it down: `npx wrangler pages project delete airlock-demo`.
 
 ## Publish to GitHub Pages

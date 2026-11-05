@@ -21,7 +21,6 @@ Content-Security-Policy:
   style-src 'self' 'unsafe-inline';
   img-src 'self' data: https://raw.githubusercontent.com;
   font-src 'self';
-  media-src 'self';
   connect-src 'self' <runtime-origin> https://test.rpc.fastnear.com https://near-testnet.drpc.org https://testnet-rpc.intea.rs https://rpc.testnet.near.org https://raw.githubusercontent.com https://cdn.jsdelivr.net https://wallet.intear.tech;
   frame-src 'self' https://raw.githubusercontent.com https://cdn.jsdelivr.net https://wallet.intear.tech;
   frame-ancestors 'none';
