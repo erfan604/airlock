@@ -88,6 +88,10 @@ const run: E2E = async ({ page, baseUrl }) => {
   const pv = textOf((await get('/proven/')).body);
   assert.ok(pv.includes('PROVEN OK') && pv.includes('What this does not cover'), 'proven text');
 
+  // AIR-313: the Use page carries every step, command and last line as text
+  const us = textOf((await get('/use/')).body);
+  for (const s of ['Use it with your own agent', 'pnpm airlock init --owner', 'AIRLOCK READY', 'pnpm airlock approve', 'What the agent can and cannot do']) assert.ok(us.includes(s), `use text: ${s}`);
+
   // the machine files
   const llms = await get('/llms.txt');
   assert.equal(llms.status, 200);

@@ -16,6 +16,12 @@ export const PAGES: PageMeta[] = [
       'Pick a scam email, or an attack on an agent you hired for a job, or write your own. A stand-in agent builds the payment, and the airlock-verdict code the NEAR contract runs, compiled to WebAssembly, decides in your browser whether the money moves.',
   },
   {
+    path: '/use',
+    title: 'Use it with your own agent | AIRLOCK',
+    description:
+      'Put AIRLOCK between any MCP agent (Claude Desktop, Claude Code, Cursor) and your NEAR testnet funds: deploy your own policy with one command, add the MCP server, and watch an invoice paid, a doctored invoice held, and your approval. Every step with its command and expected last line.',
+  },
+  {
     path: '/replay',
     title: 'The recorded testnet run | AIRLOCK',
     description: 'A replay of recorded NEAR testnet runs: an invoice paid, a correction from an email held for the owner, and a tampered approval refused by the contract, each with its transaction.',

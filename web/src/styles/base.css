@@ -154,8 +154,9 @@ button {
 .site-tabs > li:first-child {
   display: none;
 }
-/* under 360px the tabs no longer fit: the strip scrolls and its right edge fades instead of cutting a tab */
-@media (max-width: 359px) {
+/* under 440px the five tabs (AIR-313 added Use it) no longer fit: the strip scrolls from its first tab and its right edge fades instead of
+   cutting a tab (with flex-end an overflowing strip would cut its first tab where no scroll reaches it) */
+@media (max-width: 439px) {
   .site-tabs {
     justify-content: flex-start;
     mask-image: linear-gradient(90deg, black 0, black calc(100% - 28px), transparent);

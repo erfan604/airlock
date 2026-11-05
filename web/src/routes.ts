@@ -11,6 +11,7 @@ import { STATIC } from './static.ts';
 import { StaticChallenge, StaticLive } from './static/StaticPages.tsx';
 import { Landing } from './landing/Landing.tsx';
 import { TryPage } from './try/TryPage.tsx';
+import { UsePage } from './use/UsePage.tsx';
 // AIR-192: the read-only Bench page loads on demand, so the shell's bundle does not grow
 const BenchPage = lazy(() => import('./bench/BenchPage.tsx'));
 
@@ -22,6 +23,8 @@ export const ROUTES: Record<string, () => ReactElement> = {
   '/replay': () => createElement(ReplayAware, { live: () => createElement(TaskPage) }),
   '/task': () => createElement(ReplayAware, { live: () => createElement(TaskPage) }),
   '/proven': () => createElement(ProvenPage),
+  // AIR-313: the quickstart for people, the same steps as docs/QUICKSTART.md
+  '/use': () => createElement(UsePage),
   '/approvals': () => createElement(ReplayAware, { live: () => createElement(ApprovalsRoute) }),
   // AIR-301: the public Steal this agent page; it reads the challenge service and needs no session
   // AIR-310: a hosted static copy has no challenge service, so the page says so and points at the commands
