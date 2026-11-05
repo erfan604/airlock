@@ -233,6 +233,8 @@ DURATION demo 3s
 DURATION replay 8s
 ```
 
+Full gate again after the e2e step was added (commit 4022a50): 2026-11-04 17:35 MST, main at f1cd533 (warm build directories, same machine), `scripts/check.sh full` printed `ALL GREEN (full, skipped: sandbox-p88)` in 2482 s (`TOTAL 2482s`); `web-e2e` 71 s (13 suites and the fixtures sweep), `kani` 201 s, `policy-sandbox` 2015 s.
+
 Toolchain pins (scripts/evidence-pins.sh, run in the clone):
 
 | tool | pinned | actual | status |

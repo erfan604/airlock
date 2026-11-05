@@ -24,7 +24,7 @@ What can be checked with which tools, how long each command takes and the last l
 | 1 | T1 | `pnpm i && pnpm demo --no-open --exit-when-ready` | about 5 s | `ready in <n>s` |
 | 2 | T1 | `scripts/claims-run.sh --tier node` | about 10 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
 | 3 | T2 | `pnpm bench:replay` | about 8 s | `REPLAY OK <n> runs` |
-| 4 | T3 | `scripts/check.sh full` | about 2407 s | `ALL GREEN (full` |
+| 4 | T3 | `scripts/check.sh full` | about 2482 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
 
 1. Replays recorded testnet runs and says so; no keys. The time is the demo part on a warm install (the install is not timed). If port 4173 or 8787 is taken it picks a free port and prints the real `console http://127.0.0.1:<port>`; a port named with `--console-port` or `--runtime-port` is strict and stops with `port <n> is already in use` when taken.
@@ -35,6 +35,6 @@ What can be checked with which tools, how long each command takes and the last l
 
 Commands beyond the five (the live demo, the challenge self test, the intents quote, approval verification, the model report check) are listed with their last lines in the README section "More commands". Every label there says whether a run is recorded or live.
 
-A hosted job, `.github/workflows/quick-tier.yml`, runs the T1 tier on every push to main (the replay demo, the node tier of the claims and the proof transcripts). The gate is `scripts/check.sh full`, run locally. The full gate took 2407 s in the G5 record, a fresh clone at a6f8c55 (`docs/EVIDENCE.md`), because it needs Kani, Lean and the NEAR sandbox. That record predates commit 4022a50, which added the browser e2e suites to the full gate, so a re-run is pending. `scripts/fresh-clone-check.sh` clones the repository into empty directories and runs the quick and the full gate; `scripts/g5-check.sh` printed `G5 OK` on a6f8c55 (AIR-254).
+A hosted job, `.github/workflows/quick-tier.yml`, runs the T1 tier on every push to main (the replay demo, the node tier of the claims and the proof transcripts). The gate is `scripts/check.sh full`, run locally. The full gate took 2482 s on 2026-11-04 at commit f1cd533 (`docs/EVIDENCE.md`), with the browser e2e suites that commit 4022a50 added, because it needs Kani, Lean and the NEAR sandbox; the G5 record, a fresh clone at a6f8c55 before those suites, took 2407 s. `scripts/fresh-clone-check.sh` clones the repository into empty directories and runs the quick and the full gate; `scripts/g5-check.sh` printed `G5 OK` on a6f8c55 (AIR-254).
 
 The Lean language server for editors is off by default: copy `.mcp.json.example` to `.mcp.json` to use it.

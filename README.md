@@ -53,10 +53,10 @@ The strings above are asserted by the browser test `pnpm -C web e2e demo`, which
 | 1 | T1 | `pnpm i && pnpm demo --no-open --exit-when-ready` | about 5 s | `ready in <n>s` |
 | 2 | T1 | `scripts/claims-run.sh --tier node` | about 10 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
 | 3 | T2 | `pnpm bench:replay` | about 8 s | `REPLAY OK <n> runs` |
-| 4 | T3 | `scripts/check.sh full` | about 2407 s | `ALL GREEN (full` |
+| 4 | T3 | `scripts/check.sh full` | about 2482 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
 
-Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean (the maintainer gate), T4 plus read only RPC. Row 4's time and last line are the G5 record in `docs/EVIDENCE.md`, a fresh clone with empty build directories at commit a6f8c55. That record predates commit 4022a50, which added a browser e2e step (`web-e2e`) to the full gate, so a re-run is pending and the time will be longer by about a minute. A row whose tool is missing prints `SKIP <id> needs <tool>`. Details in `docs/VERIFY.md`. A hosted job (`.github/workflows/quick-tier.yml`) runs the T1 tier on every push to main; the full gate is `scripts/check.sh full`, run locally.
+Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean (the maintainer gate), T4 plus read only RPC. Row 4's time and last line are the run of 2026-11-04 at commit f1cd533 in `docs/EVIDENCE.md` (warm build directories, including the browser e2e step `web-e2e` that commit 4022a50 added); the earlier G5 record, a fresh clone with empty build directories at a6f8c55, took 2407 s before that step existed. A row whose tool is missing prints `SKIP <id> needs <tool>`. Details in `docs/VERIFY.md`. A hosted job (`.github/workflows/quick-tier.yml`) runs the T1 tier on every push to main; the full gate is `scripts/check.sh full`, run locally.
 
 ## Verify everything
 
@@ -237,7 +237,7 @@ Each item answers one entry of the Not covered list under Proven. None is built.
 - TEE: register the runtime in a TEE and link the registration transaction in `docs/EVIDENCE.md`; the runtime is in local mode, unattested.
 - Chain and MPC signer: these stay trusted; the on chain evidence of each run stays re-checkable with `pnpm verify-approval` and `pnpm tsx scripts/verify-golden.ts`.
 
-Continuous integration: `.github/workflows/quick-tier.yml` runs the T1 tier on every push to main (`pnpm i`, the replay demo, `scripts/claims-run.sh --tier node` and `pnpm proven:transcripts`, about a minute). The full gate needs Kani, Lean and the NEAR sandbox and took 2407 s in the G5 record, so it runs locally. `scripts/fresh-clone-check.sh` is the reproducible equivalent: it clones the repository, builds in empty directories and runs the gate. The record is the G5 fresh clone at commit a6f8c55 (`docs/EVIDENCE.md`, quick ALL GREEN and full ALL GREEN with the protocol 88 sandbox step skipped (label sandbox-p88), and `scripts/g5-check.sh` printed `G5 OK` there). It predates commit 4022a50, which added the browser e2e suites to the full gate, so a re-run is pending.
+Continuous integration: `.github/workflows/quick-tier.yml` runs the T1 tier on every push to main (`pnpm i`, the replay demo, `scripts/claims-run.sh --tier node` and `pnpm proven:transcripts`, about a minute). The full gate needs Kani, Lean and the NEAR sandbox and took 2482 s on 2026-11-04 (`docs/EVIDENCE.md`), so it runs locally. `scripts/fresh-clone-check.sh` is the reproducible equivalent: it clones the repository, builds in empty directories and runs the gate. The record is the G5 fresh clone at commit a6f8c55 (`docs/EVIDENCE.md`, quick ALL GREEN and full ALL GREEN with the protocol 88 sandbox step skipped (label sandbox-p88), and `scripts/g5-check.sh` printed `G5 OK` there). It predates commit 4022a50, which added the browser e2e suites to the full gate; the full gate was run again with them at f1cd533 on 2026-11-04 and printed `ALL GREEN (full, skipped: sandbox-p88)` in 2482 s.
 
 ## Console
 
