@@ -47,7 +47,7 @@ fn flood_admit_counts_pending_and_refuses_the_fourth() {
     let r = rec(&c, &a);
     assert_eq!((r.pending, r.hour_count), (3, 3));
     testing_env!(inproc_ctx(OWNER, T0, 0).build());
-    assert_eq!(c.get_escalation_state(a).pending, 3);
+    assert_eq!(c.get_escalation_state(a, None).pending, 3);
 }
 
 #[test]
@@ -201,7 +201,7 @@ fn flood_view_reports_current_buckets() {
     }
     c.flood_after_reject(&a, T0);
     testing_env!(inproc_ctx(OWNER, T0, 0).build());
-    let v = c.get_escalation_state(a.clone());
+    let v = c.get_escalation_state(a.clone(), None);
     assert_eq!((v.pending, v.hour_count, v.rejects_today), (1, 2, 1));
     assert_eq!(v.consecutive_rejects, 1);
     assert!(!v.locked);
@@ -216,17 +216,17 @@ fn flood_view_reports_current_buckets() {
     );
     // the next hour: the stored hour is old, so the view shows 0 while the day count stays
     testing_env!(inproc_ctx(OWNER, T0 + MS_PER_HOUR, 0).build());
-    let v = c.get_escalation_state(a.clone());
+    let v = c.get_escalation_state(a.clone(), None);
     assert_eq!((v.hour_count, v.rejects_today, v.pending), (0, 1, 1));
     // the next day: the day count is 0 too, the streak and the pending count are not buckets
     testing_env!(inproc_ctx(OWNER, T0 + MS_PER_DAY, 0).build());
-    let v = c.get_escalation_state(a.clone());
+    let v = c.get_escalation_state(a.clone(), None);
     assert_eq!((v.hour_count, v.rejects_today), (0, 0));
     assert_eq!((v.pending, v.consecutive_rejects), (1, 1));
     // an unknown agent: zeros with the current limits, and limits follow set_flags
     set_flag(&mut c, "hourly_escalation_budget", serde_json::json!(9));
     testing_env!(inproc_ctx(OWNER, T0, 0).build());
-    let v = c.get_escalation_state(agent("nobody"));
+    let v = c.get_escalation_state(agent("nobody"), None);
     assert_eq!(
         (
             v.pending,

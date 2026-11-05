@@ -151,6 +151,12 @@ pub enum StorageKey {
     EvmAttempts,
     // AIR-109 (appended last)
     X402Attempts,
+    // AIR-315 (appended last). None of the four is a field of `Contract`: each map is opened where it is used (`flood.rs`), so the
+    // state struct and every earlier prefix keep their layout and a deployed contract upgrades in place.
+    FloodOrigin,
+    FloodBackstop,
+    FloodEpoch,
+    FloodRequestOrigin,
 }
 
 const STORAGE_BYTES_TO_REGISTER: u128 = 486;

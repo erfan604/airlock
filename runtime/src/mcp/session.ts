@@ -15,6 +15,8 @@ import { grounder } from '../interpreter/grounding.ts';
 import { ROOT_PC, bookResult, mk, sortedLabels } from '../interpreter/value.ts';
 import type { LVal } from '../interpreter/value.ts';
 import { AmountError, formatBaseUnits, toBaseUnits } from '../money/index.ts';
+import { requestOrigin } from '../origin.ts';
+import type { Source } from '../origin.ts';
 import { TOOL_CHANNEL } from '../tools/channels.ts';
 import type { InboxItem } from '../tools/world.ts';
 
@@ -109,6 +111,8 @@ export class SessionRefusal extends Error {
 interface Held {
   text: string;
   labels: ReadonlySet<LabelName>;
+  /** AIR-315: where the text came from (a mail by its sender, a page by its host, a file by its name); none for the owner's and the book's */
+  source: Source | null;
 }
 
 interface ActiveTask {
@@ -141,6 +145,8 @@ export class Session {
   private readonly handles = new Map<string, Held>();
   /** every untrusted label the session has returned to the client so far */
   private readonly seen = new Set<LabelName>();
+  /** every untrusted source the session has returned to the client so far (AIR-315), keyed by kind and identity */
+  private readonly seenSources = new Map<string, Source>();
   private counter = 0;
   private active: ActiveTask | null = null;
   private queue: Promise<unknown> = Promise.resolve();
@@ -151,20 +157,23 @@ export class Session {
 
   // ---- handles ----
 
-  private hold(text: string, label: LabelName): { h: string; text: string } {
+  private hold(text: string, label: LabelName, source: Source | null): { h: string; text: string } {
     this.counter += 1;
     const h = `h${this.counter}`;
-    this.handles.set(h, { text, labels: new Set([label]) });
-    if (!TRUSTED_NAMES.has(label)) this.seen.add(label);
+    this.handles.set(h, { text, labels: new Set([label]), source });
+    if (!TRUSTED_NAMES.has(label)) {
+      this.seen.add(label);
+      if (source !== null) this.seenSources.set(`${source.kind}\n${source.identity}`, source);
+    }
     return { h, text };
   }
 
   /** Every string and number leaf becomes `{ h, text }` with the one label of the tool; keys and structure stay. */
-  private wrap(value: unknown, label: LabelName): unknown {
-    if (typeof value === 'string') return this.hold(value, label);
-    if (typeof value === 'number' || typeof value === 'bigint') return this.hold(String(value), label);
-    if (Array.isArray(value)) return value.map((v) => this.wrap(v, label));
-    if (typeof value === 'object' && value !== null) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, this.wrap(v, label)]));
+  private wrap(value: unknown, label: LabelName, source: Source | null = null): unknown {
+    if (typeof value === 'string') return this.hold(value, label, source);
+    if (typeof value === 'number' || typeof value === 'bigint') return this.hold(String(value), label, source);
+    if (Array.isArray(value)) return value.map((v) => this.wrap(v, label, source));
+    if (typeof value === 'object' && value !== null) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, this.wrap(v, label, source)]));
     return value;
   }
 
@@ -191,7 +200,9 @@ export class Session {
 
   readEmail(): { labels: LabelName[]; emails: unknown } {
     const label = TOOL_CHANNEL.read_inbox;
-    return { labels: [label], emails: this.wrap(structuredClone(this.deps.sources.inbox), label) };
+    // each mail is its own source, named by its sender (AIR-315)
+    const emails = structuredClone(this.deps.sources.inbox).map((m) => this.wrap(m, label, { kind: 'mail', identity: typeof m.from === 'string' ? m.from : 'read_inbox' }));
+    return { labels: [label], emails };
   }
 
   async fetchPage(url: string): Promise<{ labels: LabelName[]; url: string; page: unknown }> {
@@ -201,7 +212,13 @@ export class Session {
     if (Object.hasOwn(pages, url)) text = pages[url] ?? '';
     else if (fetchLive !== undefined) text = await fetchLive(url);
     else throw new SessionRefusal('NoPage', 'this server has no such page and live fetching is off in the owner config');
-    return { labels: [label], url, page: this.wrap(text, label) };
+    let host = 'fetch_url';
+    try {
+      host = new URL(url).host;
+    } catch {
+      // an unparsable URL is still one source, named by the tool
+    }
+    return { labels: [label], url, page: this.wrap(text, label, { kind: 'web', identity: host }) };
   }
 
   readFile(name: string): { labels: LabelName[]; name: string; content: unknown } {
@@ -221,7 +238,7 @@ export class Session {
     const rel = relative(root, realpathSync(path));
     if (rel.startsWith('..') || isAbsolute(rel) || rel.split(sep).includes('..')) throw new SessionRefusal('BadName', 'the path leaves the file directory');
     if (stat.size > READ_FILE_MAX) throw new SessionRefusal('TooLarge', 'the file is over 256 KB');
-    return { labels: [label], name, content: this.wrap(readFileSync(path, 'utf8'), label) };
+    return { labels: [label], name, content: this.wrap(readFileSync(path, 'utf8'), label, { kind: 'file', identity: name }) };
   }
 
   async bookList(): Promise<{ labels: LabelName[]; book: unknown }> {
@@ -232,17 +249,30 @@ export class Session {
 
   // ---- labels of pay's arguments ----
 
-  /** The labelled value of an argument. `kind` picks the grounding of a literal; `decimals` is the asset's, for an amount. */
-  private valueOf(arg: ValueArg, kind: 'payee' | 'amount', decimals: number): LVal {
+  /**
+   * The labelled value of an argument and its untrusted sources (AIR-315: a handle's own source, or for an ungrounded literal every source
+   * read so far). `kind` picks the grounding of a literal; `decimals` is the asset's, for an amount.
+   */
+  private sourcedValueOf(arg: ValueArg, kind: 'payee' | 'amount', decimals: number): { value: LVal; sources: Source[] } {
     if (typeof arg === 'string') {
-      const ownerText = this.deps.config.request;
-      const grounded =
-        kind === 'amount'
-          ? grounder(arg, 'amount', { ownerText, decimals })
-          : grounder(arg, 'name', { ownerText }) || grounder(arg, 'address', { ownerText });
-      // a literal the model typed is untrusted unless the owner's request holds it: it may come from anything the session returned
-      return grounded ? mk(arg, ['Owner']) : mk(arg, [QUOTE, ...this.seen]);
+      const value = this.literalOf(arg, kind, decimals);
+      return { value, sources: value.labels.has('Owner') ? [] : [...this.seenSources.values()] };
     }
+    const held = this.handles.get(arg.handle);
+    return { value: this.handleOf(arg, kind), sources: held?.source === null || held?.source === undefined ? [] : [held.source] };
+  }
+
+  private literalOf(arg: string, kind: 'payee' | 'amount', decimals: number): LVal {
+    const ownerText = this.deps.config.request;
+    const grounded =
+      kind === 'amount'
+        ? grounder(arg, 'amount', { ownerText, decimals })
+        : grounder(arg, 'name', { ownerText }) || grounder(arg, 'address', { ownerText });
+    // a literal the model typed is untrusted unless the owner's request holds it: it may come from anything the session returned
+    return grounded ? mk(arg, ['Owner']) : mk(arg, [QUOTE, ...this.seen]);
+  }
+
+  private handleOf(arg: HandleArg, kind: 'payee' | 'amount'): LVal {
     const held = this.handles.get(arg.handle);
     if (held === undefined) throw new SessionRefusal('UnknownHandle', `no handle with that id for ${kind}`);
     if (arg.quote === undefined) return mk(held.text, held.labels);
@@ -307,9 +337,13 @@ export class Session {
 
     let to: LVal;
     let amountVal: LVal;
+    const sources: Source[] = [];
     try {
-      to = this.valueOf(args.payee, 'payee', decimals);
-      amountVal = this.valueOf(args.amount, 'amount', decimals);
+      const p = this.sourcedValueOf(args.payee, 'payee', decimals);
+      const a = this.sourcedValueOf(args.amount, 'amount', decimals);
+      to = p.value;
+      amountVal = a.value;
+      sources.push(...p.sources, ...a.sources);
     } catch (e) {
       if (e instanceof SessionRefusal) return refused(e.code, e.message);
       throw e;
@@ -349,15 +383,16 @@ export class Session {
 
     const labels = { recipient: sortedLabels(recipient.labels), amount: sortedLabels(amountVal.labels), pc: sortedLabels(ROOT_PC.labels) };
     const trace = { payee, amount: amount.toString(), labels, forms: { payee: typeof args.payee === 'string' ? 'literal' : 'handle', amount: typeof args.amount === 'string' ? 'literal' : 'handle' } };
+    const bits = { recipient: labelsToBits(labels.recipient), amount: labelsToBits(labels.amount), pc: labelsToBits(labels.pc) };
     const req = ActionRequest.parse({
       task_id: task.task_id,
       action_index: index,
       asset,
       payee,
       amount: amount.toString(),
-      labels: { recipient: labelsToBits(labels.recipient), amount: labelsToBits(labels.amount), pc: labelsToBits(labels.pc) },
+      labels: bits,
       evm: null,
-      hints: { plan_hash: task.plan_sha256, trace_digest: sha256Hex(utf8.encode(JSON.stringify(trace))) },
+      hints: { plan_hash: task.plan_sha256, trace_digest: sha256Hex(utf8.encode(JSON.stringify(trace))), origin: requestOrigin(bits, sources) },
     });
 
     const shown = { payee, amount: formatBaseUnits(amount, decimals), labels };

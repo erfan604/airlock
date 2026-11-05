@@ -17,6 +17,8 @@ import type { CheckedPlan, OwnerTask, PlanStep } from './dsl/index.ts';
 import { isBooked } from './counterparty.ts';
 import type { CounterpartyAssessor, CounterpartyNote } from './counterparty.ts';
 import { pickEvidence, requestContentHash } from './evidence.ts';
+import { requestOrigin } from './origin.ts';
+import type { Source, SourceKind } from './origin.ts';
 import type { EvidenceField, EvidenceSource, EvidenceStore } from './evidence.ts';
 import { run } from './interpreter/index.ts';
 import type { Book, Extractor, Grounder, Proposed, RunDeps, RunResult, ToolArgPolicy, Tools, TraceEvent } from './interpreter/index.ts';
@@ -167,6 +169,75 @@ function sourcesOf(p: Proposed, trace: readonly TraceEvent[]): EvidenceSource[] 
   );
 }
 
+// AIR-315: the plan step at a trace path (`[0, 'then', 1, 'do', 2]`), or undefined
+function stepAt(plan: readonly PlanStep[], path: unknown): PlanStep | undefined {
+  if (!Array.isArray(path)) return undefined;
+  let steps: readonly PlanStep[] = plan;
+  let step: PlanStep | undefined;
+  for (const part of path) {
+    if (typeof part === 'number') {
+      step = steps[part];
+      if (step === undefined) return undefined;
+    } else if (step !== undefined && (part === 'then' || part === 'else' || part === 'do') && Object.hasOwn(step, part)) {
+      steps = (step as unknown as Record<string, readonly PlanStep[]>)[part] ?? [];
+    } else {
+      return undefined;
+    }
+  }
+  return step;
+}
+
+// a literal string argument of a call step (a reference is data, and data never names a tool argument: rule 10)
+function literalArg(step: PlanStep | undefined, key: string): string | null {
+  if (step === undefined || !('call' in step)) return null;
+  const v = (step.args as Record<string, unknown> | undefined)?.[key];
+  return typeof v === 'string' ? v : null;
+}
+
+function hostOf(url: string | null): string | null {
+  if (url === null) return null;
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
+  }
+}
+
+const KIND_OF: Record<string, SourceKind> = {
+  read_inbox: 'mail',
+  read_feed: 'feed',
+  fetch_url: 'web',
+  fetch_paid: 'pay',
+  read_attachment: 'file',
+  memory_read: 'mem',
+  read_paste: 'paste',
+};
+
+// AIR-315: the untrusted sources of a proposal, one per untrusted tool call its recipient, amount or pc came from: a mail by its sender, a
+// page by its host, a file by its name, any other tool by its name. The contract keys its flood counters by the hash of these.
+function sourcesFor(p: Proposed, trace: readonly TraceEvent[], plan: readonly PlanStep[]): Source[] {
+  const ids = new Set([...p.origins.recipient, ...p.origins.amount, ...p.origins.pc]);
+  const out: Source[] = [];
+  for (const id of ids) {
+    const call = trace.find((e) => e.kind === 'call' && e.data.id === id);
+    if (call === undefined) continue;
+    const tool = typeof call.data.tool === 'string' ? call.data.tool : 'unknown';
+    if (typeof call.data.label !== 'string' || !call.data.label.startsWith('Untrusted:')) continue;
+    const kind = KIND_OF[tool] ?? 'tool';
+    const step = stepAt(plan, call.data.step);
+    const identity =
+      kind === 'mail' || kind === 'feed'
+        ? pickEvidence(call.data.raw).sender
+        : kind === 'web' || kind === 'pay'
+          ? hostOf(literalArg(step, 'url'))
+          : kind === 'file'
+            ? literalArg(step, 'name')
+            : null;
+    out.push(identity === null ? { kind, identity: tool } : { kind, identity });
+  }
+  return out;
+}
+
 // what an error of the chain or EVM stages says; a message is never copied (it can hold text from outside)
 function failureOf(e: unknown): { code: string; retryable?: boolean; detail?: string } {
   if (e instanceof ChainWaitError) return { code: e.code, retryable: e.retryable };
@@ -246,15 +317,16 @@ export async function* runTask(p: RunTaskParams): AsyncGenerator<TraceEvent, voi
       }
       try {
         digest ??= toHex(sha256(new TextEncoder().encode(JSON.stringify(result.trace.map((e) => ({ kind: e.kind, data: e.data }))))));
+        const labels = { recipient: labelsToBits(proposal.recipientLabels), amount: labelsToBits(proposal.amountLabels), pc: labelsToBits(proposal.pc) };
         const req = ActionRequest.parse({
           task_id: task.task_id,
           action_index: index,
           asset: proposal.asset,
           payee: proposal.payee,
           amount: proposal.amount.toString(),
-          labels: { recipient: labelsToBits(proposal.recipientLabels), amount: labelsToBits(proposal.amountLabels), pc: labelsToBits(proposal.pc) },
+          labels,
           evm,
-          hints: { plan_hash: task.plan_sha256, trace_digest: digest },
+          hints: { plan_hash: task.plan_sha256, trace_digest: digest, origin: requestOrigin(labels, sourcesFor(proposal, result.trace, p.plan)) },
         });
         // AIR-304: only a payee outside the book is looked up; the assessor never throws and the note only reaches the owner's card
         const counterparty = deps.counterparty === undefined || isBooked(deps.book, proposal.payee) ? null : await deps.counterparty.assess(proposal.payee);

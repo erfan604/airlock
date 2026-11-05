@@ -2453,9 +2453,9 @@
       "family": "DOS",
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_dos_three_rejects_lock_escalations_but_allows_still_pass",
-      "attack": "three junk escalations the owner rejects",
-      "expect": "escalations blocked EscalationsLocked until reset; payments inside the limits still allowed",
-      "before": null,
+      "attack": "three junk escalations from one origin, rejected by the owner",
+      "expect": "after AIR-315: that origin is locked; the owner's real supplier still escalates and is approved, an owner-typed payee still escalates, payments inside the limits still pass; resetting the one origin reopens it",
+      "before": "before AIR-315: the whole agent was locked, so the owner's next payment that needed a tap was blocked until reset_escalations",
       "fix": null
     },
     {
@@ -2463,9 +2463,9 @@
       "family": "DOS",
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_dos_pending_full_blocks_escalations_but_allows_still_pass",
-      "attack": "three junk escalations left pending",
-      "expect": "a fourth escalation blocked PendingFull; payments inside the limits still allowed",
-      "before": null,
+      "attack": "junk escalations from one origin left pending",
+      "expect": "after AIR-315: two pending fill that origin only; the supplier and the owner still escalate",
+      "before": "before AIR-315: three pending filled the agent's queue and blocked every other escalation",
       "fix": null
     },
     {
@@ -2473,9 +2473,9 @@
       "family": "DOS",
       "file": "contracts/airlock-policy/src/redteam.rs",
       "test": "rt_dos_reset_keeps_the_hourly_budget",
-      "attack": "spend the hourly escalation budget, then the owner resets",
-      "expect": "still blocked EscalationBudget until the next UTC hour",
-      "before": null,
+      "attack": "spend one origin's hourly escalation budget, then the owner resets that origin",
+      "expect": "after AIR-315: that origin stays blocked for the hour (the reset keeps the hour count); the supplier and the owner still escalate; the next hour is fresh",
+      "before": "before AIR-315: six escalations spent the agent's hour, so every escalation of the owner was blocked for the rest of the UTC hour",
       "fix": null
     },
     {
@@ -2517,6 +2517,106 @@
       "expect": "the amount is Owner plus Unresolved, as on the product server, so the verdict holds it",
       "before": "the live engine ran without the grounder: the literal was Owner only, so a planner literal the owner never typed could auto-execute inside the signed task bound",
       "fix": "a9725d9"
+    },
+    {
+      "id": "RT-DOS-07",
+      "family": "DOS",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_dos_many_attacker_origins_meet_the_backstop_not_the_owner",
+      "attack": "eight sender identities, one pending escalation each",
+      "expect": "the ninth non-owner origin is blocked PendingFull by the shared backstop, the supplier's mail too (residual); an owner-typed payee still escalates",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-DOS-08",
+      "family": "DOS",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_dos_owner_origin_needs_trusted_labels",
+      "attack": "a request with an untrusted label names the origin owner",
+      "expect": "revert: origin owner needs trusted labels",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-DOS-09",
+      "family": "DOS",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_dos_bad_origin_reverts",
+      "attack": "origins in the wrong shape (uppercase, short, non-hex, empty, a space, a long kind)",
+      "expect": "revert: bad origin",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-DOS-10",
+      "family": "DOS",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_dos_legacy_requests_keep_the_agent_limits",
+      "attack": "requests that name no origin, three of them rejected",
+      "expect": "the per-agent counters of AIR-083 lock those; requests that name an origin are not behind the lock; reset_escalations with no origin clears it",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-DOS-11",
+      "family": "DOS",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_dos_reset_all_clears_every_origin_lock",
+      "attack": "two origins locked, then reset_escalations with no origin",
+      "expect": "both origins escalate again",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-DOS-12",
+      "family": "DOS",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_dos_expire_frees_the_slot_of_its_own_origin",
+      "attack": "a stranger expires one of an origin's two pending escalations",
+      "expect": "that origin escalates again",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-DOS-13",
+      "family": "DOS",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_dos_preview_uses_the_origin",
+      "attack": "preview of a request from a full origin and from the supplier",
+      "expect": "blocked PendingFull for the full origin, escalated for the supplier",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-DOS-14",
+      "family": "DOS",
+      "file": "runtime/test/redteam.test.ts",
+      "test": "rt_dos_runtime_names_the_origin_of_each_mail",
+      "attack": "two mails from two senders through runTask",
+      "expect": "each request names its sender's origin, mail:<16 hex>, and the two differ",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-DOS-15",
+      "family": "DOS",
+      "file": "runtime/test/redteam.test.ts",
+      "test": "rt_dos_runtime_owner_typed_payment_is_owner_origin",
+      "attack": "a payment with only trusted labels through runTask",
+      "expect": "the request names the origin owner",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-DOS-16",
+      "family": "DOS",
+      "file": "runtime/test/redteam.test.ts",
+      "test": "rt_dos_mcp_names_the_origin_of_each_mail",
+      "attack": "the MCP session pays amounts quoted from two mails and one the owner typed",
+      "expect": "the requests name each sender's origin and owner",
+      "before": null,
+      "fix": null
     }
   ]
 }

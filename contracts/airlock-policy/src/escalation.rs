@@ -312,7 +312,7 @@ impl Contract {
         }
         // the escalation leaves the agent's pending count and the consecutive reject streak ends (AIR-083); a revert after this point
         // reverts the counters with the call
-        self.flood_after_approve(&rec.agent);
+        self.flood_after_approve_request(&rec.agent, &request_key);
         // charge: the payee is read now (a payee that left the book has no limit, and its day ledger still records the payment)
         let payee = self.payee(&rec.payee);
         let caps = approval_caps(&asset_entry, payee.as_ref(), pending.task_bound);
@@ -457,7 +457,7 @@ impl Contract {
             id: no.to_string(),
         }
         .emit();
-        self.flood_after_reject(&agent, block_timestamp_ms());
+        self.flood_after_reject_request(&agent, &key, block_timestamp_ms());
     }
 
     /// Anyone: expire the escalation with short number `id` once its time to live has passed (AIR-081). Not payable. `id` resolves like
@@ -476,7 +476,7 @@ impl Contract {
         let agent = rec.agent.clone();
         self.records.insert(key.clone(), expire_tombstone(&rec));
         self.pending_nos.remove(&no);
-        self.flood_after_expire(&agent);
+        self.flood_after_expire_request(&agent, &key);
         Event::Expired {
             request_id: &key,
             id: no.to_string(),
@@ -489,9 +489,8 @@ impl Contract {
     /// `#[payable]`, exactly 1 yoctoNEAR from the owner (`owner_call`, the first statement).
     #[payable]
     pub fn reset_escalations(&mut self, agent: AccountId, origin: Option<String>) {
-        let _ = origin;
         self.owner_call();
-        self.flood_reset(&agent);
+        self.flood_reset_origin(&agent, origin.as_deref());
         Event::EscalationsReset { agent: &agent }.emit();
     }
 

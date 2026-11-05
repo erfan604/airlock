@@ -12,6 +12,7 @@
 // (`request_id`), and the asset must be the one the payee key implies. Pause blocks every request (verdict rule 1), and there is no
 // other signing path.
 use crate::escalation::pending_info;
+use crate::flood::flood_key;
 use crate::keys::{asset_for_payee_key, validate_payee_key};
 use crate::ledgers::{LedgerKey, caps_for, is_untrusted_amount, verdict_inputs};
 use crate::policy::{AssetEntry, BookEntry, MIN_EVM_GAS};
@@ -132,6 +133,8 @@ fn outcome_of(
 /// parameters. Each failure is a revert with the quoted text.
 fn check_request_shape(req: &SubmitRequest) {
     check_labels(&req.labels);
+    // AIR-315: the origin the runtime names must have its shape, and only a request with trusted labels may name the owner's
+    flood_key(req);
     // an `ft:` asset is refused before its payee key is validated (an `ft:` key would fail as an unknown scheme)
     require!(!req.asset.starts_with("ft:"), "lane not shipped");
     validate_payee_key(&req.payee);
@@ -212,10 +215,12 @@ impl Contract {
             }
             // the flood gate sits in front of `store_pending` in `submit_batch` (AIR-083): the agent of the counter is the task's agent
             // (a view has no caller), the one `submit_batch` requires of the task
-            Verdict::Escalate(reason) => match self.flood_check(&task.agent_id, now_ms) {
-                Ok(_) => ("escalated", Some(reason), None),
-                Err(refused) => ("blocked", Some(refused), None),
-            },
+            Verdict::Escalate(reason) => {
+                match self.flood_check_key(&task.agent_id, &flood_key(req), now_ms) {
+                    Ok(()) => ("escalated", Some(reason), None),
+                    Err(refused) => ("blocked", Some(refused), None),
+                }
+            }
             Verdict::Block(reason) => ("blocked", Some(reason), None),
         };
         PreviewView {
@@ -391,16 +396,19 @@ impl Contract {
             }
             // the flood gate (AIR-083) runs before `store_pending`: a refusal is a stored Block with the flood reason, consumes the id and
             // one task action (step e) but no pending number
-            Verdict::Escalate(reason) => match self.flood_admit(&rec.agent, now_ms) {
-                Ok(()) => {
-                    let no = self.store_pending(rec, &ctx, reason);
-                    (outcome_of(&id, "escalated", Some(reason), Some(no)), None)
+            Verdict::Escalate(reason) => {
+                match self.flood_admit_key(&rec.agent, &flood_key(req), now_ms) {
+                    Ok(()) => {
+                        self.remember_request_origin(&id, &flood_key(req));
+                        let no = self.store_pending(rec, &ctx, reason);
+                        (outcome_of(&id, "escalated", Some(reason), Some(no)), None)
+                    }
+                    Err(refused) => {
+                        self.store_blocked(rec, refused);
+                        (outcome_of(&id, "blocked", Some(refused), None), None)
+                    }
                 }
-                Err(refused) => {
-                    self.store_blocked(rec, refused);
-                    (outcome_of(&id, "blocked", Some(refused), None), None)
-                }
-            },
+            }
             Verdict::Block(reason) => {
                 self.store_blocked(rec, reason);
                 (outcome_of(&id, "blocked", Some(reason), None), None)
