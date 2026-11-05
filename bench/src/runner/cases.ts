@@ -16,7 +16,7 @@ import { BENCH_ROOT, benchAssets } from './assets.ts';
 
 // ---- the vocabulary ----
 export type Group = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'U' | 'S' | 'X' | 'P'; // S, X, P are new (SPEC R5-18)
-export type Tag = 'drain' | 'k2_residual' | 'memory' | 'second_stage' | 'adapted_nospend' | 'tier3' | 'proposed' | 'should' | 'raw_gate' | 'field_content' | 'adaptive';
+export type Tag = 'drain' | 'k2_residual' | 'memory' | 'second_stage' | 'adapted_nospend' | 'tier3' | 'proposed' | 'should' | 'raw_gate' | 'field_content' | 'adaptive' | 'redteam';
 /**
  * NO_TASK: the analyzer refuses to build a task (its errors are not empty). NONE: nothing was proposed. STOPPED (AIR-289, attack cases with a
  * plan gate only): the gate path ended ABORTED with no payment, the interpreter refused before any request existed; the reason names the AbortCode.
@@ -26,7 +26,7 @@ export type Expect = 'ALLOW' | 'ESCALATE' | 'BLOCK' | 'NONE' | 'NO_TASK' | 'STOP
 export type Extraction = Record<string, unknown>[];
 
 const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'U', 'S', 'X', 'P'] as const;
-const TAGS = ['drain', 'k2_residual', 'memory', 'second_stage', 'adapted_nospend', 'tier3', 'proposed', 'should', 'raw_gate', 'field_content', 'adaptive'] as const;
+const TAGS = ['drain', 'k2_residual', 'memory', 'second_stage', 'adapted_nospend', 'tier3', 'proposed', 'should', 'raw_gate', 'field_content', 'adaptive', 'redteam'] as const;
 const EXPECTS = ['ALLOW', 'ESCALATE', 'BLOCK', 'NONE', 'NO_TASK', 'STOPPED'] as const;
 const LEGIT_EXPECTS = ['ALLOW', 'ESCALATE', 'BLOCK', 'NONE', 'NO_TASK'] as const;
 
@@ -260,11 +260,12 @@ const origins = new WeakMap<object, Origin>();
 
 /**
  * The folder that holds `fixtures/` for the cases of `dir`: its parent, or the parent's parent when the parent is itself named `fixtures`.
- * The Should tier (AIR-288) and the adaptive round (AIR-231) keep their case files one level down, in `cases/should` and `cases/adaptive`; they share the fixtures of the folder above `cases`.
+ * The Should tier (AIR-288), the adaptive round (AIR-231) and the red-team campaign (AIR-314) keep their case files one level down, in
+ * `cases/should`, `cases/adaptive` and `cases/redteam`; they share the fixtures of the folder above `cases`.
  */
 export function rootForCasesDir(dir: string): string {
   const full = resolve(dir);
-  const parent = dirname(basename(full) === 'should' || basename(full) === 'adaptive' ? dirname(full) : full);
+  const parent = dirname(basename(full) === 'should' || basename(full) === 'adaptive' || basename(full) === 'redteam' ? dirname(full) : full);
   return basename(parent) === 'fixtures' ? dirname(parent) : parent;
 }
 

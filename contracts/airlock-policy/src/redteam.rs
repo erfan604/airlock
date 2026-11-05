@@ -1,0 +1,807 @@
+// AIR-314 red-team campaign, contract half: each test is one attack on the policy contract, called in process the way the agent or a
+// stranger would call it, with the outcome the contract must give. The ids (RT-CON, RT-APPR, RT-TASK, RT-DOS) and what each test tries are
+// listed in bench/cases/redteam/contract.json and rendered in docs/REDTEAM.md; the report fails when a listed test is missing here or a
+// test here is not listed. `#[cfg(test)]` (see lib.rs): nothing here is compiled into the contract.
+use crate::agents::{AllowedAgent, fingerprint};
+use crate::escalation::book_status;
+use crate::gate::MAX_BATCH;
+use crate::policy::{AssetEntry, BookEntry};
+use crate::request::{
+    EvmParams, Hex32, Hints, Labels, RequestState, SubmitOutcome, SubmitRequest, request_id,
+};
+use crate::task::{OwnerTask, TASK_TAG, TaskBound, task_hash};
+use crate::testutil::{OWNER, POLICY, ctx, fresh, sign, task_public_key};
+use crate::*;
+use near_sdk::PromiseOrValue;
+use near_sdk::json_types::{Base64VecU8, U128};
+use near_sdk::testing_env;
+use shade_attestation::measurements::create_mock_full_measurements_hex;
+
+const AGENT: &str = "agent.test.near";
+const OTHER_AGENT: &str = "other-agent.test.near";
+const ALICE: &str = "near:alice.test.near";
+const EVIL: &str = "near:evil-ops.test.near";
+const NOW: u64 = 10_000_000;
+const TTL_MS: u64 = 3_600_000;
+const OWNER_MASK: u16 = 1;
+const BOOK_MASK: u16 = 2;
+const EMAIL_MASK: u16 = 1 << 5;
+const QUARANTINE_MASK: u16 = 1 << 12;
+/// Alice's per-payment cap for an untrusted amount, her daily untrusted budget and her daily limit (base units).
+const CAP: u128 = 100;
+const BUDGET: u128 = 1_000;
+const DAILY: u128 = 5_000;
+
+fn panic_text(payload: Box<dyn std::any::Any + Send>) -> String {
+    payload
+        .downcast_ref::<String>()
+        .cloned()
+        .or_else(|| payload.downcast_ref::<&str>().map(|s| (*s).to_string()))
+        .unwrap_or_default()
+}
+
+fn panics<R>(f: impl FnOnce() -> R) -> String {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
+        Ok(_) => panic!("expected a revert, the call succeeded"),
+        Err(payload) => panic_text(payload),
+    }
+}
+
+fn asset_entry() -> AssetEntry {
+    AssetEntry {
+        symbol: "NEAR".to_string(),
+        decimals: 24,
+        hard_cap: 10_000,
+        daily_cap: 100_000,
+        max_fee_per_gas: 0,
+        max_gas: 0,
+        quick_task_cap: 100_000,
+        path: None,
+        eip712: None,
+    }
+}
+
+fn allow_agent(c: &mut Contract, agent: &str) {
+    let id: AccountId = agent.parse().unwrap();
+    c.agents.insert(
+        id.clone(),
+        Agent {
+            measurements: create_mock_full_measurements_hex(),
+            ppid: Ppid::default(),
+            valid_until_ms: NOW * 10,
+        },
+    );
+    c.whitelisted_agents_for_local.insert(id.clone());
+    c.allowed_agents.insert(
+        id,
+        AllowedAgent {
+            fingerprint: fingerprint(agent),
+            allowed_ms: 0,
+        },
+    );
+}
+
+/// Asset `near`, book payee `ALICE` (cap 100, budget 1000, daily 5000), the task key, and `AGENT` and `OTHER_AGENT` allowed.
+fn setup() -> Contract {
+    let mut c = fresh();
+    c.assets.insert("near".to_string(), asset_entry());
+    c.book.insert(
+        ALICE.to_string(),
+        BookEntry {
+            cap: Some(CAP),
+            daily_untrusted_budget: BUDGET,
+            daily_limit: DAILY,
+            label: "Alice".to_string(),
+        },
+    );
+    c.task_key = Some(task_public_key());
+    allow_agent(&mut c, AGENT);
+    allow_agent(&mut c, OTHER_AGENT);
+    c
+}
+
+fn task_for(id: &str, bounds: &[(&str, u128)], max_actions: u8) -> OwnerTask {
+    task_at(id, bounds, max_actions, NOW)
+}
+
+/// A task issued just before `now_ms` and valid for 30 minutes after it.
+fn task_at(id: &str, bounds: &[(&str, u128)], max_actions: u8, now_ms: u64) -> OwnerTask {
+    OwnerTask {
+        tag: TASK_TAG.to_string(),
+        task_id: id.to_string(),
+        contract_id: POLICY.parse().unwrap(),
+        agent_id: AGENT.parse().unwrap(),
+        plan_sha256: Hex32([0x11; 32]),
+        instruction_sha256_salted: Hex32([0x22; 32]),
+        issued_ms: now_ms - 5_000,
+        expires_ms: now_ms + 1_800_000,
+        max_actions,
+        bounds: bounds
+            .iter()
+            .map(|(key, max_total)| TaskBound {
+                payee_key: (*key).to_string(),
+                max_total: U128(*max_total),
+            })
+            .collect(),
+    }
+}
+
+fn task(bounds: &[(&str, u128)], max_actions: u8) -> OwnerTask {
+    task_for("task-1", bounds, max_actions)
+}
+
+fn request(t: &OwnerTask, index: u8, payee: &str, amount: u128, labels: Labels) -> SubmitRequest {
+    SubmitRequest {
+        task_id: t.task_id.clone(),
+        action_index: index,
+        asset: crate::keys::asset_for_payee_key(payee),
+        payee: payee.to_string(),
+        amount: U128(amount),
+        labels,
+        evm: None,
+        hints: Hints {
+            plan_hash: t.plan_sha256.clone(),
+            trace_digest: Hex32([0x33; 32]),
+        },
+    }
+}
+
+/// Recipient from the book, amount and pc from the owner: what an honest runtime sends for a typed payment.
+fn clean(t: &OwnerTask, index: u8, payee: &str, amount: u128) -> SubmitRequest {
+    request(
+        t,
+        index,
+        payee,
+        amount,
+        Labels {
+            recipient: BOOK_MASK,
+            amount: OWNER_MASK,
+            pc: OWNER_MASK,
+        },
+    )
+}
+
+/// Every value typed by the owner: the shape of a payment to a payee the owner names by address.
+fn typed(t: &OwnerTask, index: u8, payee: &str, amount: u128) -> SubmitRequest {
+    request(
+        t,
+        index,
+        payee,
+        amount,
+        Labels {
+            recipient: OWNER_MASK,
+            amount: OWNER_MASK,
+            pc: OWNER_MASK,
+        },
+    )
+}
+
+/// Recipient from the book, amount read by the quarantined reader from an email: the K2 shape.
+fn data_amount(t: &OwnerTask, index: u8, payee: &str, amount: u128) -> SubmitRequest {
+    request(
+        t,
+        index,
+        payee,
+        amount,
+        Labels {
+            recipient: BOOK_MASK,
+            amount: EMAIL_MASK | QUARANTINE_MASK,
+            pc: OWNER_MASK,
+        },
+    )
+}
+
+/// A recipient read from data: always escalates for a payee in the task (`UntrustedRecipient`).
+fn data_payee(t: &OwnerTask, index: u8, payee: &str, amount: u128) -> SubmitRequest {
+    request(
+        t,
+        index,
+        payee,
+        amount,
+        Labels {
+            recipient: EMAIL_MASK | QUARANTINE_MASK,
+            amount: OWNER_MASK,
+            pc: OWNER_MASK,
+        },
+    )
+}
+
+fn submit_as(
+    c: &mut Contract,
+    agent: &str,
+    now_ms: u64,
+    t: &OwnerTask,
+    reqs: Vec<SubmitRequest>,
+) -> Vec<SubmitOutcome> {
+    testing_env!(ctx(agent, now_ms, 0).build());
+    let sig = Base64VecU8(sign(t));
+    match c.submit_batch(reqs, t.clone(), sig) {
+        PromiseOrValue::Value(outcomes) => outcomes,
+        PromiseOrValue::Promise(_) => panic!("the agent was refused"),
+    }
+}
+
+fn submit(c: &mut Contract, t: &OwnerTask, reqs: Vec<SubmitRequest>) -> Vec<SubmitOutcome> {
+    submit_as(c, AGENT, NOW, t, reqs)
+}
+
+fn tag(o: &SubmitOutcome) -> String {
+    match &o.reason {
+        None => o.outcome.clone(),
+        Some(r) => format!("{}:{}", o.outcome, r),
+    }
+}
+
+fn tags(outs: &[SubmitOutcome]) -> Vec<String> {
+    outs.iter().map(tag).collect()
+}
+
+/// The six strings of the approval card of pending number `no`, as the honest console sends them.
+fn card(c: &Contract, no: u32) -> [String; 6] {
+    let (_, rec) = c.pending_record(no).expect("a pending record");
+    let p = rec.pending.expect("escalation data");
+    [
+        no.to_string(),
+        rec.payee,
+        p.display_symbol,
+        p.display_amount,
+        rec.reason.expect("a reason"),
+        book_status(p.book_in).to_string(),
+    ]
+}
+
+fn approve_as(c: &mut Contract, who: &str, now_ms: u64, k: &[String; 6]) {
+    testing_env!(ctx(who, now_ms, 1).build());
+    c.approve(
+        k[0].clone(),
+        k[1].clone(),
+        k[2].clone(),
+        k[3].clone(),
+        k[4].clone(),
+        k[5].clone(),
+    );
+}
+
+fn owner(now_ms: u64) {
+    testing_env!(ctx(OWNER, now_ms, 1).build());
+}
+
+/// One escalation under its own task (index 0): a data recipient to Alice. Returns its pending number.
+fn escalate_one(c: &mut Contract, task_id: &str, amount: u128) -> u32 {
+    let t = task_for(task_id, &[(ALICE, 1_000)], 1);
+    let out = submit(c, &t, vec![data_payee(&t, 0, ALICE, amount)]);
+    assert_eq!(out[0].outcome, "escalated", "{:?}", out[0]);
+    out[0]
+        .pending_id
+        .as_ref()
+        .expect("a pending id")
+        .parse()
+        .unwrap()
+}
+
+fn spent_task(c: &Contract, t: &OwnerTask) -> u8 {
+    c.get_task_state(hex::encode(task_hash(t))).actions_used
+}
+
+// ---------------------------------------------------------------------------------------------------------------- CON: contract edges
+
+#[test]
+fn rt_con_batch_of_four_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 400)], 4);
+    let reqs = (0..=MAX_BATCH as u8)
+        .map(|i| clean(&t, i, ALICE, 1))
+        .collect::<Vec<_>>();
+    assert_eq!(reqs.len(), 4);
+    assert!(panics(|| submit(&mut c, &t, reqs)).contains("batch size 1 to 3"));
+}
+
+#[test]
+fn rt_con_same_index_twice_in_one_batch_charges_once() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    let out = submit(
+        &mut c,
+        &t,
+        vec![clean(&t, 0, ALICE, 60), clean(&t, 0, ALICE, 60)],
+    );
+    assert_eq!(tags(&out), ["allowed", "allowed"]);
+    // the second is the stored answer of the first, not a second payment: one charge of 60, one action
+    let rec = c.records.get(&request_id(&task_hash(&t), 0)).unwrap();
+    assert_eq!(rec.applied_charge.as_ref().unwrap().task, 60);
+    assert_eq!(spent_task(&c, &t), 1);
+}
+
+#[test]
+fn rt_con_two_allows_in_one_batch_share_the_task_bound() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 2);
+    let out = submit(
+        &mut c,
+        &t,
+        vec![clean(&t, 0, ALICE, 60), clean(&t, 1, ALICE, 60)],
+    );
+    assert_eq!(tags(&out), ["allowed", "escalated:OverTaskBound"]);
+}
+
+#[test]
+fn rt_con_unknown_label_bit_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    let mut r = clean(&t, 0, ALICE, 10);
+    r.labels.recipient = BOOK_MASK | (1 << 15);
+    assert!(panics(|| submit(&mut c, &t, vec![r])).contains("unknown label bit"));
+}
+
+#[test]
+fn rt_con_asset_payee_mismatch_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    let mut r = clean(&t, 0, ALICE, 10);
+    r.asset = "evm:84532:native".to_string();
+    r.evm = Some(EvmParams {
+        gas_limit: U128(21_000),
+        max_fee_per_gas: U128(1),
+        max_priority_fee_per_gas: U128(1),
+    });
+    assert!(panics(|| submit(&mut c, &t, vec![r])).contains("asset does not match payee"));
+}
+
+#[test]
+fn rt_con_ft_lane_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    let mut r = clean(&t, 0, ALICE, 10);
+    r.asset = "ft:usdc.test.near".to_string();
+    assert!(panics(|| submit(&mut c, &t, vec![r])).contains("lane not shipped"));
+}
+
+#[test]
+fn rt_con_index_past_max_actions_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    assert!(
+        panics(|| submit(&mut c, &t, vec![clean(&t, 1, ALICE, 10)]))
+            .contains("task actions exhausted")
+    );
+}
+
+#[test]
+fn rt_con_plan_hash_mismatch_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    let mut r = clean(&t, 0, ALICE, 10);
+    r.hints.plan_hash = Hex32([0x99; 32]);
+    assert!(panics(|| submit(&mut c, &t, vec![r])).contains("plan hash mismatch"));
+}
+
+#[test]
+fn rt_con_replay_with_changed_amount_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t, vec![clean(&t, 0, ALICE, 10)])),
+        ["allowed"]
+    );
+    assert!(
+        panics(|| submit(&mut c, &t, vec![clean(&t, 0, ALICE, 90)])).contains("request mismatch")
+    );
+}
+
+#[test]
+fn rt_con_lying_runtime_owner_labels_capped_by_task_bound() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 2);
+    // every label claimed Owner: a payee outside the book still escalates, and a book payee is still held at the signed bound
+    let all_owner = Labels {
+        recipient: OWNER_MASK,
+        amount: OWNER_MASK,
+        pc: OWNER_MASK,
+    };
+    let out = submit(
+        &mut c,
+        &t,
+        vec![
+            request(&t, 0, EVIL, 10, all_owner),
+            request(&t, 1, ALICE, 101, all_owner),
+        ],
+    );
+    assert_eq!(
+        tags(&out),
+        ["escalated:OutsideTask", "escalated:OverTaskBound"]
+    );
+}
+
+#[test]
+fn rt_con_uppercase_payee_key_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    let mut r = clean(&t, 0, ALICE, 10);
+    r.payee = "near:Alice.test.near".to_string();
+    panics(|| submit(&mut c, &t, vec![r]));
+    assert!(!c.records.contains_key(&request_id(&task_hash(&t), 0)));
+}
+
+#[test]
+fn rt_con_evm_params_on_near_lane_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    let mut r = clean(&t, 0, ALICE, 10);
+    r.evm = Some(EvmParams {
+        gas_limit: U128(21_000),
+        max_fee_per_gas: U128(1),
+        max_priority_fee_per_gas: U128(1),
+    });
+    assert!(panics(|| submit(&mut c, &t, vec![r])).contains("evm params not allowed"));
+}
+
+#[test]
+fn rt_con_book_add_by_agent_reverts() {
+    let mut c = setup();
+    testing_env!(ctx(AGENT, NOW, 1).build());
+    panics(|| {
+        c.book_add(
+            EVIL.to_string(),
+            Some(U128(CAP)),
+            U128(BUDGET),
+            U128(DAILY),
+            "Evil".to_string(),
+        )
+    });
+    assert!(c.payee(EVIL).is_none());
+}
+
+// ---------------------------------------------------------------------------------------------------------------- APPR: approval abuse
+
+fn one_pending(c: &mut Contract) -> u32 {
+    escalate_one(c, "task-appr", 40)
+}
+
+#[test]
+fn rt_appr_changed_amount_reverts() {
+    let mut c = setup();
+    let no = one_pending(&mut c);
+    let mut k = card(&c, no);
+    k[3] = "0.0000000000000000000004".to_string();
+    assert!(
+        panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("approve rejected: WrongAmount")
+    );
+}
+
+#[test]
+fn rt_appr_changed_payee_reverts() {
+    let mut c = setup();
+    let no = one_pending(&mut c);
+    let mut k = card(&c, no);
+    k[1] = EVIL.to_string();
+    assert!(
+        panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("approve rejected: WrongRecipient")
+    );
+}
+
+#[test]
+fn rt_appr_replayed_approve_reverts() {
+    let mut c = setup();
+    let no = one_pending(&mut c);
+    let k = card(&c, no);
+    approve_as(&mut c, OWNER, NOW, &k);
+    assert!(panics(|| approve_as(&mut c, OWNER, NOW + 1, &k)).contains("NotPending"));
+}
+
+#[test]
+fn rt_appr_after_expiry_reverts() {
+    let mut c = setup();
+    let no = one_pending(&mut c);
+    let k = card(&c, no);
+    assert!(
+        panics(|| approve_as(&mut c, OWNER, NOW + TTL_MS, &k))
+            .contains("approve rejected: Expired")
+    );
+}
+
+#[test]
+fn rt_appr_after_task_revoked_reverts() {
+    let mut c = setup();
+    let no = one_pending(&mut c);
+    let k = card(&c, no);
+    let (_, rec) = c.pending_record(no).unwrap();
+    owner(NOW);
+    c.revoke_task(hex::encode(rec.task_hash));
+    assert!(
+        panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("approve rejected: TaskRevoked")
+    );
+}
+
+#[test]
+fn rt_appr_by_agent_reverts() {
+    let mut c = setup();
+    let no = one_pending(&mut c);
+    let k = card(&c, no);
+    panics(|| approve_as(&mut c, AGENT, NOW, &k));
+    assert_eq!(c.pending_record(no).unwrap().1.state, RequestState::Pending);
+}
+
+#[test]
+fn rt_appr_wrong_why_reverts() {
+    let mut c = setup();
+    let no = one_pending(&mut c);
+    let mut k = card(&c, no);
+    k[4] = "OwnerTyped".to_string();
+    assert!(
+        panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("approve rejected: WrongReason")
+    );
+}
+
+#[test]
+fn rt_appr_after_reject_reverts() {
+    let mut c = setup();
+    let no = one_pending(&mut c);
+    let k = card(&c, no);
+    owner(NOW);
+    c.reject(no.to_string());
+    assert!(panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("NotPending"));
+}
+
+#[test]
+fn rt_appr_while_paused_reverts() {
+    let mut c = setup();
+    let no = one_pending(&mut c);
+    let k = card(&c, no);
+    owner(NOW);
+    c.pause(true);
+    assert!(
+        panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("approve rejected: Limit:Paused")
+    );
+}
+
+#[test]
+fn rt_appr_remembered_payee_has_no_untrusted_budget() {
+    let mut c = setup();
+    // a new payee read from data escalates; the owner approves it and remembers it with a generous cap
+    let t = task_for("task-new", &[(EVIL, 50)], 1);
+    let out = submit(&mut c, &t, vec![data_payee(&t, 0, EVIL, 40)]);
+    assert_eq!(tags(&out), ["escalated:UntrustedRecipient"]);
+    let no: u32 = out[0].pending_id.as_ref().unwrap().parse().unwrap();
+    let k = card(&c, no);
+    testing_env!(ctx(OWNER, NOW, 1).build());
+    c.approve_and_remember(
+        k[0].clone(),
+        k[1].clone(),
+        k[2].clone(),
+        k[3].clone(),
+        k[4].clone(),
+        k[5].clone(),
+        U128(100),
+        U128(1_000),
+        "Vendor".to_string(),
+    );
+    assert_eq!(c.payee(EVIL).unwrap().daily_untrusted_budget, 0);
+    // the next amount read from data for that payee, inside the remembered cap and the task bound, is still held
+    let t2 = task_for("task-next", &[(EVIL, 50)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t2, vec![data_amount(&t2, 0, EVIL, 10)])),
+        ["escalated:UntrustedAmount"]
+    );
+}
+
+#[test]
+fn rt_appr_remember_cannot_set_cap_below_amount() {
+    let mut c = setup();
+    let t = task_for("task-new", &[(EVIL, 50)], 1);
+    let out = submit(&mut c, &t, vec![data_payee(&t, 0, EVIL, 40)]);
+    let no: u32 = out[0].pending_id.as_ref().unwrap().parse().unwrap();
+    let k = card(&c, no);
+    testing_env!(ctx(OWNER, NOW, 1).build());
+    let text = panics(|| {
+        c.approve_and_remember(
+            k[0].clone(),
+            k[1].clone(),
+            k[2].clone(),
+            k[3].clone(),
+            k[4].clone(),
+            k[5].clone(),
+            U128(39),
+            U128(1_000),
+            "Vendor".to_string(),
+        )
+    });
+    assert!(text.contains("remember rejected: CapBelowAmount"), "{text}");
+    assert!(c.payee(EVIL).is_none());
+}
+
+// ---------------------------------------------------------------------------------------------------------------- TASK: task-bound reuse
+
+#[test]
+fn rt_task_expired_task_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    let late = t.expires_ms;
+    assert!(
+        panics(|| submit_as(&mut c, AGENT, late, &t, vec![clean(&t, 0, ALICE, 10)]))
+            .contains("task expired")
+    );
+}
+
+#[test]
+fn rt_task_revoked_task_reverts() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 2);
+    assert_eq!(
+        tags(&submit(&mut c, &t, vec![clean(&t, 0, ALICE, 10)])),
+        ["allowed"]
+    );
+    owner(NOW);
+    c.revoke_task(hex::encode(task_hash(&t)));
+    assert!(panics(|| submit(&mut c, &t, vec![clean(&t, 1, ALICE, 10)])).contains("task revoked"));
+}
+
+#[test]
+fn rt_task_raised_bound_breaks_the_signature() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    let sig = Base64VecU8(sign(&t));
+    let mut raised = t.clone();
+    raised.bounds[0].max_total = U128(5_000);
+    testing_env!(ctx(AGENT, NOW, 0).build());
+    let r = clean(&raised, 0, ALICE, 1_000);
+    assert!(panics(|| c.submit_batch(vec![r], raised.clone(), sig)).contains("bad task signature"));
+}
+
+#[test]
+fn rt_task_second_task_meets_the_payee_daily_limit() {
+    let mut c = setup();
+    // two owner tasks each bound Alice at 4000; her daily limit of 5000 caps what both together auto-pay in one UTC day
+    let t1 = task_for("task-a", &[(ALICE, 4_000)], 1);
+    let t2 = task_for("task-b", &[(ALICE, 4_000)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t1, vec![clean(&t1, 0, ALICE, 4_000)])),
+        ["allowed"]
+    );
+    assert_eq!(
+        tags(&submit(&mut c, &t2, vec![clean(&t2, 0, ALICE, 4_000)])),
+        ["escalated:OverPayeeLimit"]
+    );
+}
+
+#[test]
+fn rt_task_other_agent_cannot_use_the_task() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 1);
+    assert!(
+        panics(|| submit_as(&mut c, OTHER_AGENT, NOW, &t, vec![clean(&t, 0, ALICE, 10)]))
+            .contains("wrong agent")
+    );
+}
+
+#[test]
+fn rt_task_bound_not_reusable_after_allow() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 2);
+    assert_eq!(
+        tags(&submit(&mut c, &t, vec![clean(&t, 0, ALICE, 100)])),
+        ["allowed"]
+    );
+    assert_eq!(
+        tags(&submit(&mut c, &t, vec![clean(&t, 1, ALICE, 1)])),
+        ["escalated:OverTaskBound"]
+    );
+}
+
+// ---------------------------------------------------------------------------------------------------------------- DOS: escalation DoS
+
+#[test]
+fn rt_dos_three_rejects_lock_escalations_but_allows_still_pass() {
+    let mut c = setup();
+    for i in 0..3 {
+        let no = escalate_one(&mut c, &format!("junk-{i}"), 10);
+        owner(NOW);
+        c.reject(no.to_string());
+    }
+    // the agent is locked: the owner's next payment that needs a tap is blocked, not queued ...
+    let t = task_for("real-new", &[(EVIL, 50)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t, vec![typed(&t, 0, EVIL, 10)])),
+        ["blocked:EscalationsLocked"]
+    );
+    // ... while a payment inside the owner's limits still executes
+    let t2 = task_for("real-typed", &[(ALICE, 50)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t2, vec![clean(&t2, 0, ALICE, 10)])),
+        ["allowed"]
+    );
+    // and the owner's reset reopens escalations
+    owner(NOW);
+    c.reset_escalations(AGENT.parse().unwrap());
+    let t3 = task_for("real-new-2", &[(EVIL, 50)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t3, vec![typed(&t3, 0, EVIL, 10)])),
+        ["escalated:NewRecipient"]
+    );
+}
+
+#[test]
+fn rt_dos_pending_full_blocks_escalations_but_allows_still_pass() {
+    let mut c = setup();
+    for i in 0..3 {
+        escalate_one(&mut c, &format!("junk-{i}"), 10);
+    }
+    let t = task_for("real-new", &[(EVIL, 50)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t, vec![typed(&t, 0, EVIL, 10)])),
+        ["blocked:PendingFull"]
+    );
+    let t2 = task_for("real-typed", &[(ALICE, 50)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t2, vec![clean(&t2, 0, ALICE, 10)])),
+        ["allowed"]
+    );
+}
+
+#[test]
+fn rt_dos_reset_keeps_the_hourly_budget() {
+    let mut c = setup();
+    // six escalations in one hour, each rejected or approved so the pending cap never binds
+    for i in 0..6 {
+        let no = escalate_one(&mut c, &format!("junk-{i}"), 10);
+        let k = card(&c, no);
+        approve_as(&mut c, OWNER, NOW, &k);
+    }
+    owner(NOW);
+    c.reset_escalations(AGENT.parse().unwrap());
+    let t = task_for("real-new", &[(EVIL, 50)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t, vec![typed(&t, 0, EVIL, 10)])),
+        ["blocked:EscalationBudget"]
+    );
+    // the next UTC hour has a fresh budget
+    let t2 = task_at("real-new-2", &[(EVIL, 50)], 1, NOW + 3_600_000);
+    assert_eq!(
+        tags(&submit_as(
+            &mut c,
+            AGENT,
+            NOW + 3_600_000,
+            &t2,
+            vec![typed(&t2, 0, EVIL, 10)]
+        )),
+        ["escalated:NewRecipient"]
+    );
+}
+
+#[test]
+fn rt_dos_junk_request_burns_one_action() {
+    let mut c = setup();
+    let t = task(&[(ALICE, 100)], 2);
+    // a request the gate blocks still uses its index, so the owner's task has one action left
+    let out = submit(&mut c, &t, vec![clean(&t, 0, ALICE, 20_000)]);
+    assert_eq!(tags(&out), ["blocked:AmountOutOfBounds"]);
+    assert_eq!(spent_task(&c, &t), 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t, vec![clean(&t, 1, ALICE, 10)])),
+        ["allowed"]
+    );
+}
+
+#[test]
+fn rt_dos_expire_by_anyone_keeps_the_reject_streak() {
+    let mut c = setup();
+    for i in 0..2 {
+        let no = escalate_one(&mut c, &format!("junk-{i}"), 10);
+        owner(NOW);
+        c.reject(no.to_string());
+    }
+    let no = escalate_one(&mut c, "junk-x", 10);
+    // a stranger expires the third one after its time to live: it frees the slot and neither locks nor clears the streak
+    testing_env!(ctx("stranger.test.near", NOW + TTL_MS, 0).build());
+    c.expire(no.to_string());
+    let t = task_at("real-new", &[(EVIL, 50)], 1, NOW + TTL_MS);
+    assert_eq!(
+        tags(&submit_as(
+            &mut c,
+            AGENT,
+            NOW + TTL_MS,
+            &t,
+            vec![typed(&t, 0, EVIL, 10)]
+        )),
+        ["escalated:NewRecipient"]
+    );
+}

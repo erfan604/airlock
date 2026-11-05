@@ -38,6 +38,8 @@ pub mod ledgers;
 pub mod nonces;
 pub mod owner;
 pub mod policy;
+#[cfg(test)]
+mod redteam;
 pub mod request;
 pub mod task;
 #[cfg(test)]

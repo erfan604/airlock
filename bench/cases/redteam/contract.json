@@ -1,0 +1,226 @@
+[
+ {
+  "id": "RT-CON-01",
+  "test": "rt_con_batch_of_four_reverts",
+  "attack": "a batch of four requests to stretch one call",
+  "expect": "revert: batch size 1 to 3"
+ },
+ {
+  "id": "RT-CON-02",
+  "test": "rt_con_same_index_twice_in_one_batch_charges_once",
+  "attack": "the same request twice in one batch to be paid twice",
+  "expect": "the second answers the stored outcome; one charge, one action"
+ },
+ {
+  "id": "RT-CON-03",
+  "test": "rt_con_two_allows_in_one_batch_share_the_task_bound",
+  "attack": "two payments in one batch that each fit the bound but not together",
+  "expect": "allowed, then escalated OverTaskBound"
+ },
+ {
+  "id": "RT-CON-04",
+  "test": "rt_con_unknown_label_bit_reverts",
+  "attack": "label bit 15, which no name maps to",
+  "expect": "revert: unknown label bit"
+ },
+ {
+  "id": "RT-CON-05",
+  "test": "rt_con_asset_payee_mismatch_reverts",
+  "attack": "an EVM asset with a NEAR payee key",
+  "expect": "revert: asset does not match payee"
+ },
+ {
+  "id": "RT-CON-06",
+  "test": "rt_con_ft_lane_reverts",
+  "attack": "a NEP-141 asset id on a lane that is not shipped",
+  "expect": "revert: lane not shipped"
+ },
+ {
+  "id": "RT-CON-07",
+  "test": "rt_con_index_past_max_actions_reverts",
+  "attack": "an action index past the task's max_actions",
+  "expect": "revert: task actions exhausted"
+ },
+ {
+  "id": "RT-CON-08",
+  "test": "rt_con_plan_hash_mismatch_reverts",
+  "attack": "a request under another plan than the one the owner signed",
+  "expect": "revert: plan hash mismatch"
+ },
+ {
+  "id": "RT-CON-09",
+  "test": "rt_con_replay_with_changed_amount_reverts",
+  "attack": "resubmitting an allowed request id with a larger amount",
+  "expect": "revert: request mismatch"
+ },
+ {
+  "id": "RT-CON-10",
+  "test": "rt_con_lying_runtime_owner_labels_capped_by_task_bound",
+  "attack": "a lying runtime labels every value Owner",
+  "expect": "a payee outside the task escalates OutsideTask; a book payee above the bound escalates OverTaskBound"
+ },
+ {
+  "id": "RT-CON-11",
+  "test": "rt_con_uppercase_payee_key_reverts",
+  "attack": "an uppercase twin of a book key",
+  "expect": "revert, nothing stored"
+ },
+ {
+  "id": "RT-CON-12",
+  "test": "rt_con_evm_params_on_near_lane_reverts",
+  "attack": "EVM fee parameters on a NEAR request",
+  "expect": "revert: evm params not allowed"
+ },
+ {
+  "id": "RT-CON-13",
+  "test": "rt_con_book_add_by_agent_reverts",
+  "attack": "the agent adds a payee to the book",
+  "expect": "revert (owner only), book unchanged"
+ },
+ {
+  "id": "RT-APPR-01",
+  "test": "rt_appr_changed_amount_reverts",
+  "attack": "approve with a different amount than the stored request",
+  "expect": "revert: approve rejected: WrongAmount"
+ },
+ {
+  "id": "RT-APPR-02",
+  "test": "rt_appr_changed_payee_reverts",
+  "attack": "approve naming another payee",
+  "expect": "revert: approve rejected: WrongRecipient"
+ },
+ {
+  "id": "RT-APPR-03",
+  "test": "rt_appr_replayed_approve_reverts",
+  "attack": "the same approve twice",
+  "expect": "revert: NotPending"
+ },
+ {
+  "id": "RT-APPR-04",
+  "test": "rt_appr_after_expiry_reverts",
+  "attack": "approve at the expiry time",
+  "expect": "revert: approve rejected: Expired"
+ },
+ {
+  "id": "RT-APPR-05",
+  "test": "rt_appr_after_task_revoked_reverts",
+  "attack": "approve after the owner revoked the task",
+  "expect": "revert: approve rejected: TaskRevoked"
+ },
+ {
+  "id": "RT-APPR-06",
+  "test": "rt_appr_by_agent_reverts",
+  "attack": "the agent approves its own escalation",
+  "expect": "revert (owner only), still Pending"
+ },
+ {
+  "id": "RT-APPR-07",
+  "test": "rt_appr_wrong_why_reverts",
+  "attack": "approve with a reason the card did not show",
+  "expect": "revert: approve rejected: WrongReason"
+ },
+ {
+  "id": "RT-APPR-08",
+  "test": "rt_appr_after_reject_reverts",
+  "attack": "approve after a reject",
+  "expect": "revert: NotPending"
+ },
+ {
+  "id": "RT-APPR-09",
+  "test": "rt_appr_while_paused_reverts",
+  "attack": "approve while the contract is paused",
+  "expect": "revert: approve rejected: Limit:Paused"
+ },
+ {
+  "id": "RT-APPR-10",
+  "test": "rt_appr_remembered_payee_has_no_untrusted_budget",
+  "attack": "approve and remember a payee with a high cap, then send it an amount read from data",
+  "expect": "the remembered entry has budget 0: the next data amount escalates UntrustedAmount"
+ },
+ {
+  "id": "RT-APPR-11",
+  "test": "rt_appr_remember_cannot_set_cap_below_amount",
+  "attack": "remember with a cap below the approved amount",
+  "expect": "revert: remember rejected: CapBelowAmount, nothing stored"
+ },
+ {
+  "id": "RT-TASK-01",
+  "test": "rt_task_expired_task_reverts",
+  "attack": "a request under a task at its expiry time",
+  "expect": "revert: task expired"
+ },
+ {
+  "id": "RT-TASK-02",
+  "test": "rt_task_revoked_task_reverts",
+  "attack": "the next action of a task the owner revoked",
+  "expect": "revert: task revoked"
+ },
+ {
+  "id": "RT-TASK-03",
+  "test": "rt_task_raised_bound_breaks_the_signature",
+  "attack": "the owner's signature with a raised bound",
+  "expect": "revert: bad task signature"
+ },
+ {
+  "id": "RT-TASK-04",
+  "test": "rt_task_second_task_meets_the_payee_daily_limit",
+  "attack": "a second task to the same payee on the same day",
+  "expect": "allowed, then escalated OverPayeeLimit"
+ },
+ {
+  "id": "RT-TASK-05",
+  "test": "rt_task_other_agent_cannot_use_the_task",
+  "attack": "another allowed agent submits under this agent's task",
+  "expect": "revert: wrong agent"
+ },
+ {
+  "id": "RT-TASK-06",
+  "test": "rt_task_bound_not_reusable_after_allow",
+  "attack": "a later call reuses a spent task bound",
+  "expect": "escalated OverTaskBound"
+ },
+ {
+  "id": "RT-DOS-01",
+  "test": "rt_dos_three_rejects_lock_escalations_but_allows_still_pass",
+  "attack": "three junk escalations the owner rejects",
+  "expect": "escalations blocked EscalationsLocked until reset; payments inside the limits still allowed"
+ },
+ {
+  "id": "RT-DOS-02",
+  "test": "rt_dos_pending_full_blocks_escalations_but_allows_still_pass",
+  "attack": "three junk escalations left pending",
+  "expect": "a fourth escalation blocked PendingFull; payments inside the limits still allowed"
+ },
+ {
+  "id": "RT-DOS-03",
+  "test": "rt_dos_reset_keeps_the_hourly_budget",
+  "attack": "spend the hourly escalation budget, then the owner resets",
+  "expect": "still blocked EscalationBudget until the next UTC hour"
+ },
+ {
+  "id": "RT-DOS-04",
+  "test": "rt_dos_junk_request_burns_one_action",
+  "attack": "a request the gate blocks",
+  "expect": "it uses one of the task's actions; the rest still work"
+ },
+ {
+  "id": "RT-DOS-05",
+  "test": "rt_dos_expire_by_anyone_keeps_the_reject_streak",
+  "attack": "a stranger expires a pending escalation",
+  "expect": "the slot frees, the streak neither grows nor clears, no lock"
+ },
+ {
+  "id": "RT-DOS-06",
+  "test": "rt_dos_first_mail_takes_the_only_action",
+  "file": "runtime/test/redteam.test.ts",
+  "attack": "the attacker's mail is listed before the real invoice in a one-payment task",
+  "expect": "the plan runs once per mail; the first mail takes action index 0 and the real invoice gets NeedsAnotherTask (availability; the amount is still bounded by the cap, budget and task)"
+ },
+ {
+  "id": "RT-GRD-19",
+  "test": "rt_grd_live_challenge_grounds_planner_literals",
+  "file": "challenge/test/redteam.test.ts",
+  "attack": "a planner literal the owner never typed, in the live challenge engine",
+  "expect": "the amount is Owner plus Unresolved, as on the product server, so the verdict holds it"
+ }
+]

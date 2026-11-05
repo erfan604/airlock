@@ -1,0 +1,709 @@
+[
+ {
+  "id": "RT-GRD-01",
+  "fn": "ground",
+  "args": [
+   "1800",
+   "amount",
+   "Pay my accountant 1,800 NEAR.",
+   24
+  ],
+  "expect": "false",
+  "note": "a thousands comma splits the number: 1800 does not ground, so it is held (fail safe)"
+ },
+ {
+  "id": "RT-GRD-02",
+  "fn": "ground",
+  "args": [
+   "800",
+   "amount",
+   "Pay my accountant 1,800 NEAR.",
+   24
+  ],
+  "expect": "true",
+  "note": "known limit: the part after a thousands comma grounds; the owner sees 800 in the preview before signing"
+ },
+ {
+  "id": "RT-GRD-03",
+  "fn": "ground",
+  "args": [
+   "1.8",
+   "amount",
+   "Pay my accountant 1.800 NEAR.",
+   24
+  ],
+  "expect": "true",
+  "note": "known limit: a European thousands dot reads as a decimal point; the preview shows 1.8"
+ },
+ {
+  "id": "RT-GRD-04",
+  "fn": "ground",
+  "args": [
+   "1000",
+   "amount",
+   "Pay my accountant 1e3 NEAR.",
+   24
+  ],
+  "expect": "false",
+  "note": "scientific notation in the owner's words grounds nothing"
+ },
+ {
+  "id": "RT-GRD-05",
+  "fn": "ground",
+  "args": [
+   "4.2",
+   "amount",
+   "Pay my accountant \u0664\u066b\u0662 NEAR.",
+   24
+  ],
+  "expect": "false",
+  "note": "Arabic-Indic digits in the owner's words ground nothing (held, utility loss)"
+ },
+ {
+  "id": "RT-GRD-06",
+  "fn": "ground",
+  "args": [
+   "25",
+   "amount",
+   "Pay my accountant 1\u066025 NEAR.",
+   24
+  ],
+  "expect": "true",
+  "note": "known limit (KNOWN_LIMITATIONS): mixed scripts inside a number ground the ASCII run"
+ },
+ {
+  "id": "RT-GRD-07",
+  "fn": "ground",
+  "args": [
+   "4.2",
+   "amount",
+   "Pay my accountant 4.20 NEAR.",
+   24
+  ],
+  "expect": "true",
+  "note": "trailing zeros compare by value"
+ },
+ {
+  "id": "RT-GRD-08",
+  "fn": "ground",
+  "args": [
+   "4.2",
+   "amount",
+   "Pay my accountant 4,2 NEAR.",
+   24
+  ],
+  "expect": "false",
+  "note": "a decimal comma does not ground 4.2: held (fail safe)"
+ },
+ {
+  "id": "RT-GRD-09",
+  "fn": "ground",
+  "args": [
+   "evil-ops.testnet",
+   "address",
+   "Pay accountant.testnet 4.2 NEAR.",
+   null
+  ],
+  "expect": "false",
+  "note": "an address the owner never typed does not ground"
+ },
+ {
+  "id": "RT-GRD-10",
+  "fn": "ground",
+  "args": [
+   "accountant.testnet",
+   "address",
+   "Pay \u0430ccountant.testnet 4.2 NEAR.",
+   null
+  ],
+  "expect": "false",
+  "note": "a homoglyph in the owner's words never grounds the ASCII name"
+ },
+ {
+  "id": "RT-GRD-11",
+  "fn": "ground",
+  "args": [
+   "near:accountant.testnet",
+   "address",
+   "Pay accountant.testnet 4.2 NEAR.",
+   null
+  ],
+  "expect": "true",
+  "note": "the scheme prefix of a literal compares by account"
+ },
+ {
+  "id": "RT-GRD-12",
+  "fn": "ground",
+  "args": [
+   "0x2527d02599ba641c19fea793cd0f167589a0f10d",
+   "address",
+   "Pay evm:1:0x2527d02599ba641c19fea793cd0f167589a0f10d 0.02 ETH.",
+   null
+  ],
+  "expect": "false",
+  "note": "an owner token that names another chain does not ground a bare address (fail closed)"
+ },
+ {
+  "id": "RT-GRD-13",
+  "fn": "ground",
+  "args": [
+   "accountant",
+   "name",
+   "Pay my Accountant for April.",
+   null
+  ],
+  "expect": "true",
+  "note": "alias grounding is ASCII case-insensitive"
+ },
+ {
+  "id": "RT-GRD-14",
+  "fn": "ground",
+  "args": [
+   "accountant",
+   "name",
+   "Pay my accountants for April.",
+   null
+  ],
+  "expect": "false",
+  "note": "alias grounding needs a whole word"
+ },
+ {
+  "id": "RT-GRD-15",
+  "fn": "ground",
+  "args": [
+   "4.2",
+   "amount",
+   "Pay my accountant 14.2 NEAR.",
+   24
+  ],
+  "expect": "false",
+  "note": "a number inside a larger number does not ground"
+ },
+ {
+  "id": "RT-GRD-16",
+  "fn": "ground",
+  "args": [
+   "9.4",
+   "amount",
+   "Do not pay 9.4, pay my accountant 4.2 NEAR.",
+   24
+  ],
+  "expect": "true",
+  "note": "known limit: negation is not read; the preview shows the bound the owner signs"
+ },
+ {
+  "id": "RT-GRD-17",
+  "fn": "ground",
+  "args": [
+   "accountant.testnet",
+   "address",
+   "Pay ACCOUNTANT.TESTNET 4.2 NEAR.",
+   null
+  ],
+  "expect": "false",
+  "note": "an uppercase account in the owner's words is not a NEAR account and grounds nothing"
+ },
+ {
+  "id": "RT-GRD-18",
+  "fn": "ground",
+  "args": [
+   "accountant.testnet",
+   "address",
+   "Pay accountant\u200b.testnet 4.2 NEAR.",
+   null
+  ],
+  "expect": "false",
+  "note": "a zero-width space in the owner's words breaks the token: nothing grounds"
+ },
+ {
+  "id": "RT-PAY-16",
+  "fn": "resolveAlias",
+  "args": [
+   "ACCOUNTANT"
+  ],
+  "expect": "near:accountant.testnet",
+  "note": "labels match ASCII case-insensitively (the owner's alias, not a key)"
+ },
+ {
+  "id": "RT-PAY-17",
+  "fn": "resolveAlias",
+  "args": [
+   "\u0430ccountant"
+  ],
+  "expect": "miss",
+  "note": "a homoglyph alias misses"
+ },
+ {
+  "id": "RT-PAY-18",
+  "fn": "resolveAlias",
+  "args": [
+   "near:accountant.testnet"
+  ],
+  "expect": "near:accountant.testnet",
+  "note": "an exact key matches"
+ },
+ {
+  "id": "RT-PAY-19",
+  "fn": "resolveAlias",
+  "args": [
+   "NEAR:accountant.testnet"
+  ],
+  "expect": "miss",
+  "note": "a key matches only exactly"
+ },
+ {
+  "id": "RT-PAY-20",
+  "fn": "resolveAlias",
+  "args": [
+   "accountant\u200b"
+  ],
+  "expect": "miss",
+  "note": "a zero-width character makes the name non-ASCII: miss"
+ },
+ {
+  "id": "RT-PAY-21",
+  "fn": "payeeKey",
+  "args": [
+   {
+    "kind": "near"
+   },
+   "evm:84532:0x2527d02599ba641c19fea793cd0f167589a0f10d"
+  ],
+  "expect": "error:TargetMismatch",
+  "note": "an EVM key in a NEAR transfer"
+ },
+ {
+  "id": "RT-PAY-22",
+  "fn": "payeeKey",
+  "args": [
+   {
+    "kind": "evm",
+    "chain_id": 84532
+   },
+   "0x2527D02599BA641C19FEA793CD0F167589A0F10D"
+  ],
+  "expect": "evm:84532:0x2527d02599ba641c19fea793cd0f167589a0f10d",
+  "note": "a checksum-case address folds to the one canonical key, so it meets the same book entry and the same ledgers"
+ },
+ {
+  "id": "RT-PAY-23",
+  "fn": "payeeKey",
+  "args": [
+   {
+    "kind": "evm",
+    "chain_id": 84532
+   },
+   "evm:8453:0x2527d02599ba641c19fea793cd0f167589a0f10d"
+  ],
+  "expect": "error:TargetMismatch",
+  "note": "a key on another chain id in a Base Sepolia transfer"
+ },
+ {
+  "id": "RT-PAY-24",
+  "fn": "validatePayeeKey",
+  "args": [
+   "evm:084532:0x2527d02599ba641c19fea793cd0f167589a0f10d"
+  ],
+  "expect": "error:BadChainId",
+  "note": "a chain id with a leading zero"
+ },
+ {
+  "id": "RT-PAY-25",
+  "fn": "validatePayeeKey",
+  "args": [
+   "evm:84532:0X2527d02599ba641c19fea793cd0f167589a0f10d"
+  ],
+  "expect": "error:BadChar",
+  "note": "an uppercase 0X prefix"
+ },
+ {
+  "id": "RT-PAY-26",
+  "fn": "validatePayeeKey",
+  "args": [
+   "near:accountant.testnet "
+  ],
+  "expect": "error:BadChar",
+  "note": "a trailing space in a key"
+ },
+ {
+  "id": "RT-PAY-27",
+  "fn": "checkLookalike",
+  "args": [
+   "near:acc0untant.testnet",
+   [
+    "near:accountant.testnet",
+    "near:landlord.testnet"
+   ]
+  ],
+  "expect": "flag:name_edit",
+  "note": "a digit-for-letter twin of a book name is flagged on the card (a hint; the gate escalates it anyway)"
+ },
+ {
+  "id": "RT-PAY-28",
+  "fn": "checkLookalike",
+  "args": [
+   "near:accountant.testnet",
+   [
+    "near:accountant.testnet",
+    "near:landlord.testnet"
+   ]
+  ],
+  "expect": "clear",
+  "note": "the book entry itself is not a look-alike (control)"
+ },
+ {
+  "id": "RT-AMT-21",
+  "fn": "toBaseUnits",
+  "args": [
+   "4.2",
+   24
+  ],
+  "expect": "4200000000000000000000000",
+  "note": "the canonical conversion (control)"
+ },
+ {
+  "id": "RT-AMT-22",
+  "fn": "toBaseUnits",
+  "args": [
+   "4.200000000000000000000000000",
+   24
+  ],
+  "expect": "4200000000000000000000000",
+  "note": "extra fraction places are accepted only when all zero"
+ },
+ {
+  "id": "RT-AMT-23",
+  "fn": "toBaseUnits",
+  "args": [
+   9007199254740993,
+   24
+  ],
+  "expect": "error:Format",
+  "note": "an integer past the safe range is refused, never rounded"
+ },
+ {
+  "id": "RT-AMT-24",
+  "fn": "toBaseUnits",
+  "args": [
+   "340282366920938463463374607431768211456",
+   0
+  ],
+  "expect": "error:Range",
+  "note": "u128 max plus one is refused"
+ },
+ {
+  "id": "RT-AMT-25",
+  "fn": "toBaseUnits",
+  "args": [
+   "0x10",
+   24
+  ],
+  "expect": "error:Format",
+  "note": "hexadecimal is refused"
+ },
+ {
+  "id": "RT-AMT-26",
+  "fn": "toBaseUnits",
+  "args": [
+   "4.",
+   24
+  ],
+  "expect": "error:Format",
+  "note": "a trailing point is refused"
+ },
+ {
+  "id": "RT-QX-09",
+  "fn": "validateField",
+  "args": [
+   "amount",
+   "4.9 NEAR"
+  ],
+  "expect": "null",
+  "note": "a unit in the answer is null, never trimmed into a number"
+ },
+ {
+  "id": "RT-QX-10",
+  "fn": "validateField",
+  "args": [
+   "amount",
+   4.9
+  ],
+  "expect": "null",
+  "note": "a JSON number is null: only exact decimal text"
+ },
+ {
+  "id": "RT-QX-11",
+  "fn": "validateField",
+  "args": [
+   "address",
+   "ACCOUNTANT.testnet"
+  ],
+  "expect": "null",
+  "note": "an uppercase NEAR account is null"
+ },
+ {
+  "id": "RT-QX-12",
+  "fn": "validateField",
+  "args": [
+   "address",
+   "accountant.testnet\u200b"
+  ],
+  "expect": "null",
+  "note": "a zero-width tail is null"
+ },
+ {
+  "id": "RT-QX-13",
+  "fn": "validateField",
+  "args": [
+   "enum:paid,unpaid",
+   "PAID"
+  ],
+  "expect": "null",
+  "note": "an enum member matches exactly"
+ },
+ {
+  "id": "RT-QX-14",
+  "fn": "validateField",
+  "args": [
+   "bool",
+   "true"
+  ],
+  "expect": "null",
+  "note": "the string true is not a boolean"
+ },
+ {
+  "id": "RT-QX-15",
+  "fn": "validateField",
+  "args": [
+   "__proto__",
+   "4.9"
+  ],
+  "expect": "null",
+  "note": "a type name outside the validator table is null"
+ },
+ {
+  "id": "RT-QX-16",
+  "fn": "validateField",
+  "args": [
+   "address",
+   "0x2527D02599BA641C19FEA793CD0F167589A0F10D"
+  ],
+  "expect": "\"0x2527d02599ba641c19fea793cd0f167589a0f10d\"",
+  "note": "a checksum-case address folds to lowercase (the label stays quarantine)"
+ },
+ {
+  "id": "RT-BOOK-06",
+  "fn": "checkPlan",
+  "args": [
+   [
+    {
+     "action": "book_add",
+     "args": {
+      "key": "near:evil-ops.testnet"
+     }
+    }
+   ]
+  ],
+  "expect": "error:Malformed",
+  "note": "no plan action writes the book"
+ },
+ {
+  "id": "RT-BOOK-07",
+  "fn": "checkPlan",
+  "args": [
+   [
+    {
+     "let": "x",
+     "call": "book_add",
+     "args": {}
+    }
+   ]
+  ],
+  "expect": "error:UnknownTool",
+  "note": "no tool writes the book"
+ },
+ {
+  "id": "RT-INT-12",
+  "fn": "checkPlan",
+  "args": [
+   [
+    {
+     "let": "a",
+     "call": "read_inbox"
+    },
+    {
+     "action": "transfer",
+     "args": {
+      "to": "accountant.testnet",
+      "amount": "1",
+      "asset": {
+       "ref": "a"
+      }
+     }
+    }
+   ]
+  ],
+  "expect": "error:DataDerivedAsset",
+  "note": "an asset taken from data is refused by rule 12"
+ },
+ {
+  "id": "RT-INT-13",
+  "fn": "toolArgPolicy",
+  "args": [
+   "fetch_url",
+   [
+    "Untrusted:email"
+   ],
+   "https://pay.example"
+  ],
+  "expect": "refuse:UntrustedToolArg",
+  "note": "data never names what a tool fetches"
+ },
+ {
+  "id": "RT-INT-14",
+  "fn": "toolArgPolicy",
+  "args": [
+   "get_price",
+   [
+    "Owner",
+    "Unresolved"
+   ],
+   "near"
+  ],
+  "expect": "refuse:UntrustedToolArg",
+  "note": "an ungrounded literal never names a tool argument"
+ },
+ {
+  "id": "RT-INT-15",
+  "fn": "toolArgPolicy",
+  "args": [
+   "get_price",
+   [
+    "Oracle"
+   ],
+   "near"
+  ],
+  "expect": "allow",
+  "note": "an Oracle value may (control)"
+ },
+ {
+  "id": "RT-ARI-11",
+  "fn": "analyze",
+  "args": [
+   [
+    {
+     "let": "b",
+     "call": "get_balance",
+     "args": {
+      "asset": "near"
+     }
+    },
+    {
+     "let": "x",
+     "calc": "mul",
+     "inputs": [
+      {
+       "ref": "b"
+      },
+      "0.1"
+     ]
+    },
+    {
+     "let": "payee",
+     "lookup": {
+      "key": "accountant"
+     }
+    },
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": {
+       "ref": "x"
+      },
+      "asset": "near"
+     }
+    }
+   ],
+   "Pay my accountant 10 percent of my NEAR balance."
+  ],
+  "expect": "errors:NoBounds",
+  "note": "a balance the attacker can raise by sending funds is Oracle, but a calculated amount gets no task bound: nothing to sign"
+ },
+ {
+  "id": "RT-OWN-07",
+  "fn": "analyze",
+  "args": [
+   [
+    {
+     "let": "payee",
+     "lookup": {
+      "key": "accountant"
+     }
+    },
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": "60",
+      "asset": "near"
+     }
+    }
+   ],
+   "Pay my accountant 60 NEAR."
+  ],
+  "expect": "errors:ExceedsQuickCap",
+  "note": "a pasted amount above the quick task cap cannot be signed with the local task key"
+ },
+ {
+  "id": "RT-OWN-08",
+  "fn": "analyze",
+  "args": [
+   [
+    {
+     "let": "m",
+     "call": "read_inbox"
+    },
+    {
+     "let": "i",
+     "extract": {
+      "from": {
+       "ref": "m"
+      },
+      "schema": {
+       "amount": "amount"
+      }
+     }
+    },
+    {
+     "let": "payee",
+     "lookup": {
+      "key": "landlord"
+     }
+    },
+    {
+     "action": "transfer",
+     "args": {
+      "to": {
+       "ref": "payee"
+      },
+      "amount": {
+       "ref": "i",
+       "path": [
+        "amount"
+       ]
+      },
+      "asset": "near"
+     }
+    }
+   ],
+   "Pay my landlord what the email says."
+  ],
+  "expect": "errors:NoBounds",
+  "note": "a data amount to a payee with no cap gets no bound"
+ }
+]
