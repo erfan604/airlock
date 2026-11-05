@@ -167,23 +167,16 @@ const run: E2E = async ({ page, baseUrl }) => {
   await id('tube-band-poster', page).waitFor({ state: 'attached' });
   assert.equal(await page.locator('[data-testid="tube-band"] video').count(), 0, 'no tube video under reduced motion');
   assert.equal(await page.locator('[data-testid^="how-step-"][data-active]').count(), 0, 'no step lit under reduced motion');
-  // the stamp and the switchyard show their last frame only
+  // the stamp shows its last frame only (the switchyard is held back: SHOW_YARD in ReplayShell)
   await page.goto(`${baseUrl}/try`);
   await id('try-stamp-end', page).waitFor();
   assert.equal(await id('try-stamp-end', page).getAttribute('src'), '/media/stamp-held-end.jpg');
-  await page.goto(`${baseUrl}/replay`);
-  await id('yard-band-end', page).waitFor();
-  assert.equal(await page.locator('[data-testid="yard-band"] video').count(), 0, 'no yard video under reduced motion');
   await page.emulateMedia({ reducedMotion: null });
-  // AIR-311: the stamp clip follows the verdict, the switchyard clip follows the act
+  // AIR-311: the stamp clip follows the verdict
   await page.goto(`${baseUrl}/try`);
   await page.waitForFunction(() => document.querySelector('[data-testid="try-stamp-video"]')?.getAttribute('src') === '/media/stamp-held.mp4');
   await id('try-preset-honest', page).click();
   await page.waitForFunction(() => document.querySelector('[data-testid="try-stamp-video"]')?.getAttribute('src') === '/media/stamp-allowed.mp4');
-  await page.goto(`${baseUrl}/replay`);
-  await page.waitForFunction(() => document.querySelector('[data-testid="yard-band-video"]')?.getAttribute('src') === '/media/yard-act1.mp4');
-  await id('act-b01', page).click();
-  await page.waitForFunction(() => document.querySelector('[data-testid="yard-band-video"]')?.getAttribute('src') === '/media/yard-act2.mp4');
   // AIR-311: the How it works band loads its loop only near the viewport, then lights the step it is showing
   await page.goto(`${baseUrl}/`);
   const band = id('tube-band-video', page);

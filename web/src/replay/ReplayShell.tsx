@@ -23,7 +23,11 @@ import { liveReplayApi } from './api.ts';
 import type { Act, ActId, ActLink, HeldRequest, ReplayApi, TamperResult } from './api.ts';
 import { REJECT_NOTE, replayApprove } from './replayApprove.ts';
 
-/** AIR-311: the switchyard band above the acts: what each recorded act did, as a model railway. */
+/** AIR-311: the switchyard band above the acts. Held back 2026-11-04 (PM review: the render is below the site's bar); flip to true
+ * once the yard is re-rendered and approved. */
+const SHOW_YARD = false;
+
+/** What each recorded act did, as a model railway. */
 const YARD_ALT: Record<ActId, string> = {
   u01: 'A model railway yard: a blue wagon labelled 4.2 NEAR runs the main line and stops at the platform marked PAID.',
   b01: 'A model railway yard: the points throw and a red wagon labelled 9.4 NEAR is shunted onto the siding marked HELD, where an amber lamp lights.',
@@ -239,6 +243,7 @@ export function ReplayShell({ api = liveReplayApi }: { api?: ReplayApi }) {
       {loaded === 'error' ? <p className="replay-line">The recordings could not be read.</p> : null}
       {loaded !== null && loaded !== 'error' ? (
         <>
+          {SHOW_YARD ? (
           <OneShot
             name={`yard-${active === 'u01' ? 'act1' : active === 'b01' ? 'act2' : 'act3'}`}
             run={active}
@@ -246,6 +251,7 @@ export function ReplayShell({ api = liveReplayApi }: { api?: ReplayApi }) {
             className="yard-band"
             testId="yard-band"
           />
+          ) : null}
           <nav className="replay-nav" aria-label="Acts">
             {loaded.acts.map((a) => (
               <button key={a.id} type="button" className="card-btn card-btn-outline replay-tab" data-testid={`act-${a.id}`} aria-pressed={a.id === active} onClick={() => setActive(a.id)}>
