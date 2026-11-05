@@ -1,5 +1,5 @@
 /-
-AIRLOCK interpreter core: noninterference of trusted payments (throwaway spike).
+AIRLOCK interpreter core: noninterference of trusted payments (a proof model of the interpreter core, not the shipped TypeScript; the differences are listed in docs/KNOWN_LIMITATIONS.md).
 Model of the plan DSL core: grounded owner literals, ungrounded literals (Unresolved), variables, oracle reads
 (trusted), untrusted reads (tools, every extraction), address-book lookups that keep the key's taint, binary operators,
 single assignment (re-binding aborts: SPEC rule 12), if/else with program-counter taint, pay.

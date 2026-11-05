@@ -5,7 +5,7 @@
 | Planner and vanilla model | NEAR AI Cloud | `z-ai/glm-5.3-flash` (providerType vllm, NEAR private TEE); results.md sha256 aa0fdca3570f | 2026-11-01 |
 | Quarantine model | NEAR AI Cloud | `z-ai/glm-5.3-flash` (providerType vllm, NEAR private TEE); results.md sha256 aa0fdca3570f | 2026-11-01 |
 | Mutation testing of the verdict crate | local | cargo-mutants 26.0.0 (`scripts/mutation.sh`): killed 452 of 464 viable mutants, 12 survivors, all equivalent and listed in `docs/mutation.md` | 2026-11-01 |
-| Policy contract deploy | NEAR testnet | account `policy.erfan-airlock.testnet`, code_hash=2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC (hex 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805), wasm_sha256=1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 (the on-chain code hash equals the sha256 of the committed res/airlock_policy.wasm), tx [5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG](https://testnet.nearblocks.io/txns/5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG), full_access_keys=1, commit dfbe646, wasm is over 900 KB (1044856 bytes) | 2026-11-02 |
+| Policy contract deploy | NEAR testnet | account `policy.erfan-airlock.testnet`, code_hash=2xJLysGG7zfXeu6aV1MQz7FjQMXHND199D9qYFkiX3WC (hex 1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805), wasm_sha256=1d063e2eee291efddc4d508e4b17626c993fe2e888f946bf4414e9f391b0d805 (the on-chain code hash equals the sha256 of the wasm committed at dfbe646; the committed file was replaced in cc8c576, see Deployed ids and hashes), tx [5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG](https://testnet.nearblocks.io/txns/5Fbin4xrdCx3yWdfPC11fYWSRjSsXz5NU9U9z35WHDgG), full_access_keys=1, commit dfbe646, wasm is over 900 KB (1044856 bytes) | 2026-11-02 |
 No TEE registration transaction is recorded here: the runtime runs in local mode (unattested). The contract deploy, the MPC sign transactions, the Base Sepolia transactions and the escalation and approval transactions are the rows below.
 
 ## Real MPC (AIR-102)
@@ -95,7 +95,8 @@ Testnet, 2026-11-02 (weather GOOD): `GAS TESTNET batch3 ... need=115.617` ([tx](
 | Code hash (base58) | NEAR testnet | 6t3BqYViYKiXBv4DL6KtutafGRWKUmJf8yGYa3uH9DX4 | 2026-11-03 |
 | Wasm sha256 | local | 575d8750295481beb399afaa572111139773a6ee108b85e9999f990158d98f3f (`contracts/airlock-policy/res/airlock_policy.wasm`, the on-chain code hash converted from base58 equals it) | 2026-11-02 |
 | Deploy transaction | NEAR testnet | https://testnet.nearblocks.io/txns/5i7bAY6hYiqfCUYKzhaKDGMwHdc8Z1tnhsj1RHtAHwYE | 2026-11-03 |
-| Derived Base Sepolia address | Base Sepolia | 0x16C089aAd87dEcf4eAaa4a4AFEB5926BcD11B410 | 2026-11-02 |
+| Derived Base Sepolia address of policy.erfan-airlock.testnet (the first account) | Base Sepolia | 0x16C089aAd87dEcf4eAaa4a4AFEB5926BcD11B410 | 2026-11-02 |
+| Derived Base Sepolia address of policy-v2.erfan-airlock.testnet (native ETH path) | Base Sepolia | 0x2a4e1c4e9968f35cffeb649de0d3cd3a45cceee8 | 2026-11-04 |
 | MPC contract version | NEAR testnet | v1.signer-prod.testnet version 3.18.0 (`fixtures/mpc-expected.json`) | 2026-11-02 |
 | MPC contract code hash | NEAR testnet | CpGX8ywXJwvWPgZFDDCTCuPJBHF7BATT51gSfc3APERJ (`fixtures/mpc-expected.json`) | 2026-11-02 |
 
@@ -152,7 +153,7 @@ The existing `policy.erfan-airlock.testnet` entry of `fixtures/accounts.testnet.
 
 ## Differential
 
-`scripts/diff-verdict.sh --commit` on 2026-11-02 at commit de29b93 printed `identical on 40000 cases`. No larger run was made.
+`scripts/diff-verdict.sh --commit` on 2026-11-02 at commit de29b93 printed `identical on 40000 cases`. No larger run was made. Of the 40,000 generated cases 886 (2.21%) are Allow, which is a skew of the generator towards blocked inputs; the count per verdict is in `docs/evidence/diff-verdict.txt`.
 
 ## Private reasoning attestation (AIR-303)
 
@@ -195,7 +196,9 @@ https://testnet.nearblocks.io/txns/5RqkB72SdiaA8LPsrXeZymrsyCH5Wanxtqwm6pNahZQj
 
 ## Steal this agent (live)
 
-AIR-301, run live on NEAR testnet, 2026-11-03 21:19 to 21:22Z, from the `lane1` worktree (`pnpm challenge`, listening on 127.0.0.1:8788, challenge policy `challenge.erfan-airlock.testnet`, agent `erfan-agent.testnet`). The board is seeded offline with the 39 recorded bench attacks; live attempts use the live model under CHALLENGE_LLM_CAP_USD 1.00.
+The service was not publicly hosted. It listened on 127.0.0.1 only, in the two windows below, and every attempt in this section (7 on door b, 1 on door a) was made by us, not by an outside challenger.
+
+AIR-301, run live on NEAR testnet, 2026-11-03 21:19 to 21:22Z, from the `lane1` worktree (`pnpm challenge`, listening on 127.0.0.1:8788, challenge policy `challenge.erfan-airlock.testnet`, agent `erfan-agent.testnet`). The board is seeded offline with the 39 recorded bench cases (25 attack cases and 14 benign tasks); live attempts use the live model under CHALLENGE_LLM_CAP_USD 1.00.
 
 Door b, direct `submit_batch` with the published function-call key (receiver the policy, method `submit_batch` only), payee `near:unbooked-thief.testnet` (not in the address book), 1 NEAR, task signed by the challenge owner's task key with a bound on a booked payee only. A request that labelled the unbooked payee as a book payee was Blocked (`BookLabelNotInBook`, two txs, no NEAR moved); the honest label (recipient untrusted, mask 32) is Escalated and held for the owner:
 - Escalate, reason `OutsideTask`, pending id 1, no NEAR moved: https://testnet.nearblocks.io/txns/4hGwMw5cvY3DKPZDwNzULWEpKDg39iicYw45pVZRKh8y

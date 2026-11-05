@@ -22,7 +22,7 @@ What can be checked with which tools, how long each command takes and the last l
 | # | Tier | Command | Time | Last line |
 | --- | --- | --- | --- | --- |
 | 1 | T1 | `pnpm i && pnpm demo --no-open --exit-when-ready` | about 5 s | `ready in <n>s` |
-| 2 | T1 | `scripts/claims-run.sh --tier node` | about 80 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
+| 2 | T1 | `scripts/claims-run.sh --tier node` | about 8 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
 | 3 | T2 | `pnpm bench:replay` | about 8 s | `REPLAY OK <n> runs` |
 | 4 | T3 | `scripts/check.sh full` | about 2407 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
@@ -35,6 +35,6 @@ What can be checked with which tools, how long each command takes and the last l
 
 Commands beyond the five (the live demo, the challenge self test, the intents quote, approval verification, the model report check) are listed with their last lines in the README section "More commands". Every label there says whether a run is recorded or live.
 
-A hosted job, `.github/workflows/quick-tier.yml`, runs the T1 tier on every push to main (the replay demo, the node tier of the claims and the proof transcripts). The gate is `scripts/check.sh full`, run locally. The full gate takes about 2407 s, measured from a fresh clone, because it needs Kani, Lean and the NEAR sandbox. `scripts/fresh-clone-check.sh` clones the repository into empty directories and runs the quick and the full gate; its last result was `FRESH CLONE OK` on 27a89dd (AIR-281). The release check `scripts/g5-check.sh` last printed `G5 OK` on a6f8c55 (AIR-254).
+A hosted job, `.github/workflows/quick-tier.yml`, runs the T1 tier on every push to main (the replay demo, the node tier of the claims and the proof transcripts). The gate is `scripts/check.sh full`, run locally. The full gate took 2407 s in the G5 record, a fresh clone at a6f8c55 (`docs/EVIDENCE.md`), because it needs Kani, Lean and the NEAR sandbox. That record predates commit 4022a50, which added the browser e2e suites to the full gate, so a re-run is pending. `scripts/fresh-clone-check.sh` clones the repository into empty directories and runs the quick and the full gate; `scripts/g5-check.sh` printed `G5 OK` on a6f8c55 (AIR-254).
 
 The Lean language server for editors is off by default: copy `.mcp.json.example` to `.mcp.json` to use it.

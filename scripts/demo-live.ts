@@ -168,7 +168,7 @@ export function autopilotLines(a: Autopilot): string[] {
 
 const twinPath = (root: string): string => goldenPath(root, 'twin');
 
-/** The recorded twin loss, or null when there is none (the twin did not fall live on 2026-11-02, so no file exists until one does). */
+/** The recorded twin loss, or null when there is none (the twin did not fall in the three live runs of 2026-11-04, so no file exists until one does). */
 export function readTwin(root: string): GoldenRun | null {
   const p = twinPath(root);
   if (!existsSync(p)) return null;
@@ -189,7 +189,7 @@ export function bannerLines(contractId: string, twin: boolean): string[] {
     'FIXED  the AIRLOCK plan is a file (fixtures/plans/u01.json): no planner call is made, so nothing says the agent planned live',
     twin
       ? "RECORDED act 1: the vanilla twin's loss is the golden run bench/golden/twin.json, its transaction is checked on the chain now"
-      : 'NONE   act 1: bench/golden/twin.json does not exist (the vanilla twin did not fall in six live runs on 2026-11-02), so act 1 shows no loss',
+      : 'NONE   act 1: bench/golden/twin.json does not exist (the vanilla twin did not fall in three live runs on 2026-11-04), so act 1 shows no loss',
     'HUMAN  Erfan approves in the wallet (or the CLI fallback of AIR-087)',
   ];
 }

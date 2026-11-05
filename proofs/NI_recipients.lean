@@ -1,5 +1,5 @@
 /-
-AIRLOCK interpreter core: noninterference of trusted RECIPIENTS (red team round 3 variant, throwaway spike).
+AIRLOCK interpreter core: noninterference of trusted RECIPIENTS (the recipient variant of the model in NI.lean, added after red team round 3; the differences from the shipped TypeScript are listed in docs/KNOWN_LIMITATIONS.md).
 Covers guarantee part (b): for actions whose recipient and trigger are trusted, the recipient list is identical in
 every attacker world even when the amount came from data.
 Model of the plan DSL core: grounded owner literals, ungrounded literals (Unresolved), variables, oracle reads

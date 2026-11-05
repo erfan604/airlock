@@ -31,14 +31,14 @@
 - There is no reject-all by design: three consecutive rejects lock an agent's escalations (`lock_consecutive_rejects`), which stops a flood but does not clear the pending requests.
 - A careless owner can approve a truthfully displayed bad payment: the console shows the real payee and amount, and the contract rechecks the approve arguments, but it cannot stop an owner who does not read the card.
 - The bench volume numbers come from a simulated world fed by the verdict CLI, and benign utility is in-sample. The contract-level evidence is the sandbox suite; see docs/BENCH.md.
-- The look-alike twin payee in the bench was never actually fallen for in six live runs, so there is no live twin-loss claim: no golden run shows the vanilla or the allowlist twin losing money, and none is claimed.
+- The look-alike twin payee in the bench was never actually fallen for in the three live runs of 2026-11-04 recorded in docs/EVIDENCE.md, so there is no live twin-loss claim: no golden run shows the vanilla or the allowlist twin losing money, and none is claimed.
 - Runs are on testnet only; no mainnet transaction was made and no mainnet claim is made.
 - The replay demo needs no keys and no network; it replays recorded model answers and chain reads, so it shows the recorded runs and is not a live run.
 - The model attestation (AIR-303) covers the model TEE instance that answered one report request with our nonce. NEAR AI Cloud says the same hostname can be served by several instances that share one signing key, so the report does not name the instance that answers a later completion, and no per-completion response signature is checked. The GPU verdict is NVIDIA NRAS over TLS, with no local check of its token. Quote collateral comes from Phala's PCCS and is checked against Intel's root key. A replay shows the stored result of one live check and does not repeat it. A runtime started live without a key, or with a failed check, serves an UNATTESTED or FAILED record and keeps running.
 - NEAR AI may serve more than one model build behind the same name (one run on 2026-11-03 saw an unpinned compose hash; ten later samples showed one build). Only pinned builds verify: an unpinned build is reported FAILED, with the seen hashes in the record, and is never trusted. Adding a build is the manual, reviewed `attest-rotate` step.
 - Local mode is unattested; host powers (a host can stop, delay or read the runtime) are not removed by any check here; oracle dust moves; plan_hash and evidence are unauthenticated hints; UTC-boundary burst.
 - Wallet manifest pinning fixes which wallets the console offers, not the wallets' code: a wallet executor such as Intear's is a
-  remote script that can change; the contract's recheck of the six approve arguments is the control.
+  remote script that can change; the contract's recheck of the five approve arguments after the request id is the control.
 - The console CSP allows inline styles and lists a per-wallet executor origin, because NEAR Connect 0.11.4 injects styles and loads wallet scripts from remote origins; scripts stay `'self'` plus a per-response nonce.
 - The runtime's evidence store is in memory and is lost when the runtime restarts.
 - The session cookie is `Secure`, so a demo over plain `http://<LAN address>` cannot log in; use localhost or HTTPS.
