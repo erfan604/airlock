@@ -84,6 +84,11 @@ pub struct EvmParams {
 pub struct Hints {
     pub plan_hash: Hex32,
     pub trace_digest: Hex32,
+    /// AIR-315: the flood-control origin the runtime names for an escalation (`owner`, or `<kind>:<16 lowercase hex>`, a hash of the
+    /// untrusted source such as a mail sender). Absent for a runtime that names none. Keys the flood counters only; never trusted for
+    /// a verdict, never stored in a record, never put in an event.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
 }
 
 /// What an agent submits (`submit_batch`, at most 3 per call). The TypeScript side calls it `ActionRequest`.

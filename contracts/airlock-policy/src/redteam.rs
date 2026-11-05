@@ -142,6 +142,7 @@ fn request(t: &OwnerTask, index: u8, payee: &str, amount: u128, labels: Labels) 
         hints: Hints {
             plan_hash: t.plan_sha256.clone(),
             trace_digest: Hex32([0x33; 32]),
+            origin: None,
         },
     }
 }
@@ -689,81 +690,282 @@ fn rt_task_bound_not_reusable_after_allow() {
 
 // ---------------------------------------------------------------------------------------------------------------- DOS: escalation DoS
 
+// AIR-315: the flood counters are kept per (agent, origin). An attacker's origin is the hash of the source its text came from (a mail
+// sender here); the owner's real supplier mails from another origin, and an owner-typed payment has the origin `owner`.
+const ATTACKER: &str = "mail:aaaaaaaaaaaaaaaa";
+const SUPPLIER: &str = "mail:bbbbbbbbbbbbbbbb";
+
+fn from_origin(mut r: SubmitRequest, origin: &str) -> SubmitRequest {
+    r.hints.origin = Some(origin.to_string());
+    r
+}
+
+/// A recipient read from `origin`'s text, under its own one-action task at `now_ms`: the outcome tag.
+fn data_from_at(c: &mut Contract, task_id: &str, origin: &str, now_ms: u64) -> SubmitOutcome {
+    let t = task_at(task_id, &[(ALICE, 1_000)], 1, now_ms);
+    let out = submit_as(
+        c,
+        AGENT,
+        now_ms,
+        &t,
+        vec![from_origin(data_payee(&t, 0, ALICE, 10), origin)],
+    );
+    out[0].clone()
+}
+
+fn data_from(c: &mut Contract, task_id: &str, origin: &str) -> SubmitOutcome {
+    data_from_at(c, task_id, origin, NOW)
+}
+
+/// The pending number of an escalation that must have been admitted.
+fn pending_no(o: &SubmitOutcome) -> u32 {
+    assert_eq!(o.outcome, "escalated", "{o:?}");
+    o.pending_id
+        .as_ref()
+        .expect("a pending id")
+        .parse()
+        .unwrap()
+}
+
+/// A payee the owner typed by address (every label Owner, origin `owner`): escalates `NewRecipient` when admitted.
+fn owner_new_payee(c: &mut Contract, task_id: &str) -> String {
+    let t = task_for(task_id, &[(EVIL, 50)], 1);
+    tag(&submit(c, &t, vec![from_origin(typed(&t, 0, EVIL, 10), "owner")])[0])
+}
+
+fn allowed_typed(c: &mut Contract, task_id: &str) -> String {
+    let t = task_for(task_id, &[(ALICE, 50)], 1);
+    tag(&submit(c, &t, vec![from_origin(clean(&t, 0, ALICE, 10), "owner")])[0])
+}
+
 #[test]
 fn rt_dos_three_rejects_lock_escalations_but_allows_still_pass() {
     let mut c = setup();
     for i in 0..3 {
-        let no = escalate_one(&mut c, &format!("junk-{i}"), 10);
+        let no = pending_no(&data_from(&mut c, &format!("junk-{i}"), ATTACKER));
         owner(NOW);
         c.reject(no.to_string());
     }
-    // the agent is locked: the owner's next payment that needs a tap is blocked, not queued ...
-    let t = task_for("real-new", &[(EVIL, 50)], 1);
+    // the attacker's origin is locked ...
     assert_eq!(
-        tags(&submit(&mut c, &t, vec![typed(&t, 0, EVIL, 10)])),
-        ["blocked:EscalationsLocked"]
+        tag(&data_from(&mut c, "junk-4", ATTACKER)),
+        "blocked:EscalationsLocked"
     );
-    // ... while a payment inside the owner's limits still executes
-    let t2 = task_for("real-typed", &[(ALICE, 50)], 1);
+    // ... while the owner's real supplier still escalates and the owner can approve it
+    let no = pending_no(&data_from(&mut c, "supplier-1", SUPPLIER));
+    let k = card(&c, no);
+    approve_as(&mut c, OWNER, NOW, &k);
+    // ... a payee the owner typed still escalates, and a payment inside the owner's limits still executes
     assert_eq!(
-        tags(&submit(&mut c, &t2, vec![clean(&t2, 0, ALICE, 10)])),
-        ["allowed"]
+        owner_new_payee(&mut c, "real-new"),
+        "escalated:NewRecipient"
     );
-    // and the owner's reset reopens escalations
+    assert_eq!(allowed_typed(&mut c, "real-typed"), "allowed");
+    // the owner's reset of that one origin reopens it
     owner(NOW);
-    c.reset_escalations(AGENT.parse().unwrap());
-    let t3 = task_for("real-new-2", &[(EVIL, 50)], 1);
-    assert_eq!(
-        tags(&submit(&mut c, &t3, vec![typed(&t3, 0, EVIL, 10)])),
-        ["escalated:NewRecipient"]
-    );
+    c.reset_escalations(AGENT.parse().unwrap(), Some(ATTACKER.to_string()));
+    assert_eq!(data_from(&mut c, "junk-5", ATTACKER).outcome, "escalated");
 }
 
 #[test]
 fn rt_dos_pending_full_blocks_escalations_but_allows_still_pass() {
     let mut c = setup();
-    for i in 0..3 {
-        escalate_one(&mut c, &format!("junk-{i}"), 10);
+    for i in 0..2 {
+        pending_no(&data_from(&mut c, &format!("junk-{i}"), ATTACKER));
     }
-    let t = task_for("real-new", &[(EVIL, 50)], 1);
+    // two pending fill the attacker's origin, not the agent
     assert_eq!(
-        tags(&submit(&mut c, &t, vec![typed(&t, 0, EVIL, 10)])),
-        ["blocked:PendingFull"]
+        tag(&data_from(&mut c, "junk-2", ATTACKER)),
+        "blocked:PendingFull"
     );
-    let t2 = task_for("real-typed", &[(ALICE, 50)], 1);
+    pending_no(&data_from(&mut c, "supplier-1", SUPPLIER));
     assert_eq!(
-        tags(&submit(&mut c, &t2, vec![clean(&t2, 0, ALICE, 10)])),
-        ["allowed"]
+        owner_new_payee(&mut c, "real-new"),
+        "escalated:NewRecipient"
     );
+    assert_eq!(allowed_typed(&mut c, "real-typed"), "allowed");
 }
 
 #[test]
 fn rt_dos_reset_keeps_the_hourly_budget() {
     let mut c = setup();
-    // six escalations in one hour, each rejected or approved so the pending cap never binds
-    for i in 0..6 {
-        let no = escalate_one(&mut c, &format!("junk-{i}"), 10);
+    // four escalations of one origin in one hour, each approved so its pending cap never binds
+    for i in 0..4 {
+        let no = pending_no(&data_from(&mut c, &format!("junk-{i}"), ATTACKER));
         let k = card(&c, no);
         approve_as(&mut c, OWNER, NOW, &k);
     }
-    owner(NOW);
-    c.reset_escalations(AGENT.parse().unwrap());
-    let t = task_for("real-new", &[(EVIL, 50)], 1);
     assert_eq!(
-        tags(&submit(&mut c, &t, vec![typed(&t, 0, EVIL, 10)])),
-        ["blocked:EscalationBudget"]
+        tag(&data_from(&mut c, "junk-4", ATTACKER)),
+        "blocked:EscalationBudget"
+    );
+    // a reset of the origin keeps its hour count, as the agent-wide reset always did
+    owner(NOW);
+    c.reset_escalations(AGENT.parse().unwrap(), Some(ATTACKER.to_string()));
+    assert_eq!(
+        tag(&data_from(&mut c, "junk-5", ATTACKER)),
+        "blocked:EscalationBudget"
+    );
+    // another origin and the owner are not charged for it
+    pending_no(&data_from(&mut c, "supplier-1", SUPPLIER));
+    assert_eq!(
+        owner_new_payee(&mut c, "real-new"),
+        "escalated:NewRecipient"
     );
     // the next UTC hour has a fresh budget
-    let t2 = task_at("real-new-2", &[(EVIL, 50)], 1, NOW + 3_600_000);
     assert_eq!(
-        tags(&submit_as(
+        data_from_at(&mut c, "junk-6", ATTACKER, NOW + 3_600_000).outcome,
+        "escalated"
+    );
+}
+
+#[test]
+fn rt_dos_many_attacker_origins_meet_the_backstop_not_the_owner() {
+    let mut c = setup();
+    // an attacker with eight sender identities fills the shared backstop of origins other than the owner
+    for i in 0..8 {
+        pending_no(&data_from(
             &mut c,
-            AGENT,
-            NOW + 3_600_000,
-            &t2,
-            vec![typed(&t2, 0, EVIL, 10)]
-        )),
-        ["escalated:NewRecipient"]
+            &format!("junk-{i}"),
+            &format!("mail:{i:016x}"),
+        ));
+    }
+    assert_eq!(
+        tag(&data_from(&mut c, "junk-8", "mail:00000000000000ff")),
+        "blocked:PendingFull"
+    );
+    // the residual: the real supplier's mail waits behind the backstop too ...
+    assert_eq!(
+        tag(&data_from(&mut c, "supplier-1", SUPPLIER)),
+        "blocked:PendingFull"
+    );
+    // ... but a payee the owner typed is never behind it
+    assert_eq!(
+        owner_new_payee(&mut c, "real-new"),
+        "escalated:NewRecipient"
+    );
+}
+
+#[test]
+fn rt_dos_owner_origin_needs_trusted_labels() {
+    let mut c = setup();
+    let t = task_for("claim-owner", &[(ALICE, 1_000)], 1);
+    let r = from_origin(data_payee(&t, 0, ALICE, 10), "owner");
+    let text = panics(|| submit(&mut c, &t, vec![r]));
+    assert!(text.contains("origin owner needs trusted labels"), "{text}");
+}
+
+#[test]
+fn rt_dos_bad_origin_reverts() {
+    let mut c = setup();
+    for bad in [
+        "MAIL:aaaaaaaaaaaaaaaa",
+        "mail:aaaa",
+        "mail:aaaaaaaaaaaaaaaag",
+        "",
+        "mail aaaaaaaaaaaaaaaa",
+        "toolongkind:aaaaaaaaaaaaaaaa",
+    ] {
+        let t = task_for(&format!("bad-{bad}"), &[(ALICE, 1_000)], 1);
+        let r = from_origin(data_payee(&t, 0, ALICE, 10), bad);
+        let text = panics(|| submit(&mut c, &t, vec![r]));
+        assert!(text.contains("bad origin"), "{bad}: {text}");
+    }
+}
+
+#[test]
+fn rt_dos_legacy_requests_keep_the_agent_limits() {
+    let mut c = setup();
+    // a runtime that names no origin keeps the per-agent counters of AIR-083: three rejects lock its escalations
+    for i in 0..3 {
+        let no = escalate_one(&mut c, &format!("legacy-{i}"), 10);
+        owner(NOW);
+        c.reject(no.to_string());
+    }
+    let t = task_for("legacy-4", &[(ALICE, 1_000)], 1);
+    assert_eq!(
+        tags(&submit(&mut c, &t, vec![data_payee(&t, 0, ALICE, 10)])),
+        ["blocked:EscalationsLocked"]
+    );
+    // requests that name their origin are not behind that lock
+    pending_no(&data_from(&mut c, "supplier-1", SUPPLIER));
+    owner(NOW);
+    c.reset_escalations(AGENT.parse().unwrap(), None);
+    let t2 = task_for("legacy-5", &[(ALICE, 1_000)], 1);
+    assert_eq!(
+        submit(&mut c, &t2, vec![data_payee(&t2, 0, ALICE, 10)])[0].outcome,
+        "escalated"
+    );
+}
+
+#[test]
+fn rt_dos_reset_all_clears_every_origin_lock() {
+    let mut c = setup();
+    for origin in [ATTACKER, SUPPLIER] {
+        for i in 0..3 {
+            let no = pending_no(&data_from(&mut c, &format!("{origin}-{i}"), origin));
+            owner(NOW);
+            c.reject(no.to_string());
+        }
+        assert_eq!(
+            tag(&data_from(&mut c, &format!("{origin}-x"), origin)),
+            "blocked:EscalationsLocked"
+        );
+    }
+    owner(NOW);
+    c.reset_escalations(AGENT.parse().unwrap(), None);
+    assert_eq!(
+        data_from(&mut c, "attacker-after", ATTACKER).outcome,
+        "escalated"
+    );
+    assert_eq!(
+        data_from(&mut c, "supplier-after", SUPPLIER).outcome,
+        "escalated"
+    );
+}
+
+#[test]
+fn rt_dos_expire_frees_the_slot_of_its_own_origin() {
+    let mut c = setup();
+    let first = pending_no(&data_from(&mut c, "junk-0", ATTACKER));
+    pending_no(&data_from(&mut c, "junk-1", ATTACKER));
+    assert_eq!(
+        tag(&data_from(&mut c, "junk-2", ATTACKER)),
+        "blocked:PendingFull"
+    );
+    testing_env!(ctx("stranger.test.near", NOW + TTL_MS, 0).build());
+    c.expire(first.to_string());
+    assert_eq!(
+        data_from_at(&mut c, "junk-3", ATTACKER, NOW + TTL_MS).outcome,
+        "escalated"
+    );
+}
+
+#[test]
+fn rt_dos_preview_uses_the_origin() {
+    let mut c = setup();
+    for i in 0..2 {
+        pending_no(&data_from(&mut c, &format!("junk-{i}"), ATTACKER));
+    }
+    let t = task_for("preview", &[(ALICE, 1_000)], 1);
+    testing_env!(ctx(AGENT, NOW, 0).build());
+    let attacker = c.preview_at(
+        &from_origin(data_payee(&t, 0, ALICE, 10), ATTACKER),
+        &t,
+        NOW,
+    );
+    let supplier = c.preview_at(
+        &from_origin(data_payee(&t, 0, ALICE, 10), SUPPLIER),
+        &t,
+        NOW,
+    );
+    assert_eq!(
+        (attacker.outcome.as_str(), attacker.reason.as_deref()),
+        ("blocked", Some("PendingFull"))
+    );
+    assert_eq!(
+        (supplier.outcome.as_str(), supplier.reason.as_deref()),
+        ("escalated", Some("UntrustedRecipient"))
     );
 }
 

@@ -639,6 +639,7 @@ fn request(payee: &str, amount: u128, labels: Labels) -> SubmitRequest {
         hints: Hints {
             plan_hash: Hex32([0; 32]),
             trace_digest: Hex32([0; 32]),
+            origin: None,
         },
     }
 }

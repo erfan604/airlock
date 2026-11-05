@@ -58,7 +58,8 @@ export const ActionRequest = z
     amount: AmountText,
     labels: z.strictObject({ recipient: Mask, amount: Mask, pc: Mask }),
     evm: z.strictObject({ gas_limit: AmountText, max_fee_per_gas: AmountText, max_priority_fee_per_gas: AmountText }).nullable(),
-    hints: z.strictObject({ plan_hash: Hex64, trace_digest: Hex64 }),
+    // AIR-315: the flood-control origin (runtime/src/origin.ts); optional on the wire, the contract keys its escalation counters by it
+    hints: z.strictObject({ plan_hash: Hex64, trace_digest: Hex64, origin: z.string().regex(/^(owner|[a-z]{1,8}:[0-9a-f]{16})$/).optional() }),
   })
   .superRefine((r, ctx) => {
     if (isAsset(r.asset) && isPayee(r.payee) && assetForPayeeKey(r.payee) !== r.asset) {

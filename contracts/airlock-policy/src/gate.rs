@@ -591,6 +591,7 @@ mod tests {
             hints: Hints {
                 plan_hash: plan_hash(),
                 trace_digest: Hex32([0x33; 32]),
+                origin: None,
             },
         }
     }

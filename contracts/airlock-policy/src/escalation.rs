@@ -488,7 +488,8 @@ impl Contract {
     /// count stay, so a reset cannot get around the hourly budget. Succeeds for an agent with no flood state and creates none.
     /// `#[payable]`, exactly 1 yoctoNEAR from the owner (`owner_call`, the first statement).
     #[payable]
-    pub fn reset_escalations(&mut self, agent: AccountId) {
+    pub fn reset_escalations(&mut self, agent: AccountId, origin: Option<String>) {
+        let _ = origin;
         self.owner_call();
         self.flood_reset(&agent);
         Event::EscalationsReset { agent: &agent }.emit();
@@ -1255,7 +1256,7 @@ mod tests {
         // `reset_escalations` for an agent with no state emits and creates no entry
         testing_env!(ctx(OWNER, NOW, 1).build());
         let nobody: AccountId = "nobody.test.near".parse().unwrap();
-        c.reset_escalations(nobody.clone());
+        c.reset_escalations(nobody.clone(), None);
         assert!(c.flood.get(&nobody).is_none());
         assert!(
             get_logs()
