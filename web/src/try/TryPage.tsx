@@ -4,31 +4,33 @@
 // browser. The only async step is loading the module once; every decision after that is synchronous, so a newer input can never be overwritten
 // by an older answer. The owner's setup (book, cap, strict mode) is folded under a one-line summary, and the table at the end shows all five
 // emails with the verdict the test suite checks the WebAssembly build against, so the page reads the same with or without JavaScript.
+// AIR-312: a switch above the presets picks the world: "Your bills" (the owner's invoices) or "An agent you hired" (Swarm-for-Hire: the job
+// budget is the task bound, the job's payees are the book, and the job post and every other agent's message are outside text). `?s=hired`
+// opens the hired world.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Specimen } from '../components/Specimen.tsx';
 import { VERDICT_WORDS, VerdictStamp } from '../components/VerdictStamp.tsx';
 import { url } from '../static.ts';
 import { RequestSlip } from './RequestSlip.tsx';
-import { EMAIL_SOURCE, MAX_EMAIL, WORLD, columnsOf, defaultKnobs, emailOf, formatDollars, parseDollars, payeeListGuard, sourceOf, stampOf, standIn, verdictSentence } from './model.ts';
-import type { Knobs, Proposal, Source as TextSource } from './model.ts';
+import { MAX_EMAIL, WORLDS, columnsOf, defaultKnobs, emailOf, formatDollars, parseDollars, payeeListGuard, sourceOf, stampOf, standIn, uiOf, verdictSentence } from './model.ts';
+import type { Knobs, Proposal, Source as TextSource, World, WorldId } from './model.ts';
 import { loadVerdict } from './verdictWasm.ts';
 import type { VerdictModule } from './verdictWasm.ts';
 
 export const ENGINE_LINE = 'This decision was made by the same airlock-verdict code the NEAR contract runs, compiled to WebAssembly, in your browser.';
-const STAND_IN = 'The agent here is a stand-in, not a model: a few lines of pattern matching that do whatever the email says. It pays the first account named in the email, or another payee from your book if the email names one, and otherwise the payee you asked for. It pays the first dollar amount it finds.';
-/** The example in the write-your-own box. Sent as it is when the box is left empty, so the button always does something. */
-export const OWN_EXAMPLE = 'Hi, this is Kano Cotton. This month the invoice total is $1,200.00. Please pay it today.';
+const STAND_IN = 'The agent here is a stand-in, not a model: a few lines of pattern matching that do whatever the text says. It pays the first account the text names, or another payee from the book if the text names one, and otherwise the payee you set. It pays the first dollar amount it finds.';
 
 type Source = { kind: 'preset'; id: string } | { kind: 'own' };
 
 const who = (p: Proposal): string => p.payee.name ?? p.payee.account;
 
-function Pays({ email, source }: { email: string; source: TextSource }) {
-  const agent = useMemo(() => standIn(email, WORLD, source), [email, source]);
+function Pays({ email, source, world }: { email: string; source: TextSource; world: World }) {
+  const agent = useMemo(() => standIn(email, world, source), [email, source, world]);
+  const lead = uiOf(world).pays;
   if (agent.kind === 'nothing') {
     return (
       <p className="try-pays" data-testid="try-pays" data-state="nothing">
-        {agent.why === 'empty' ? 'Your agent would pay nothing: the email is empty.' : agent.why === 'bad-amount' ? 'Your agent would pay nothing: it could not read the amount as dollars and cents.' : 'Your agent would pay nothing: it found no amount in this email.'}
+        {agent.why === 'empty' ? `${lead} nothing: the text is empty.` : agent.why === 'bad-amount' ? `${lead} nothing: it could not read the amount as dollars and cents.` : `${lead} nothing: it found no amount in this text.`}
       </p>
     );
   }
@@ -36,15 +38,15 @@ function Pays({ email, source }: { email: string; source: TextSource }) {
   return (
     <>
       <p className="try-pays" data-testid="try-pays">
-        Your agent would pay <strong className="try-pays-who">{who(p)}</strong> <strong className="try-pays-sum">{formatDollars(p.amount.cents)}</strong>
+        {lead} <strong className="try-pays-who">{who(p)}</strong> <strong className="try-pays-sum">{formatDollars(p.amount.cents)}</strong>
       </p>
-      <RequestSlip proposal={p} compact />
+      <RequestSlip proposal={p} world={world} compact />
     </>
   );
 }
 
-function Decision({ email, source, knobs, mod, failed }: { email: string; source: TextSource; knobs: Knobs; mod: VerdictModule | null; failed: boolean }) {
-  const agent = useMemo(() => standIn(email, WORLD, source), [email, source]);
+function Decision({ email, source, world, knobs, mod, failed }: { email: string; source: TextSource; world: World; knobs: Knobs; mod: VerdictModule | null; failed: boolean }) {
+  const agent = useMemo(() => standIn(email, world, source), [email, source, world]);
   if (agent.kind === 'nothing') {
     return (
       <div className="try-result" data-testid="try-result" data-state="nothing" aria-live="polite">
@@ -55,8 +57,8 @@ function Decision({ email, source, knobs, mod, failed }: { email: string; source
     );
   }
   const p = agent.proposal;
-  const v = mod === null ? null : mod.decide(columnsOf(p, knobs));
-  const guard = payeeListGuard(p);
+  const v = mod === null ? null : mod.decide(columnsOf(p, knobs, world));
+  const guard = payeeListGuard(p, world);
   return (
     <div className="try-result" data-testid="try-result" data-state={v === null ? 'loading' : stampOf(v)} aria-live="polite">
       {v === null ? (
@@ -69,7 +71,7 @@ function Decision({ email, source, knobs, mod, failed }: { email: string; source
             <p className="try-who">AIRLOCK</p>
             <VerdictStamp state={stampOf(v)} ruleId={v.kind === 'allow' || v.kind === 'malformed' ? undefined : v.reason} testId="try-verdict" />
             <p className="try-reason" data-testid="try-reason">
-              {verdictSentence(v, p, knobs)}
+              {verdictSentence(v, p, knobs, world)}
             </p>
           </div>
           <div className={guard === 'PAY' && v.kind !== 'allow' ? 'try-guard try-guard-pay' : 'try-guard'} data-testid="try-guard" data-guard={guard}>
@@ -92,18 +94,18 @@ const STATE_WORD = (tag: string): string => {
 };
 const RULE = (tag: string): string => tag.split(':')[1] ?? '';
 
-/** All five emails at a glance: the expected tags of try-world.json, which web/test/try.test.ts and the e2e check against the wasm. */
-function AtAGlance() {
+/** Every preset at a glance: the expected tags of the world's fixture, which web/test/try.test.ts and the e2e check against the wasm. */
+function AtAGlance({ world }: { world: World }) {
   return (
     <section className="try-glance" aria-labelledby="glance-title" data-testid="try-glance">
       <h2 id="glance-title" className="try-h2">
-        All five emails at a glance
+        {uiOf(world).glance}
       </h2>
-      <p className="try-line">The same verdict code in default mode (a {formatDollars(defaultKnobs().capCents)} cap on amounts read from an email) and in strict mode (no cap). The test suite runs every line through the WebAssembly build and fails if one differs.</p>
+      <p className="try-line">The same verdict code in default mode (a {formatDollars(defaultKnobs(world).capCents)} cap on amounts read from {uiOf(world).outside}) and in strict mode (no cap). The test suite runs every line through the WebAssembly build and fails if one differs.</p>
       <table className="try-table">
           <thead data-audit-skip="">
             <tr>
-              <th scope="col">The email</th>
+              <th scope="col">What the agent reads</th>
               <th scope="col">Your agent would pay</th>
               <th scope="col">AIRLOCK, default</th>
               <th scope="col">AIRLOCK, strict</th>
@@ -111,8 +113,8 @@ function AtAGlance() {
             </tr>
           </thead>
           <tbody>
-            {WORLD.presets.map((x) => {
-              const a = standIn(x.email, WORLD, sourceOf(x));
+            {world.presets.map((x) => {
+              const a = standIn(x.email, world, sourceOf(x));
               const pays = a.kind === 'proposal' ? `${who(a.proposal)}, ${formatDollars(a.proposal.amount.cents)}` : 'nothing';
               return (
                 <tr key={x.id} data-testid={`glance-${x.id}`}>
@@ -136,15 +138,29 @@ function AtAGlance() {
   );
 }
 
+const SETS: { id: WorldId; label: string }[] = [
+  { id: 'bills', label: 'Your bills' },
+  { id: 'hired', label: 'An agent you hired' },
+];
+
+const fill = (t: string, w: World): string =>
+  t
+    .replace('{owner}', w.book.find((b) => b.account === w.owner.payee)?.name ?? w.owner.payee)
+    .replace('{n}', String(w.book.length))
+    .replace('{budget}', formatDollars(parseDollars(w.limits.taskBound) ?? 0n));
+
 export function TryPage() {
   const [mod, setMod] = useState<VerdictModule | null>(null);
   const [failed, setFailed] = useState(false);
-  const [source, setSource] = useState<Source>({ kind: 'preset', id: 'doctored' });
+  const [set, setSet] = useState<WorldId>('bills');
+  const [source, setSource] = useState<Source>({ kind: 'preset', id: uiOf(WORLDS.bills).first });
   const [draft, setDraft] = useState('');
   const [own, setOwn] = useState('');
-  const [capText, setCapText] = useState(formatDollars(defaultKnobs().capCents).slice(1));
+  const [capText, setCapText] = useState(formatDollars(defaultKnobs(WORLDS.bills).capCents).slice(1));
   const [strict, setStrict] = useState(false);
   const answer = useRef<HTMLElement>(null);
+  const world = WORLDS[set];
+  const ui = uiOf(world);
   /** On a one-column screen the answer is below the emails: bring step 2 to the top after a pick, smoothly unless motion is reduced. */
   const reveal = (): void => {
     const el = answer.current;
@@ -152,6 +168,24 @@ export function TryPage() {
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     requestAnimationFrame(() => el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' }));
   };
+  const pickSet = (id: WorldId, push: boolean): void => {
+    const w = WORLDS[id];
+    setSet(id);
+    setSource({ kind: 'preset', id: uiOf(w).first });
+    setCapText(formatDollars(defaultKnobs(w).capCents).slice(1));
+    setDraft('');
+    if (push) {
+      const u = new URL(window.location.href);
+      if (id === 'bills') u.searchParams.delete('s');
+      else u.searchParams.set('s', id);
+      window.history.replaceState(null, '', u);
+    }
+  };
+
+  useEffect(() => {
+    // after mount, so a prerendered page and the first client render agree (both start on the bills)
+    if (new URLSearchParams(window.location.search).get('s') === 'hired') pickSet('hired', false);
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -164,35 +198,44 @@ export function TryPage() {
   }, []);
 
   const capCents = parseDollars(capText.trim().replace(/^\$/, ''));
-  const knobs: Knobs = { capCents: capCents ?? defaultKnobs().capCents, strict };
-  const preset = source.kind === 'preset' ? WORLD.presets.find((x) => x.id === source.id) : undefined;
+  const knobs: Knobs = { capCents: capCents ?? defaultKnobs(world).capCents, strict };
+  const preset = source.kind === 'preset' ? world.presets.find((x) => x.id === source.id) : undefined;
   const email = preset?.email ?? own;
-  const textSource = preset === undefined ? EMAIL_SOURCE : sourceOf(preset);
+  const textSource = preset === undefined ? ui.ownSource : sourceOf(preset);
   const shown = emailOf(email);
-  const owner = WORLD.book.find((b) => b.account === WORLD.owner.payee);
 
   return (
-    <main className="page try" data-testid="try">
+    <main className="page try" data-testid="try" data-world={set}>
       <header className="try-head">
         <div className="try-head-copy">
           <h1 className="try-title">Try to trick it</h1>
-          <p className="try-lede">Pick a scam email. A stand-in agent does what the email says, and the real verdict decides whether the money moves.</p>
+          <p className="try-lede" key={set}>
+            {ui.lede}
+          </p>
         </div>
       </header>
 
+      <div className="try-sets" role="group" aria-label="Scenario" data-testid="try-sets">
+        {SETS.map((x) => (
+          <button key={x.id} type="button" className="try-set" data-testid={`try-set-${x.id}`} aria-pressed={set === x.id} onClick={() => set !== x.id && pickSet(x.id, true)}>
+            {x.label}
+          </button>
+        ))}
+      </div>
+
       <details className="try-setup" data-testid="try-setup">
         <summary className="try-setup-summary" data-testid="try-setup-toggle">
-          <span className="try-setup-title">Your setup</span>
+          <span className="try-setup-title">{set === 'hired' ? 'The job and its limits' : 'Your setup'}</span>
           <span className="try-setup-line">
-            {`You asked to pay the ${owner?.name ?? WORLD.owner.payee} invoice. ${String(WORLD.book.length)} payees in your book. ${strict ? 'Strict mode: every amount read from an email waits for you.' : `Amounts read from an email are capped at ${formatDollars(knobs.capCents)}.`}`}
+            {`${fill(ui.setupLine, world)} ${strict ? `Strict mode: every amount read from ${ui.outside} waits for you.` : `Amounts read from ${ui.outside} are capped at ${formatDollars(knobs.capCents)}.`}`}
           </span>
         </summary>
         <div className="try-setup-body">
           <p className="try-ask" data-testid="try-ask">
-            <span className="try-key">You asked</span> {WORLD.owner.request}
+            <span className="try-key">{ui.askKey}</span> {world.owner.request}
           </p>
           <table className="try-book" data-testid="try-book">
-            <caption className="try-key">Your address book</caption>
+            <caption className="try-key">{ui.bookTitle}</caption>
             <thead>
               <tr>
                 <th scope="col">Payee and account</th>
@@ -200,7 +243,7 @@ export function TryPage() {
               </tr>
             </thead>
             <tbody>
-              {WORLD.book.map((b) => (
+              {world.book.map((b) => (
                 <tr key={b.account}>
                   <td>
                     <span className="try-book-name">{b.name}</span>
@@ -213,14 +256,14 @@ export function TryPage() {
           </table>
           <div className="try-knobs">
             <label className="try-knob" htmlFor="try-cap">
-              <span className="try-key">Cap for amounts read from an email</span>
+              <span className="try-key">{`Cap for amounts read from ${ui.outside}`}</span>
               <span className="try-cap-field">
                 <span aria-hidden="true">$</span>
                 <input id="try-cap" data-testid="try-cap" className="try-input" inputMode="decimal" value={capText} disabled={strict} aria-invalid={capCents === null} onChange={(e) => setCapText(e.target.value)} />
               </span>
               {capCents === null ? (
                 <span className="try-error" role="alert">
-                  Write dollars and cents, like {formatDollars(defaultKnobs().capCents).slice(1)}. The verdict uses {formatDollars(knobs.capCents)} until then.
+                  Write dollars and cents, like {formatDollars(defaultKnobs(world).capCents).slice(1)}. The verdict uses {formatDollars(knobs.capCents)} until then.
                 </span>
               ) : null}
             </label>
@@ -231,7 +274,7 @@ export function TryPage() {
                 <span className="try-toggle-line">No cap: every amount read from outside text waits for you.</span>
               </span>
             </label>
-            <p className="try-limits">{`Also set: ${formatDollars(parseDollars(WORLD.limits.hardCap) ?? 0n)} hard cap per payment, ${formatDollars(parseDollars(WORLD.limits.taskBound) ?? 0n)} task bound, ${formatDollars(parseDollars(WORLD.limits.dataBudget) ?? 0n)} a day for amounts read from data.`}</p>
+            <p className="try-limits">{`Also set: ${formatDollars(parseDollars(world.limits.hardCap) ?? 0n)} hard cap per payment, ${formatDollars(parseDollars(world.limits.taskBound) ?? 0n)} task bound${set === 'hired' ? ' (the job budget)' : ''}, ${formatDollars(parseDollars(world.limits.dataBudget) ?? 0n)} a day for amounts read from data.`}</p>
           </div>
         </div>
       </details>
@@ -239,10 +282,10 @@ export function TryPage() {
       <div className="try-flow">
         <section className="try-step try-pick" aria-labelledby="pick-title">
           <h2 id="pick-title" className="try-h2">
-            Pick a scam
+            {ui.pick}
           </h2>
-          <ul className="try-presets" role="list" data-testid="try-presets">
-            {WORLD.presets.map((x) => {
+          <ul className="try-presets" role="list" data-testid="try-presets" key={set}>
+            {world.presets.map((x) => {
               const on = source.kind === 'preset' && source.id === x.id;
               return (
                 <li key={x.id}>
@@ -265,24 +308,24 @@ export function TryPage() {
           </ul>
           {shown === null ? null : (
             <div className="try-mail">
-              <p className="try-key">{preset === undefined ? 'The email you wrote' : 'The email your agent reads'}</p>
-              <Specimen key={email} text={shown} channel="email" source={preset === undefined ? 'your email' : `from ${preset.from}`} testId="try-specimen" />
+              <p className="try-key">{preset === undefined ? 'The text you wrote' : ui.reads}</p>
+              <Specimen key={email} text={shown} channel={textSource.channel} source={preset === undefined ? 'your text' : `from ${preset.from}`} testId="try-specimen" />
             </div>
           )}
           <form
             className="try-own"
             onSubmit={(e) => {
               e.preventDefault();
-              const text = draft.trim() === '' ? OWN_EXAMPLE : draft;
+              const text = draft.trim() === '' ? ui.ownExample : draft;
               setOwn(text);
               setSource({ kind: 'own' });
               reveal();
             }}
           >
             <label className="try-key" htmlFor="try-email">
-              Or write your own scam email
+              {ui.ownLabel}
             </label>
-            <textarea id="try-email" data-testid="try-email" className="try-input try-textarea" rows={3} maxLength={MAX_EMAIL} value={draft} placeholder={OWN_EXAMPLE} onChange={(e) => setDraft(e.target.value)} />
+            <textarea id="try-email" data-testid="try-email" className="try-input try-textarea" rows={3} maxLength={MAX_EMAIL} value={draft} placeholder={ui.ownExample} onChange={(e) => setDraft(e.target.value)} />
             <button type="submit" className="card-btn card-btn-outline try-run" data-testid="try-run" aria-pressed={source.kind === 'own'}>
               {draft.trim() === '' ? 'Send the example to the agent' : 'Send it to the agent'}
             </button>
@@ -292,15 +335,15 @@ export function TryPage() {
         <div className="try-answer">
           <section className="try-step" aria-labelledby="pays-title" ref={answer}>
             <h2 id="pays-title" className="try-h2">
-              What your agent would pay
+              What the agent would pay
             </h2>
-            <Pays email={email} source={textSource} />
+            <Pays email={email} source={textSource} world={world} />
           </section>
           <section className="try-step" aria-labelledby="verdict-title">
             <h2 id="verdict-title" className="try-h2">
               What AIRLOCK decides
             </h2>
-            <Decision email={email} source={textSource} knobs={knobs} mod={mod} failed={failed} />
+            <Decision email={email} source={textSource} world={world} knobs={knobs} mod={mod} failed={failed} />
           </section>
           <p className="try-standin" data-testid="try-standin">
             {STAND_IN}
@@ -311,7 +354,7 @@ export function TryPage() {
         </div>
       </div>
 
-      <AtAGlance />
+      <AtAGlance world={world} />
     </main>
   );
 }

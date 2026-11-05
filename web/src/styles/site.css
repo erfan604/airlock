@@ -662,7 +662,7 @@ h1 {
 /* the Try page: three steps (pick, what the agent would pay, what AIRLOCK decides) with the setup folded under one line */
 .try {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-5);
   max-width: 80rem;
   margin: 0 auto;
   min-width: 0;
@@ -682,7 +682,7 @@ h1 {
 }
 @media (min-width: 720px) {
   .try-title {
-    font-size: 72px;
+    font-size: 64px;
   }
 }
 .try-lede,
@@ -703,6 +703,47 @@ h1 {
   line-height: 20px;
   color: var(--ink-3);
   text-align: left;
+}
+
+/* the world switch: two segments, the current one filled */
+.try-sets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-self: start;
+  width: min(100%, 34rem);
+  padding: 4px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-m);
+}
+.try-set {
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: calc(var(--radius-m) - 3px);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.1;
+  cursor: pointer;
+  transition: background-color 240ms var(--ease-out), color 240ms var(--ease-out);
+}
+.try-set:hover {
+  color: var(--ink);
+}
+.try-set[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.try-set:active {
+  transform: scale(0.98);
+}
+.try-presets {
+  animation: fade 280ms var(--ease-out) backwards;
+}
+.try-lede {
+  animation: fade 280ms var(--ease-out) backwards;
 }
 
 /* the setup: one summary line, the book and the knobs inside */

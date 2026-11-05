@@ -12,7 +12,7 @@ import type { RequestView } from '@airlock/runtime/chain-types';
 import { buildStaticCsp } from '../csp.ts';
 import { approveArgs } from '../src/approvals/cardModel.ts';
 import { clipAudit } from './audit.ts';
-import { checkLanding, checkTry, showPreset } from './site.ts';
+import { checkHired, checkLanding, checkTry, showPreset } from './site.ts';
 import type { E2E } from './types.ts';
 
 const web = fileURLToPath(new URL('../', import.meta.url));
@@ -118,6 +118,9 @@ const run: E2E = async ({ page, baseUrl }) => {
     await audit(page, 'landing');
     await checkTry(page, baseUrl);
     await audit(page, 'try after the presets');
+    await checkHired(page, baseUrl);
+    await shot(page, 'try-hired', viewport.width);
+    await audit(page, 'try hired');
     for (const preset of ['doctored', 'honest']) {
       await showPreset(page, baseUrl, preset);
       await shot(page, `try-${preset}`, viewport.width);

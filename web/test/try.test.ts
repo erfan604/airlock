@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { WORLD, columnsOf, defaultKnobs, formatDollars, parseDollars, payeeListGuard, reasonWords, standIn } from '../src/try/model.ts';
+import { HIRED, WORLD, columnsOf, defaultKnobs, formatDollars, parseDollars, payeeListGuard, reasonWords, sourceOf, standIn } from '../src/try/model.ts';
 import { REASONS, instantiateVerdict, tagOf } from '../src/try/verdictWasm.ts';
 import type { VerdictModule } from '../src/try/verdictWasm.ts';
 
@@ -85,6 +85,27 @@ test('every preset gives its expected verdict in default and strict mode, and th
     assert.equal(tagOf(m.decide(columnsOf(r.proposal, { ...knobs, strict: true }))), p.expect.strict, `${p.id} strict`);
     assert.equal(payeeListGuard(r.proposal), p.expect.guard, `${p.id} guard`);
   }
+});
+
+test('AIR-312: every hired-agent preset gives its expected verdict from the real wasm, with the label of the text it came from', async () => {
+  const m = await wasm();
+  assert.equal(HIRED.presets.length, 4);
+  const seen: string[] = [];
+  for (const p of HIRED.presets) {
+    const r = standIn(p.email, HIRED, sourceOf(p));
+    assert.equal(r.kind, 'proposal', p.id);
+    if (r.kind !== 'proposal') continue;
+    const knobs = defaultKnobs(HIRED);
+    const cols = columnsOf(r.proposal, knobs, HIRED);
+    // the amount carries the label bit of its channel: web (64) for an invoice or the job post, chat (256) for another agent
+    assert.equal(cols[6], sourceOf(p).channel === 'chat' ? 256n : 64n, `${p.id} amount label`);
+    assert.equal(tagOf(m.decide(cols)), p.expect.default, `${p.id} default`);
+    assert.equal(tagOf(m.decide(columnsOf(r.proposal, { ...knobs, strict: true }, HIRED))), p.expect.strict, `${p.id} strict`);
+    assert.equal(payeeListGuard(r.proposal, HIRED), p.expect.guard, `${p.id} guard`);
+    seen.push(p.expect.default);
+  }
+  // the honest bill is paid; the budget grab, the inflated bill and the look-alike are not
+  assert.deepEqual(seen, ['allow', 'escalate:OutsideTask', 'escalate:UntrustedAmount', 'escalate:OutsideTask']);
 });
 
 test('the cap knob moves the honest invoice and the doctored amount across the line', async () => {

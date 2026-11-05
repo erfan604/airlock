@@ -3,7 +3,7 @@
 // verdict.wasm, in default and strict mode, with the payee-list guard's answer and the engine line; a written email goes through too.
 import assert from 'node:assert/strict';
 import type { Page } from 'playwright';
-import { WORLD } from '../src/try/model.ts';
+import { HIRED, WORLD } from '../src/try/model.ts';
 import { ENGINE_LINE } from '../src/try/TryPage.tsx';
 
 const id = (testId: string, page: Page) => page.locator(`[data-testid="${testId}"]`);
@@ -85,4 +85,37 @@ export async function showPreset(page: Page, baseUrl: string, preset: string): P
   await id(`try-preset-${preset}`, page).click();
   await page.locator('[data-testid="try-verdict"]').waitFor();
   await page.evaluate(() => window.scrollTo(0, 0));
+}
+
+/** AIR-312: the hired-agent world: the switch, every preset's verdict from the real wasm, and `?s=hired` opening it directly. */
+export async function checkHired(page: Page, baseUrl: string): Promise<void> {
+  await page.goto(`${baseUrl}/try`);
+  await id('try', page).waitFor();
+  await page.locator('[data-testid="try-result"][data-state="held"]').waitFor();
+  await id('try-set-hired', page).click();
+  assert.equal(await id('try', page).getAttribute('data-world'), 'hired');
+  assert.equal(await id('try-set-hired', page).getAttribute('aria-pressed'), 'true');
+  assert.equal(await id('try-preset-hired-inflate', page).getAttribute('aria-pressed'), 'true');
+  assert.ok(page.url().endsWith('/try?s=hired'), page.url());
+  assert.ok((await id('try-setup-toggle', page).innerText()).includes('$40.00 budget'));
+  for (const p of HIRED.presets) {
+    await id(`try-preset-${p.id}`, page).click();
+    const want = stateOf(p.expect.default);
+    await page.locator(`[data-testid="try-result"][data-state="${want}"]`).waitFor();
+    const v = await verdictOf(page);
+    assert.equal(v.state, want, p.id);
+    assert.equal(v.guard, p.expect.guard, `${p.id} guard`);
+    const rule = p.expect.default.split(':')[1];
+    if (rule !== undefined) assert.ok((await id('try-verdict', page).innerText()).includes(rule), `${p.id} rule ${rule}`);
+  }
+  assert.equal(await id('try-pays', page).innerText(), 'The hired agent would pay inference-bi11ing.testnet $4.00');
+  // the link the landing uses opens the hired world on arrival
+  await page.goto(`${baseUrl}/try?s=hired`);
+  await page.locator('[data-testid="try"][data-world="hired"]').waitFor();
+  await page.locator('[data-testid="try-result"][data-state="held"]').waitFor();
+  assert.ok((await id('try-reason', page).innerText()).includes('a message from another agent'));
+  // and back to the bills
+  await id('try-set-bills', page).click();
+  assert.equal(await id('try-preset-doctored', page).getAttribute('aria-pressed'), 'true');
+  assert.ok(page.url().endsWith('/try'), page.url());
 }
