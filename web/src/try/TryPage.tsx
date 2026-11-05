@@ -15,7 +15,6 @@ import { RequestSlip } from './RequestSlip.tsx';
 import { MAX_EMAIL, WORLDS, columnsOf, defaultKnobs, emailOf, formatDollars, parseDollars, payeeListGuard, sourceOf, stampOf, standIn, uiOf, verdictSentence } from './model.ts';
 import type { Knobs, Proposal, Source as TextSource, World, WorldId } from './model.ts';
 import { loadVerdict } from './verdictWasm.ts';
-import { SiteLoop } from '../landing/SiteLoop.tsx';
 import type { VerdictModule } from './verdictWasm.ts';
 
 export const ENGINE_LINE = 'This decision was made by the same airlock-verdict code the NEAR contract runs, compiled to WebAssembly, in your browser.';
@@ -214,7 +213,6 @@ export function TryPage() {
             {ui.lede}
           </p>
         </div>
-        <SiteLoop name="looptry" alt="Suitcases with a payee tag ride a baggage belt into the glass AIRLOCK scanner, and a cyan scan line reads each one." className="try-loop" />
       </header>
 
       <div className="try-sets" role="group" aria-label="Scenario" data-testid="try-sets">
