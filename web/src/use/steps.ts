@@ -22,7 +22,7 @@ export const STEPS: Step[] = [
   {
     id: 'init',
     title: 'Deploy your own policy',
-    text: 'One command creates your policy account with the faucet, the agent and a payee called Acme under your account, deploys the policy contract, puts Acme in your address book with a 1 NEAR cap for amounts read from outside text, and writes the agent config to ~/.airlock/mcp.json. About 3 minutes and 15 transactions.',
+    text: 'One command creates your policy account with the faucet, the agent and a payee called Acme under your account, deploys the policy contract, puts Acme in your address book with a 1 NEAR cap for amounts read from outside text, and writes the agent config to ~/.airlock/mcp.json. About 2 minutes and 15 transactions.',
     cmd: 'pnpm airlock init --owner <you>.testnet',
     last: 'AIRLOCK READY <you>-policy.testnet',
   },

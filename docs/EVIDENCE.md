@@ -256,6 +256,24 @@ Warm on this Mac before the run, so the run did not download them. A reader pays
 - Lean toolchains (elan): ~/.elan (2825 MB)
 - NEAR sandbox binaries (neard): ~/.cache/airlock-sandbox (63 MB)
 
+## Quickstart from a fresh clone (AIR-313)
+
+docs/QUICKSTART.md run on 2026-11-05 (21:37Z to 21:45Z) from a fresh `git clone` of commit 007a6c6 (rebased onto origin/main afterwards; the rebase changed no file of the quickstart), with a new faucet owner account, the MCP server driven by `pnpm airlock play` (the scripted stdio client, no model). The steps and their last lines as printed: `pnpm i` `Done in 2.6s using pnpm v12.14.0`; `near account create-account sponsor-by-faucet-service airlock-qs2-1105.testnet ...` `New account <airlock-qs2-1105.testnet> created successfully.`; `pnpm airlock init --owner airlock-qs2-1105.testnet` `AIRLOCK READY airlock-qs2-1105-policy.testnet` (91 s); `pnpm airlock claude-config` `}`; `pnpm airlock play` `PLAY DONE allow 1 escalate 2 block 0`; `pnpm airlock approve 1` `APPROVED 1 ...`; `pnpm airlock reject 2` `REJECTED 2 ...`. The payee's balance went from 0.05 to 2.05 NEAR (read with `view_account`). The NEAR lane makes no MPC call, so no signer weather line applies.
+
+| Step | Account | Tx |
+| --- | --- | --- |
+| owner account (faucet) | `airlock-qs2-1105.testnet` | https://testnet.nearblocks.io/txns/73crc7p3Fpm5r957bRnZqyZ1AzZomLhS6QV16evd7Hof |
+| top-up of the policy account (3.81 NEAR) | `airlock-qs2-1105-policy.testnet` | https://testnet.nearblocks.io/txns/FimrFcfuqEJUsBL7DeQ5y1yrPa6zA5BVfajPGDb66wJZ |
+| create the agent | `agent.airlock-qs2-1105.testnet` | https://testnet.nearblocks.io/txns/CGJKAW9ykdFEDWQkyAEua29c7S8QxY1GycwCDZHRZsFY |
+| create the payee Acme | `acme.airlock-qs2-1105.testnet` | https://testnet.nearblocks.io/txns/3PTe9gfEUn6tEZgKeXVkQhryVzPTp9abMuoki5xz5CRW |
+| deploy, code hash 6t3BqYViYKiXBv4DL6KtutafGRWKUmJf8yGYa3uH9DX4 equals the sha256 of the committed res/airlock_policy.wasm | `airlock-qs2-1105-policy.testnet` | https://testnet.nearblocks.io/txns/6ZqRojSSF7C9fdS2uBUUTs27sgjEywYZc1qzpoEFsKvB |
+| bootstrap set_task_key (the last of 10 owner and agent calls; `POLICY MATCHES` after) | `airlock-qs2-1105-policy.testnet` | https://testnet.nearblocks.io/txns/FjXfxjuDKf3a84YogBSM18SX6YMrELCidQriViKMpsCj |
+| pay m1, 0.5 NEAR: Allow (amount Untrusted:email plus quarantine, within the 1 NEAR cap) | `acme.airlock-qs2-1105.testnet` | https://testnet.nearblocks.io/txns/BFi3RkLQHjx4eo99sWzuDGEvaA6X7mMGSpZ9kVQ2mftp |
+| owner approve of pending 1, 1.5 NEAR (Escalate UntrustedAmount) | `acme.airlock-qs2-1105.testnet` | https://testnet.nearblocks.io/txns/CJuswvsbtP48qerFT9xnZb6KsN1Par3PNqErDQGhYM6W |
+| owner reject of pending 2, the doctored invoice to acme-billing.airlock-qs2-1105.testnet (Escalate OutsideTask) | `nothing paid` | https://testnet.nearblocks.io/txns/B9aNfgfRNxv8vQYMvkarQxM5uZNe25UqhvPPtXDXAQUV |
+
+An earlier run of the same steps from the worktree on owner `airlock-qs-1105.testnet` (policy `airlock-qs-1105-policy.testnet`) gave the same three verdicts: Allow https://testnet.nearblocks.io/txns/H44TPc4ed6ib1wPjgYXekeSqzEMVuyeSSe55GV2Saw1w, approve https://testnet.nearblocks.io/txns/CKQWHQpScsmwAGdVkGLGkbMjJzs5qthcQzzNrHumMJzQ, reject https://testnet.nearblocks.io/txns/4v1aj2ZUmdvtKfn5aicvDyKrcyH1fwyK2ZrfYQyoAqyS. Its agent account was deleted afterwards (https://testnet.nearblocks.io/txns/ciQthCzSfhCyFT6qmW2h6FvYSFKegmCgkoSs5vN4hhk) because its key had been shown in a debugging session.
+
 ## Model choice
 
 planner model: z-ai/glm-5.3-flash, chosen on the criteria in order: benign task success first (the highest of the affordable models, with the fewest error rows), then cost per 1,000 calls from PRICES (USD 0.08 per million input tokens and 0.50 per million output tokens, measured about USD 0.06 per 1,000 calls), then mean latency (3.4 s per call at low reasoning effort), then JSON-schema acceptance (accepted, with the JSON in the answer and not in the reasoning), then the TEE flag (providerType vllm with attestation supported). Reasoning effort is low; the same model runs on both sides of the comparison.
