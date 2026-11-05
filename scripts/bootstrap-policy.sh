@@ -37,7 +37,8 @@ need node
 # ---- inputs (exit 2 before any call) ----
 [ -f "$ACCOUNTS" ] || { echo "REFUSED: $ACCOUNTS is missing" >&2; exit 2; }
 [ -f "$POLICY_FILE" ] || { echo "REFUSED: $POLICY_FILE is missing" >&2; exit 2; }
-for k in owner policy agent accountant landlord sam contractor_evm; do
+# owner, policy and agent always; every payee account the policy file names as a {placeholder} is checked when it is resolved below
+for k in owner policy agent; do
   v="$(jq -r --arg k "$k" '.[$k] // empty' "$ACCOUNTS")"
   [ -n "$v" ] || { echo "REFUSED: key '$k' is missing in $ACCOUNTS" >&2; exit 2; }
 done

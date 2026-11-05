@@ -31,6 +31,35 @@ The diagrams are ASCII so machine readers can parse them. The README holds the o
 ## Data flow
 The owner request goes to the planner, which returns a plan in the DSL. The checked plan runs in the interpreter, which labels every value by origin and proposes ActionRequests. The runtime sends them to the policy contract with `submit_batch`. The contract applies the verdict and the ledgers, builds the transaction, asks the MPC signer for a signature, and the runtime broadcasts it and reads the receipt. A request the verdict escalates waits for the owner's `approve`.
 
+## MCP server (AIR-313)
+`runtime/src/mcp/` lets any MCP client (Claude Desktop, Claude Code, Cursor, a NEAR AI agent) use an AIRLOCK policy over stdio. The client's model is an untrusted planner: it reads untrusted text and chooses the calls. So the server, never the model, decides every label, and `pay` goes through the same `submit_batch` path as the orchestrator and returns the contract's verdict.
+
+```
+owner config (file, written by `pnpm airlock init`)       MCP client (untrusted planner)
+  request text, task bounds, accounts, inbox                     | tools/call over stdio
+            |                                                    v
+            +------------------------------------------>  airlock-mcp (runtime/src/mcp)
+                                                           read tools: value + handle + label (TOOL_CHANNEL)
+                                                           pay: labels from handles, grounding, book lookup
+                                                             -> ActionRequest -> ChainClient.submitBatch
+                                                             -> policy contract verdict (Allow, Escalate, Block)
+```
+
+Session. The owner's request and the task bounds come from the owner's config file at server start (`AIRLOCK_MCP_CONFIG`, default `~/.airlock/mcp.json`), never from a tool argument. No tool can change them. At the first `pay` the server signs one OwnerTask with the owner's local task key: the bounds of the config, `max_actions` of the config, a TTL of at most the contract's `max_task_ttl_ms`, and `plan_sha256` = sha256 of the session description (`airlock-mcp-session-v1`, the request text and the bounds). Every request of the session carries that hash. When the task expires or runs out of actions, `pay` answers `TaskExpired` or `NeedsNewTask` and the owner restarts the server; the server never widens or renews a task on its own.
+
+Handles. Every string a read tool returns is wrapped as `{ h, text }`, and the server keeps the raw value and its labels under the handle id `h`. The label is the tool layer's channel (`runtime/src/tools/channels.ts`): `read_email` is `Untrusted:email` (the `read_inbox` channel), `fetch_page` is `Untrusted:web` (a page of the config, or a live https fetch of a host the owner lists in `fetch_hosts`, public addresses only, `runtime/src/mcp/fetch.ts`), `read_file` is `Untrusted:file` (the `read_attachment` channel), `book_list` is `Book`. Content never changes a label.
+
+Arguments of `pay`. `payee` and `amount` are each one of three forms, and the server labels them as follows.
+| Form | Labels | Mirrors |
+| --- | --- | --- |
+| `{ "handle": "h3" }`, the whole value of a handle | the handle's labels | R2 (a tool result keeps the tool's label) |
+| `{ "handle": "h3", "quote": "4.2" }`, a substring of the handle's text (refused when it does not occur verbatim) | the handle's labels plus `Untrusted:quarantine` (a model chose the span) | R3 (extraction adds quarantine) |
+| a plain string the client typed | `Owner` when the literal occurs in the owner's request (the product grounder, `runtime/src/interpreter/grounding.ts`, kind `name` or `address` for a payee, `amount` with the asset decimals for an amount); otherwise `Untrusted:quarantine` plus every untrusted label the session has returned so far | R1 and R8 (grounding), with the model's own text treated as derived from everything it read |
+
+The payee is then looked up in the on-chain book with the alias rule of `resolveAlias` and labelled with `bookResult` (R5: `Book`, plus the key's labels when the key was untrusted). A payee the book does not know stays an address with its own labels. The pc is `Owner`: the trigger of the session is the owner's request, and the task bounds what any pay of the session can move (see the MCP client bullet in docs/THREAT_MODEL.md). The asset is `near` only in this version, so no data-derived asset argument exists.
+
+Verdict. `pay` builds one ActionRequest (`labelsToBits` of the three label sets, `hints.plan_hash` from the task, `trace_digest` = sha256 of the label trace of that call) and submits it with `ChainClient.submitBatch`. The answer is the contract's outcome: `Allow` with the transaction hash, `Escalate` with the reason, the pending id and the owner's command `pnpm airlock approve <id>`, or `Block` with the reason. The server never retries a refused request under other labels.
+
 ## Decisions
 - The task quick cap is a field of each registered asset (`quick_task_cap` in `asset_set`, AIR-042), not a flag: SPEC R3-09 says per asset, so `set_flags` carries only the task TTL and action maxima. SPEC 8.2 lists it under `set_flags`; the spec update of AIR-066 follows this line.
 - An asset that is not in the registry can only block (verdict rule 0). Display symbols are unique across the registry and compared without letter case, so the approval screen never shows one symbol for two assets (AB6).

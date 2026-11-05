@@ -16,9 +16,11 @@
     "proven": "tsx scripts/proven.ts",
     "proven:transcripts": "tsx scripts/proof-transcripts.ts",
     "challenge": "tsx challenge/src/cli.ts",
-    "try": "pnpm -C bench exec tsx src/scripts/try.ts"
+    "try": "pnpm -C bench exec tsx src/scripts/try.ts",
+    "airlock": "tsx scripts/airlock.ts"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
     "chainsig.js": "1.1.16",
     "tsx": "4.21.0",
     "viem": "2.57.7"

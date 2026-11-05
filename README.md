@@ -8,6 +8,8 @@ Steal this agent: the challenge service is not publicly hosted yet. It ran from 
 
 Hosted demo: https://airlock-ere.pages.dev (a static site on Cloudflare Pages with no server and NEAR testnet data): the overview, `/try` (write a scam email and the real airlock-verdict, compiled to WebAssembly, decides in your browser) and `/replay` (the recorded testnet run). The same site builds locally with `pnpm build:static` (`docs/HOSTED_DEMO.md`). Proof transcripts (recorded Kani, Lean and differential output): `pnpm proven:transcripts`, which needs Node and pnpm and nothing else.
 
+Use it with your own agent: `docs/QUICKSTART.md` deploys your own policy on NEAR testnet with `pnpm airlock init --owner <you>.testnet` and adds the AIRLOCK MCP server to Claude Desktop or any MCP client, in about five minutes (the same steps are on the site at `/use`).
+
 Verify: `scripts/claims-run.sh --tier node` (about 10 s on a warm machine, needs Node and pnpm); every command and its last line is under Verify in 5 commands below, and `docs/VERIFY.md` is the place to start.
 
 License: Apache 2.0, see `LICENSE`.

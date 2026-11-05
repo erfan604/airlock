@@ -25,6 +25,8 @@ export interface SandboxWorld {
   mpcId: string;
   payeeId: string;
   agentSigner: KeyPairSigner;
+  /** the agent's secret key, for a test that writes a credentials file (AIR-313); never printed */
+  agentKey: KeyPairString;
   /** an owner call with 1 yoctoNEAR (every owner method of the product contract demands exactly that) */
   ownerCall(method: string, args: object): Promise<void>;
   /** the owner's Ed25519 signature over the borsh bytes of the task, with the seed of 32 bytes of 01 (no prefix) */
@@ -122,12 +124,12 @@ export async function startWorld(opts: { dropSendTxReplies?: boolean } = {}): Pr
     const root = new Account(validator.account_id, provider, KeyPairSigner.fromSecretKey(validator.secret_key as KeyPairString));
     const ownerId = validator.account_id;
 
-    const make = async (name: string, nearAmount: string): Promise<{ id: string; account: Account; signer: KeyPairSigner }> => {
+    const make = async (name: string, nearAmount: string): Promise<{ id: string; account: Account; signer: KeyPairSigner; secret: KeyPairString }> => {
       const id = `${name}.${ownerId}`;
       const key = KeyPair.fromRandom('ed25519');
       await root.createAccount({ newAccountId: id, publicKey: key.getPublicKey(), nearToTransfer: nearToYocto(nearAmount as `${number}`) });
       const signer = new KeyPairSigner(key);
-      return { id, account: new Account(id, provider, signer), signer };
+      return { id, account: new Account(id, provider, signer), signer, secret: key.toString() as KeyPairString };
     };
     const policy = await make('policy', '100');
     const mpc = await make('mpc', '10');
@@ -203,6 +205,7 @@ export async function startWorld(opts: { dropSendTxReplies?: boolean } = {}): Pr
       mpcId: mpc.id,
       payeeId: payee.id,
       agentSigner: agent.signer,
+      agentKey: agent.secret,
       ownerCall,
       signTask: (task) => new Uint8Array(ed25519Sign(null, ownerTaskBorsh(task), taskKey)),
       sentTxs: lossy === null ? [] : lossy.sentTxs,
