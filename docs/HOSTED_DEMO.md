@@ -1,8 +1,9 @@
 # Hosted replay demo
 
 Anyone can open one URL and see the console replay the recorded runs with no server, no key and no chain write. It is the same console as
-`pnpm demo`, built as plain files. Every screen of the replay says `Replay of recorded run <name>`. Nothing in this document has been published:
-publishing is outward facing and needs the owner's yes for the exact host and command.
+`pnpm demo`, built as plain files. Every screen of the replay says `Replay of recorded run <name>`. Published 2026-11-04 on Cloudflare Pages (owner's yes: "host it regardless", Cloudflare chosen because GitHub Pages refuses a private repository on this plan):
+https://airlock-ere.pages.dev, project `airlock`, built from main at 6d43e54 with `pnpm -C web build:static` and deployed with
+`npx wrangler@3 pages deploy web/dist-static --project-name airlock --branch main`. Kept up at least until 2026-11-25.
 
 ## What is in it
 
