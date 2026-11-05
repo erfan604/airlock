@@ -10,6 +10,7 @@ import { Card } from '../approvals/Card.tsx';
 import type { ApproveArgs, ApproveResult } from '../approvals/Card.tsx';
 import { parseEvidence } from '../approvals/evidence.ts';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
+import { SiteLoop } from '../landing/SiteLoop.tsx';
 import { KEY_KINDS, TraceListView } from '../task/TraceList.tsx';
 import { createTraceStore } from '../task/traceStore.ts';
 import type { TraceState, TraceStore } from '../task/traceStore.ts';
@@ -226,7 +227,10 @@ export function ReplayShell({ api = liveReplayApi }: { api?: ReplayApi }) {
           <span className="replay-date" data-testid="replay-date">{` recorded ${act.recordedAt.slice(0, 10)}`}</span>
         )}
       </p>
-      <p className="replay-lede">This is a replay of recorded testnet runs. Nothing runs live, no wallet is used and no key is needed.</p>
+      <div className="replay-head">
+        <p className="replay-lede">This is a replay of recorded testnet runs. Nothing runs live, no wallet is used and no key is needed.</p>
+        <SiteLoop name="loopheld" alt="A large suitcase rests on the side rollers under a lit HELD sign while other bags keep riding the belt through the scanner behind it." className="replay-loop" eager />
+      </div>
       {loaded === null ? <p className="replay-line">Reading the recordings.</p> : null}
       {loaded === 'error' ? <p className="replay-line">The recordings could not be read.</p> : null}
       {loaded !== null && loaded !== 'error' ? (

@@ -1438,3 +1438,60 @@ h1 {
     line-height: 26px;
   }
 }
+
+/* AIR-311 site loops: a 16:9 render that explains one thing, never a background; the poster holds the space before the video loads */
+.site-loop {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  background: #050a14;
+  min-width: 0;
+}
+.site-loop-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (min-width: 1080px) {
+  .try-head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 21rem);
+    align-items: center;
+    gap: var(--space-7);
+  }
+}
+/* on a phone the Try loop would push the steps a screen down: it is left out there (the landing has the hero loop) */
+@media (max-width: 1079px) {
+  .try-loop {
+    display: none;
+  }
+}
+.how-head {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+.how-head-copy {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+@media (min-width: 900px) {
+  .how-head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: var(--space-7);
+  }
+}
+.replay-head {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 760px) {
+  .replay-head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+    align-items: center;
+  }
+}

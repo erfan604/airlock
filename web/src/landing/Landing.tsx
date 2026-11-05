@@ -15,6 +15,7 @@ import type { WasmVerdict } from '../try/verdictWasm.ts';
 import { factsOf } from './facts.ts';
 import type { Facts } from './facts.ts';
 import { HeroMedia } from './HeroMedia.tsx';
+import { SiteLoop } from './SiteLoop.tsx';
 import { preload } from '../preload.ts';
 
 type Proven = { entries: { id: string; says: string }[]; notCovered: string[] };
@@ -172,7 +173,15 @@ const STEPS = [
 function How() {
   return (
     <section className="how" aria-labelledby="how-title">
-      <h2 id="how-title" className="land-h2">How it works</h2>
+      <div className="how-head">
+        <div className="how-head-copy">
+          <h2 id="how-title" className="land-h2">
+            How it works
+          </h2>
+          <p className="land-p">The tag on a suitcase is the payee. A payee list reads only the tag. AIRLOCK looks inside: where the amount came from.</p>
+        </div>
+        <SiteLoop name="loophow" alt="Seen from above, suitcases with an email inside ride into the glass AIRLOCK scanner; under the scan line each shell turns to X-ray and the email inside shows." className="how-loop" />
+      </div>
       <ol className="how-track">
         {STEPS.map((s) => (
           <li key={s.title} className="how-stop">

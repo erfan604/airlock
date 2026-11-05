@@ -163,7 +163,20 @@ const run: E2E = async ({ page, baseUrl }) => {
   await page.goto(`${baseUrl}/`);
   await id('hero-poster', page).waitFor();
   assert.equal(await id('hero-video', page).count(), 0, 'no video under reduced motion');
+  // AIR-311 site loops: under reduced motion the posters only; otherwise the How loop below the fold has no source until it comes near
+  await page.goto(`${baseUrl}/try`);
+  await id('loop-looptry-poster', page).waitFor();
+  assert.equal(await page.locator('video').count(), 0, 'no loop video under reduced motion');
   await page.emulateMedia({ reducedMotion: null });
+  await page.goto(`${baseUrl}/`);
+  const how = id('loop-loophow-video', page);
+  await how.waitFor({ state: 'attached' });
+  assert.equal(await how.getAttribute('src'), null, 'the How loop waits until it is near the viewport');
+  await how.scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => document.querySelector('[data-testid="loop-loophow-video"]')?.getAttribute('src') !== null);
+  assert.deepEqual(await how.evaluate((v) => [(v as HTMLVideoElement).muted, (v as HTMLVideoElement).loop, v.hasAttribute('playsinline'), v.getAttribute('poster')]), [true, true, true, '/media/loophow-poster.jpg']);
+  await page.goto(`${baseUrl}/try`);
+  await page.waitForFunction(() => document.querySelector('[data-testid="loop-looptry-video"]')?.getAttribute('src') === '/media/looptry.mp4');
 
   // an unknown path is a 404 from the host and still serves the console page
   const missing = await page.request.get(`${baseUrl}/no-such-page`);
