@@ -165,7 +165,7 @@ const run: E2E = async ({ page, baseUrl }) => {
   // an unknown path is a 404 from the host and still serves the console page
   const missing = await page.request.get(`${baseUrl}/no-such-page`);
   assert.equal(missing.status(), 404);
-  assert.ok((await missing.text()).includes('<div id="root">'));
+  assert.ok((await missing.text()).includes('<div id="root"'));
   // the module the Try page runs is served as wasm
   const wasm = await page.request.get(`${baseUrl}/verdict.wasm`);
   assert.equal(wasm.status(), 200);

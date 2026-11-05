@@ -10,8 +10,26 @@ import type { VerdictState } from '../components/verdict.ts';
 import type { ReasonName, WasmVerdict } from './verdictWasm.ts';
 
 export type BookEntry = { name: string; account: string; usual: string; every: string };
-export type Preset = { id: string; title: string; line: string; from: string; email: string; expect: { default: string; strict: string; guard: 'PAY' | 'REFUSE' } };
+export type SourceChannel = 'email' | 'web' | 'chat';
+/** Where a preset's text comes from: its label channel and the words the page uses for it ("an email", "the job post"). */
+export type Source = { channel: SourceChannel; words: string };
+export const EMAIL_SOURCE: Source = { channel: 'email', words: 'an email' };
+export type Preset = {
+  id: string;
+  title: string;
+  line: string;
+  from: string;
+  email: string;
+  source?: Source;
+  expect: { default: string; strict: string; guard: 'PAY' | 'REFUSE' };
+};
+/** The page's words for the owner's side of a world: the task, what "you named" means, the book. */
+export type WorldWords = { task: string; named: string; book: string; ask: string; says: string };
+export const BILL_WORDS: WorldWords = { task: 'the task you signed', named: 'You named', book: 'your address book', ask: 'You asked to pay', says: 'Your book says' };
 export type World = {
+  id?: string;
+  label?: string;
+  words?: WorldWords;
   owner: { request: string; payee: string };
   book: BookEntry[];
   limits: { hardCap: string; dailyLeft: string; taskBound: string; payeeDailyLimit: string; dataBudget: string; defaultCap: string };
@@ -19,6 +37,7 @@ export type World = {
 };
 
 export const WORLD: World = worldJson as unknown as World;
+export const sourceOf = (p: Preset): Source => p.source ?? EMAIL_SOURCE;
 export const MAX_EMAIL = 2000;
 
 // dollars as BigInt cents
@@ -58,6 +77,8 @@ export type Origin = 'owner' | 'email-book' | 'email';
 export type Proposal = {
   payee: { account: string; name: string | null; origin: Origin; inBook: boolean; inTask: boolean };
   amount: { cents: bigint; origin: 'email' };
+  /** the outside text the request was built from; `origin: 'email'` means "from this source" */
+  source: Source;
 };
 
 export type AgentResult = { kind: 'proposal'; proposal: Proposal } | { kind: 'nothing'; why: 'no-amount' | 'bad-amount' | 'empty' };
@@ -68,7 +89,7 @@ const bookByAccount = (w: World, account: string): BookEntry | undefined => w.bo
  * The stand-in: it pays the first account id in the email; else a payee from your book other than the one you named, if the email
  * names one; else the payee you named. It pays the first dollar amount in the email (the first plain number if there is no `$`).
  */
-export function standIn(email: string, w: World = WORLD): AgentResult {
+export function standIn(email: string, w: World = WORLD, source: Source = EMAIL_SOURCE): AgentResult {
   if (email.trim() === '') return { kind: 'nothing', why: 'empty' };
   const text = email.slice(0, MAX_EMAIL);
   const ownerEntry = bookByAccount(w, w.owner.payee);
@@ -90,21 +111,22 @@ export function standIn(email: string, w: World = WORLD): AgentResult {
   if (m === null) return { kind: 'nothing', why: 'no-amount' };
   const amount = parseDollars((m[1] as string).replace(/[.,]$/, ''));
   if (amount === null) return { kind: 'nothing', why: 'bad-amount' };
-  return { kind: 'proposal', proposal: { payee, amount: { cents: amount, origin: 'email' } } };
+  return { kind: 'proposal', proposal: { payee, amount: { cents: amount, origin: 'email' }, source } };
 }
 
 // the request the verdict reads
 
-/** Label bits of contracts/airlock-verdict (labels.rs). */
-export const LABEL = { owner: 1n, book: 2n, unresolved: 16n, email: 32n } as const;
+/** Label bits of contracts/airlock-verdict (labels.rs): the untrusted channels start at bit 5 in the order of runtime/src/dsl/labels.ts. */
+export const LABEL = { owner: 1n, book: 2n, unresolved: 16n, email: 32n, web: 64n, chat: 256n } as const;
 
 export type Knobs = { capCents: bigint; strict: boolean };
 export const defaultKnobs = (w: World = WORLD): Knobs => ({ capCents: cents(w.limits.defaultCap), strict: false });
 
 export function labelsOf(p: Proposal): { recipient: bigint; amount: bigint; pc: bigint } {
-  const recipient = p.payee.origin === 'owner' ? LABEL.owner | LABEL.book : p.payee.origin === 'email-book' ? LABEL.book | LABEL.email : LABEL.email;
-  // the owner's request is what started the run, so the decision to pay is the owner's (pc); the amount is read from the email
-  return { recipient, amount: LABEL.email, pc: LABEL.owner };
+  const outside = LABEL[p.source.channel];
+  const recipient = p.payee.origin === 'owner' ? LABEL.owner | LABEL.book : p.payee.origin === 'email-book' ? LABEL.book | outside : outside;
+  // the owner's request is what started the run, so the decision to pay is the owner's (pc); the amount is read from the outside text
+  return { recipient, amount: outside, pc: LABEL.owner };
 }
 
 /**
@@ -152,16 +174,22 @@ export function stampOf(v: WasmVerdict): VerdictState {
 
 // words
 
-export function originWords(o: Origin | 'email-amount', inBook: boolean): string {
+export const wordsOf = (w: World): WorldWords => w.words ?? BILL_WORDS;
+
+/** `the email` for `an email`, `the job post` stays. */
+const theSource = (s: Source): string => s.words.replace(/^an? /, 'the ');
+
+export function originWords(o: Origin | 'email-amount', inBook: boolean, source: Source = EMAIL_SOURCE, w: World = WORLD): string {
+  const book = wordsOf(w).book;
   switch (o) {
     case 'owner':
-      return 'named by you, found in your address book';
+      return `named by you, found in ${book}`;
     case 'email-book':
-      return 'picked by the email, from your address book';
+      return `picked by ${theSource(source)}, from ${book}`;
     case 'email':
-      return inBook ? 'from an email' : 'from an email, not in your address book';
+      return inBook ? `from ${source.words}` : `from ${source.words}, not in ${book}`;
     case 'email-amount':
-      return 'from an email';
+      return `from ${source.words}`;
   }
 }
 
@@ -186,21 +214,21 @@ export function reasonWords(reason: ReasonName, p: Proposal, knobs: Knobs, w: Wo
     case 'BookLabelNotInBook':
       return 'The request claims the payee is in your address book, and it is not.';
     case 'OutsideTask':
-      return `${who} is not in the task you signed. You asked to pay ${bookByAccount(w, w.owner.payee)?.name ?? w.owner.payee}.`;
+      return `${who} is not in ${wordsOf(w).task}. ${wordsOf(w).ask} ${bookByAccount(w, w.owner.payee)?.name ?? w.owner.payee}.`;
     case 'OverTaskBound':
-      return `The amount is more than the ${formatDollars(cents(w.limits.taskBound))} left of the task you signed.`;
+      return `The amount is more than the ${formatDollars(cents(w.limits.taskBound))} left of ${wordsOf(w).task}.`;
     case 'UntrustedTrigger':
       return 'Whether to pay at all was decided by outside text.';
     case 'UntrustedRecipient':
-      return 'The payee was picked by outside text, not by you or your address book.';
+      return `The payee was picked by outside text, not by you or ${wordsOf(w).book}.`;
     case 'NewRecipient':
-      return `${who} is not in your address book.`;
+      return `${who} is not in ${wordsOf(w).book}.`;
     case 'OverPayeeLimit':
       return `The amount is over the ${formatDollars(cents(w.limits.payeeDailyLimit))} daily limit you set for ${who}.`;
     case 'UntrustedAmount':
-      if (knobs.strict) return 'The amount came from an email, and strict mode pays no amount read from outside text without you.';
-      if (p.amount.cents > knobs.capCents) return `The amount came from an email and is over the ${formatDollars(knobs.capCents)} cap you set for ${who} on amounts read from data.`;
-      return `The amount came from an email and is over the ${formatDollars(cents(w.limits.dataBudget))} left of today's budget for amounts read from data.`;
+      if (knobs.strict) return `The amount came from ${p.source.words}, and strict mode pays no amount read from outside text without you.`;
+      if (p.amount.cents > knobs.capCents) return `The amount came from ${p.source.words} and is over the ${formatDollars(knobs.capCents)} cap you set for ${who} on amounts read from data.`;
+      return `The amount came from ${p.source.words} and is over the ${formatDollars(cents(w.limits.dataBudget))} left of today's budget for amounts read from data.`;
     case 'PendingFull':
       return 'Too many requests are already waiting for you.';
     case 'EscalationsLocked':
@@ -211,7 +239,7 @@ export function reasonWords(reason: ReasonName, p: Proposal, knobs: Knobs, w: Wo
 }
 
 export function verdictSentence(v: WasmVerdict, p: Proposal, knobs: Knobs, w: World = WORLD): string {
-  if (v.kind === 'allow') return `Paid. You named ${p.payee.name ?? p.payee.account}, it is in your address book, and the amount from the email is inside the ${formatDollars(knobs.capCents)} cap you set.`;
+  if (v.kind === 'allow') return `Paid. ${wordsOf(w).named} ${p.payee.name ?? p.payee.account}, it is in ${wordsOf(w).book}, and the amount from ${theSource(p.source)} is inside the ${formatDollars(knobs.capCents)} cap you set.`;
   if (v.kind === 'malformed') return 'The verdict could not read this request, so nothing is paid.';
   return reasonWords(v.reason, p, knobs, w);
 }
