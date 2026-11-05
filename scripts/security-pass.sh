@@ -52,7 +52,7 @@ c_html_sinks() {
 
 c_wrap_allow() {
   need_dir "$1" web/src || return 1
-  local hit; hit=$(gg "$1" -lE 'wrapUntrusted' -- web/src | grep -vE '^web/src/(approvals/evidence\.ts|task/traceStore\.ts|challenge/model\.ts|components/untrusted\.ts|fixtures/)')
+  local hit; hit=$(gg "$1" -lE 'wrapUntrusted' -- web/src | grep -vE '^web/src/(approvals/evidence\.ts|task/traceStore\.ts|challenge/model\.ts|try/model\.ts|components/untrusted\.ts|fixtures/)')
   [ -z "$hit" ] || { echo "wrapUntrusted outside its allow-list: $(echo "$hit" | head -1)"; return 1; }
 }
 
