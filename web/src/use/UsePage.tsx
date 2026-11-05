@@ -32,7 +32,7 @@ function StepItem({ step, n }: { step: Step; n: number }): ReactElement {
   return (
     <li className="use-step" data-testid={`use-step-${step.id}`}>
       <span className="use-num" aria-hidden="true">
-        {String(n).padStart(2, '0')}
+        {n}
       </span>
       <div className="use-body">
         <h2 className="use-h2">{step.title}</h2>
@@ -45,7 +45,7 @@ function StepItem({ step, n }: { step: Step; n: number }): ReactElement {
         )}
         {step.last === undefined ? null : (
           <p className="use-last">
-            <span className="use-key">Last line</span> <code>{step.last}</code>
+            <span className="use-key">Last line:</span> <code>{step.last}</code>
           </p>
         )}
         {step.note === undefined ? null : <p className="use-note">{step.note}</p>}
@@ -64,7 +64,7 @@ export function UsePage(): ReactElement {
         only when your own request holds it.
       </p>
       <p className="use-needs">
-        <span className="use-key">You need</span> {NEEDS}
+        <span className="use-key">You need:</span> {NEEDS}
       </p>
       <ol className="use-steps" data-testid="use-steps">
         {STEPS.map((s, i) => (
