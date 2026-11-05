@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Specimen } from '../components/Specimen.tsx';
 import { VERDICT_WORDS, VerdictStamp } from '../components/VerdictStamp.tsx';
+import { OneShot } from '../landing/OneShot.tsx';
 import { url } from '../static.ts';
 import { RequestSlip } from './RequestSlip.tsx';
 import { MAX_EMAIL, WORLDS, columnsOf, defaultKnobs, emailOf, formatDollars, parseDollars, payeeListGuard, sourceOf, stampOf, standIn, uiOf, verdictSentence } from './model.ts';
@@ -69,7 +70,25 @@ function Decision({ email, source, world, knobs, mod, failed }: { email: string;
         <div className="try-decision" key={`${email}|${String(knobs.capCents)}|${String(knobs.strict)}`}>
           <div className="try-airlock">
             <p className="try-who">AIRLOCK</p>
-            <VerdictStamp state={stampOf(v)} ruleId={v.kind === 'allow' || v.kind === 'malformed' ? undefined : v.reason} testId="try-verdict" />
+            {v.kind === 'allow' || v.kind === 'escalate' ? (
+              <>
+                <OneShot
+                  name={v.kind === 'allow' ? 'stamp-allowed' : 'stamp-held'}
+                  run={`${email}|${String(knobs.capCents)}|${String(knobs.strict)}`}
+                  alt={v.kind === 'allow' ? 'A rubber stamp comes down on the payment request slip and leaves ALLOWED in green ink.' : 'A rubber stamp comes down on the payment request slip and leaves HELD FOR YOU in red ink.'}
+                  className="try-stamp"
+                  testId="try-stamp"
+                />
+                <div className="sr-only" data-audit-skip="">
+                  <VerdictStamp state={stampOf(v)} ruleId={v.kind === 'allow' ? undefined : v.reason} testId="try-verdict" />
+                </div>
+                <p className="try-rule" data-testid="try-rule">
+                  {v.kind === 'allow' ? 'ALLOW' : `ESCALATE, rule ${v.reason}`}
+                </p>
+              </>
+            ) : (
+              <VerdictStamp state={stampOf(v)} ruleId={v.kind === 'malformed' ? undefined : v.reason} testId="try-verdict" />
+            )}
             <p className="try-reason" data-testid="try-reason">
               {verdictSentence(v, p, knobs, world)}
             </p>

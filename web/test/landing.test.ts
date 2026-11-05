@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseBench } from '../src/bench/types.ts';
 import { factsOf } from '../src/landing/facts.ts';
+import { stepAt } from '../src/landing/TubeBand.tsx';
 
 const bench = parseBench(JSON.parse(readFileSync(new URL('../public/bench.json', import.meta.url), 'utf8')) as unknown);
 
@@ -31,4 +32,8 @@ test('the landing facts are the audited bench figures', () => {
 test('a bench file without the payment-task table gives no facts, never a guess', () => {
   assert.ok(bench !== null);
   assert.equal(factsOf({ ...bench, completion: bench.completion.filter((t) => !t.title.startsWith('Benign payment tasks only')) }), null);
+});
+
+test('the tube band lights the step its loop is showing, and wraps every 6 s', () => {
+  assert.deepEqual([0, 1.5, 1.7, 3.1, 3.3, 5.9, 6.0, 7.7].map(stepAt), [0, 0, 1, 1, 2, 2, 0, 1]);
 });

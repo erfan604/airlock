@@ -15,6 +15,7 @@ import type { WasmVerdict } from '../try/verdictWasm.ts';
 import { factsOf } from './facts.ts';
 import type { Facts } from './facts.ts';
 import { HeroMedia } from './HeroMedia.tsx';
+import { TubeBand } from './TubeBand.tsx';
 import { preload } from '../preload.ts';
 
 type Proven = { entries: { id: string; says: string }[]; notCovered: string[] };
@@ -170,19 +171,23 @@ const STEPS = [
 ];
 
 function How() {
+  const [step, setStep] = useState<0 | 1 | 2 | null>(null);
   return (
     <section className="how" aria-labelledby="how-title">
+      <TubeBand onStep={setStep} />
       <div className="how-head">
         <div className="how-head-copy">
           <h2 id="how-title" className="land-h2">
             How it works
           </h2>
-          <p className="land-p">The tag on a suitcase is the payee. A payee list reads only the tag. AIRLOCK looks inside: where the amount came from.</p>
+          <p className="land-p">
+            Every value travels with a label that says where it came from. The NEAR contract reads the labels: what your own words and your address book decided goes through within your limits, and what an email decided waits for you, unless it is an amount inside the cap you set.
+          </p>
         </div>
       </div>
       <ol className="how-track">
-        {STEPS.map((s) => (
-          <li key={s.title} className="how-stop">
+        {STEPS.map((s, i) => (
+          <li key={s.title} className="how-stop" data-active={step === i ? 'true' : undefined} data-testid={`how-step-${String(i + 1)}`}>
             <h3 className="how-title">{s.title}</h3>
             <p className="land-p">{s.body}</p>
           </li>

@@ -62,6 +62,7 @@ const run: E2E = async ({ page, baseUrl }) => {
     assert.ok(t.includes(s), `landing text: ${s}`);
   assert.ok(home.body.includes('<script type="application/ld+json">') && home.body.includes('"@type":"SoftwareApplication"'), 'JSON-LD');
   assert.ok(home.body.includes('alt="') || t.includes('suitcases ride a baggage belt'), 'the hero loop is described');
+  assert.ok(t.includes('junction box engraved AIRLOCK'), 'the How it works band is described in text');
 
   // the Try page: the steps, every preset of both worlds with its expected verdict in the at-a-glance table, the engine named
   const tr = textOf((await get('/try/')).body);

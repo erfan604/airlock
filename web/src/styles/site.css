@@ -668,6 +668,62 @@ h1 {
   }
 }
 
+/* the tube office band: full bleed behind How it works, fading into the page at its foot; the step it is showing lights below it */
+.tube-band {
+  position: relative;
+  margin: 0 calc(50% - 50vw) calc(-1 * var(--space-4));
+  aspect-ratio: 12 / 5;
+  max-height: 640px;
+  overflow: hidden;
+  background: #07100b;
+}
+@media (max-width: 719px) {
+  .tube-band {
+    aspect-ratio: 4 / 5;
+    max-height: none;
+    margin-bottom: calc(-1 * var(--space-4));
+  }
+}
+.tube-band::before,
+.tube-band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.tube-band::before {
+  top: 0;
+  height: 14%;
+  background: linear-gradient(0deg, transparent, var(--paper));
+}
+.tube-band::after {
+  bottom: 0;
+  height: 22%;
+  background: linear-gradient(180deg, transparent, var(--paper));
+}
+.tube-band-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.how > .how-head {
+  position: relative;
+}
+.how-stop .how-title,
+.how-stop::before {
+  transition: color 320ms var(--ease-out), background-color 320ms var(--ease-out), box-shadow 320ms var(--ease-out);
+}
+.how-stop[data-active='true'] .how-title {
+  color: var(--xray);
+}
+.how-stop[data-active='true']::before {
+  background: var(--xray);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--xray) 22%, transparent);
+}
+
 /* proven and not */
 .limits {
   display: grid;
@@ -1447,4 +1503,65 @@ h1 {
 .how-head-copy {
   display: grid;
   gap: var(--space-3);
+}
+
+/* AIR-311 one-shot clips: the stamp desk in step 3 of the Try page, the switchyard band on the Replay page */
+.one-shot {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  background: #120c07;
+}
+.one-shot-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.try-stamp {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-m);
+}
+@media (max-width: 719px) {
+  .try-stamp {
+    aspect-ratio: 4 / 3;
+  }
+}
+.page .try-rule,
+.try-rule {
+  font-family: var(--font-data);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-3);
+}
+
+.yard-band {
+  margin: 0 calc(50% - 50vw);
+  aspect-ratio: 4 / 1;
+  max-height: 420px;
+  background: #3b3420;
+}
+@media (max-width: 719px) {
+  .yard-band {
+    aspect-ratio: 4 / 5;
+    max-height: none;
+  }
+}
+.yard-band::before,
+.yard-band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16%;
+  z-index: 1;
+  pointer-events: none;
+}
+.yard-band::before {
+  top: 0;
+  background: linear-gradient(0deg, transparent, var(--paper));
+}
+.yard-band::after {
+  bottom: 0;
+  background: linear-gradient(180deg, transparent, var(--paper));
 }

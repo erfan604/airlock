@@ -17,3 +17,7 @@
 ^web/src/landing/HeroMedia\.tsx:[0-9]+:.*src=\{(poster|(mounted \? )?url\(tall \? 'media/hero-loop-916\.mp4' : 'media/hero-loop\.mp4'\)( : undefined)?)\}
 # AIR-311: the prerendered replay summary links a transaction through its own txHref, which keeps a url only when it starts with one of the two explorer prefixes.
 ^web/src/replay/ReplaySummary\.tsx:[0-9]+:.*href=\{txHref\(
+# AIR-311: the How it works band: the poster and the loop are same-origin media named from `cut`, one of two string literals in the same file.
+^web/src/landing/TubeBand\.tsx:[0-9]+:.*src=\{(poster|near \? url\(`media/\$\{cut\}\.mp4`\) : undefined)\}
+# AIR-311: one-shot clips (stamp desk, switchyard): same-origin media named from `cut`, built from the `name` prop, a literal or a closed set at every call site.
+^web/src/landing/OneShot\.tsx:[0-9]+:.*src=\{url\(`media/\$\{cut\}(-end\.jpg|\.mp4)`\)\}
