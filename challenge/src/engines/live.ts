@@ -13,7 +13,7 @@ import type { AgentDeps, planTask } from '@airlock/runtime/agent';
 import { TASK_TAG, planSha256, resolveAlias } from '@airlock/runtime/dsl';
 import type { BookRows, CheckedPlan, OwnerTask } from '@airlock/runtime/dsl';
 import type { Extractor } from '@airlock/runtime/interpreter';
-import { run as interpret } from '@airlock/runtime/interpreter';
+import { defaultToolArgPolicy, grounder, run as interpret } from '@airlock/runtime/interpreter';
 import { collectLlm } from '@airlock/runtime/llm';
 import type { LlmCall } from '@airlock/runtime/llm';
 import { formatBaseUnits, toBaseUnits } from '@airlock/runtime/money';
@@ -145,6 +145,9 @@ export class LiveEngine implements Engine {
       extract,
       book: { resolve: (alias) => resolveAlias(rows, alias) },
       decimalsOf: (asset) => registry.get(asset)?.decimals,
+      // the product hooks of runtime/src/server/main.ts (AIR-314): without the grounder every planner literal would be Owner
+      ground: grounder,
+      toolArgPolicy: defaultToolArgPolicy,
       chain,
       fees: feePolicyFromRegistry(registry),
       evmSender: () => null,
