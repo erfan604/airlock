@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "name": "live-latest",
+  "case": "demo-live",
+  "scenario": null,
+  "recordedAt": "2026-11-05T00:06:31.181Z",
+  "network": "testnet",
+  "contractId": "policy-v2.erfan-airlock.testnet",
+  "llmMode": "record",
+  "planSha256": "7c4dbab7914c3b73f2fc9789b8b5ef3fc5596815b4e42fb8037837b0e12457d5",
+  "taskId": null,
+  "taskHash": null,
+  "requests": [
+    {
+      "request_id": "d076ef95221d222f24e674121595a81afa6d7088440a946db7d7e2f17e8a291e:0",
+      "outcome": "allowed",
+      "reason": null,
+      "pending_id": null
+    },
+    {
+      "request_id": "20ac01f2b885a8eef9bd95285434647f3eea63684a9ecfab27b5e16f1be05945:0",
+      "outcome": "escalated",
+      "reason": "OverTaskBound",
+      "pending_id": "4"
+    },
+    {
+      "request_id": "0add9561c87545c7ce94e1575f9bf7baa2b3cfb8e4747443ff0cb006644bf6e7:0",
+      "outcome": "escalated",
+      "reason": "OverTaskBound",
+      "pending_id": "5"
+    }
+  ],
+  "trace": [],
+  "txs": [
+    {
+      "chain": "near",
+      "label": "submit",
+      "hash": "3RR5eKiFTv1X2ucRAsRUrTxVAT13Pm8gjZdNTuGZUpuG",
+      "status": "success",
+      "url": "https://testnet.nearblocks.io/txns/3RR5eKiFTv1X2ucRAsRUrTxVAT13Pm8gjZdNTuGZUpuG"
+    },
+    {
+      "chain": "near",
+      "label": "submit",
+      "hash": "5djC9Bsf27NwmFH9fgLBd2bQ6DQHgg8qSVZAgUtaKJkj",
+      "status": "success",
+      "url": "https://testnet.nearblocks.io/txns/5djC9Bsf27NwmFH9fgLBd2bQ6DQHgg8qSVZAgUtaKJkj"
+    },
+    {
+      "chain": "near",
+      "label": "approve",
+      "hash": "GTzcpEuSaTofY8u2Yx18GBR5phsuK1KJBjmj4ZcrYDCz",
+      "status": "success",
+      "url": "https://testnet.nearblocks.io/txns/GTzcpEuSaTofY8u2Yx18GBR5phsuK1KJBjmj4ZcrYDCz"
+    },
+    {
+      "chain": "near",
+      "label": "submit",
+      "hash": "R15dxhKrxLQ7Lw8VTEG5UG1FBZLM4hT6PJ1zNS6wX5x",
+      "status": "success",
+      "url": "https://testnet.nearblocks.io/txns/R15dxhKrxLQ7Lw8VTEG5UG1FBZLM4hT6PJ1zNS6wX5x"
+    },
+    {
+      "chain": "near",
+      "label": "tamper",
+      "hash": "4MMNGyyjNVM4AQ6SomvTX6E2iJnjr8Nf6sz9rzNtkPM7",
+      "status": "failure",
+      "url": "https://testnet.nearblocks.io/txns/4MMNGyyjNVM4AQ6SomvTX6E2iJnjr8Nf6sz9rzNtkPM7"
+    }
+  ],
+  "run": null,
+  "note": "pnpm demo:live; the owner approval of request 4 was typed by the coordinator under D23 (relayed yes) when the approve script asked for it; request 5 stays pending"
+}
