@@ -2456,7 +2456,7 @@
       "attack": "three junk escalations from one origin, rejected by the owner",
       "expect": "after AIR-315: that origin is locked; the owner's real supplier still escalates and is approved, an owner-typed payee still escalates, payments inside the limits still pass; resetting the one origin reopens it",
       "before": "before AIR-315: the whole agent was locked, so the owner's next payment that needed a tap was blocked until reset_escalations",
-      "fix": null
+      "fix": "c2c67f8"
     },
     {
       "id": "RT-DOS-02",
@@ -2466,7 +2466,7 @@
       "attack": "junk escalations from one origin left pending",
       "expect": "after AIR-315: two pending fill that origin only; the supplier and the owner still escalate",
       "before": "before AIR-315: three pending filled the agent's queue and blocked every other escalation",
-      "fix": null
+      "fix": "c2c67f8"
     },
     {
       "id": "RT-DOS-03",
@@ -2476,7 +2476,7 @@
       "attack": "spend one origin's hourly escalation budget, then the owner resets that origin",
       "expect": "after AIR-315: that origin stays blocked for the hour (the reset keeps the hour count); the supplier and the owner still escalate; the next hour is fresh",
       "before": "before AIR-315: six escalations spent the agent's hour, so every escalation of the owner was blocked for the rest of the UTC hour",
-      "fix": null
+      "fix": "c2c67f8"
     },
     {
       "id": "RT-DOS-04",

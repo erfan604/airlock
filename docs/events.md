@@ -55,8 +55,8 @@ Types: `string`, `number`, `boolean`, `object`, `array of strings`; `string or n
 | `approved` | `request_id: string`, `id: string`, `digest: string`, `approver: string`, `block_height: string` | `approve` (AIR-080). `digest` is 64 lowercase hex, `approver` the owner account, `block_height` a decimal string. |
 | `rejected` | `request_id: string`, `id: string` | `reject` (AIR-081), emitted before `escalations_locked`. |
 | `expired` | `request_id: string`, `id: string` | `expire` (AIR-081), any caller, after the escalation's time to live. |
-| `escalations_locked` | `agent: string`, `consecutive: number`, `today: number` | `reject` when it newly locks the agent (AIR-083). `consecutive` and `today` are the counters after the reject, plain JSON numbers. |
-| `escalations_reset` | `agent: string` | `reset_escalations` (AIR-081), owner only. |
+| `escalations_locked` | `agent: string`, `consecutive: number`, `today: number` | `reject` when it newly locks the agent's per-agent counters (AIR-083), the counters of requests that name no origin. `consecutive` and `today` are the counters after the reject, plain JSON numbers. A lock of one origin (AIR-315) emits nothing, because the origin is text the runtime chose; `get_escalation_state(agent, origin)` shows it. |
+| `escalations_reset` | `agent: string` | `reset_escalations` (AIR-081), owner only, with or without its optional origin (AIR-315); the origin is not in the event. |
 
 ### Execution lanes (AIR-100, AIR-101, AIR-104, AIR-105)
 
