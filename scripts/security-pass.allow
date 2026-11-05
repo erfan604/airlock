@@ -13,5 +13,7 @@
 ^web/src/[A-Za-z/]+\.tsx:[0-9]+:.*href=\{url\('[a-z]*(\?s=[a-z]+)?'\)\}
 # AIR-311: the console tabs: `url()` in front of a route from the constant NAV list of the same file.
 ^web/src/shell/SiteNav\.tsx:[0-9]+:.*href=\{url\(n\.path\)\}
-# AIR-311: the landing loop and its poster: same-origin media files named by string literals in the same file.
-^web/src/landing/HeroMedia\.tsx:[0-9]+:.*src=\{(poster|url\(tall \? 'media/hero-loop-916\.mp4' : 'media/hero-loop\.mp4'\))\}
+# AIR-311: the landing loop and its poster: same-origin media files named by string literals in the same file (set after mount).
+^web/src/landing/HeroMedia\.tsx:[0-9]+:.*src=\{(poster|(mounted \? )?url\(tall \? 'media/hero-loop-916\.mp4' : 'media/hero-loop\.mp4'\)( : undefined)?)\}
+# AIR-311: the prerendered replay summary links a transaction through its own txHref, which keeps a url only when it starts with one of the two explorer prefixes.
+^web/src/replay/ReplaySummary\.tsx:[0-9]+:.*href=\{txHref\(

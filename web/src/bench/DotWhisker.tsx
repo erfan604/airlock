@@ -1,5 +1,6 @@
 // AIR-192: a dot and a whisker on a fixed 0 to 100 scale, hand drawn SVG. `p`, `lo` and `hi` are fractions that arrive from bench.json; they
 // are only multiplied by 100 into a percentage of the track. End caps on the interval, a 14 px marker, the cell text as the label.
+import { PRERENDER } from '../static.ts';
 import type { Kind, Row } from './types.ts';
 
 const MARK = 14;
@@ -7,6 +8,8 @@ const H = 22;
 const MID = H / 2;
 
 export function DotWhisker({ row, kind, label }: { row: Row; kind: Kind; label: string }) {
+  // AIR-311: the prerendered Bench page carries the numbers as text and leaves the 1,500 marks to the browser (the page renders fresh over it)
+  if (PRERENDER) return null;
   const empty = row.n === 0;
   const fill = kind === 'attack' ? 'url(#bench-stripe)' : kind === 'intent' ? 'var(--clear)' : kind === 'tap' ? 'var(--paper)' : 'var(--ink-2)';
   const stroke = kind === 'tap' ? 'var(--clear)' : kind === 'attack' ? 'var(--signal)' : 'none';

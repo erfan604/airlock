@@ -15,6 +15,7 @@ import type { WasmVerdict } from '../try/verdictWasm.ts';
 import { factsOf } from './facts.ts';
 import type { Facts } from './facts.ts';
 import { HeroMedia } from './HeroMedia.tsx';
+import { preload } from '../preload.ts';
 
 type Proven = { entries: { id: string; says: string }[]; notCovered: string[] };
 const PROVEN = proven as unknown as Proven;
@@ -217,8 +218,13 @@ function Proven() {
 }
 
 export function Landing() {
-  const [facts, setFacts] = useState<Facts | null | 'loading'>('loading');
+  // AIR-311: a prerendered page carries the numbers it was built with, so the first render already shows them
+  const [facts, setFacts] = useState<Facts | null | 'loading'>(() => {
+    const pre = preload()?.facts;
+    return pre === undefined ? 'loading' : pre;
+  });
   useEffect(() => {
+    if (facts !== 'loading') return undefined;
     let live = true;
     void loadBench().then((d) => {
       if (live) setFacts(d === null ? null : factsOf(d));
@@ -226,7 +232,7 @@ export function Landing() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [facts]);
   return (
     <main className="landing" data-testid="landing">
       <section className="hero" aria-labelledby="hero-title">

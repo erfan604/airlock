@@ -14,6 +14,7 @@ import { KEY_KINDS, TraceListView } from '../task/TraceList.tsx';
 import { createTraceStore } from '../task/traceStore.ts';
 import type { TraceState, TraceStore } from '../task/traceStore.ts';
 import { outcomeOf } from './outcome.ts';
+import { STAYED } from './summary.ts';
 import { STATIC } from '../static.ts';
 import { StaticEventSource } from './staticEventSource.ts';
 import { AutopilotChart } from './AutopilotChart.tsx';
@@ -26,7 +27,6 @@ const EXPLORER_PREFIXES = ['https://testnet.nearblocks.io/txns/', 'https://sepol
 const txHref = (url: string): string | undefined => (EXPLORER_PREFIXES.some((p) => url.startsWith(p)) ? url : undefined);
 
 const SCOPE = { network: 'testnet', contractId: 'policy.test.near' } as const;
-const STAYED = 'The stored request stayed pending with its stored amount. Nothing was signed.';
 
 function Links({ links }: { links: ActLink[] }) {
   if (links.length === 0) return null;

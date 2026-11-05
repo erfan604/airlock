@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { replayMode } from './api.ts';
 import { ReplayShell } from './ReplayShell.tsx';
+import { ReplaySummary } from './ReplaySummary.tsx';
+import { preload } from '../preload.ts';
 
 export function ReplayAware({ live }: { live: () => ReactElement }) {
   const [mode, setMode] = useState<'loading' | 'replay' | 'live'>('loading');
@@ -14,6 +16,10 @@ export function ReplayAware({ live }: { live: () => ReactElement }) {
       on = false;
     };
   }, []);
-  if (mode === 'loading') return <main className="page gate" data-testid="mode-loading" aria-busy="true" />;
+  if (mode === 'loading') {
+    // AIR-311: the static page carries the acts as text (prerendered), shown until the replay console is ready
+    const acts = preload()?.replay;
+    return acts === undefined ? <main className="page gate" data-testid="mode-loading" aria-busy="true" /> : <ReplaySummary acts={acts} />;
+  }
   return mode === 'replay' ? <ReplayShell /> : live();
 }

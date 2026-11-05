@@ -13,6 +13,7 @@ const TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json',
   '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml',
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
   // AIR-311: the Try page's verdict module and the landing media

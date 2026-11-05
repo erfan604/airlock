@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { DotWhisker, StripeDefs } from './DotWhisker.tsx';
 import { loadBench } from './types.ts';
+import { preload } from '../preload.ts';
 import type { BenchData, CompareRow, Kind, Table } from './types.ts';
 
 /** The cells of a table as a real table; under 720 px every cell carries its column title, so nothing scrolls sideways. */
@@ -142,8 +143,13 @@ export function BenchView({ data }: { data: BenchData | null }) {
 }
 
 export function BenchPage() {
-  const [state, setState] = useState<{ done: boolean; data: BenchData | null }>({ done: false, data: null });
+  // AIR-311: a prerendered page carries its bench data, so the first render already has the tables
+  const [state, setState] = useState<{ done: boolean; data: BenchData | null }>(() => {
+    const pre = preload()?.bench;
+    return pre === undefined ? { done: false, data: null } : { done: true, data: pre };
+  });
   useEffect(() => {
+    if (state.done) return undefined;
     let live = true;
     void loadBench().then((data) => {
       if (live) setState({ done: true, data });
@@ -151,7 +157,7 @@ export function BenchPage() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [state.done]);
   if (!state.done) return <main className="page bench" data-testid="bench-loading" aria-busy="true"><h1 className="bench-title">Bench</h1></main>;
   return <BenchView data={state.data} />;
 }

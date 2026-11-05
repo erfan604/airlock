@@ -21,11 +21,26 @@ The replay data is the answer of the replay server to each read the console make
 those files with the functions it uses live. The trace is the server-sent event text, read by `replay/staticEventSource.ts`. No page signs, opens a
 wallet or calls any other origin: the policy is `connect-src 'self'` and the e2e fails on any request to another host.
 
+## For readers that run no JavaScript
+
+Every page is prerendered at build time (`web/scripts/prerender.tsx`): the same React app renders each route to HTML, so the title, description,
+canonical link, headings, numbers, the Try page's presets with their verdicts and the replay's acts with their transactions are in the HTML a
+crawler or an AI agent fetches. The data a page was rendered with goes into the page as a JSON data block (`type="application/json"`, never
+executed, so the policy stays `script-src 'self'`), and the browser hydrates from it. The build also writes, from the same sources:
+
+| File | What it holds |
+| --- | --- |
+| `/llms.txt` | the llmstxt.org index: the README summary line, every page with one line, the raw data files |
+| `/llms-full.txt` | a plain-text digest: README sections copied verbatim, the bench numbers from `bench.json`, both Try scenarios with their verdicts, the recorded acts, every testnet transaction of `docs/EVIDENCE.md` |
+| `/robots.txt`, `/sitemap.xml` | everything allowed; every page that is not an alias |
+
+`pnpm -C web e2e nojs` fetches every page without running a script and checks the text is there.
+
 ## Build and check
 
 ```
 pnpm i
-pnpm build:static            # web/dist-static, ends with STATIC EXPORT OK <n> files
+pnpm build:static            # web/dist-static, ends with PRERENDER OK <n> pages
 pnpm -C web e2e static       # serves dist-static like a host, clip audit at 375 and 1440, prints E2E static OK
 pnpm -C web preview:static   # look at it by hand on http://127.0.0.1:4180
 ```

@@ -1,4 +1,5 @@
 // The shell: `/fixtures/<name>` renders a registered fixture, every other path its route from routes.ts (AIR-311: `/` is the landing). There is no client router yet: every route is a full page load, which is what the fixture screenshots want.
+import type { ReactElement } from 'react';
 import { DoorSprite } from './components/Door.tsx';
 import { getFixture } from './fixtures/index.ts';
 import { ROUTES } from './routes.ts';
@@ -17,7 +18,8 @@ function Placeholder({ line }: { line: string }) {
   );
 }
 
-export function App({ pathname: rawPathname }: { pathname: string }) {
+/** `page` replaces the route's element: the build-time prerender passes the Bench page itself, which the browser loads lazily. */
+export function App({ pathname: rawPathname, page }: { pathname: string; page?: ReactElement }) {
   const pathname = routePath(rawPathname);
   const m = /^\/fixtures\/([^/]+)\/?$/.exec(pathname);
   const fixture = m ? getFixture(m[1] as string) : undefined;
@@ -37,7 +39,7 @@ export function App({ pathname: rawPathname }: { pathname: string }) {
         <span className="shell-net">testnet</span>
       </header>
       <div id="main" className="shell-main" tabIndex={-1}>
-        {fixture ? fixture.render() : m ? <Placeholder line="No such fixture." /> : route ? route() : <Placeholder line="There is no page at this address." />}
+        {page ?? (fixture ? fixture.render() : m ? <Placeholder line="No such fixture." /> : route ? route() : <Placeholder line="There is no page at this address." />)}
       </div>
     </>
   );
