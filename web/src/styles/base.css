@@ -8,6 +8,7 @@
   --font-system: 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-data: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --font-evidence: 'Courier Prime', 'Courier New', ui-monospace, monospace;
+  --font-display: 'Barlow Condensed', 'Mona Sans', system-ui, sans-serif;
   --stripe: repeating-linear-gradient(-45deg, var(--signal) 0 6px, var(--paper) 6px 12px);
   --radius-s: 6px;
   --radius-m: 10px;
@@ -35,7 +36,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(70rem 32rem at 50% -12rem, color-mix(in srgb, var(--clear) 7%, transparent), transparent 70%),
+    radial-gradient(80rem 36rem at 70% -14rem, color-mix(in srgb, var(--xray) 7%, transparent), transparent 70%),
     var(--paper);
   color: var(--ink);
   font-family: var(--font-system);
@@ -75,46 +76,172 @@ button {
   letter-spacing: 0.08em;
 }
 
-/* the shell bar: a text wordmark and the network, nothing that imitates a logo */
+/* the shell bar: the AIRLOCK mark (the one place NEAR green marks the product), the tabs and the network as plain text */
 .shell-bar {
   position: relative;
   z-index: 5;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  gap: 0 var(--space-4);
   min-height: 44px;
   padding: 0 var(--space-4);
   border-bottom: 1px solid var(--hair);
-  background: color-mix(in srgb, var(--paper) 86%, transparent);
-  backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  view-transition-name: shell;
 }
 .shell-mark {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: 44px;
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0.18em;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-decoration: none;
 }
 .shell-mark::before {
   content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
   background: var(--clear);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--clear) 70%, transparent);
+  transform: rotate(45deg);
 }
 .shell-net {
-  padding: 2px var(--space-3);
-  border: 1px solid var(--hair);
-  border-radius: 999px;
+  margin-left: auto;
   font-family: var(--font-data);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 18px;
-  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: -60px;
+  z-index: 20;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-s);
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: var(--space-2);
+}
+.shell-main:focus {
+  outline: none;
+}
+.site-nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* a phone keeps the shell to one 44 px row: the wordmark is the overview link, so the Overview tab is left out there, and the
+   network label waits for a wider screen (every replay screen and the landing footer say testnet) */
+.site-tabs {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0;
+  margin: 0 calc(-1 * var(--space-2)) 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.site-tabs > li:first-child {
+  display: none;
+}
+/* under 360px the tabs no longer fit: the strip scrolls and its right edge fades instead of cutting a tab */
+@media (max-width: 359px) {
+  .site-tabs {
+    justify-content: flex-start;
+    mask-image: linear-gradient(90deg, black 0, black calc(100% - 28px), transparent);
+    padding-right: 28px;
+  }
+}
+.site-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  font-size: 15px;
+  font-weight: 500;
   color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--press);
+}
+@media (max-width: 719px) {
+  .shell-bar {
+    flex-wrap: nowrap;
+    gap: var(--space-3);
+  }
+  .shell-mark {
+    position: relative;
+    flex: none;
+    font-size: 19px;
+  }
+  .shell-mark[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--ink);
+  }
+}
+@media (max-width: 519px) {
+  .shell-net {
+    display: none;
+  }
+}
+.site-tab::after {
+  content: '';
+  position: absolute;
+  left: var(--space-2);
+  right: var(--space-2);
+  bottom: -1px;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 260ms var(--ease-out);
+}
+.site-tab:hover {
+  color: var(--ink);
+}
+.site-tab[aria-current='page'] {
+  color: var(--ink);
+}
+.site-tab[aria-current='page']::after {
+  transform: scaleX(1);
+}
+@media (min-width: 720px) {
+  .site-nav {
+    flex: 0 1 auto;
+  }
+  .site-tabs > li:first-child {
+    display: list-item;
+  }
+  .site-tab {
+    min-height: 60px;
+  }
+  .site-tabs {
+    justify-content: flex-start;
+    margin: 0;
+  }
+  .site-tab {
+    padding: 0 var(--space-3);
+  }
+  .site-tab::after {
+    left: var(--space-3);
+    right: var(--space-3);
+  }
 }
 
 .page {
@@ -128,8 +255,9 @@ button {
   .shell-bar {
     position: sticky;
     top: 0;
-    min-height: 56px;
+    min-height: 60px;
     padding: 0 var(--space-5);
+    gap: var(--space-6);
   }
   .page {
     padding: var(--space-7) var(--space-5) var(--space-8);
@@ -206,7 +334,35 @@ button {
   }
 }
 
+/* AIR-311: pages are full loads; a cross-document view transition fades the page body and keeps the shell bar still */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root) {
+  animation: 180ms var(--ease-out) both vt-out;
+}
+::view-transition-new(root) {
+  animation: 320ms var(--ease-out) both vt-in;
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
   *,
   *::before,
   *::after {

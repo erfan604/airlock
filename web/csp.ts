@@ -19,8 +19,11 @@ export const NEAR_RPC = [
   'https://rpc.testnet.near.org',
 ] as const;
 
-/** Paths the console and the runtime share one origin for, so the session cookie is sent (AIR-161's routes). */
-export const PROXY_PATHS = ['/session', '/tasks', '/runs', '/api', '/replay'] as const;
+/**
+ * Paths the console and the runtime share one origin for, so the session cookie is sent (AIR-161's routes). AIR-311: the replay server's
+ * reads are under `/replay/`, with the slash, because `/replay` itself is now a console page.
+ */
+export const PROXY_PATHS = ['/session', '/tasks', '/runs', '/api', '/replay/'] as const;
 
 /**
  * What a wallet's executor iframe loads beyond the origins its manifest names, measured per executor (AIR-182, headless Chromium 153,
@@ -63,7 +66,8 @@ const join = (base: string, extra: readonly string[]): string => [base, ...extra
 export function buildCsp(o: CspInput): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${o.nonce}'`,
+    // AIR-311: 'wasm-unsafe-eval' lets the Try page compile its own same-origin verdict.wasm; it allows no JavaScript eval
+    `script-src 'self' 'nonce-${o.nonce}' 'wasm-unsafe-eval'`,
     join("style-src 'self' 'unsafe-inline'", uiOrigins(o.walletIds, 'style')),
     join(`img-src 'self' data: ${o.iconOrigins.join(' ')}`, uiOrigins(o.walletIds, 'img')),
     join("font-src 'self'", uiOrigins(o.walletIds, 'font')),
@@ -103,13 +107,14 @@ export function previewProxy(runtimeOrigin: string): Record<string, { target: st
 /**
  * AIR-310: the policy of the static build (`web/dist-static`). It is the preview policy with everything the replay never uses taken away: the
  * runtime origin, the NEAR RPC hosts, the wallet origins and the wallet frames are gone, so the page can talk to its own origin only. There is no
- * nonce because the built page has no inline script (a module script by `src` only). `frame-ancestors` cannot be set from a meta tag, so it is
+ * nonce because the built page has no inline script (a module script by `src` only). AIR-311 adds 'wasm-unsafe-eval' (the Try page compiles
+ * its same-origin verdict.wasm; no JavaScript eval); the landing loop is same-origin media under default-src. `frame-ancestors` cannot be set from a meta tag, so it is
  * in the header form only (`_headers`); a host that ignores `_headers` (GitHub Pages) still gets everything else from the meta tag.
  */
 export function buildStaticCsp(opts: { header: boolean }): string {
   return [
     "default-src 'self'",
-    "script-src 'self'",
+    "script-src 'self' 'wasm-unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
     "font-src 'self'",

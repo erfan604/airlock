@@ -8,6 +8,7 @@ import type { Page } from 'playwright';
 import type { RequestView } from '@airlock/runtime/chain-types';
 import { approveArgs } from '../src/approvals/cardModel.ts';
 import { clipAudit } from './audit.ts';
+import { checkLanding, checkTry } from './site.ts';
 import { FIXTURE_DIR } from './demo.setup.ts';
 import type { E2E } from './types.ts';
 
@@ -103,7 +104,7 @@ const run: E2E = async ({ page, baseUrl }) => {
 
   for (const viewport of [{ width: 375, height: 667 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
-    await page.goto(`${baseUrl}/`);
+    await page.goto(`${baseUrl}/replay`);
     await id('replay-banner', page).waitFor();
     assert.ok((await id('replay-banner', page).innerText()).includes('Replay of recorded run'), `banner at ${viewport.width}`);
     assert.equal(await page.locator('[data-testid="login-connect"]').count(), 0, 'no wallet login in replay');
@@ -113,6 +114,12 @@ const run: E2E = async ({ page, baseUrl }) => {
     await checkAct3(page);
     await page.setViewportSize(viewport);
   }
+
+  // AIR-311: the landing and the Try page under the preview server's nonce policy (the wasm compiles under 'wasm-unsafe-eval')
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await checkLanding(page, baseUrl);
+  await checkTry(page, baseUrl);
+  assert.deepEqual(await clipAudit(page), [], 'clip audit, try');
 
   for (const host of hosts) assert.ok(host === '127.0.0.1' || host === 'localhost', `a request went to ${host}`);
   assert.ok(hosts.has(origin), 'the page made requests to its own origin');

@@ -317,9 +317,9 @@ test('list: the hostile fixture shows the tag string as escaped text and the inv
   assert.equal(out.includes('\u202e'), false);
 });
 
-test('list: outsider text appears only inside a specimen element', () => {
+test('list: outsider text appears only inside a specimen element or an untrusted chip (AIR-311)', () => {
   const out = html(stateOf(hostile.events as TraceEventWire[]));
-  const withoutSpecimens = out.replace(/<span class="specimen-text">[^<]*<\/span>/g, '');
+  const withoutSpecimens = out.replace(/<span class="(?:specimen-text|untrusted-chip-value)">[^<]*<\/span>/g, '');
   assert.equal(withoutSpecimens.includes('onerror'), false);
   assert.equal(withoutSpecimens.includes('&lt;img'), false);
 });

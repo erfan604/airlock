@@ -31,7 +31,7 @@ The screenshots of the e2e are in `web/audit/static-*.png`. `pnpm build:static` 
 and `fixtures/world.jsonl`, so it shows what is committed.
 
 The policy is in the page as a meta tag and, for hosts that read it, in `dist-static/_headers`: scripts from `'self'` only, no inline script, no
-remote host, `frame-ancestors 'none'` in the header form. A host that ignores `_headers` (GitHub Pages) still enforces the meta tag.
+remote host, `'wasm-unsafe-eval'` so the Try page can compile its own `verdict.wasm` (WebAssembly only, no JavaScript eval), media from `'self'`, `frame-ancestors 'none'` in the header form. A host that ignores `_headers` (GitHub Pages) still enforces the meta tag.
 
 ## Publish to Cloudflare Pages (recommended)
 

@@ -15,6 +15,11 @@ const TYPES: Record<string, string> = {
   '.txt': 'text/plain; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
+  // AIR-311: the Try page's verdict module and the landing media
+  '.wasm': 'application/wasm',
+  '.mp4': 'video/mp4',
+  '.jpg': 'image/jpeg',
+  '.png': 'image/png',
 };
 
 /** The header lines under the first block of a `_headers` file (the `/*` block). */
@@ -52,8 +57,27 @@ export function serveStatic(dir: string, port: number): Promise<{ url: string; s
     if (!found) file = join(root, '404.html');
     for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
     res.setHeader('Content-Type', TYPES[extname(file)] ?? 'application/octet-stream');
+    const body = readFileSync(file);
+    // a single byte range, as every static host answers one: a browser asks for media in ranges
+    const range = found ? /^bytes=([0-9]{0,15})-([0-9]{0,15})$/.exec(req.headers.range ?? '') : null;
+    res.setHeader('Accept-Ranges', 'bytes');
+    if (range !== null && (range[1] !== '' || range[2] !== '')) {
+      const size = body.length;
+      const start = range[1] === '' ? Math.max(0, size - Number(range[2])) : Number(range[1]);
+      const end = range[1] === '' || range[2] === '' ? size - 1 : Math.min(size - 1, Number(range[2]));
+      if (start > end || start >= size) {
+        res.statusCode = 416;
+        res.setHeader('Content-Range', `bytes */${String(size)}`);
+        res.end();
+        return;
+      }
+      res.statusCode = 206;
+      res.setHeader('Content-Range', `bytes ${String(start)}-${String(end)}/${String(size)}`);
+      res.end(req.method === 'HEAD' ? undefined : body.subarray(start, end + 1));
+      return;
+    }
     res.statusCode = found ? 200 : 404;
-    res.end(req.method === 'HEAD' ? undefined : readFileSync(file));
+    res.end(req.method === 'HEAD' ? undefined : body);
   });
   return new Promise((ok, fail) => {
     server.once('error', fail);

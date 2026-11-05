@@ -9,11 +9,18 @@ import { ReplayAware } from './replay/ReplayAware.tsx';
 import { TaskPage } from './task/TaskPage.tsx';
 import { STATIC } from './static.ts';
 import { StaticChallenge, StaticLive } from './static/StaticPages.tsx';
+import { Landing } from './landing/Landing.tsx';
+import { TryPage } from './try/TryPage.tsx';
 // AIR-192: the read-only Bench page loads on demand, so the shell's bundle does not grow
 const BenchPage = lazy(() => import('./bench/BenchPage.tsx'));
 
 export const ROUTES: Record<string, () => ReactElement> = {
-  '/': () => createElement(ReplayAware, { live: () => createElement(TaskPage) }),
+  // AIR-311: `/` is the landing in every mode. The replay console (or, behind a live runtime, the Task page) moved to `/replay`; `/task`
+  // is the same route under the name a live operator reads.
+  '/': () => createElement(Landing),
+  '/try': () => createElement(TryPage),
+  '/replay': () => createElement(ReplayAware, { live: () => createElement(TaskPage) }),
+  '/task': () => createElement(ReplayAware, { live: () => createElement(TaskPage) }),
   '/proven': () => createElement(ProvenPage),
   '/approvals': () => createElement(ReplayAware, { live: () => createElement(ApprovalsRoute) }),
   // AIR-301: the public Steal this agent page; it reads the challenge service and needs no session

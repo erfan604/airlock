@@ -3,26 +3,6 @@
 import type { ReactElement } from 'react';
 import { url } from '../static.ts';
 
-export const STATIC_LINKS: { path: string; label: string }[] = [
-  { path: '', label: 'Replay' },
-  { path: 'bench', label: 'Bench' },
-  { path: 'proven', label: 'Proven' },
-  { path: 'challenge', label: 'Challenge' },
-  { path: 'live', label: 'Live demo' },
-];
-
-export function StaticNav() {
-  return (
-    <nav className="static-nav" data-testid="static-nav" aria-label="Pages">
-      {STATIC_LINKS.map((l) => (
-        <a key={l.path} className="static-nav-link" href={url(l.path)}>
-          {l.label}
-        </a>
-      ))}
-    </nav>
-  );
-}
-
 type Need = { title: string; why: string; commands: { cmd: string; does: string }[] };
 
 function NeedsServer({ need, testId }: { need: Need; testId: string }) {
@@ -44,7 +24,7 @@ function NeedsServer({ need, testId }: { need: Need; testId: string }) {
         ))}
       </ul>
       <p className="replay-line">
-        <a href={url('')}>Back to the replay</a>
+        <a href={url('replay')}>Watch the recorded run</a>{' or '}<a href={url('try')}>try to trick the verdict in your browser</a>
       </p>
     </main>
   );

@@ -10,35 +10,38 @@ import type { TokenName } from '../src/styles/tokens.ts';
 
 const webRoot = fileURLToPath(new URL('../', import.meta.url));
 
-// D24 (AIR-296): the dark NEAR palette, recomputed with the same WCAG 2 formula.
+// AIR-311: the night navy media palette (D24 roles kept), recomputed with the same WCAG 2 formula.
 const EXPECTED: Array<[fg: TokenName, bg: TokenName, ratio: number]> = [
-  ['ink', 'paper', 17.27],
-  ['ink', 'raised', 15.84],
-  ['ink', 'sunk', 17.79],
-  ['ink2', 'paper', 9.83],
-  ['ink2', 'raised', 9.01],
-  ['ink2', 'sunk', 10.12],
-  ['ink3', 'paper', 5.96],
-  ['ink3', 'raised', 5.46],
-  ['ink3', 'sunk', 6.14],
-  ['clear', 'paper', 12.53],
-  ['clear', 'raised', 11.49],
-  ['clear', 'sunk', 12.91],
-  ['alarm', 'paper', 6.51],
-  ['alarm', 'raised', 5.97],
-  ['alarm', 'sunk', 6.71],
-  ['signal', 'paper', 11.14],
-  ['signal', 'raised', 10.21],
-  ['signal', 'sunk', 11.47],
-  ['info', 'paper', 7.63],
-  ['info', 'raised', 7.0],
-  ['info', 'sunk', 7.86],
+  ['ink', 'paper', 14.62],
+  ['ink', 'raised', 12.95],
+  ['ink', 'sunk', 15.68],
+  ['ink2', 'paper', 10.04],
+  ['ink2', 'raised', 8.89],
+  ['ink2', 'sunk', 10.76],
+  ['ink3', 'paper', 6.64],
+  ['ink3', 'raised', 5.88],
+  ['ink3', 'sunk', 7.12],
+  ['clear', 'paper', 11.62],
+  ['clear', 'raised', 10.29],
+  ['clear', 'sunk', 12.46],
+  ['alarm', 'paper', 6.67],
+  ['alarm', 'raised', 5.91],
+  ['alarm', 'sunk', 7.15],
+  ['signal', 'paper', 5.61],
+  ['signal', 'raised', 4.97],
+  ['signal', 'sunk', 6.02],
+  ['info', 'paper', 10.05],
+  ['info', 'raised', 8.9],
+  ['info', 'sunk', 10.78],
+  ['xray', 'paper', 10.87],
+  ['xray', 'raised', 9.63],
+  ['xray', 'sunk', 11.66],
   ['onClear', 'clear', 12.12],
-  ['paper', 'ink', 17.27],
-  ['edge', 'paper', 3.66],
-  ['edge', 'raised', 3.35],
-  ['edge', 'sunk', 3.77],
-  ['focus', 'paper', 11.1],
+  ['paper', 'ink', 14.62],
+  ['edge', 'paper', 4.08],
+  ['edge', 'raised', 3.61],
+  ['edge', 'sunk', 4.37],
+  ['focus', 'paper', 10.87],
 ];
 
 test('contrast: the ratios of the ticket match within 0.01 and are all ok', () => {
@@ -51,17 +54,17 @@ test('contrast: the ratios of the ticket match within 0.01 and are all ok', () =
   });
 });
 
-test('contrast: a failing pair is reported ok false (hair on paper is 1.42)', () => {
+test('contrast: a failing pair is reported ok false (hair on paper is 1.47)', () => {
   const [r] = checkContrast([{ fg: 'hair', bg: 'paper', min: 4.5 }]);
   assert.ok(r);
-  assert.ok(Math.abs(r.ratio - 1.42) <= 0.01, String(r.ratio));
+  assert.ok(Math.abs(r.ratio - 1.47) <= 0.01, String(r.ratio));
   assert.equal(r.ok, false);
 });
 
-test('contrast: the default pair list has 23 text pairs and 6 graphics pairs, all ok', () => {
+test('contrast: the default pair list has 26 text pairs and 6 graphics pairs, all ok', () => {
   const pairs = defaultPairs();
-  assert.equal(pairs.length, 29);
-  assert.equal(pairs.filter((p) => p.min === 4.5).length, 23);
+  assert.equal(pairs.length, 32);
+  assert.equal(pairs.filter((p) => p.min === 4.5).length, 26);
   assert.equal(pairs.filter((p) => p.min === 3).length, 6);
   assert.ok(checkContrast(pairs).every((r) => r.ok));
 });

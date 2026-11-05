@@ -23,13 +23,14 @@ export function lintPolicy(policy, nonce = null) {
   const d = directives(policy);
   const script = d.get('script-src') ?? [];
   if (script.length === 0) problems.push('script-src is missing');
-  for (const bad of ["'unsafe-inline'", "'unsafe-eval'", "'wasm-unsafe-eval'", "'unsafe-hashes'", "'strict-dynamic'", '*', 'https:', 'http:', 'data:', 'blob:']) {
+  for (const bad of ["'unsafe-inline'", "'unsafe-eval'", "'unsafe-hashes'", "'strict-dynamic'", '*', 'https:', 'http:', 'data:', 'blob:']) {
     if (script.includes(bad)) problems.push(`script-src contains ${bad}`);
   }
   const nonces = script.filter((t) => /^'nonce-[A-Za-z0-9+/=]+'$/.test(t));
   if (!script.includes("'self'")) problems.push("script-src lacks 'self'");
   if (nonces.length !== 1) problems.push(`script-src carries ${nonces.length} nonces, expected exactly one`);
-  const other = script.filter((t) => t !== "'self'" && !nonces.includes(t));
+  // AIR-311: 'wasm-unsafe-eval' compiles the same-origin verdict.wasm of the Try page; it allows no JavaScript eval
+  const other = script.filter((t) => t !== "'self'" && t !== "'wasm-unsafe-eval'" && !nonces.includes(t));
   if (other.length > 0) problems.push(`script-src has extra sources: ${other.join(' ')}`);
   if (nonce !== null && !script.includes(`'nonce-${nonce}'`)) problems.push('script-src nonce is not the page nonce');
 

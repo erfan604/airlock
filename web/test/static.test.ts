@@ -17,9 +17,10 @@ test('parseSse reads id, event and data, joins multi-line data and skips comment
 });
 
 test('the static policy allows the page origin only and has no unsafe-eval, no remote host', () => {
+  const script = /script-src ([^;]*)/.exec(buildStaticCsp({ header: true }))?.[1]?.split(' ') ?? [];
   const header = buildStaticCsp({ header: true });
-  assert.ok(header.includes("connect-src 'self';") && header.includes("script-src 'self';") && header.includes("frame-ancestors 'none'"));
-  assert.ok(!header.includes('http') && !header.includes('unsafe-eval'));
+  assert.ok(header.includes("connect-src 'self';") && header.includes("script-src 'self' 'wasm-unsafe-eval';") && header.includes("frame-ancestors 'none'"));
+  assert.ok(!header.includes('http') && !script.includes("'unsafe-eval'") && script.includes("'wasm-unsafe-eval'"));
   assert.ok(!buildStaticCsp({ header: false }).includes('frame-ancestors'));
 });
 

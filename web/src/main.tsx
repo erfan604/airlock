@@ -15,6 +15,7 @@ import './styles/proven.css';
 import './styles/challenge.css';
 import './styles/bench.css';
 import './styles/fixtures.css';
+import './styles/site.css';
 import { App } from './App.tsx';
 
 const root = document.getElementById('root');

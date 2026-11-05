@@ -1,10 +1,12 @@
 // The live trace as a list (AIR-184): one row per event with its seals, its Specimens and, for a verdict, the stamp. Rows come from the
 // store already built (`rowOf`), so this file never sees a raw string from outside: an outside value is an `Untrusted` cell and goes to
 // `Specimen` only. The list view is the accessible twin of the provenance graph that was cut.
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { Seal } from '../components/Seal.tsx';
-import { Specimen } from '../components/Specimen.tsx';
+import { UntrustedValue } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
+import { url } from '../static.ts';
+import type { TraceKind } from './trace.ts';
 import type { TraceCell, TraceRow, TraceState, TraceStore } from './traceStore.ts';
 
 export const ANSWERED_TEXT = 'Answered, nothing paid';
@@ -28,7 +30,7 @@ function Cell({ row, cell }: { row: TraceRow; cell: TraceCell }) {
     return (
       <div className="trace-cell trace-cell-block" data-cell={cell.name}>
         <span className="trace-cell-name">{cell.name}</span>
-        <Specimen text={cell.untrusted} channel={cell.channel} maxLines={row.kind === 'extract' ? 2 : undefined} />
+        <UntrustedValue text={cell.untrusted} channel={cell.channel} maxLines={row.kind === 'extract' ? 2 : undefined} />
       </div>
     );
   }
@@ -47,7 +49,7 @@ function Stamp({ row }: { row: TraceRow }) {
     <div className="trace-stamp">
       <VerdictStamp state={row.stamp} ruleId={textOf(row, 'reason')} />
       {row.stamp === 'held' ? (
-        <a className="trace-review" data-testid="review-link" href="/approvals">
+        <a className="trace-review" data-testid="review-link" href={url('approvals')}>
           {pending === undefined ? 'Review requests' : `Review request ${pending}`}
         </a>
       ) : null}
@@ -83,7 +85,13 @@ export function TraceRowView({ row }: { row: TraceRow }) {
   );
 }
 
-export function TraceListView({ state }: { state: TraceState }) {
+/** AIR-311: the rows a replay shows before "Show the full trace": what was read, who is paid, what was proposed and what the gate said. */
+export const KEY_KINDS: readonly TraceKind[] = ['extract', 'lookup', 'proposed', 'verdict', 'signed', 'broadcast', 'error', 'say'];
+
+export function TraceListView({ state, keyKinds }: { state: TraceState; keyKinds?: readonly TraceKind[] }) {
+  const [full, setFull] = useState(false);
+  const shown = keyKinds === undefined || full ? state.rows : state.rows.filter((r) => keyKinds.includes(r.kind));
+  const hidden = state.rows.length - shown.length;
   return (
     <section className="trace" data-testid="trace-list" aria-label="Run trace">
       {state.collapsed > 0 ? (
@@ -91,11 +99,16 @@ export function TraceListView({ state }: { state: TraceState }) {
           {`${state.collapsed} earlier events collapsed`}
         </p>
       ) : null}
-      <ol className="trace-rows">
-        {state.rows.map((row) => (
+      <ol className="trace-rows" id="trace-rows">
+        {shown.map((row) => (
           <TraceRowView key={row.key} row={row} />
         ))}
       </ol>
+      {keyKinds === undefined || (hidden === 0 && !full) ? null : (
+        <button type="button" className="trace-toggle" data-testid="trace-expand" aria-expanded={full} aria-controls="trace-rows" onClick={() => setFull((f) => !f)}>
+          {full ? 'Show the key steps only' : `Show the full trace (${String(hidden)} more ${hidden === 1 ? 'step' : 'steps'})`}
+        </button>
+      )}
       {state.stale ? (
         <p className="trace-line trace-stale" data-testid="stale-caption" role="status">
           {STALE_TEXT}

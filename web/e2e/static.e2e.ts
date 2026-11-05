@@ -1,5 +1,5 @@
 // The static build in a real browser (AIR-310): web/dist-static served as plain files, the way Cloudflare Pages or GitHub Pages serve it. The
-// replay at /, the Bench, Proven, Challenge and Live pages at 375x667 and 1440x900, the clip audit at 375 and 1440 on each, screenshots to
+// landing at /, the Try page (AIR-311), the replay at /replay, the Bench, Proven, Challenge and Live pages at 375x667 and 1440x900, the clip audit at 375 and 1440 on each, screenshots to
 // web/audit/static-<page>-<width>.png, every request on the page's own host (no external request at all), the Content-Security-Policy of the
 // host header on every document, and the recorded hashes taken from the golden files. The harness fails on any console error.
 // Run: pnpm build:static && pnpm -C web e2e static
@@ -12,6 +12,7 @@ import type { RequestView } from '@airlock/runtime/chain-types';
 import { buildStaticCsp } from '../csp.ts';
 import { approveArgs } from '../src/approvals/cardModel.ts';
 import { clipAudit } from './audit.ts';
+import { checkLanding, checkTry, showPreset } from './site.ts';
 import type { E2E } from './types.ts';
 
 const web = fileURLToPath(new URL('../', import.meta.url));
@@ -36,7 +37,7 @@ async function audit(page: Page, label: string): Promise<void> {
 }
 
 async function replayPage(page: Page, baseUrl: string, width: number): Promise<void> {
-  await page.goto(`${baseUrl}/`);
+  await page.goto(`${baseUrl}/replay`);
   await id('replay-banner', page).waitFor();
   assert.ok((await id('replay-banner', page).innerText()).includes('Replay of recorded run'), 'banner');
   assert.equal(await page.locator('[data-testid="login-connect"]').count(), 0, 'no wallet login in the static copy');
@@ -48,6 +49,13 @@ async function replayPage(page: Page, baseUrl: string, width: number): Promise<v
   assert.equal(await id('verdict-stamp', page).getAttribute('data-state'), 'allowed');
   assert.ok((await id('trace-list', page).innerText()).includes('4.2 NEAR'), 'the amount carries its symbol');
   assert.equal(await id('tx-link', page).getAttribute('data-hash'), u01.txs[0]?.hash);
+  // AIR-311: the act opens with its outcome, and the trace shows its key steps until it is expanded
+  assert.equal(await id('act-outcome', page).getAttribute('data-state'), 'allowed');
+  assert.equal(await id('outcome-money', page).innerText(), '4.2 NEAR paid');
+  const keyRows = await page.locator('[data-testid="trace-list"] [data-testid="trace-row"]').count();
+  await id('trace-expand', page).click();
+  assert.ok((await page.locator('[data-testid="trace-list"] [data-testid="trace-row"]').count()) > keyRows, 'show the full trace adds rows');
+  await id('trace-expand', page).click();
   await shot(page, 'replay-act1', width);
   await audit(page, 'act 1');
 
@@ -58,6 +66,9 @@ async function replayPage(page: Page, baseUrl: string, width: number): Promise<v
   assert.equal(await id('act-title', page).innerText(), 'Act 2 Correction held');
   const stamp = page.locator('[data-testid="trace-list"] [data-testid="verdict-stamp"]');
   assert.ok((await stamp.innerText()).includes('HELD FOR YOU'));
+  assert.equal(await id('act-outcome', page).getAttribute('data-state'), 'held');
+  assert.equal(await id('outcome-money', page).innerText(), '9.4 NEAR held');
+  assert.ok((await id('outcome-reason', page).innerText()).includes('Nothing moves until you approve it.'));
   const held = dist('data/replay/request/' + encodeURIComponent(String((dist('data/replay/acts.json') as { acts: { id: string; pendingNo: string }[] }).acts.find((a) => a.id === 'b01')?.pendingNo)) + '.json') as { view: RequestView };
   const title = await id('card-title', page).innerText();
   assert.ok(title.startsWith('Pay 9.4 NEAR to ') && title.endsWith('?'), `card title: ${title}`);
@@ -78,6 +89,7 @@ async function replayPage(page: Page, baseUrl: string, width: number): Promise<v
   await id('act-tamper', page).click();
   await id('tamper-result', page).waitFor();
   assert.equal(await id('tamper-failure', page).innerText(), 'approve rejected: WrongAmount');
+  assert.equal(await id('act-outcome', page).getAttribute('data-state'), 'blocked');
   assert.equal(await id('tamper-link', page).getAttribute('data-hash'), tamperGolden.txs[0]?.hash);
   await shot(page, 'replay-act3', width);
   await audit(page, 'act 3');
@@ -99,6 +111,18 @@ const run: E2E = async ({ page, baseUrl }) => {
 
   for (const viewport of WIDTHS) {
     await page.setViewportSize(viewport);
+    // AIR-311: the landing at /, the Try page on the real verdict.wasm, then the replay at /replay
+    await checkLanding(page, baseUrl);
+    await page.waitForTimeout(2600);
+    await shot(page, 'landing', viewport.width);
+    await audit(page, 'landing');
+    await checkTry(page, baseUrl);
+    await audit(page, 'try after the presets');
+    for (const preset of ['doctored', 'honest']) {
+      await showPreset(page, baseUrl, preset);
+      await shot(page, `try-${preset}`, viewport.width);
+      await audit(page, `try ${preset}`);
+    }
     await replayPage(page, baseUrl, viewport.width);
 
     await page.goto(`${baseUrl}/bench`);
@@ -126,10 +150,25 @@ const run: E2E = async ({ page, baseUrl }) => {
     await page.setViewportSize(viewport);
   }
 
+  // AIR-311: reduced motion shows the poster and never loads the loop; otherwise the loop is muted, inline and looping
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${baseUrl}/`);
+  const video = id('hero-video', page);
+  await video.waitFor({ state: 'attached' });
+  assert.deepEqual(await video.evaluate((v) => [(v as HTMLVideoElement).muted, (v as HTMLVideoElement).loop, v.hasAttribute('playsinline'), v.getAttribute('poster')]), [true, true, true, '/media/hero-poster.jpg']);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(`${baseUrl}/`);
+  await id('hero-poster', page).waitFor();
+  assert.equal(await id('hero-video', page).count(), 0, 'no video under reduced motion');
+  await page.emulateMedia({ reducedMotion: null });
+
   // an unknown path is a 404 from the host and still serves the console page
   const missing = await page.request.get(`${baseUrl}/no-such-page`);
   assert.equal(missing.status(), 404);
   assert.ok((await missing.text()).includes('<div id="root">'));
+  // the module the Try page runs is served as wasm
+  const wasm = await page.request.get(`${baseUrl}/verdict.wasm`);
+  assert.equal(wasm.status(), 200);
 
   const origin = new URL(baseUrl).host;
   assert.deepEqual([...hosts], [origin], `every request goes to ${origin}, got ${[...hosts].join(', ')}`);

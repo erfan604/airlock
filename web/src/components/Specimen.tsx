@@ -123,3 +123,21 @@ export function UntrustedInline({ text, max = 40 }: UntrustedInlineProps) {
     </span>
   );
 }
+
+/** AIR-311: a value this short, on one line, is shown as a chip; anything longer as a full Specimen. */
+export const CHIP_MAX = 48;
+
+/**
+ * A short outside value (an extracted amount, a payee key) as a chip: the channel seal, then the value in Courier Prime on a sunk well with a
+ * striped edge, so the stripe marks the one value that came from outside, not the whole row. Longer or multi-line text is a Specimen.
+ */
+export function UntrustedValue({ text, channel, maxLines, testId }: { text: Untrusted; channel: ChannelName; maxLines?: number; testId?: string }) {
+  const raw = revealUntrusted(text);
+  if (raw.includes('\n') || countCodePoints(raw) > CHIP_MAX) return <Specimen text={text} channel={channel} maxLines={maxLines} testId={testId} />;
+  return (
+    <span className="untrusted-chip" data-testid={testId ?? 'untrusted-chip'}>
+      <ChannelSeal channel={channel} />
+      <span className="untrusted-chip-value">{sanitizeUntrusted(raw).shown}</span>
+    </span>
+  );
+}

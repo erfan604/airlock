@@ -8,7 +8,7 @@ import type { Plugin } from 'vite';
 import { buildStaticCsp } from './csp.ts';
 
 /** The console routes that get their own `index.html`. */
-export const STATIC_ROUTES = ['proven', 'bench', 'challenge', 'live', 'approvals'] as const;
+export const STATIC_ROUTES = ['try', 'replay', 'task', 'proven', 'bench', 'challenge', 'live', 'approvals'] as const;
 
 /** The `_headers` file (Cloudflare Pages and Netlify syntax). Paths are from the site root, whatever the base path of the build is. */
 export function headersFile(): string {

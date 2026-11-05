@@ -17,10 +17,11 @@ lists as `web/csp.ts` has them:
 ```text
 Content-Security-Policy:
   default-src 'self';
-  script-src 'self' 'nonce-<nonce>';
+  script-src 'self' 'nonce-<nonce>' 'wasm-unsafe-eval';
   style-src 'self' 'unsafe-inline';
   img-src 'self' data: https://raw.githubusercontent.com;
   font-src 'self';
+  media-src 'self';
   connect-src 'self' <runtime-origin> https://test.rpc.fastnear.com https://near-testnet.drpc.org https://testnet-rpc.intea.rs https://rpc.testnet.near.org https://raw.githubusercontent.com https://cdn.jsdelivr.net https://wallet.intear.tech;
   frame-src 'self' https://raw.githubusercontent.com https://cdn.jsdelivr.net https://wallet.intear.tech;
   frame-ancestors 'none';
@@ -37,7 +38,8 @@ The nonce rule:
    `__AIRLOCK_CSP_NONCE__` in each of them (`html.cspNonce` in `web/vite.config.ts`); the host replaces every occurrence with the
    nonce of that response. A static header cannot do this, so a host needs a small piece of code or an edge function for it.
 3. Send `Cache-Control: no-store` with the HTML, so a cached page never meets a header with another nonce.
-4. `script-src` never contains `unsafe-inline`, `unsafe-eval` or `data:`. A host that cannot add a nonce must serve no inline script
+4. `script-src` never contains `unsafe-inline`, `unsafe-eval` or `data:`. It carries `wasm-unsafe-eval` so the Try page can compile its
+   same-origin `verdict.wasm` (WebAssembly only, no JavaScript eval). A host that cannot add a nonce must serve no inline script
    at all and may then use `script-src 'self'`.
 5. Send the header on every response the host answers for the console, not only on the page you rewrite. `vite-csp.ts` sets it on
    every GET and HEAD that Vite does not proxy before it passes the request on, so a static file, the single page fallback and an

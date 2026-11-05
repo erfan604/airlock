@@ -27,22 +27,22 @@ const run: E2E = async ({ page, baseUrl }) => {
   // `/` without a session: the login button and nothing else. The session read answers 200 with no account (a 401 would be logged by Chromium
   // as a console error, which this harness fails on), and the gate reads that as signed out.
   await page.route('**/session', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
-  await page.goto(`${baseUrl}/`);
+  await page.goto(`${baseUrl}/task`);
   await page.locator('[data-testid="login-connect"]').waitFor();
   assert.equal(await page.locator('[data-testid="task-view"]').count(), 0, 'no task view without a session');
   assert.equal(await page.locator('[data-testid="instruction-input"]').count(), 0);
-  await audit(page, '/ without a session');
+  await audit(page, '/task without a session');
 
   // `/` idle, with a session
   await page.unroute('**/session');
   await page.route('**/session', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"accountId":"owner.testnet"}' }));
-  await page.goto(`${baseUrl}/`);
+  await page.goto(`${baseUrl}/task`);
   await page.locator('[data-testid="task-view"]').waitFor();
   assert.equal(await page.locator('[data-testid="trace-list"]').count(), 0, 'no trace before a run');
   assert.ok(await page.locator('[data-testid="submit-task"]').isDisabled(), 'submit is disabled for an empty instruction');
   await page.locator('[data-testid="instruction-input"]').fill('Pay the April invoice from my accountant.');
   assert.ok(await page.locator('[data-testid="submit-task"]').isEnabled());
-  await audit(page, '/ idle');
+  await audit(page, '/task idle');
 
   // U01: seven rows, an ALLOWED stamp, the amount with its symbol, no review link
   await open(page, baseUrl, 'task-allowed');

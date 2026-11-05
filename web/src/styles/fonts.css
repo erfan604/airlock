@@ -1,5 +1,5 @@
 /* Self-hosted latin subsets (the demo runs offline, font-src is 'self'). D24 (AIR-296): Mona Sans is the system voice (the free face
-   near.org ships beside its display grotesk), IBM Plex Mono the data, Courier Prime only for text an outsider wrote. */
+   near.org ships beside its display grotesk), IBM Plex Mono the data, Courier Prime only for text an outsider wrote. AIR-311: Barlow Condensed (OFL) is the display face, the signage type of the landing media. */
 @font-face {
   font-family: 'Mona Sans';
   font-style: normal;
@@ -55,4 +55,25 @@
   font-weight: 400;
   font-display: swap;
   src: url('/fonts/courier-prime-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/barlow-condensed-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/barlow-condensed-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/barlow-condensed-latin-700-normal.woff2') format('woff2');
 }

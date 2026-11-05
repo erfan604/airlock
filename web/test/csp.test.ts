@@ -32,7 +32,7 @@ test('csp: buildCsp has every directive of the ticket in order', () => {
     csp,
     [
       "default-src 'self'",
-      `script-src 'self' 'nonce-${nonce}'`,
+      `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval'`,
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: ${ICON_ORIGINS.join(' ')}`,
       "font-src 'self'",
@@ -49,7 +49,7 @@ test('csp: buildCsp has every directive of the ticket in order', () => {
   assert.ok(csp.includes(`img-src 'self' data: ${ICON_ORIGINS[0]}`));
   assert.ok(csp.includes("frame-ancestors 'none'"));
   assert.ok(csp.includes(`connect-src 'self' http://localhost:8787 ${RPC.join(' ')}`));
-  assert.equal(csp.includes('unsafe-eval'), false);
+  assert.equal(directives(csp).get('script-src')?.includes("'unsafe-eval'"), false);
 });
 
 test('csp: script-src never allows unsafe-inline or unsafe-eval, and only style-src allows inline', () => {

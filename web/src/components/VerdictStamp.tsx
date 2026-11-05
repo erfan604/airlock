@@ -17,12 +17,12 @@ export const VERDICT_WORDS: Record<VerdictState, [word: string, term: string]> =
   stopped: ['STOPPED', 'no submit'],
 };
 
-export type VerdictStampProps = { state: VerdictState; ruleId?: string; sentence?: string };
+export type VerdictStampProps = { state: VerdictState; ruleId?: string; sentence?: string; testId?: string };
 
-export function VerdictStamp({ state, ruleId, sentence }: VerdictStampProps) {
+export function VerdictStamp({ state, ruleId, sentence, testId = 'verdict-stamp' }: VerdictStampProps) {
   const [word, term] = VERDICT_WORDS[state];
   return (
-    <div className={`verdict-stamp verdict-${state}`} data-testid="verdict-stamp" data-state={state}>
+    <div className={`verdict-stamp verdict-${state}`} data-testid={testId} data-state={state}>
       <Door state={state} size={48} />
       <div className="verdict-text">
         <div className="verdict-word">{word}</div>

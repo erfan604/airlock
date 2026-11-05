@@ -31,13 +31,13 @@ export function checkContrast(pairs: readonly Pair[]): PairResult[] {
 }
 
 /**
- * D24 (AIR-296) pairs. Text, at least 4.5: ink, ink2, ink3, clear, alarm, signal and info on paper, raised and sunk (21), the label
+ * D24 (AIR-296) pairs, xray added by AIR-311. Text, at least 4.5: ink, ink2, ink3, clear, alarm, signal, info and xray on paper, raised and sunk (24), the label
  * on a clear fill (onClear on clear) and the label on an ink fill (paper on ink): 23. Graphics, at least 3: the stripe (signal
  * against paper), a control outline (edge) on paper, raised and sunk, the focus ring on paper and the clear accent on paper: 6.
  */
 export function defaultPairs(): Pair[] {
   const pairs: Pair[] = [];
-  for (const fg of ['ink', 'ink2', 'ink3', 'clear', 'alarm', 'signal', 'info'] as const) {
+  for (const fg of ['ink', 'ink2', 'ink3', 'clear', 'alarm', 'signal', 'info', 'xray'] as const) {
     for (const bg of ['paper', 'raised', 'sunk'] as const) pairs.push({ fg, bg, min: 4.5 });
   }
   pairs.push({ fg: 'onClear', bg: 'clear', min: 4.5 }, { fg: 'paper', bg: 'ink', min: 4.5 });

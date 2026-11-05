@@ -21,7 +21,7 @@ export type World = {
 export const WORLD: World = worldJson as unknown as World;
 export const MAX_EMAIL = 2000;
 
-// ---- dollars as BigInt cents ------------------------------------------------------------------------------------------------------------
+// dollars as BigInt cents
 
 const DOLLARS = /^(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,24})(?:\.([0-9]{1,2}))?$/;
 
@@ -45,7 +45,7 @@ const cents = (text: string): bigint => {
   return c;
 };
 
-// ---- the stand-in agent -----------------------------------------------------------------------------------------------------------------
+// the stand-in agent
 
 /** A NEAR account id of the two suffixes. Adapted from bench/src/try/extract.ts (the `pnpm try` stand-in), NEAR ids only. */
 const ACCOUNT = /(?<![A-Za-z0-9_.-])[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.(?:testnet|near)(?![A-Za-z0-9_-]|\.[a-z0-9_-])/;
@@ -93,7 +93,7 @@ export function standIn(email: string, w: World = WORLD): AgentResult {
   return { kind: 'proposal', proposal: { payee, amount: { cents: amount, origin: 'email' } } };
 }
 
-// ---- the request the verdict reads ------------------------------------------------------------------------------------------------------
+// the request the verdict reads
 
 /** Label bits of contracts/airlock-verdict (labels.rs). */
 export const LABEL = { owner: 1n, book: 2n, unresolved: 16n, email: 32n } as const;
@@ -150,7 +150,7 @@ export function stampOf(v: WasmVerdict): VerdictState {
   return v.kind === 'allow' ? 'allowed' : v.kind === 'escalate' ? 'held' : 'blocked';
 }
 
-// ---- words ------------------------------------------------------------------------------------------------------------------------------
+// words
 
 export function originWords(o: Origin | 'email-amount', inBook: boolean): string {
   switch (o) {

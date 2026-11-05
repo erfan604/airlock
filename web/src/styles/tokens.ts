@@ -1,4 +1,5 @@
-// Design tokens (DESIGN.md 2.2 and 6.1, colours replaced by D24 in AIR-296): one typed object, emitted as CSS custom properties of the
+// Design tokens (DESIGN.md 2.2 and 6.1, colours replaced by D24 in AIR-296 and by the owner's media palette in AIR-311: night navy, bone,
+// signal orange, X-ray cyan, NEAR green only for the mark and allowed states): one typed object, emitted as CSS custom properties of the
 // same names in kebab case by scripts/emit-tokens.ts. Components read the properties; nothing else hard-codes a hex.
 // D24 supersedes the light paper theme: a dark NEAR theme. The names keep their roles, not their old colours: `paper` is the canvas,
 // `raised` a surface on it, `sunk` an inset well (the interior of outsider text), `ink` to `ink3` the text steps, `hair` the 1 px
@@ -6,24 +7,26 @@
 // (checked 2026-11-02): green #00EC97, blue #17D9D4, purple #9797FF, red #FF7966, white #F2F1E9 on black.
 //   clear   NEAR green: allowed, approved and the primary action, used sparingly.
 //   onClear text drawn on a clear fill.
-//   signal  amber: the outside stripe and the held state. Never green.
+//   signal  orange: the outside stripe and the held state. Never green.
+//   xray    cyan: the scan, the origin trace on the landing and Try pages. Never a verdict colour.
 //   alarm   red, NEAR's #FF7966 pushed further from the amber so blocked never reads as held.
 //   info    NEAR purple: neutral system labels (trace kinds). focus: NEAR blue, the keyboard focus ring.
 export const manual = {
-  paper: '#0B0C0E',
-  raised: '#15171B',
-  sunk: '#060708',
-  ink: '#F2F1E9',
-  ink2: '#B9B8B0',
-  ink3: '#8F8E88',
-  hair: '#2A2D33',
-  edge: '#666B75',
-  signal: '#FFB547',
+  paper: '#0B1626',
+  raised: '#13213A',
+  sunk: '#060D19',
+  ink: '#EFE6D2',
+  ink2: '#C9C0AC',
+  ink3: '#A39C8B',
+  hair: '#243552',
+  edge: '#66789A',
+  signal: '#E8692F',
   clear: '#00EC97',
   onClear: '#03140D',
-  alarm: '#FF5C6A',
-  info: '#9797FF',
-  focus: '#17D9D4',
+  alarm: '#FF6B8A',
+  info: '#8FC9E3',
+  focus: '#62D6FF',
+  xray: '#62D6FF',
 } as const;
 
 export type TokenName = keyof typeof manual;

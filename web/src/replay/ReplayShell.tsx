@@ -9,9 +9,11 @@ import { evidenceBody } from '../approvals/ApprovalsRoute.tsx';
 import { Card } from '../approvals/Card.tsx';
 import type { ApproveArgs, ApproveResult } from '../approvals/Card.tsx';
 import { parseEvidence } from '../approvals/evidence.ts';
-import { TraceListView } from '../task/TraceList.tsx';
+import { VerdictStamp } from '../components/VerdictStamp.tsx';
+import { KEY_KINDS, TraceListView } from '../task/TraceList.tsx';
 import { createTraceStore } from '../task/traceStore.ts';
-import type { TraceStore } from '../task/traceStore.ts';
+import type { TraceState, TraceStore } from '../task/traceStore.ts';
+import { outcomeOf } from './outcome.ts';
 import { STATIC } from '../static.ts';
 import { StaticEventSource } from './staticEventSource.ts';
 import { AutopilotChart } from './AutopilotChart.tsx';
@@ -32,7 +34,7 @@ function Links({ links }: { links: ActLink[] }) {
     <ul className="replay-links" data-testid="tx-links">
       {links.map((l) => (
         <li key={`${l.label}:${l.hash}`} className="replay-link">
-          <span className="replay-link-label">{`${l.label} (${l.status})`}</span>
+          <span className="replay-link-label">{l.label === 'submit' ? `The request on NEAR testnet${l.status === 'failure' ? ', refused' : ''}` : `${l.label} on NEAR testnet (${l.status})`}</span>
           <a data-testid="tx-link" data-hash={l.hash} href={txHref(l.url)} target="_blank" rel="noopener noreferrer">
             {l.hash}
           </a>
@@ -42,14 +44,31 @@ function Links({ links }: { links: ActLink[] }) {
   );
 }
 
-function TraceBlock({ runId, registry }: { runId: string; registry: AssetRegistry | null }) {
+/** The recorded trace of one run, through the live trace store. Null for an act without a run. */
+function useTrace(runId: string | null, registry: AssetRegistry | null): TraceState | null {
   const store = useMemo<TraceStore>(() => createTraceStore({ registry: () => registry, ...(STATIC ? { EventSource: StaticEventSource as unknown as typeof EventSource } : {}) }), [registry]);
   useEffect(() => {
+    if (runId === null) return undefined;
     store.connect(runId);
     return () => store.disconnect();
   }, [store, runId]);
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  return <TraceListView state={state} />;
+  return runId === null ? null : state;
+}
+
+/** AIR-311: the act opens with how it ended: the verdict, the reason in plain words, the money and the testnet transaction. */
+function OutcomeHead({ stamp, reason, sentence, money, to, links }: { stamp: Parameters<typeof VerdictStamp>[0]['state']; reason: string | null; sentence: string; money: string; to?: string | null; links: ReactNode }) {
+  return (
+    <section className="outcome" data-testid="act-outcome" data-state={stamp} aria-label="How this run ended">
+      <VerdictStamp state={stamp} ruleId={reason ?? undefined} testId="outcome-stamp" />
+      <div className="outcome-text">
+        <p className="outcome-money" data-testid="outcome-money">{money}</p>
+        {to === null || to === undefined ? null : <p className="outcome-to">{`to ${to}`}</p>}
+        <p className="outcome-reason" data-testid="outcome-reason">{sentence}</p>
+        {links}
+      </div>
+    </section>
+  );
 }
 
 type HeldData = { held: HeldRequest; evidence: unknown };
@@ -114,39 +133,58 @@ function TamperBlock({ api }: { api: ReplayApi }) {
   if (result === 'error') return <p className="replay-line">The recording could not be read.</p>;
   return (
     <section className="replay-tamper" data-testid="tamper-result">
+      <OutcomeHead
+        stamp="blocked"
+        reason={null}
+        money="Nothing signed"
+        sentence={`The recorded approval changed one value after you saw the card, and the contract refused it. ${STAYED}`}
+        links={
+          <ul className="replay-links">
+            <li className="replay-link">
+              <span className="replay-link-label">Refused approval on testnet</span>
+              <a data-testid="tamper-link" data-hash={result.tx} href={txHref(result.url)} target="_blank" rel="noopener noreferrer">
+                {result.tx}
+              </a>
+            </li>
+          </ul>
+        }
+      />
       <p className="replay-failure" data-testid="tamper-failure">
         {result.failure}
       </p>
-      <p className="replay-line">The recorded approval changed one value after you saw the card, and the contract refused it.</p>
-      <p className="replay-line">{STAYED}</p>
-      <ul className="replay-links">
-        <li className="replay-link">
-          <span className="replay-link-label">tamper (failure)</span>
-          <a data-testid="tamper-link" data-hash={result.tx} href={txHref(result.url)} target="_blank" rel="noopener noreferrer">
-            {result.tx}
-          </a>
-        </li>
-      </ul>
     </section>
   );
 }
 
 function ActView({ act, api, registry, held }: { act: Act; api: ReplayApi; registry: AssetRegistry | null; held: HeldData | null }): ReactNode {
+  const trace = useTrace(act.runId, registry);
+  const outcome = trace === null ? null : outcomeOf(trace);
   return (
     <section className="replay-act" data-testid={`act-view-${act.id}`}>
       <h2 className="replay-title" data-testid="act-title">
         {act.title}
       </h2>
+      {act.id === 'tamper' ? (
+        <TamperBlock api={api} />
+      ) : outcome === null ? (
+        <p className="replay-line">Reading the recorded run.</p>
+      ) : (
+        <OutcomeHead stamp={outcome.stamp} reason={outcome.reason} sentence={outcome.sentence} money={outcome.money} to={outcome.to} links={<Links links={act.links} />} />
+      )}
       {act.id === 'tamper' ? null : (
-        <>
+        <div className="replay-asked">
           <p className="replay-label">The owner asked</p>
           <p className="replay-words" data-testid="owner-words">
             {act.ownerWords}
           </p>
+        </div>
+      )}
+      {trace === null ? null : (
+        <>
+          <h3 className="replay-h3">What the agent did</h3>
+          <TraceListView state={trace} keyKinds={KEY_KINDS} />
         </>
       )}
-      {act.runId === null ? null : <TraceBlock runId={act.runId} registry={registry} />}
-      {act.id === 'tamper' ? <TamperBlock api={api} /> : <Links links={act.links} />}
       {act.id === 'b01' && held !== null ? <HeldCard act={act} api={api} data={held} /> : null}
     </section>
   );

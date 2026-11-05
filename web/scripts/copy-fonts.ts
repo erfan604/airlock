@@ -11,6 +11,8 @@ const outDir = fileURLToPath(new URL('../public/fonts/', import.meta.url));
 
 const FILES: ReadonlyArray<{ name: string; weights: readonly number[] }> = [
   { name: 'mona-sans', weights: [400, 500, 600, 700] },
+  // AIR-311: the display face, condensed signage type that matches the landing media (OFL)
+  { name: 'barlow-condensed', weights: [500, 600, 700] },
   { name: 'ibm-plex-mono', weights: [400, 500, 700] },
   { name: 'courier-prime', weights: [400] },
 ];
