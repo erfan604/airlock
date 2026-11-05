@@ -8,7 +8,7 @@ Steal this agent: the challenge service is not publicly hosted yet. It ran from 
 
 Hosted demo: a hosted static replay is being prepared and has no URL yet (`docs/HOSTED_DEMO.md`). Until then, build the static replay console, which needs no server, locally with `pnpm build:static`. Proof transcripts (recorded Kani, Lean and differential output): `pnpm proven:transcripts`, which needs Node and pnpm and nothing else.
 
-Verify: `scripts/claims-run.sh --tier node` (about 8 s, measured warm on 2026-11-04, needs Node and pnpm); every command and its last line is under Verify in 5 commands below, and `docs/VERIFY.md` is the place to start.
+Verify: `scripts/claims-run.sh --tier node` (about 10 s on a warm machine, needs Node and pnpm); every command and its last line is under Verify in 5 commands below, and `docs/VERIFY.md` is the place to start.
 
 License: Apache 2.0, see `LICENSE`.
 
@@ -51,7 +51,7 @@ The strings above are asserted by the browser test `pnpm -C web e2e demo`, which
 | # | Tier | Command | Time | Last line |
 | --- | --- | --- | --- | --- |
 | 1 | T1 | `pnpm i && pnpm demo --no-open --exit-when-ready` | about 5 s | `ready in <n>s` |
-| 2 | T1 | `scripts/claims-run.sh --tier node` | about 8 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
+| 2 | T1 | `scripts/claims-run.sh --tier node` | about 10 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
 | 3 | T2 | `pnpm bench:replay` | about 8 s | `REPLAY OK <n> runs` |
 | 4 | T3 | `scripts/check.sh full` | about 2407 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
@@ -204,7 +204,7 @@ Over all attack runs the unprotected agent V0 loses in 69/250 (27.6%, 22.4 to 33
 
 The CAPS, BLOCKLIST, MANDATE and MANDATE-C rows are derived from V0's recorded payments as filters applied after the fact, not live runs of an agent behind those guards. MANDATE is modelled as an off-chain gateway whose mandate is exactly the owner's task, which is why it shows 0/250 [C6].
 
-Model report status of the benchmark runs: the report stored with the cheap model's final run (`bench/results/final.json`) has status `FAILED` (20 of 21 checks passed; the one failure is the compose hash allowlist, and the newer hash differs from the pinned one by an instance label alone, see Model choice in `docs/EVIDENCE.md`), the two `openai/gpt-6.1-sol` files are `UNATTESTED` (the report request failed with a server error, and that model is not a TEE model), and `bench/results/qwen36.json` is `FAILED` (no pinned measurements or compose hashes were configured for it) [C6]. What the report check does verify is the stored fixture of one live fetch for the planner model, 21 checks [C15]. It does not show which instance answered any bench call [C15].
+Model report status of the benchmark runs: the report stored with the cheap model's final run (`bench/results/final.json`) has status `FAILED` (20 of 21 checks passed; the one failure is the compose hash allowlist, and the newer hash differs from the pinned one by an instance label alone, see Model choice in `docs/EVIDENCE.md`), the two `openai/gpt-6.1-sol` files are `UNATTESTED` (the report request failed with a server error, so no report was obtained), and `bench/results/qwen36.json` is `FAILED` (no pinned measurements or compose hashes were configured for it) [C6]. What the report check does verify is the stored fixture of one live fetch for the planner model, 21 checks [C15]. It does not show which instance answered any bench call [C15].
 
 What these numbers mean. One cheap model was tested (`z-ai/glm-5.3-flash`), on our own corpus. Blatant injections failed against it: V0 never fell for 16 of the 25 cases, including every case that tells it to pay a stranger [C6]. What worked is data manipulation aimed at payees the owner already has: 68 of V0's 69 successes paid a booked payee, with a doctored amount (29 runs), a faked condition (29) or another booked payee (10), and 1 paid an attacker look-alike account [C6]. Repeating V0 on a frontier model, `openai/gpt-6.1-sol` (5 runs per case, so the intervals are still wide), it was paid in 42/125 attack runs (33.6%, 25.9 to 42.3), and on a second cheap model, `Qwen/Qwen3.6-35B-A3B-FP8` (5 runs per case), in 48/125 (38.4%, 30.3 to 47.2), so a stronger model was not safer here. Running AIRLOCK itself with each of those two models as the planner (5 runs per case, intervals still wide), A1 was paid in 0/125 (0.0%, 0.0 to 3.0) on both and A2 in 5/125 (4.0%, 1.7 to 9.0) on both, all `own-B01-incap`, the documented residual, with no A1 or A2 run on any of the three models paying an address outside the book (V0 did: 1/250 runs on GLM, 10/125 on `openai/gpt-6.1-sol`, 16/125 on Qwen); the table is under Model sensitivity in `docs/BENCH.md` [C6]. The verdict does not take model output as authority, because payee and amount provenance, the caps, the task bound and the address book are enforced by the contract; what the model changes is how often a bad request reaches it, so A1 and A2 are reported as measured on three models, not as model independent [C6].
 
@@ -237,7 +237,7 @@ Each item answers one entry of the Not covered list under Proven. None is built.
 - TEE: register the runtime in a TEE and link the registration transaction in `docs/EVIDENCE.md`; the runtime is in local mode, unattested.
 - Chain and MPC signer: these stay trusted; the on chain evidence of each run stays re-checkable with `pnpm verify-approval` and `pnpm tsx scripts/verify-golden.ts`.
 
-Continuous integration: `.github/workflows/quick-tier.yml` runs the T1 tier on every push to main (`pnpm i`, the replay demo, `scripts/claims-run.sh --tier node` and `pnpm proven:transcripts`, about a minute). The full gate needs Kani, Lean and the NEAR sandbox and took 2407 s in the G5 record, so it runs locally. `scripts/fresh-clone-check.sh` is the reproducible equivalent: it clones the repository, builds in empty directories and runs the gate. The record is the G5 fresh clone at commit a6f8c55 (`docs/EVIDENCE.md`, quick and full both ALL GREEN, and `scripts/g5-check.sh` printed `G5 OK` there). It predates commit 4022a50, which added the browser e2e suites to the full gate, so a re-run is pending.
+Continuous integration: `.github/workflows/quick-tier.yml` runs the T1 tier on every push to main (`pnpm i`, the replay demo, `scripts/claims-run.sh --tier node` and `pnpm proven:transcripts`, about a minute). The full gate needs Kani, Lean and the NEAR sandbox and took 2407 s in the G5 record, so it runs locally. `scripts/fresh-clone-check.sh` is the reproducible equivalent: it clones the repository, builds in empty directories and runs the gate. The record is the G5 fresh clone at commit a6f8c55 (`docs/EVIDENCE.md`, quick ALL GREEN and full ALL GREEN with the protocol 88 sandbox step skipped (label sandbox-p88), and `scripts/g5-check.sh` printed `G5 OK` there). It predates commit 4022a50, which added the browser e2e suites to the full gate, so a re-run is pending.
 
 ## Console
 

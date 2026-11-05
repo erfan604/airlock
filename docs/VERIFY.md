@@ -22,7 +22,7 @@ What can be checked with which tools, how long each command takes and the last l
 | # | Tier | Command | Time | Last line |
 | --- | --- | --- | --- | --- |
 | 1 | T1 | `pnpm i && pnpm demo --no-open --exit-when-ready` | about 5 s | `ready in <n>s` |
-| 2 | T1 | `scripts/claims-run.sh --tier node` | about 8 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
+| 2 | T1 | `scripts/claims-run.sh --tier node` | about 10 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
 | 3 | T2 | `pnpm bench:replay` | about 8 s | `REPLAY OK <n> runs` |
 | 4 | T3 | `scripts/check.sh full` | about 2407 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
