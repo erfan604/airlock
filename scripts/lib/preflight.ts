@@ -133,7 +133,8 @@ export async function checkUntrustedBudget(payee: string, asset: string, min: bi
 
 /**
  * fixtures/accounts.testnet.json, with the policy account replaced by `DEMO_POLICY` when that is set (AIR-247: `pnpm demo:live` runs against
- * policy-v2 while the golden evidence stays on the file's account). Without the variable the file is read as is.
+ * the current demo policy, policy-v3 since AIR-316, while the golden evidence stays on the file's account). Without the variable the file is
+ * read as is.
  */
 export function loadAccounts<T extends { policy?: string }>(root: string, env: { DEMO_POLICY?: string | undefined } = process.env): T {
   const a = JSON.parse(readFileSync(join(root, 'fixtures', 'accounts.testnet.json'), 'utf8')) as T;

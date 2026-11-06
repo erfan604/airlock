@@ -31,7 +31,7 @@ import { parseRequestView } from '../runtime/src/chain/types.ts';
 const NEAR = 10n ** 24n;
 /** U01 4.2 NEAR plus the approved B01 9.4 NEAR, both through the accountant's untrusted day budget (AIR-247) */
 export const MIN_BUDGET = 136n * 10n ** 23n;
-export const DEFAULT_DEMO_POLICY = 'policy-v2.erfan-airlock.testnet';
+export const DEFAULT_DEMO_POLICY = 'policy-v3.erfan-airlock.testnet';
 export const MAX_PENDING = 3;
 export const MAX_HOUR_ESCALATIONS = 5;
 export const APPROVAL_WAIT_MS = 600_000;
@@ -526,7 +526,8 @@ if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.
   const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
   const argv = process.argv.slice(2);
   const dry = argv.includes('--dry-run');
-  // the demo runs against policy-v2 (coordinator decision 2026-11-03); the golden evidence stays on the account of fixtures/accounts.testnet.json
+  // the demo runs against policy-v3 (AIR-316: the committed wasm of AIR-315; policy-v2 ran the demo from 2026-11-03); the golden evidence
+  // stays on the account of fixtures/accounts.testnet.json
   if (process.env.DEMO_POLICY === undefined || process.env.DEMO_POLICY === '') process.env.DEMO_POLICY = DEFAULT_DEMO_POLICY;
   if (!dry && (process.env.LLM_MODE === undefined || process.env.LLM_MODE === '')) process.env.LLM_MODE = 'record';
   const io: DemoIo = dry ? dryIo(root) : liveDemoIo(root);

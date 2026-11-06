@@ -244,6 +244,26 @@ test('a Current policy contract account row moves the code checks to the redeplo
   });
 });
 
+test('the live demo record bench/golden/live-latest.json may name the current policy account; any other account fails (AIR-316)', () => {
+  const V3 = 'policy-v3.fixture-owner.testnet';
+  const addRow = (w: World) => evidence(w, (s) => swap(s, '| Policy contract account | NEAR testnet | ' + POLICY + ' |',
+    '| Policy contract account | NEAR testnet | ' + POLICY + ' |\n| Current policy contract account | NEAR testnet | ' + V3 + ' | 2026-11-05 |'));
+  withWorld((w) => {
+    addRow(w);
+    writeFileSync(join(w.root, 'bench', 'golden', 'live-latest.json'), JSON.stringify({ contractId: V3 }));
+    assert.match(run(w).out, /^PASS golden contractId/m);
+  });
+  withWorld((w) => {
+    addRow(w);
+    writeFileSync(join(w.root, 'bench', 'golden', 'live-latest.json'), JSON.stringify({ contractId: 'policy-old.fixture-owner.testnet' }));
+    assertFails(run(w), /^FAIL golden contractId: .*live-latest\.json has contractId policy-old\.fixture-owner\.testnet/);
+  });
+  withWorld((w) => {   // without a current row the live record is held to the policy account like every golden file
+    writeFileSync(join(w.root, 'bench', 'golden', 'live-latest.json'), JSON.stringify({ contractId: V3 }));
+    assertFails(run(w), /^FAIL golden contractId: .*live-latest\.json has contractId policy-v3\.fixture-owner\.testnet/);
+  });
+});
+
 test('a golden file with another contract id fails and names the file; a tree with no golden files fails', () => {
   withWorld((w) => {
     edit(w, 'bench/golden/tamper.json', (s) => swap(s, '"policy.fixture-owner.testnet"', '"policy-old.fixture-owner.testnet"'));

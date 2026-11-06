@@ -1,0 +1,173 @@
+{
+  "transaction": {
+    "signer_id": "policy-v3.erfan-airlock.testnet",
+    "public_key": "ed25519:8edZgXAoKwervMdBmBgdgGJzaYMTu1oUebsGbXNDbgTq",
+    "nonce": 276417352000001,
+    "receiver_id": "policy-v3.erfan-airlock.testnet",
+    "actions": [
+      {
+        "DeployContract": {
+          "code": "Weyt2bCId37apC8aJy75aYFHNiOtv6Phyg9ZvMs0+As="
+        }
+      },
+      {
+        "FunctionCall": {
+          "method_name": "new",
+          "args": "eyJhdHRlc3RhdGlvbl9leHBpcmF0aW9uX3RpbWVfbXMiOiI4NjQwMDAwMCIsIm1wY19jb250cmFjdF9pZCI6InYxLnNpZ25lci1wcm9kLnRlc3RuZXQiLCJvd25lcl9pZCI6ImVyZmFuLWFpcmxvY2sudGVzdG5ldCIsInJlcXVpcmVzX3RlZSI6ZmFsc2V9",
+          "gas": 100000000000000,
+          "deposit": "0"
+        }
+      }
+    ],
+    "priority_fee": 0,
+    "signature": "ed25519:4CPN9dqVGSDcGtMpa6okeTUcrrG6C8YSDp2W1G4cLNHQpxrjDo5Tqh4h65LUjuCq5NLBaNYxJot5AbuHC9zZyqe8",
+    "hash": "8pPpk7L4L3RntbcrpkZfjof9EgbXdK7Xm4gu3FP98koo"
+  },
+  "execution_outcome": {
+    "block_hash": "AEx58jqQGUnxQoZA3Xp3iy42iymMS5vxnzLhfV42DQxn",
+    "block_timestamp": 1793926122008801813,
+    "block_height": 276417437,
+    "index": 1,
+    "id": "8pPpk7L4L3RntbcrpkZfjof9EgbXdK7Xm4gu3FP98koo",
+    "outcome": {
+      "logs": [],
+      "receipt_ids": [
+        "8KrATzeY3v3MB5RJNDCHRBE5W9i3VjsX6oYyt5TPYoLX"
+      ],
+      "gas_burnt": 7875290429761,
+      "tokens_burnt": "787529042976100000000",
+      "executor_id": "policy-v3.erfan-airlock.testnet",
+      "status": {
+        "SuccessReceiptId": "8KrATzeY3v3MB5RJNDCHRBE5W9i3VjsX6oYyt5TPYoLX"
+      },
+      "metadata": {
+        "version": 1,
+        "gas_profile": null
+      }
+    }
+  },
+  "receipts": [
+    {
+      "execution_outcome": {
+        "block_hash": "AEx58jqQGUnxQoZA3Xp3iy42iymMS5vxnzLhfV42DQxn",
+        "block_timestamp": 1793926122008801813,
+        "block_height": 276417437,
+        "index": 0,
+        "id": "8KrATzeY3v3MB5RJNDCHRBE5W9i3VjsX6oYyt5TPYoLX",
+        "outcome": {
+          "logs": [],
+          "receipt_ids": [
+            "7C4KwTCiAj5NfmtBV8eFSzAqhsWxa8J8EeSKDoeddZcL"
+          ],
+          "gas_burnt": 72532471941707,
+          "tokens_burnt": "7253247194170700000000",
+          "executor_id": "policy-v3.erfan-airlock.testnet",
+          "status": {
+            "SuccessValue": ""
+          },
+          "metadata": {
+            "version": 4,
+            "gas_profile": null,
+            "contracts": [
+              null,
+              {
+                "local": "742c7E8xNYr3qHFXouAEzUoUGqZhpkURHXbgPtzHEj8e"
+              }
+            ]
+          }
+        }
+      },
+      "receipt": {
+        "block_height": 276417437,
+        "block_hash": "AEx58jqQGUnxQoZA3Xp3iy42iymMS5vxnzLhfV42DQxn",
+        "block_timestamp": 1793926122008801813,
+        "receipt_index": 0,
+        "predecessor_id": "policy-v3.erfan-airlock.testnet",
+        "receiver_id": "policy-v3.erfan-airlock.testnet",
+        "receipt_id": "8KrATzeY3v3MB5RJNDCHRBE5W9i3VjsX6oYyt5TPYoLX",
+        "receipt": {
+          "Action": {
+            "signer_id": "policy-v3.erfan-airlock.testnet",
+            "signer_public_key": "ed25519:8edZgXAoKwervMdBmBgdgGJzaYMTu1oUebsGbXNDbgTq",
+            "gas_price": "1000000000",
+            "output_data_receivers": [],
+            "input_data_ids": [],
+            "actions": [
+              {
+                "DeployContract": {
+                  "code": "Weyt2bCId37apC8aJy75aYFHNiOtv6Phyg9ZvMs0+As="
+                }
+              },
+              {
+                "FunctionCall": {
+                  "method_name": "new",
+                  "args": "eyJhdHRlc3RhdGlvbl9leHBpcmF0aW9uX3RpbWVfbXMiOiI4NjQwMDAwMCIsIm1wY19jb250cmFjdF9pZCI6InYxLnNpZ25lci1wcm9kLnRlc3RuZXQiLCJvd25lcl9pZCI6ImVyZmFuLWFpcmxvY2sudGVzdG5ldCIsInJlcXVpcmVzX3RlZSI6ZmFsc2V9",
+                  "gas": 100000000000000,
+                  "deposit": "0"
+                }
+              }
+            ],
+            "is_promise_yield": false
+          }
+        },
+        "priority": 0
+      }
+    },
+    {
+      "execution_outcome": {
+        "block_hash": "67jhUWiqMMBxgfMjcfi6bPJQFk2ffxF2z5d2QNDSbhXz",
+        "block_timestamp": 1793926122859732613,
+        "block_height": 276417438,
+        "index": 0,
+        "id": "7C4KwTCiAj5NfmtBV8eFSzAqhsWxa8J8EeSKDoeddZcL",
+        "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 223182562500,
+          "tokens_burnt": "0",
+          "executor_id": "policy-v3.erfan-airlock.testnet",
+          "status": {
+            "SuccessValue": ""
+          },
+          "metadata": {
+            "version": 4,
+            "gas_profile": null,
+            "contracts": [
+              {
+                "local": "742c7E8xNYr3qHFXouAEzUoUGqZhpkURHXbgPtzHEj8e"
+              }
+            ]
+          }
+        }
+      },
+      "receipt": {
+        "block_height": 276417438,
+        "block_hash": "67jhUWiqMMBxgfMjcfi6bPJQFk2ffxF2z5d2QNDSbhXz",
+        "block_timestamp": 1793926122859732613,
+        "receipt_index": 1,
+        "predecessor_id": "system",
+        "receiver_id": "policy-v3.erfan-airlock.testnet",
+        "receipt_id": "7C4KwTCiAj5NfmtBV8eFSzAqhsWxa8J8EeSKDoeddZcL",
+        "receipt": {
+          "Action": {
+            "signer_id": "policy-v3.erfan-airlock.testnet",
+            "signer_public_key": "ed25519:8edZgXAoKwervMdBmBgdgGJzaYMTu1oUebsGbXNDbgTq",
+            "gas_price": "0",
+            "output_data_receivers": [],
+            "input_data_ids": [],
+            "actions": [
+              {
+                "Transfer": {
+                  "deposit": "163787080761055300000000"
+                }
+              }
+            ],
+            "is_promise_yield": false
+          }
+        },
+        "priority": 0
+      }
+    }
+  ],
+  "data_receipts": []
+}

@@ -3,31 +3,31 @@
   "name": "live-latest",
   "case": "demo-live",
   "scenario": null,
-  "recordedAt": "2026-11-05T00:06:31.181Z",
+  "recordedAt": "2026-11-06T00:57:11.590Z",
   "network": "testnet",
-  "contractId": "policy-v2.erfan-airlock.testnet",
-  "llmMode": "record",
+  "contractId": "policy-v3.erfan-airlock.testnet",
+  "llmMode": "replay",
   "planSha256": "7c4dbab7914c3b73f2fc9789b8b5ef3fc5596815b4e42fb8037837b0e12457d5",
   "taskId": null,
   "taskHash": null,
   "requests": [
     {
-      "request_id": "d076ef95221d222f24e674121595a81afa6d7088440a946db7d7e2f17e8a291e:0",
+      "request_id": "c3bfe7ef2446a7ef0390f7ed540db256b6b6c3a495d29021b371546ecc74c6ed:0",
       "outcome": "allowed",
       "reason": null,
       "pending_id": null
     },
     {
-      "request_id": "20ac01f2b885a8eef9bd95285434647f3eea63684a9ecfab27b5e16f1be05945:0",
+      "request_id": "3c4819f4efe475a9841bd3b8523e1ae91b38448339956f2e0a49bacb369374d7:0",
       "outcome": "escalated",
       "reason": "OverTaskBound",
-      "pending_id": "4"
+      "pending_id": "1"
     },
     {
-      "request_id": "0add9561c87545c7ce94e1575f9bf7baa2b3cfb8e4747443ff0cb006644bf6e7:0",
+      "request_id": "928f6e51ade33caa7d0f4033bf05ee5bdb60648f7b4396a286356fd95b680401:0",
       "outcome": "escalated",
       "reason": "OverTaskBound",
-      "pending_id": "5"
+      "pending_id": "2"
     }
   ],
   "trace": [],
@@ -35,39 +35,39 @@
     {
       "chain": "near",
       "label": "submit",
-      "hash": "3RR5eKiFTv1X2ucRAsRUrTxVAT13Pm8gjZdNTuGZUpuG",
+      "hash": "myhUCFZhjdPTkQroQZancUmPz5ehrEGCt4WeBhcwDJj",
       "status": "success",
-      "url": "https://testnet.nearblocks.io/txns/3RR5eKiFTv1X2ucRAsRUrTxVAT13Pm8gjZdNTuGZUpuG"
+      "url": "https://testnet.nearblocks.io/txns/myhUCFZhjdPTkQroQZancUmPz5ehrEGCt4WeBhcwDJj"
     },
     {
       "chain": "near",
       "label": "submit",
-      "hash": "5djC9Bsf27NwmFH9fgLBd2bQ6DQHgg8qSVZAgUtaKJkj",
+      "hash": "2W1z629R88pzyMiBLj2wYiH5ov2yC4bHUVsujsNAa6g8",
       "status": "success",
-      "url": "https://testnet.nearblocks.io/txns/5djC9Bsf27NwmFH9fgLBd2bQ6DQHgg8qSVZAgUtaKJkj"
+      "url": "https://testnet.nearblocks.io/txns/2W1z629R88pzyMiBLj2wYiH5ov2yC4bHUVsujsNAa6g8"
     },
     {
       "chain": "near",
       "label": "approve",
-      "hash": "GTzcpEuSaTofY8u2Yx18GBR5phsuK1KJBjmj4ZcrYDCz",
+      "hash": "H4TCupRbnrqkWe3oxip6oRuB9Tn3aL8YuuiPpDSuNSuf",
       "status": "success",
-      "url": "https://testnet.nearblocks.io/txns/GTzcpEuSaTofY8u2Yx18GBR5phsuK1KJBjmj4ZcrYDCz"
+      "url": "https://testnet.nearblocks.io/txns/H4TCupRbnrqkWe3oxip6oRuB9Tn3aL8YuuiPpDSuNSuf"
     },
     {
       "chain": "near",
       "label": "submit",
-      "hash": "R15dxhKrxLQ7Lw8VTEG5UG1FBZLM4hT6PJ1zNS6wX5x",
+      "hash": "G3PcFCFHhffMrMLDqxTMB7nB3fahSfUC4nKfHSfqi5e7",
       "status": "success",
-      "url": "https://testnet.nearblocks.io/txns/R15dxhKrxLQ7Lw8VTEG5UG1FBZLM4hT6PJ1zNS6wX5x"
+      "url": "https://testnet.nearblocks.io/txns/G3PcFCFHhffMrMLDqxTMB7nB3fahSfUC4nKfHSfqi5e7"
     },
     {
       "chain": "near",
       "label": "tamper",
-      "hash": "4MMNGyyjNVM4AQ6SomvTX6E2iJnjr8Nf6sz9rzNtkPM7",
+      "hash": "DNcFasPvmbyp1v2FXkjCKTbpuFZMBBSXnVrYxpnCtRim",
       "status": "failure",
-      "url": "https://testnet.nearblocks.io/txns/4MMNGyyjNVM4AQ6SomvTX6E2iJnjr8Nf6sz9rzNtkPM7"
+      "url": "https://testnet.nearblocks.io/txns/DNcFasPvmbyp1v2FXkjCKTbpuFZMBBSXnVrYxpnCtRim"
     }
   ],
   "run": null,
-  "note": "pnpm demo:live; the owner approval of request 4 was typed by the coordinator under D23 (relayed yes) when the approve script asked for it; request 5 stays pending"
+  "note": "pnpm demo:live; the owner approval of request 1 was typed by the coordinator under D23 (relayed yes) when the approve script asked for it; request 2 stays pending"
 }

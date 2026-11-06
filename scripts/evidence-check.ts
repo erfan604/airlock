@@ -18,7 +18,8 @@
 //  3. Code: `Wasm sha256` equals the sha256 of contracts/airlock-policy/res/airlock_policy.wasm; `Code hash (base58)` equals that digest
 //     in base58; RPC view_account of the policy account holds the same code_hash; `Deploy transaction` went to the policy account,
 //     did not fail and deploys that wasm (a DeployContract action; FastNEAR gives its 32 byte code hash, RPC gives the whole code,
-//     which is hashed here); every bench/golden/*.json has the policy account as contractId.
+//     which is hashed here); every bench/golden/*.json has the policy account as contractId, except live-latest.json, the live demo's
+//     record, which has the current policy account when the file has that row (AIR-316).
 //  4. Every testnet.nearblocks.io/txns/<hash> link: one POST of the valid hashes to https://tx.test.fastnear.com/v0/transactions (in
 //     batches of 20, the endpoint answers 400 above 20 and for any malformed hash), then for a hash it did not return RPC `tx`
 //     (wait_until FINAL) on the archival list of plan/STACK.md section RPC, each account of fixtures/accounts.testnet.json in file
@@ -419,10 +420,12 @@ async function runChecks(env: Env, report: Report): Promise<number> {
       } catch {
         id = '(not valid JSON)';
       }
-      if (id !== policy) wrong.push('bench/golden/' + n + ' has contractId ' + String(id));
+      // AIR-316: the live demo's record is written on the account that holds the committed wasm (the current row when there is one)
+      const want = n === 'live-latest.json' && curRow !== undefined && codeAccount !== null ? codeAccount : policy;
+      if (id !== want) wrong.push('bench/golden/' + n + ' has contractId ' + String(id));
     }
     if (wrong.length === 0) report('PASS', 'golden contractId', names.length + ' files');
-    else report('FAIL', 'golden contractId', wrong.join('; ') + '; the row says ' + policy);
+    else report('FAIL', 'golden contractId', wrong.join('; ') + '; the row says ' + policy + (curRow !== undefined && codeAccount !== null ? ' (and ' + codeAccount + ' for live-latest.json)' : ''));
   });
 
   // 4. NEAR transactions
