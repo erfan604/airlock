@@ -10,7 +10,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { PAGES } from '../src/pages.ts';
 import { ROUTES } from '../src/routes.ts';
 import { NAV } from '../src/shell/SiteNav.tsx';
-import { STEPS } from '../src/use/steps.ts';
+import { ONE_LINE, STEPS } from '../src/use/steps.ts';
 import { UsePage } from '../src/use/UsePage.tsx';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -23,6 +23,7 @@ test('use: every command and last line of the page is in docs/QUICKSTART.md', ()
     if (s.cmd !== undefined) assert.ok(quickstart.includes(s.cmd), `command of ${s.id}`);
     if (s.last !== undefined) assert.ok(quickstart.includes(s.last), `last line of ${s.id}`);
   }
+  assert.ok(quickstart.includes(ONE_LINE.cmd) && quickstart.includes(ONE_LINE.last));
   assert.ok(quickstart.includes('pnpm airlock play') && quickstart.includes('PLAY DONE allow 1 escalate 2 block 0'));
 });
 
@@ -33,6 +34,13 @@ test('use: the prerendered page carries every step as text and no copy button', 
     if (s.cmd !== undefined) assert.ok(html.includes(s.cmd), s.cmd);
   }
   assert.ok(!html.includes('use-copy'));
+});
+
+test('use: the one-line npx path comes first and says it works after publish', () => {
+  const html = unescape(renderToStaticMarkup(<UsePage />));
+  assert.ok(html.includes(ONE_LINE.cmd));
+  assert.ok(html.indexOf(ONE_LINE.cmd) < html.indexOf(STEPS[0]?.title ?? 'x'));
+  assert.ok(/after publish/i.test(ONE_LINE.title));
 });
 
 test('use: routed, listed for the sitemap and llms.txt, and in the nav', () => {

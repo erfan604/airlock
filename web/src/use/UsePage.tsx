@@ -2,7 +2,7 @@
 // cannot do. Static text, prerendered; the copy buttons appear only once the script runs, so a reader without JavaScript sees plain commands.
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { NEEDS, STEPS } from './steps.ts';
+import { NEEDS, ONE_LINE, STEPS } from './steps.ts';
 import type { Step } from './steps.ts';
 
 function Copy({ text }: { text: string }): ReactElement | null {
@@ -66,6 +66,19 @@ export function UsePage(): ReactElement {
       <p className="use-needs">
         <span className="use-key">You need:</span> {NEEDS}
       </p>
+      <section className="use-oneline" data-testid="use-oneline" aria-labelledby="use-oneline-title">
+        <h2 id="use-oneline-title" className="use-h2">
+          {ONE_LINE.title}
+        </h2>
+        <p className="use-text">{ONE_LINE.text}</p>
+        <div className="use-cmd">
+          <code className="use-code">{ONE_LINE.cmd}</code>
+          <Copy text={ONE_LINE.cmd} />
+        </div>
+        <p className="use-last">
+          <span className="use-key">Last line:</span> <code>{ONE_LINE.last}</code>
+        </p>
+      </section>
       <ol className="use-steps" data-testid="use-steps">
         {STEPS.map((s, i) => (
           <StepItem key={s.id} step={s} n={i + 1} />

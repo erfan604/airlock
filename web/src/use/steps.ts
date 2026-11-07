@@ -2,6 +2,14 @@
 // every command here appears in that file verbatim). Testnet only. `<you>` is the reader's own account name.
 export type Step = { id: string; title: string; text: string; cmd?: string; last?: string; note?: string };
 
+/** AIR-319: the one-line path, shown before the steps and marked "after publish" until the package is on npm. */
+export const ONE_LINE = {
+  title: 'One line, after publish',
+  text: 'With only Node installed, check the AIRLOCK MCP server and its verdict: five cases decided by the real verdict, no key and no network. This works once the package is published on npm; the steps below work today.',
+  cmd: 'npx -y airlock-near-mcp --check',
+  last: 'AIRLOCK MCP OK',
+};
+
 export const NEEDS = 'Node 24, pnpm, the near CLI (near-cli-rs 0.30 or later), jq, python3 and curl. No Rust, no model key and no money: testnet only.';
 
 export const STEPS: Step[] = [

@@ -1,0 +1,28 @@
+{
+  "name": "airlock-near-mcp",
+  "version": "0.1.0",
+  "description": "AIRLOCK MCP server: a provenance-gated payment tool for AI agents on NEAR testnet. npx -y airlock-near-mcp --check verifies the install with no keys.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Erfan Aghdasi",
+  "homepage": "https://github.com/erfan604/airlock#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/erfan604/airlock.git", "directory": "packages/airlock-near-mcp" },
+  "keywords": ["mcp", "model-context-protocol", "near", "agent", "wallet", "prompt-injection", "provenance"],
+  "bin": { "airlock-near-mcp": "dist/cli.js" },
+  "files": ["dist/cli.js", "README.md", "LICENSE"],
+  "engines": { "node": ">=22" },
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "node build.mjs",
+    "prepack": "node build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "tsx --test \"test/**/*.test.ts\""
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@types/node": "24.19.0",
+    "esbuild": "0.27.7",
+    "tsx": "4.21.0",
+    "typescript": "6.0.3"
+  }
+}

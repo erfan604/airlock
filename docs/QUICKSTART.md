@@ -6,6 +6,17 @@ You need Node 24, pnpm, the near CLI (near-cli-rs 0.30 or later, `near --version
 
 `<you>` below is your account name. Every step lists its command and the last line it prints. The run of these steps from a fresh clone, with its transactions, is in docs/EVIDENCE.md, section Quickstart from a fresh clone (AIR-313).
 
+## One line: check the install (after publish)
+
+The package `airlock-near-mcp` bundles the AIRLOCK MCP server and the verdict WebAssembly, so a machine with only Node needs no clone, no pnpm and no Rust to verify it. This path is marked "after publish": it works once the package is on npm; until then run the same command from a clone, as shown below it.
+
+```
+npx -y airlock-near-mcp --check
+```
+Last line: `AIRLOCK MCP OK`. It prints one line per case: the five cases of the Try page, each decided by the real verdict, with no key and no network. `npx -y airlock-near-mcp --print-config claude` prints the Claude Desktop entry that starts the server through npx, and `--help` lists every setting. Deploying your own policy contract (steps 1 to 3 below) is still needed before an agent can pay. The recorded run from the packed tarball is docs/evidence/npx-tarball.txt.
+
+Before publish, from a clone: `pnpm i && pnpm -C packages/airlock-near-mcp build && node packages/airlock-near-mcp/dist/cli.js --check`.
+
 ## 1. Get the code
 
 ```

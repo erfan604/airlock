@@ -1,0 +1,24 @@
+package airlock-near-mcp 0.1.0
+tarball airlock-near-mcp-0.1.0.tgz 257361 bytes unpacked 998319 bytes
+files:
+  LICENSE 11388
+  README.md 1384
+  dist/cli.js 984424
+  package.json 1123
+tarball sha256 b41331390ede2e8759662f6630e981cda7a0568b60938b9285e40bdf9e50b0b6
+
+$ npx -y ./airlock-near-mcp-0.1.0.tgz --check   (fresh folder and npm cache outside the repo)
+verdict.wasm 2597 bytes sha256 1916f1246224f86046158cf3f34bae47ec5050c8b3b537b3c9f31371524ee3b1
+ok doctored     escalate:UntrustedAmount
+ok lookalike    escalate:OutsideTask
+ok newpayee     escalate:OutsideTask
+ok otherbooked  escalate:OutsideTask
+ok honest       allow
+AIRLOCK MCP OK
+
+$ npx -y ./airlock-near-mcp-0.1.0.tgz   (stdio, AIRLOCK_MCP_CONFIG with a throwaway config; send initialize, then tools/list)
+initialize: server airlock-mcp 0.1.0, protocol 2025-06-18
+tools/list: owner_request, read_email, fetch_page, read_file, book_list, pay
+stderr: airlock-near-mcp ready: policy throwaway-policy.testnet, agent agent.throwaway.testnet, testnet
+HANDSHAKE OK
+removed /private/tmp/claude-501/airlock-319-8G4W9M
