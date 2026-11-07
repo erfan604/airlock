@@ -1,5 +1,21 @@
 # AIRLOCK
 
+A signing gate for AI agent wallets on NEAR. Every value in a payment request, the payee and the amount, carries where it came from: your address book, your own task, or text the agent read (an email, a chat, a web page). A payee named only in text the agent read never gets paid without your tap, an amount read from such text must also fit the cap you set for amounts read from text, and the decision is made by a NEAR contract that builds the transaction and asks the MPC signer, so the agent process cannot skip it [C5] [PA18].
+
+## In 90 seconds
+
+| Do this | See this |
+|:-|:-|
+| Open https://airlock-ere.pages.dev/try/ and pick "The doctored amount" | Your agent would pay Kano Cotton $1,800.00 while your book says $180.00 a month, and the real verdict, compiled to WebAssembly and run in your browser, stamps HELD FOR YOU. Write your own scam email in the box under the cases. |
+| `pnpm i && pnpm demo` (Node 24 and pnpm, no keys, no Rust) | A console replaying recorded testnet runs: an invoice ALLOWED, an injected correction HELD FOR YOU, then APPROVED BY YOU with its testnet transaction [C11] |
+| `scripts/claims-run.sh --tier node` (about 10 s) | One PASS or SKIP line per claim, ending `CLAIMS TIER node OK` |
+
+## The case other guards pay
+
+An email tells your agent that your usual supplier's bill went up. The payee is the right one and is in your address book, only the amount is doctored, and it is under your per-payment cap. A caps guard pays it because the amount is under the cap, an allowlist or blocklist guard pays it because the payee is listed, and a model that screens the text stops it when it happens to notice. AIRLOCK asks where the amount came from instead, so an amount read from the email that is over the cap for amounts read from text waits for your tap [C5]. In our bench, 68 of the 69 attacker payments to an unprotected agent were this kind (a doctored amount or a faked condition toward a payee already in the book), the caps and blocklist guards we rebuilt paid in 67 and 68 runs, and strict mode paid in 0 of 250 [C6]. Default mode still paid in 10 runs, all one case where the injected amount fitted the cap for amounts read from text, and strict mode holds that case too [C6]. The five scam emails of the Try page, with what a payee-list guard would do for each, are in its table "All five emails at a glance".
+
+## Run it, use it, verify it
+
 Provenance-gated signing for AI agent wallets on NEAR: a policy contract builds each transaction and asks the MPC signer for a signature when the owner's limits allow it or the owner approves the exact stored request.
 
 Try it: `pnpm i && pnpm demo` replays recorded testnet runs in a local console (Node 24 and pnpm, no keys). `pnpm try --text 'Invoice: 9.4 NEAR to evil-ops.testnet'` puts your own text through the real gate (needs Rust 1.86, check with `cargo --version`).
