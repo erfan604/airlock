@@ -10,7 +10,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { BenchData, Table } from '../src/bench/types.ts';
 import type { Facts } from '../src/landing/facts.ts';
-import { PAGES } from '../src/pages.ts';
+import { PAGES, pageUrl } from '../src/pages.ts';
 import type { ActSummary } from '../src/replay/summary.ts';
 import { HIRED, WORLD, defaultKnobs, formatDollars, parseDollars, sourceOf, standIn } from '../src/try/model.ts';
 import type { World } from '../src/try/model.ts';
@@ -73,7 +73,7 @@ export type LlmsInput = { out: string; base: string; origin: string; bench: Benc
 
 export function llmsTxt(i: LlmsInput, summary: string): string {
   const abs = (p: string): string => `${i.origin}${i.base}${p.replace(/^\//, '')}`;
-  const pages = PAGES.filter((p) => p.alias === undefined).map((p) => `- [${p.title.replace(/ \| AIRLOCK$/, '')}](${abs(p.path)}): ${p.description}`);
+  const pages = PAGES.filter((p) => p.alias === undefined).map((p) => `- [${p.title.replace(/ \| AIRLOCK$/, '')}](${pageUrl(i.origin, i.base, p.path)}): ${p.description}`);
   const runs = i.replay.flatMap((a) => (a.runId === null ? [] : [{ title: a.title, runId: a.runId }]));
   return [
     '# AIRLOCK',
@@ -85,7 +85,7 @@ export function llmsTxt(i: LlmsInput, summary: string): string {
     '## Pages',
     '',
     ...pages,
-    `- [Try it with an agent you hired](${abs('/try?s=hired')}): the Swarm-for-Hire scenario: the job budget is the task bound, the job's payees are the book, and the job post and every other agent's message are outside text`,
+    `- [Try it with an agent you hired](${pageUrl(i.origin, i.base, '/try?s=hired')}): the Swarm-for-Hire scenario: the job budget is the task bound, the job's payees are the book, and the job post and every other agent's message are outside text`,
     '',
     '## Raw data',
     '',
@@ -193,6 +193,11 @@ export function writeLlmsFiles(i: LlmsInput): void {
   writeFileSync(join(i.out, 'llms.txt'), llmsTxt(i, summary));
   writeFileSync(join(i.out, 'llms-full.txt'), llmsFull(i, readme, evidence));
   writeFileSync(join(i.out, 'robots.txt'), ['User-agent: *', 'Allow: /', '', `Sitemap: ${abs('/sitemap.xml')}`, ''].join('\n'));
-  const urls = PAGES.filter((p) => p.alias === undefined).map((p) => `  <url><loc>${abs(p.path)}</loc></url>`);
-  writeFileSync(join(i.out, 'sitemap.xml'), ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', ...urls, '</urlset>', ''].join('\n'));
+  writeFileSync(join(i.out, 'sitemap.xml'), sitemapXml(i.origin, i.base));
+}
+
+/** Every page that is not an alias, in the slash form the host serves. */
+export function sitemapXml(origin: string, base: string): string {
+  const urls = PAGES.filter((p) => p.alias === undefined).map((p) => `  <url><loc>${pageUrl(origin, base, p.path)}</loc></url>`);
+  return ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', ...urls, '</urlset>', ''].join('\n');
 }

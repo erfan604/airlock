@@ -179,3 +179,12 @@ export function shortSource(source: string): string {
   const cs = Array.from(source);
   return cs.length <= 28 ? source : `${cs.slice(0, 18).join('')}...${cs.slice(-6).join('')}`;
 }
+
+export type ChallengeRead = { state: ChallengeState; rows: Attempt[] };
+export type ReadView = { read: ChallengeRead | null; unreadable: boolean };
+
+/** The page's read state machine (AIR-323): a good read replaces the data; a failed read keeps the last good one, or none, and is flagged. A failed read is never an empty board. */
+export const settleRead = (prev: ChallengeRead | null, got: ChallengeRead | null): ReadView => (got === null ? { read: prev, unreadable: true } : { read: got, unreadable: false });
+
+/** The feed order: newest first. */
+export const newestFirst = (rows: readonly Attempt[]): Attempt[] => [...rows].sort((a, b) => b.seq - a.seq);

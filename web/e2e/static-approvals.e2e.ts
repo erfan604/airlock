@@ -181,6 +181,18 @@ const run: E2E = async ({ page, baseUrl }) => {
     await audit(page, 'expired');
   }
 
+  // AIR-323: the Approvals tab marks its own page, and an unreadable chain says so without the no-script paragraph
+  assert.equal(await page.locator('[data-testid="tab-approvals"][aria-current="page"]').count(), 1);
+  assert.equal(await page.locator('[data-testid="tab-replay"][aria-current="page"]').count(), 0);
+  const blind = await page.context().browser()?.newContext({ viewport: { width: 1440, height: 900 } });
+  if (blind === undefined) throw new Error('no browser context');
+  const blindPage = await blind.newPage();
+  for (const rpc of NEAR_RPC) await blindPage.route(`${rpc}/**`, (r) => r.abort());
+  await blindPage.goto(`${baseUrl}/approvals`);
+  await blindPage.getByText('The chain could not be read. Reload to try again.').waitFor();
+  assert.ok(!(await blindPage.locator('main').innerText()).includes('needs JavaScript'), 'no "needs JavaScript" text for a reader who has it');
+  await blind.close();
+
   // a policy that is not a testnet account is refused before any read
   await page.goto(`${baseUrl}/approvals?policy=evil.near`);
   await id(page, 'approvals-badpolicy').waitFor();

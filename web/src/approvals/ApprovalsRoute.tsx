@@ -18,7 +18,7 @@ import { rpcGetPending, rpcGetRequest, walletConfig } from '../wallet/status.ts'
 import type { Attestation } from '@airlock/runtime/attest';
 import { Card } from './Card.tsx';
 import type { ApproveArgs, ApproveResult } from './Card.tsx';
-import { approveArgs } from './cardModel.ts';
+import { approveArgs, displayMismatch } from './cardModel.ts';
 import type { RememberArgs } from './cardModel.ts';
 import { counterpartyOf, parseEvidence } from './evidence.ts';
 import type { CardEvidence } from './evidence.ts';
@@ -166,7 +166,7 @@ export function ApprovalCard({ viewOnly = false, card, ownerId, contractId, acti
   );
   let cliArgs: ApproveArgs | null = null;
   try {
-    cliArgs = approveArgs(card.view);
+    cliArgs = displayMismatch(card.view, card.asset) ? null : approveArgs(card.view, card.asset);
   } catch {
     cliArgs = null;
   }

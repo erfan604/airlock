@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ChallengeBody, AttemptRow } from '../src/challenge/ChallengeView.tsx';
 import type { ChallengeBodyProps } from '../src/challenge/ChallengeView.tsx';
-import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, reasonWords, refusalWords, sentenceOf, shortSource, stateOf } from '../src/challenge/model.ts';
+import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, newestFirst, settleRead, reasonWords, refusalWords, sentenceOf, shortSource, stateOf } from '../src/challenge/model.ts';
 import type { Attempt, ChallengeState } from '../src/challenge/model.ts';
 
 const NEAR = 10n ** 24n;
@@ -148,4 +148,40 @@ test('shortSource: a long chain request id is shortened for display only', () =>
   assert.equal(shortSource('ip:6b8a37cd'), 'ip:6b8a37cd');
   const short = shortSource(id);
   assert.ok(short.length < id.length && short.includes('...') && short.endsWith('aaaa:0'));
+});
+
+// AIR-323 H2, M4: an unreadable chain is never shown as an empty board, and the latest attempts come newest first.
+const READ_A = { state: state({ hosted: true, board: foldBoard(EMPTY_BOARD, attempt(1)) }), rows: [attempt(1)] };
+
+test('settleRead: a failed read with nothing before it is unreadable with no data; a failed read after a good one keeps the good one', () => {
+  assert.deepEqual(settleRead(null, null), { read: null, unreadable: true });
+  assert.deepEqual(settleRead(READ_A, null), { read: READ_A, unreadable: true });
+  const next = { state: state({ hosted: true }), rows: [] };
+  assert.deepEqual(settleRead(READ_A, next), { read: next, unreadable: false });
+  assert.deepEqual(settleRead(null, READ_A), { read: READ_A, unreadable: false });
+});
+
+test('newestFirst: sorts by seq descending without changing the input', () => {
+  const rows = [attempt(1), attempt(3), attempt(2)];
+  assert.deepEqual(newestFirst(rows).map((a) => a.seq), [3, 2, 1]);
+  assert.deepEqual(rows.map((a) => a.seq), [1, 3, 2]);
+});
+
+test('hosted page, chain unreadable on first load: says so, shows no counts, no "No attempts yet", no "service did not answer"', () => {
+  const html = body({ state: null, failed: true, hosted: true });
+  assert.ok(html.includes('data-testid="ch-unreadable"'));
+  assert.ok(html.includes('The chain could not be read'));
+  for (const bad of ['count-attempts', 'count-stolen', 'No attempts yet', 'Nothing yet', 'did not answer', 'ch-empty', 'key-pending']) assert.equal(html.includes(bad), false, bad);
+});
+
+test('hosted page, chain unreadable after a good read: keeps the last board and says the chain could not be read', () => {
+  const html = body({ state: READ_A.state, rows: READ_A.rows, failed: true, hosted: true });
+  assert.ok(html.includes('The chain could not be read'));
+  assert.ok(html.includes('data-testid="count-attempts"'));
+  assert.equal(html.includes('did not answer'), false);
+  assert.equal(html.includes('data-testid="ch-unreadable"'), false);
+});
+
+test('the service page still blames the service when its own API fails', () => {
+  assert.ok(body({ failed: true, state: null }).includes('did not answer'));
 });

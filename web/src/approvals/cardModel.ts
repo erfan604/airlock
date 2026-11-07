@@ -33,9 +33,19 @@ export class CardError extends Error {
  * key, the registry symbol and decimal text of `display`, the reason code and the book status. A view that is not a complete escalation
  * (no pending number, no readable values, a tombstone) never yields arguments, so nothing half-empty can reach a wallet.
  */
-export function approveArgs(v: RequestView): ApproveArgs {
+export function approveArgs(v: RequestView, asset?: AssetEntryViewJson): ApproveArgs {
   if (v.tombstone === true || v.id === null || v.display === null || v.reason === null || v.book_status === null) throw new CardError('NotApprovable');
-  return Object.freeze({ id: v.id, to: v.payee, asset: v.display.asset_symbol, amount: v.display.amount_decimal, why: v.reason, book: v.book_status });
+  // AIR-323: with the registry entry, the amount is the stored `amount` in the asset's decimals and the symbol is the registry's; `display` is then only a cross-check
+  const amount = asset === undefined ? v.display.amount_decimal : formatBaseUnits(BigInt(v.amount), asset.decimals);
+  const symbol = asset === undefined ? v.display.asset_symbol : asset.symbol;
+  return Object.freeze({ id: v.id, to: v.payee, asset: symbol, amount, why: v.reason, book: v.book_status });
+}
+
+/** True when the chain's own display text (`display.amount_decimal`, `display.asset_symbol`) differs from what the stored amount and the registry give. */
+export function displayMismatch(v: RequestView, asset: AssetEntryViewJson): boolean {
+  if (v.display === null) return false;
+  const args = approveArgs(v, asset);
+  return v.display.amount_decimal !== args.amount || v.display.asset_symbol !== args.asset;
 }
 
 /** The card title as one template: the video script checker (SCREEN-FMT) searches the source for exactly this text. */
@@ -106,6 +116,8 @@ export type CardModel = {
   forcing: ForcingModel | null;
   /** The recipient label says Book but the payee is not in the book: the Book seal is dropped and the card says so (AIR-190). */
   labelMismatch: boolean;
+  /** AIR-323: `display` disagrees with the stored amount or the registry symbol. The card shows the recomputed values, says so, and offers no approval. */
+  displayMismatch: boolean;
   /** AIR-304: the runtime's counterparty note for a payee outside the book, or null. A hint for the owner, never a control. */
   counterparty: CounterpartyLine | null;
 };
@@ -266,7 +278,7 @@ export function buildCardModel(
   nowMs: bigint,
   extras: CardExtras = {},
 ): CardModel {
-  const args = approveArgs(v);
+  const args = approveArgs(v, a);
   const bookKeys = extras.bookKeys ?? [];
   const amount = BigInt(v.amount);
   const isNew = v.book_status === 'new';
@@ -320,6 +332,7 @@ export function buildCardModel(
     diff: isNew ? { result: found, label: found === null ? null : bookLabelOf(extras.bookLabels ?? {}, found.nearest) } : null,
     magnitude: magnitudeText(amount, l, book, args.asset, a.decimals),
     labelMismatch,
+    displayMismatch: displayMismatch(v, a),
     counterparty: e.counterparty ?? null,
     forcing: forcingRequired(v, amount, extras.forcingMinAmount ?? FORCING_MIN_AMOUNT, bookKeys)
       ? { required: true, target: forcingTarget(v.payee), label: forcingLabel(v.payee) }

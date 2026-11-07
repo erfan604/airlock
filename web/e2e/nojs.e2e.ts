@@ -40,6 +40,7 @@ const run: E2E = async ({ page, baseUrl }) => {
     assert.ok(r.body.includes(`<title>${p.title.replace(/&/g, '&amp;')}</title>`), `${p.path} title`);
     assert.ok(r.body.includes('<meta name="description"'), `${p.path} description`);
     assert.ok(r.body.includes(`<link rel="canonical" href="`), `${p.path} canonical`);
+    assert.ok(/<link rel="canonical" href="[^"]*\/"/.test(r.body), `${p.path} canonical is in the slash form`);
     for (const tag of ['<header', '<nav', '<main', '<h1']) assert.ok(r.body.includes(tag), `${p.path} ${tag}`);
     assert.ok(textOf(r.body).length > 400, `${p.path} has text without JavaScript (${String(textOf(r.body).length)} characters)`);
   }
@@ -104,7 +105,9 @@ const run: E2E = async ({ page, baseUrl }) => {
   const robots = await get('/robots.txt');
   assert.ok(robots.body.includes('User-agent: *') && robots.body.includes('Allow: /') && robots.body.includes('sitemap.xml'), 'robots.txt');
   const sitemap = await get('/sitemap.xml');
-  for (const p of PAGES.filter((x) => x.alias === undefined)) assert.ok(sitemap.body.includes(`${p.path === '/' ? '' : p.path}</loc>`), `sitemap ${p.path}`);
+  for (const p of PAGES.filter((x) => x.alias === undefined)) assert.ok(sitemap.body.includes(`${p.path === '/' ? '' : `${p.path}/`}</loc>`), `sitemap ${p.path}`);
+  // AIR-323: no sitemap entry is a path the host answers with a 308
+  for (const m of sitemap.body.matchAll(/<loc>([^<]+)<\/loc>/g)) assert.ok((m[1] ?? '').endsWith('/'), `sitemap entry ${m[1] ?? ''} is in the slash form`);
   // raw data stays reachable
   assert.equal((await get('/bench.json')).status, 200);
   assert.equal((await get('/data/replay/acts.json')).status, 200);

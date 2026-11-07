@@ -139,3 +139,19 @@ test('the hosted api: no published file gives an empty board and no key; a file 
   assert.equal((await api.attempts(50)).length, 2);
   assert.deepEqual(await api.attempt('text'), { ok: false, code: 'hosted', retryAfterSeconds: null });
 });
+
+test('AIR-323: the hosted api throws, never answers zeros, when FastNEAR or the RPC fails or answers a non-list', async () => {
+  const pub = (input: Parameters<typeof fetch>[0]): Response | null => (String(input).endsWith('/x.json') ? new Response(JSON.stringify({ ...PUB, policy: POLICY, agent: AGENT, publicKey: KEY })) : null);
+  const base = chain();
+  const cases: Record<string, typeof fetch> = {
+    fastnear500: (i, n) => Promise.resolve(pub(i) ?? (String(i).includes('tx.test.fastnear') ? new Response('{}', { status: 500 }) : null)) .then((r) => r ?? base(i, n)),
+    rpc500: (i, n) => Promise.resolve(pub(i) ?? (String(i).includes('tx.test.fastnear') ? null : new Response('{}', { status: 500 }))).then((r) => r ?? base(i, n)),
+    garbage: (i, n) => Promise.resolve(pub(i) ?? (String(i).endsWith('/v0/transactions') ? new Response('not json') : null)).then((r) => r ?? base(i, n)),
+    transactionsNotList: (i, n) => Promise.resolve(pub(i) ?? (String(i).endsWith('/v0/transactions') ? new Response('{}') : null)).then((r) => r ?? base(i, n)),
+  };
+  for (const [name, fetchFn] of Object.entries(cases)) {
+    const api = hostedChallengeApi({ publicUrl: '/x.json', random: () => 0, fetchFn });
+    await assert.rejects(api.state(), Error, `${name}: state`);
+    await assert.rejects(api.attempts(50), Error, `${name}: attempts`);
+  }
+});

@@ -80,3 +80,44 @@ test('connector: a nonce is optional', async () => {
   await connectWallet({ ...deps, readNonce: () => undefined });
   assert.equal((calls.options[0] as Record<string, unknown>).cspNonce, undefined);
 });
+
+// AIR-323 H1: the library's selector has no Escape handler, so Escape left the connect promise pending for ever.
+function fakeDoc() {
+  const listeners = new Map<string, Set<(e: { key: string }) => void>>();
+  let removed = 0;
+  const doc = {
+    addEventListener: (t: string, f: (e: { key: string }) => void) => void (listeners.get(t) ?? listeners.set(t, new Set()).get(t))?.add(f),
+    removeEventListener: (t: string, f: (e: { key: string }) => void) => void listeners.get(t)?.delete(f),
+    querySelectorAll: () => [{ remove: () => void (removed += 1) }],
+  };
+  return { doc, press: (key: string) => listeners.get('keydown')?.forEach((f) => f({ key })), count: () => listeners.get('keydown')?.size ?? 0, removed: () => removed };
+}
+
+function hangingDeps(doc: unknown): ConnectorDeps {
+  class Hang {
+    connect() {
+      return new Promise<never>(() => {});
+    }
+    async disconnect() {}
+  }
+  return { loadConnector: async () => ({ NearConnector: Hang }), readNonce: () => undefined, doc } as unknown as ConnectorDeps;
+}
+
+test('connector: Escape while the selector is open closes it and rejects with a wallet LoginError', async () => {
+  const d = fakeDoc();
+  const p = connectWallet(hangingDeps(d.doc));
+  await new Promise((r) => setTimeout(r, 5));
+  assert.equal(d.count(), 1, 'one keydown listener while connecting');
+  d.press('Enter');
+  d.press('Escape');
+  await assert.rejects(p, (e: unknown) => e instanceof LoginError && e.kind === 'wallet');
+  assert.equal(d.removed(), 1, 'the selector element is removed');
+  assert.equal(d.count(), 0, 'the listener is removed');
+});
+
+test('connector: the listener is removed after a normal connect', async () => {
+  const d = fakeDoc();
+  const f = fakes('intear-wallet', [{ accountId: 'a.testnet' }]);
+  await connectWallet({ ...f.deps, doc: d.doc } as ConnectorDeps);
+  assert.equal(d.count(), 0);
+});

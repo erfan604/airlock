@@ -23,7 +23,31 @@ type ConnectorLike = {
 export type ConnectorDeps = {
   loadConnector?: () => Promise<{ NearConnector: new (options: NearConnectorOptions) => ConnectorLike }>;
   readNonce?: () => string | undefined;
+  /** the document whose Escape key closes the selector (tests pass a fake) */
+  doc?: EscapeDoc;
 };
+
+type EscapeDoc = {
+  addEventListener(type: 'keydown', f: (e: { key: string }) => void, capture?: boolean): void;
+  removeEventListener(type: 'keydown', f: (e: { key: string }) => void, capture?: boolean): void;
+  querySelectorAll(selector: string): ArrayLike<{ remove(): void }>;
+};
+
+/** NEAR Connect's selector and wallet frame have no Escape handler: this rejects, and removes both, on Escape (AIR-323). */
+function escapeWatch(doc: EscapeDoc | undefined): { escaped: Promise<never>; stop(): void } {
+  if (doc === undefined) return { escaped: new Promise<never>(() => {}), stop: () => {} };
+  let handler: (e: { key: string }) => void = () => {};
+  const escaped = new Promise<never>((_, reject) => {
+    handler = (e) => {
+      if (e.key !== 'Escape') return;
+      Array.from(doc.querySelectorAll('.hot-connector-popup')).forEach((el) => el.remove());
+      reject(new LoginError('wallet'));
+    };
+  });
+  escaped.catch(() => {});
+  doc.addEventListener('keydown', handler, true);
+  return { escaped, stop: () => doc.removeEventListener('keydown', handler, true) };
+}
 
 export type ConnectedWallet = { wallet: NearWalletBase; accountId: string; walletId: string };
 
@@ -42,7 +66,15 @@ export async function connectWallet(deps: ConnectorDeps = {}): Promise<Connected
     ...(cspNonce === undefined ? {} : { cspNonce }),
     footerBranding: null,
   });
-  const wallet = await connector.connect();
+  const watch = escapeWatch(deps.doc ?? (typeof document === 'undefined' ? undefined : document));
+  const pending = connector.connect();
+  pending.catch(() => {});
+  let wallet: NearWalletBase;
+  try {
+    wallet = await Promise.race([pending, watch.escaped]);
+  } finally {
+    watch.stop();
+  }
   // connect() resolves to the wallet only, with no account id
   const walletId = wallet.manifest.id;
   if (allowedWallet(walletId) === null) {

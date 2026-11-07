@@ -34,3 +34,24 @@ test('the static policy names only the testnet RPC and wallet hosts, with a buil
 test('the headers file carries the policy in its first block', () => {
   assert.equal(starHeaders(headersFile(NONCE))['Content-Security-Policy'], buildStaticCsp({ header: true, nonce: NONCE }));
 });
+
+// AIR-323 L4: the host serves /try/ and answers 308 to /try, so the sitemap, canonical and og:url name the slash form.
+test('pageUrl: the root stays the root, every other page gets its trailing slash, a query stays after it', async () => {
+  const { pageUrl } = await import('../src/pages.ts');
+  assert.equal(pageUrl('https://x.dev', '/', '/'), 'https://x.dev/');
+  assert.equal(pageUrl('https://x.dev', '/', '/try'), 'https://x.dev/try/');
+  assert.equal(pageUrl('https://x.dev', '/', '/try?s=hired'), 'https://x.dev/try/?s=hired');
+  assert.equal(pageUrl('https://x.dev', '/repo/', '/approvals'), 'https://x.dev/repo/approvals/');
+  assert.equal(pageUrl('https://x.dev', '/', '/approvals/'), 'https://x.dev/approvals/');
+});
+
+test('sitemapXml: every non-alias page, in the slash form, and no 308 target', async () => {
+  const { sitemapXml } = await import('../scripts/llms.ts');
+  const { PAGES } = await import('../src/pages.ts');
+  const xml = sitemapXml('https://x.dev', '/');
+  const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1] ?? '');
+  assert.equal(locs.length, PAGES.filter((p) => p.alias === undefined).length);
+  assert.ok(locs.includes('https://x.dev/'));
+  assert.ok(locs.includes('https://x.dev/approvals/') && locs.includes('https://x.dev/challenge/'));
+  for (const l of locs) assert.ok(l.endsWith('/'), l);
+});

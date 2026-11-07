@@ -114,6 +114,13 @@ function sourceLineOf(row: CardRow, model: CardModel): ReactNode {
   const parts: ReactNode[] = [];
   if (model.chip !== null && model.chip.row === row.name) parts.push(<Chip key="chip" chip={model.chip} />);
   if (row.name === 'AMOUNT' && model.cap !== null) parts.push(<CapLineView key="cap" cap={model.cap} />);
+  if (row.name === 'AMOUNT' && model.displayMismatch) {
+    parts.push(
+      <p key="display-mismatch" className="label-mismatch" data-testid="display-mismatch">
+        the chain's display text disagrees with the stored amount, so this request cannot be approved here
+      </p>,
+    );
+  }
   if (row.name === 'TO' && model.labelMismatch) {
     parts.push(
       <p key="mismatch" className="label-mismatch" data-testid="label-mismatch">
@@ -189,7 +196,7 @@ export function CardView({ viewOnly = false, model, readOnly, state, onOpen, onC
   const stamp = stampFor(readOnly, state, remembered);
   const rememberIds = useId();
   const live = readOnly === 'Pending' && !viewOnly && state.kind !== 'approved' && state.kind !== 'rejected';
-  const approveOn = live && canApprove(state);
+  const approveOn = live && canApprove(state) && !model.displayMismatch;
   const sheetOpen = approveOn && (state.kind === 'confirming' || state.kind === 'wallet_pending');
   const stopped = live && state.failures >= MAX_FAILURES;
   const waiting = state.kind === 'wallet_pending';

@@ -113,6 +113,23 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
   );
 }
 
+/** The page before the first read (also the prerendered HTML). The paragraph about scripts is for readers without them, so it sits in a noscript element. */
+export function ApprovalsLoading({ policy, error }: { policy: string; error: boolean }) {
+  return (
+    <main className="page approvals" data-testid="approvals-loading" aria-busy={!error}>
+      <h1 className="approvals-title">{`Held requests on ${policy}`}</h1>
+      <p className="approvals-empty">
+        {error ? 'The chain could not be read. Reload to try again.' : 'Reading the policy contract on NEAR testnet. Held requests wait here for the owner to approve or reject them in a wallet.'}
+      </p>
+      <noscript>
+        <p className="approvals-more">
+          This page needs JavaScript. It calls the contract view get_pending through a public NEAR testnet RPC node and shows each held request on the same card the console uses: the payee, the amount, where each value came from, why the request was held and the exact values the wallet will sign. The owner of the policy connects a wallet and approves or rejects; every other visitor sees the card with no buttons. The recorded run is on <a href={url('replay')}>the replay page</a>.
+        </p>
+      </noscript>
+    </main>
+  );
+}
+
 const SEARCH = (): string => (PRERENDER || typeof window === 'undefined' ? '' : window.location.search);
 
 export function StaticApprovals() {
@@ -186,19 +203,7 @@ export function StaticApprovals() {
       </main>
     );
   }
-  if (read === null) {
-    return (
-      <main className="page approvals" data-testid="approvals-loading" aria-busy={!error}>
-        <h1 className="approvals-title">{`Held requests on ${policy}`}</h1>
-        <p className="approvals-empty">
-          {error ? 'The chain could not be read. Reload to try again.' : 'Reading the policy contract on NEAR testnet. Held requests wait here for the owner to approve or reject them in a wallet.'}
-        </p>
-        <p className="approvals-more">
-          This page needs JavaScript. It calls the contract view get_pending through a public NEAR testnet RPC node and shows each held request on the same card the console uses: the payee, the amount, where each value came from, why the request was held and the exact values the wallet will sign. The owner of the policy connects a wallet and approves or rejects; every other visitor sees the card with no buttons. The recorded run is on <a href={url('replay')}>the replay page</a>.
-        </p>
-      </main>
-    );
-  }
+  if (read === null) return <ApprovalsLoading policy={policy} error={error} />;
   return (
     <>
       {error ? (

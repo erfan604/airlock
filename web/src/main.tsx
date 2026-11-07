@@ -1,5 +1,7 @@
 // Entry point. The one global stylesheet set is imported here and nowhere else: components never import .css, so
 // the test runner can load them.
+// AIR-323: first, so zod is configured before any module builds a schema (the CSP has no unsafe-eval)
+import { ZOD_JITLESS } from '@airlock/runtime/zod-nojit';
 import { StrictMode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import './styles/tokens.css';
@@ -19,6 +21,7 @@ import './styles/fixtures.css';
 import './styles/site.css';
 import { App } from './App.tsx';
 
+if (!ZOD_JITLESS) throw new Error('zod is not configured without eval');
 const root = document.getElementById('root');
 if (!root) throw new Error('index.html has no #root');
 const app = (

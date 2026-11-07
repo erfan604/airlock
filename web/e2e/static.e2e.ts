@@ -11,6 +11,7 @@ import type { Page } from 'playwright';
 import type { RequestView } from '@airlock/runtime/chain-types';
 import { buildStaticCsp, normalizeNonce } from '../csp.ts';
 import { approveArgs } from '../src/approvals/cardModel.ts';
+import { PAGES } from '../src/pages.ts';
 import { clipAudit } from './audit.ts';
 import { checkHired, checkLanding, checkTry, showPreset } from './site.ts';
 import type { E2E } from './types.ts';
@@ -66,6 +67,8 @@ async function hostedChallenge(page: Page, baseUrl: string, width: number): Prom
   assert.equal(await id('count-held', page).innerText(), '1');
   assert.equal(await id('count-stolen', page).innerText(), '0 NEAR');
   assert.equal(await id('attempt-row', page).count(), 2);
+  const seqs = (await id('attempt-row', page).evaluateAll((els) => els.map((e) => Number((e as HTMLElement).dataset.seq)))) as number[];
+  assert.deepEqual(seqs, [...seqs].sort((a, b) => b - a), 'latest attempts: newest first');
   assert.ok((await id('ch-hosted', page).innerText()).includes('This hosted copy has no server'));
   assert.ok((await id('door-shut', page).innerText()).includes('hosted copy'));
   assert.equal(await id('key-public', page).innerText(), 'ed25519:7HeWNqtLJHGzmsjPZn9LbPgAgjVBpFPn4vrqTgjDcPfP');
@@ -149,8 +152,46 @@ async function replayPage(page: Page, baseUrl: string, width: number): Promise<v
   await audit(page, 'act 3');
 }
 
+/** AIR-323: every page loads with no CSP violation (zod's eval probe was reported on every page), the nav lists the pages and marks the current one. */
+async function cspAndNav(page: Page, baseUrl: string): Promise<void> {
+  const NAV = ['overview', 'try', 'use', 'replay', 'approvals', 'challenge', 'bench', 'proven'];
+  for (const p of PAGES.filter((x) => x.alias === undefined)) {
+    await page.goto(`${baseUrl}${p.path === '/' ? '/' : `${p.path}/`}`);
+    await page.locator('main').first().waitFor();
+    await page.waitForTimeout(600);
+    const violations = await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
+    assert.deepEqual(violations, [], `${p.path}: securitypolicyviolation`);
+    assert.deepEqual(await page.locator('[data-testid^="tab-"]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.testid?.slice(4) ?? '')), NAV, `${p.path}: nav tabs`);
+    const current = await page.locator('[data-testid^="tab-"][aria-current="page"]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.testid?.slice(4) ?? ''));
+    const want = p.path === '/' ? 'overview' : p.path === '/live' ? null : p.path.slice(1);
+    assert.deepEqual(current, want === null ? [] : [want], `${p.path}: current tab`);
+  }
+}
+
+/** AIR-323: both chain hosts fail on the first load: the page says the chain could not be read and draws no zeros and no empty feed. */
+async function unreadableChallenge(page: Page, baseUrl: string): Promise<void> {
+  for (const mode of ['500', 'abort'] as const) {
+    const ctx = await page.context().browser()?.newContext({ viewport: page.viewportSize() ?? { width: 1440, height: 900 } });
+    if (ctx === undefined) throw new Error('no browser context');
+    const p2 = await ctx.newPage();
+    await p2.route('**/challenge-public.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: PUBLISHED }));
+    for (const host of CHAIN_HOSTS) await p2.route(`https://${host}/**`, (r) => (mode === 'abort' ? r.abort() : r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{}' })));
+    await p2.goto(`${baseUrl}/challenge/`);
+    await id('ch-unreadable', p2).waitFor();
+    const text = await p2.locator('main').innerText();
+    assert.ok(text.includes('The chain could not be read'), mode);
+    for (const bad of ['0 attempts', 'No attempts yet', 'Nothing yet', 'did not answer', '0 NEAR stolen']) assert.ok(!text.includes(bad), `${mode}: ${bad}`);
+    assert.equal(await id('count-attempts', p2).count(), 0);
+    await ctx.close();
+  }
+}
+
 const run: E2E = async ({ page, baseUrl }) => {
   mkdirSync(auditDir, { recursive: true });
+  await page.addInitScript(() => {
+    (window as unknown as { __csp: string[] }).__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) => (window as unknown as { __csp: string[] }).__csp.push(`${e.violatedDirective} ${e.blockedURI}`));
+  });
   const hosts = new Set<string>();
   const failed: string[] = [];
   const csp: string[] = [];
@@ -194,6 +235,8 @@ const run: E2E = async ({ page, baseUrl }) => {
     await audit(page, 'proven');
 
     await hostedChallenge(page, baseUrl, viewport.width);
+    await unreadableChallenge(page, baseUrl);
+    await cspAndNav(page, baseUrl);
 
     await page.goto(`${baseUrl}/live`);
     await id('static-live', page).waitFor();

@@ -56,3 +56,14 @@ export const PAGES: PageMeta[] = [
 ];
 
 export const pageOf = (path: string): PageMeta | undefined => PAGES.find((p) => p.path === path);
+
+/**
+ * The absolute URL of a page in the form the host serves (AIR-323): `/try` answers 308 to `/try/`, so the sitemap, the canonical link and the
+ * llms.txt links name `/try/`. The root keeps its one slash and a query stays after the slash. `base` ends with `/`.
+ */
+export function pageUrl(origin: string, base: string, path: string): string {
+  const q = path.indexOf('?');
+  const route = (q < 0 ? path : path.slice(0, q)).replace(/^\//, '').replace(/\/$/, '');
+  const query = q < 0 ? '' : path.slice(q);
+  return `${origin}${base}${route === '' ? '' : `${route}/`}${query}`;
+}

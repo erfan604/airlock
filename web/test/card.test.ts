@@ -621,3 +621,32 @@ test('fixtures: the JSON files are valid contract views and the live one differs
   assert.equal(fixture.view.payee, 'near:acct-firm.near');
   assert.equal(fixture.book.cap, near(50n));
 });
+
+// ---- AIR-323 L1: the headline is the raw amount in the asset's decimals; display.* is only a cross-check ----
+
+test('headline: a hostile display.amount_decimal never reaches the title, the rows, the wallet arguments or the buttons; the mismatch is flagged', () => {
+  const nines = '9'.repeat(60);
+  const i = inputs({ viewPatch: { display: { asset_symbol: 'NEAR', amount_decimal: nines } } });
+  const m = modelOf(i);
+  assert.equal(m.args.amount, '9.4', 'recomputed from amount (9400000000000000000000000) and the asset decimals');
+  assert.equal(m.title, `Pay 9.4 NEAR to ${i.view.payee}?`);
+  assert.equal(JSON.stringify(m).includes(nines), false);
+  assert.equal(m.displayMismatch, true);
+  const out = viewHtml(m);
+  assert.ok(out.includes('data-testid="display-mismatch"'));
+  assert.equal(out.includes(nines), false);
+  assert.equal(out.includes('data-testid="open-approve"'), false, 'no approve button on a mismatch');
+});
+
+test('headline: a hostile display.asset_symbol is a mismatch too, and the registry symbol is shown', () => {
+  const m = modelOf(inputs({ viewPatch: { display: { asset_symbol: 'USDC<b>', amount_decimal: '9.4' } } }));
+  assert.equal(m.args.asset, 'NEAR');
+  assert.equal(m.displayMismatch, true);
+});
+
+test('headline: an honest display matches and flags nothing', () => {
+  const m = modelOf(inputs());
+  assert.equal(m.displayMismatch, false);
+  assert.equal(viewHtml(m).includes('display-mismatch'), false);
+  assert.deepEqual(approveArgs(inputs().view, inputs().asset), approveArgs(inputs().view));
+});

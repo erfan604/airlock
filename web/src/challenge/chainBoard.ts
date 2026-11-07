@@ -183,7 +183,8 @@ export async function readChain(fetchFn: typeof fetch, cfg: ChainConfig): Promis
   const size = cfg.batch ?? 20;
   for (let i = 0; i < hashes.length; i += size) {
     const res = await postJson(fetchFn, `${base}/v0/transactions`, { tx_hashes: hashes.slice(i, i + size) });
-    const list = isObj(res) && Array.isArray(res['transactions']) ? res['transactions'] : [];
+    if (!isObj(res) || !Array.isArray(res['transactions'])) throw new Error('the transaction read answered something unexpected');
+    const list: unknown[] = res['transactions'];
     for (const raw of list) {
       const hash = isObj(raw) && isObj(raw['transaction']) ? str(raw['transaction']['hash']) : null;
       const meta = hash === null ? undefined : listed.get(hash);

@@ -9,8 +9,8 @@ import { UntrustedInline } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
 import { liveChallengeApi } from './api.ts';
 import type { AttemptResult, ChallengeApi } from './api.ts';
-import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, previewOf, reasonWords, refusalWords, sentenceOf, shortSource, stateOf } from './model.ts';
-import type { Attempt, ChallengeState, PublishedTask } from './model.ts';
+import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, newestFirst, previewOf, reasonWords, refusalWords, sentenceOf, settleRead, shortSource, stateOf } from './model.ts';
+import type { Attempt, ChallengeState, PublishedTask, ReadView } from './model.ts';
 
 const FEED = 50;
 
@@ -68,14 +68,14 @@ export function AttemptRow({ a, nowMs, fresh }: { a: Attempt; nowMs: number; fre
   );
 }
 
-function KeyFacts({ state }: { state: ChallengeState | null }) {
+function KeyFacts({ state, unreadable }: { state: ChallengeState | null; unreadable: boolean }) {
   const k = state?.key ?? null;
   return (
     <section className="ch-door" data-testid="door-key" aria-labelledby="door-key-title">
       <h2 className="ch-door-title" id="door-key-title">Door two: use the agent's own key</h2>
       <p className="ch-help">The agent signs with a function-call key. It can call <code className="ch-code">submit_batch</code> on the policy contract and nothing else: it cannot transfer, add a key or change a rule. The contract decides every request it makes.</p>
       {k === null ? (
-        <p className="ch-note" data-testid="key-pending">The key is published here when the challenge goes live.</p>
+        unreadable ? null : <p className="ch-note" data-testid="key-pending">The key is published here when the challenge goes live.</p>
       ) : (
         <dl className="ch-facts" data-testid="key-facts">
           <dt>Account</dt>
@@ -145,6 +145,8 @@ export type ChallengeBodyProps = {
   fresh: number | null;
   streaming: boolean;
   failed: boolean;
+  /** the hosted static copy: its reads are the chain, there is no challenge service to blame */
+  hosted?: boolean;
   nowMs: number;
   draft: string;
   own: Own;
@@ -152,12 +154,15 @@ export type ChallengeBodyProps = {
   onSubmit(e: FormEvent): void;
 };
 
-export function ChallengeBody({ state, rows, fresh, streaming, failed, nowMs, draft, own, onDraft, onSubmit }: ChallengeBodyProps) {
+export function ChallengeBody({ state, rows, fresh, streaming, failed, hosted, nowMs, draft, own, onDraft, onSubmit }: ChallengeBodyProps) {
   const board = state?.board ?? EMPTY_BOARD;
   const open = state?.doorTextOpen === true;
   const last = board.lastAt === null ? null : Date.parse(board.lastAt);
   const max = state?.limits.maxChars ?? 4000;
   const stolen = nearText(board.stolenYocto);
+  const isHosted = hosted === true || state?.hosted === true;
+  // a failed read with no data: no counts, no empty feed, only the cause
+  const blind = failed && state === null;
 
   return (
     <main className="page challenge" data-testid="challenge" data-mode={state?.mode ?? 'loading'}>
@@ -175,10 +180,18 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, nowMs, dr
       ) : null}
       {failed ? (
         <p className="ch-banner ch-banner-alarm" role="alert" data-testid="ch-failed">
-          The challenge service did not answer. The numbers below may be old.
+          {!isHosted
+            ? 'The challenge service did not answer. The numbers below may be old.'
+            : blind
+              ? 'The chain could not be read. No counts are shown until it can be. Reload to try again.'
+              : 'The chain could not be read just now. The numbers below are from the last good read.'}
         </p>
       ) : null}
 
+      {blind ? (
+        <p className="ch-note" data-testid="ch-unreadable">The chain could not be read, so the scoreboard and the attempts are not shown.</p>
+      ) : null}
+      {blind ? null : (
       <section className="ch-ledger" aria-label="Scoreboard">
         <p className="ch-count" aria-live="polite" data-testid="ch-count">
           <span className="ch-num" key={`a${String(board.attempts)}`} data-testid="count-attempts">{board.attempts}</span>
@@ -203,6 +216,7 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, nowMs, dr
           </p>
         ) : null}
       </section>
+      )}
 
       <div className="ch-doors">
         <section className="ch-door" data-testid="door-text" aria-labelledby="door-text-title">
@@ -227,9 +241,10 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, nowMs, dr
             <p className="ch-note" role="alert" data-testid="ch-refused">{`${refusalWords(own.code)}${own.retry === null ? '' : ` Try again in ${String(own.retry)} s.`}`}</p>
           ) : null}
         </section>
-        <KeyFacts state={state} />
+        <KeyFacts state={state} unreadable={blind} />
       </div>
 
+      {blind ? null : (
       <section className="ch-feed" aria-labelledby="ch-feed-title">
         <h2 className="ch-door-title" id="ch-feed-title">Latest attempts</h2>
         {rows.length === 0 ? (
@@ -242,28 +257,29 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, nowMs, dr
           </ol>
         )}
       </section>
+      )}
     </main>
   );
 }
 
-export type ChallengeViewProps = { api?: ChallengeApi; clock?: () => number; pollMs?: number };
+export type ChallengeViewProps = { api?: ChallengeApi; clock?: () => number; pollMs?: number; hosted?: boolean };
 
-export function ChallengeView({ api = liveChallengeApi, clock = Date.now, pollMs = 15_000 }: ChallengeViewProps) {
-  const [state, setState] = useState<ChallengeState | null>(null);
-  const [rows, setRows] = useState<Attempt[]>([]);
+export function ChallengeView({ api = liveChallengeApi, clock = Date.now, pollMs = 15_000, hosted = false }: ChallengeViewProps) {
+  const [view, setView] = useState<ReadView>({ read: null, unreadable: false });
   const [fresh, setFresh] = useState<number | null>(null);
   const [streaming, setStreaming] = useState(false);
-  const [failed, setFailed] = useState(false);
   const [nowMs, setNowMs] = useState(clock);
   const [draft, setDraft] = useState('');
   const [own, setOwn] = useState<Own>({ kind: 'idle' });
   const seen = useRef(new Set<number>());
+  const state = view.read?.state ?? null;
+  const rows = view.read?.rows ?? [];
+  const failed = view.unreadable;
 
   const take = useCallback((a: Attempt, isNew: boolean) => {
     if (seen.current.has(a.seq)) return;
     seen.current.add(a.seq);
-    setRows((prev) => [a, ...prev].sort((x, y) => y.seq - x.seq).slice(0, FEED));
-    setState((s) => (s === null ? s : { ...s, board: foldBoard(s.board, a) }));
+    setView((v) => (v.read === null ? v : { ...v, read: { state: { ...v.read.state, board: foldBoard(v.read.state.board, a) }, rows: newestFirst([a, ...v.read.rows]).slice(0, FEED) } }));
     if (isNew) setFresh(a.seq);
   }, []);
 
@@ -271,11 +287,10 @@ export function ChallengeView({ api = liveChallengeApi, clock = Date.now, pollMs
     try {
       const [s, list] = await Promise.all([api.state(), api.attempts(FEED)]);
       seen.current = new Set(list.map((a) => a.seq));
-      setState(s);
-      setRows(list);
-      setFailed(false);
+      setView((v) => settleRead(v.read, { state: s, rows: newestFirst(list) }));
     } catch {
-      setFailed(true);
+      // the last good board stays on screen (or none), flagged: a failed read is never drawn as an empty board
+      setView((v) => settleRead(v.read, null));
     }
   }, [api]);
 
@@ -307,5 +322,5 @@ export function ChallengeView({ api = liveChallengeApi, clock = Date.now, pollMs
     } else setOwn({ kind: 'refused', code: result.code, retry: result.retryAfterSeconds });
   }
 
-  return <ChallengeBody state={state} rows={rows} fresh={fresh} streaming={streaming} failed={failed} nowMs={nowMs} draft={draft} own={own} onDraft={setDraft} onSubmit={(e) => void submit(e)} />;
+  return <ChallengeBody state={state} rows={rows} fresh={fresh} streaming={streaming} failed={failed} hosted={hosted} nowMs={nowMs} draft={draft} own={own} onDraft={setDraft} onSubmit={(e) => void submit(e)} />;
 }

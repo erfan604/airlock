@@ -33,7 +33,7 @@ export const ROUTES: Record<string, () => ReactElement> = {
   '/approvals': () => (STATIC ? createElement(StaticApprovals) : createElement(ReplayAware, { live: () => createElement(ApprovalsRoute) })),
   // AIR-301: the public Steal this agent page; it reads the challenge service and needs no session
   // AIR-320: a hosted static copy has no challenge service: door two (the published key) works from the browser's own chain reads, door one says why it is shut
-  '/challenge': () => createElement(ChallengeView, STATIC ? { api: hostedApi, pollMs: 30_000 } : {}),
+  '/challenge': () => createElement(ChallengeView, STATIC ? { api: hostedApi, pollMs: 30_000, hosted: true } : {}),
   '/live': () => createElement(StaticLive),
   '/bench': () => createElement(Suspense, { fallback: null }, createElement(BenchPage)),
 };

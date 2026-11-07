@@ -9,7 +9,25 @@ const run: E2E = async ({ page, baseUrl }) => {
   await page.goto(`${baseUrl}/approvals`);
   await page.locator('[data-testid="access"]').waitFor({ timeout: 30_000 });
   assert.equal(await page.locator('[data-testid="access"]').getAttribute('data-access'), 'signed-out');
-  await page.locator('[data-testid="static-connect"]').click();
+  // AIR-323 H1: every way to close the selector gives the button back. Escape (the library has no handler for it), then a click on the backdrop.
+  const button = page.locator('[data-testid="static-connect"]');
+  const recovered = async (how: string): Promise<void> => {
+    await page.locator('.hot-connector-popup').waitFor({ state: 'detached', timeout: 5_000 });
+    await page.waitForFunction(() => {
+      const b = document.querySelector('[data-testid="static-connect"]') as HTMLButtonElement | null;
+      return b !== null && !b.disabled && b.textContent === 'Connect wallet';
+    }, undefined, { timeout: 5_000 });
+    assert.ok(await button.isEnabled(), `${how}: the button is usable again`);
+  };
+  await button.click();
+  await page.locator('.connect-item').first().waitFor({ timeout: 15_000 });
+  await page.keyboard.press('Escape');
+  await recovered('Escape');
+  await button.click();
+  await page.locator('.connect-item').first().waitFor({ timeout: 15_000 });
+  await page.locator('.modal-container').click({ position: { x: 5, y: 5 } });
+  await recovered('backdrop');
+  await button.click();
   await page.locator('.connect-item').first().waitFor({ timeout: 15_000 });
   const ids = await page.locator('.connect-item').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.type ?? ''));
   assert.deepEqual(ids, snapshot.wallets.map((w) => w.id), 'the selector lists exactly the snapshot wallet');

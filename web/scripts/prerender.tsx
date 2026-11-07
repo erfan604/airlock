@@ -24,7 +24,7 @@ export const SITE_ORIGIN = (process.env.SITE_ORIGIN ?? 'https://airlock-ere.page
 (globalThis as { __AIRLOCK_PRERENDER__?: { base: string } }).__AIRLOCK_PRERENDER__ = { base };
 const { App } = await import('../src/App.tsx');
 const { BenchPage } = await import('../src/bench/BenchPage.tsx');
-const { PAGES } = await import('../src/pages.ts');
+const { PAGES, pageUrl } = await import('../src/pages.ts');
 const { setPreload, preloadText, PRELOAD_ID } = await import('../src/preload.ts');
 const { parseBench } = await import('../src/bench/types.ts');
 const { factsOf } = await import('../src/landing/facts.ts');
@@ -82,8 +82,8 @@ async function write(route: string, file: string, mode: 'hydrate' | 'replace', p
   const head = [
     `<title>${esc(title)}</title>`,
     meta === undefined ? '<meta name="robots" content="noindex" />' : `<meta name="description" content="${esc(meta.description)}" />`,
-    meta === undefined ? '' : `<link rel="canonical" href="${esc(abs(meta.alias ?? meta.path))}" />`,
-    meta === undefined ? '' : `<meta property="og:title" content="${esc(title)}" /><meta property="og:description" content="${esc(meta.description)}" /><meta property="og:type" content="website" /><meta property="og:url" content="${esc(abs(meta.path))}" /><meta property="og:image" content="${esc(abs('/media/hero-poster.jpg'))}" />`,
+    meta === undefined ? '' : `<link rel="canonical" href="${esc(pageUrl(SITE_ORIGIN, base, meta.alias ?? meta.path))}" />`,
+    meta === undefined ? '' : `<meta property="og:title" content="${esc(title)}" /><meta property="og:description" content="${esc(meta.description)}" /><meta property="og:type" content="website" /><meta property="og:url" content="${esc(pageUrl(SITE_ORIGIN, base, meta.path))}" /><meta property="og:image" content="${esc(abs('/media/hero-poster.jpg'))}" />`,
     `<link rel="alternate" type="text/plain" title="llms.txt" href="${esc(`${base}llms.txt`)}" />`,
     route === '/' ? jsonLd() : '',
   ]

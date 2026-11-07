@@ -162,3 +162,14 @@ test('view: after a result the transaction hash links to the testnet explorer', 
 test('route: /approvals in the static build is the live chain page, not the replay', () => {
   assert.equal(typeof ROUTES['/approvals'], 'function');
 });
+
+// AIR-323 M3: the "needs JavaScript" paragraph is for readers without scripts: it sits in a noscript element, so a reader with scripts never sees it.
+test('loading view: the needs-JavaScript text is only inside noscript, in the loading and in the error state', async () => {
+  const { ApprovalsLoading } = await import('../src/approvals/StaticApprovals.tsx');
+  for (const error of [false, true]) {
+    const html = renderToStaticMarkup(<ApprovalsLoading policy="p.testnet" error={error} />);
+    assert.ok(/<noscript>.*This page needs JavaScript.*<\/noscript>/s.test(html), 'the text is kept for readers without scripts');
+    assert.equal(html.replace(/<noscript>.*?<\/noscript>/gs, '').includes('needs JavaScript'), false, `error=${String(error)}`);
+  }
+  assert.ok(renderToStaticMarkup(<ApprovalsLoading policy="p.testnet" error />).includes('The chain could not be read. Reload to try again.'));
+});
