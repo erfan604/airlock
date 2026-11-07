@@ -12,11 +12,12 @@ import { batchArgs, commandOf, hostedChallengeApi, parseHosted } from '../src/ch
 
 const fx = (name: string): Record<string, unknown> => JSON.parse(readFileSync(join(fileURLToPath(new URL('../fixtures/', import.meta.url)), name), 'utf8')) as Record<string, unknown>;
 const page = fx('challenge-fastnear-account-page.json') as { account_txs: { transaction_hash: string }[] };
-const txs = fx('challenge-fastnear-transactions.json') as { transactions: { transaction: { hash: string }; receipts: unknown[] }[] };
+const txs = fx('challenge-fastnear-transactions.json') as { transactions: { transaction: { hash: string; signer_id: string }; receipts: unknown[] }[] };
 const bookView = fx('challenge-get-book.json');
 
 const POLICY = 'policy-v2.erfan-airlock.testnet';
 const KEY = 'ed25519:7HeWNqtLJHGzmsjPZn9LbPgAgjVBpFPn4vrqTgjDcPfP';
+const AGENT = 'erfan-agent.testnet'; // the signer of the recorded attempts
 const BOOK = ['near:accountant.erfan-airlock.testnet'];
 const ALLOWED_TX = '6XaB7gpdo9rvCoupNnLM7WHudfnhnAwVhdquy2RzGqB5';
 const HELD_TX = 'ED95Qh2t1rvAUmkG2ZkDrrz3pdQ32LB9oY3AAWteqESp';
@@ -73,6 +74,14 @@ test('a transaction without a final policy receipt is left out, never guessed; a
   assert.deepEqual(classifyTx(txs.transactions[0], POLICY, 'ed25519:' + '1'.repeat(44), new Set()), { state: 'skip' }, 'another key');
 });
 
+test('the published key added to some other account does not count: only the challenge agent signs attempts', () => {
+  const real = txs.transactions.find((t) => t.transaction.hash === ALLOWED_TX)!;
+  const agent = real.transaction.signer_id;
+  assert.equal(classifyTx(real, POLICY, KEY, new Set(BOOK), agent).state, 'final');
+  const other = { ...real, transaction: { ...real.transaction, signer_id: 'someone-else.testnet' } };
+  assert.deepEqual(classifyTx(other, POLICY, KEY, new Set(BOOK), agent), { state: 'skip' });
+});
+
 test('the listing skips failed transactions and reads the block time in nanoseconds', () => {
   const l = listedOf({ account_txs: [{ transaction_hash: 'A'.repeat(44), tx_block_height: 5, tx_block_timestamp: '1793741422198692627', is_success: true }, { transaction_hash: 'B'.repeat(44), tx_block_height: 6, tx_block_timestamp: '1793741422198692627', is_success: false }], resume_token: 'r' });
   assert.deepEqual(l.txs, [{ hash: 'A'.repeat(44), height: 5, atMs: 1793741422198 }]);
@@ -120,7 +129,7 @@ test('the hosted api: no published file gives an empty board and no key; a file 
   const api = hostedChallengeApi({
     publicUrl: '/x.json',
     random: () => 0,
-    fetchFn: (input, init) => (String(input).endsWith('/x.json') ? Promise.resolve(new Response(JSON.stringify({ ...PUB, policy: POLICY, publicKey: KEY }))) : chain()(input, init)),
+    fetchFn: (input, init) => (String(input).endsWith('/x.json') ? Promise.resolve(new Response(JSON.stringify({ ...PUB, policy: POLICY, agent: AGENT, publicKey: KEY }))) : chain()(input, init)),
   });
   const s = await api.state();
   assert.equal(s.hosted, true);

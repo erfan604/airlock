@@ -100,7 +100,7 @@ export function hostedChallengeApi(o: HostedOptions = {}): ChallengeApi {
     const h = await published();
     if (h === null) return null;
     if (read === null || clock() - read.at > ttl) {
-      const cfg: ChainConfig = { policy: h.policy, publicKey: h.publicKey };
+      const cfg: ChainConfig = { policy: h.policy, publicKey: h.publicKey, agent: h.agent };
       const value = readChain(fetchFn, cfg);
       read = { at: clock(), value };
       // a failed read is not kept: the next call asks the chain again

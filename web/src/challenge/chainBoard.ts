@@ -33,16 +33,18 @@ function b64json(value: unknown): unknown {
 }
 
 /**
- * What one transaction is for the board. `skip`: not a submit_batch of the published key to the policy. `pending`: it is one, but the policy
+ * What one transaction is for the board. `skip`: not a submit_batch of the published key to the policy (signed by `agent` when it is given). `pending`: it is one, but the policy
  * receipt is missing or not final. `final`: a failed call gives no observations, a successful one gives one per request.
  */
-export function classifyTx(raw: unknown, policy: string, publicKey: string, book: ReadonlySet<string>): TxState {
+export function classifyTx(raw: unknown, policy: string, publicKey: string, book: ReadonlySet<string>, agent?: string): TxState {
   if (!isObj(raw) || !isObj(raw['transaction']) || !Array.isArray(raw['receipts'])) return { state: 'skip' };
   const tx = raw['transaction'];
   const hash = str(tx['hash']);
   const signer = str(tx['signer_id']);
   if (hash === null || signer === null || !HASH.test(hash)) return { state: 'skip' };
   if (tx['public_key'] !== publicKey || tx['receiver_id'] !== policy || !Array.isArray(tx['actions'])) return { state: 'skip' };
+  // the published key may also be added to another account by anyone; only the challenge agent's own calls are attempts (security review 2026-11-07)
+  if (agent !== undefined && signer !== agent) return { state: 'skip' };
   let args: unknown;
   let found = false;
   for (const action of tx['actions']) {
@@ -125,7 +127,7 @@ export function listedOf(page: unknown): { txs: ListedTx[]; resume: string | nul
   return { txs, resume: str(page['resume_token']) };
 }
 
-export type ChainConfig = { policy: string; publicKey: string; txBase?: string; rpcUrl?: string; pageLimit?: number; maxPages?: number; batch?: number };
+export type ChainConfig = { policy: string; publicKey: string; agent?: string; txBase?: string; rpcUrl?: string; pageLimit?: number; maxPages?: number; batch?: number };
 export type ChainRead = { attempts: Attempt[]; book: string[]; truncated: boolean };
 
 async function postJson(fetchFn: typeof fetch, url: string, body: unknown): Promise<unknown> {
@@ -186,7 +188,7 @@ export async function readChain(fetchFn: typeof fetch, cfg: ChainConfig): Promis
       const hash = isObj(raw) && isObj(raw['transaction']) ? str(raw['transaction']['hash']) : null;
       const meta = hash === null ? undefined : listed.get(hash);
       if (meta === undefined) continue;
-      const state = classifyTx(raw, cfg.policy, cfg.publicKey, bookSet);
+      const state = classifyTx(raw, cfg.policy, cfg.publicKey, bookSet, cfg.agent);
       if (state.state === 'final') found.push({ listed: meta, obs: state.obs });
     }
   }
