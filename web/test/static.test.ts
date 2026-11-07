@@ -1,7 +1,7 @@
 // AIR-310: the static adapter's pure parts: the SSE text parser that stands in for EventSource, the headers file and the host-like server's header reader.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ICON_ORIGINS, NEAR_RPC, WALLET_ORIGINS, buildStaticCsp } from '../csp.ts';
+import { FASTNEAR_TX, ICON_ORIGINS, NEAR_RPC, WALLET_ORIGINS, buildStaticCsp } from '../csp.ts';
 import { starHeaders } from '../scripts/serve-static.ts';
 import { parseSse } from '../src/replay/staticEventSource.ts';
 import { headersFile } from '../vite-static.ts';
@@ -23,10 +23,11 @@ test('the static policy names only the testnet RPC and wallet hosts, with a buil
   const script = /script-src ([^;]*)/.exec(header)?.[1]?.split(' ') ?? [];
   assert.ok(header.includes("frame-ancestors 'none'") && script.includes(`'nonce-${NONCE}'`) && script.includes("'self'") && script.includes("'wasm-unsafe-eval'") && !script.includes("'unsafe-eval'") && !script.includes("'unsafe-inline'"));
   const hosts = [...header.matchAll(/https?:\/\/[^\s;]+/g)].map((m) => m[0]);
-  const allowed = new Set<string>([...NEAR_RPC, ...WALLET_ORIGINS, ...ICON_ORIGINS]);
+  const allowed = new Set<string>([...NEAR_RPC, FASTNEAR_TX, ...WALLET_ORIGINS, ...ICON_ORIGINS]);
   assert.ok(hosts.length > 0 && hosts.every((h) => allowed.has(h)), `unexpected host in ${hosts.join(' ')}`);
   assert.ok(!header.includes('localhost') && !header.includes('http://'), 'no runtime origin and no plain http');
   assert.ok(/frame-src https:\/\/[^;]*wallet\.intear\.tech/.test(header));
+  assert.ok(/connect-src [^;]*https:\/\/tx\.test\.fastnear\.com/.test(header), 'the AIR-320 board reads the FastNEAR tx API');
   assert.ok(!buildStaticCsp({ header: false, nonce: NONCE }).includes('frame-ancestors'));
 });
 

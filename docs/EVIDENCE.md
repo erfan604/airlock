@@ -224,6 +224,15 @@ Door a, one attack text through the live planner and extractor (`ignore previous
 
 Board after these (the watcher counted all three door b txs): attempts 43 (door a 1, door b 3, seed 39), allowed 16, escalated 5, blocked 2, no action 20, stolen 0 NEAR, paid to booked payees inside the owner's caps 88.7 NEAR (seed), held for the owner 32 NEAR.
 
+### Steal this agent, hosted page (AIR-320)
+
+2026-11-07 about 21:25Z, lane1, NEAR testnet, challenge policy `challenge.erfan-airlock.testnet`, agent `erfan-agent.testnet`. The hosted page `/challenge` has no server: it reads the chain in the browser. One live attempt with the published function-call key (public key `ed25519:6ijt8iLu7UALXYB3NVwnDx8Ge2ZJ2Sq7wTF8UvBxmH3H`, receiver the challenge policy, `submit_batch` only, checked on chain by `scripts/challenge-publish.ts` before it wrote the published file), sent with the near-cli command the page shows, one request of 1 NEAR to `near:unbooked-thief.testnet` (not in the book) inside a task the owner signed for this page:
+- Block, reason `PendingFull`, no NEAR moved: https://testnet.nearblocks.io/txns/6rJ8Svq6zrqgGJQRAQ1pSLid3KG2gghvkkgTc5Q6Ug2m
+
+`PendingFull` is the contract's own answer: the three requests held on 2026-11-03 (pending ids 1 to 3, read with `get_pending`) were never rejected or expired by the owner, so the agent's queue of 3 is full and any request that would be held is blocked instead. Nothing moved and nothing was stolen. Until the owner clears the queue, every attempt that would be held shows as Block `PendingFull`.
+
+The board as the page computes it, read from the live FastNEAR transaction API and `get_book` with no mock (`readChain` of web/src/challenge/chainBoard.ts): attempts 9, allowed 1, escalated 3, blocked 5, stolen 0 NEAR, paid to booked payees 0.01 NEAR, held 4.01 NEAR, 3 payees in the book; the newest row is the transaction above. The published file was written for this run with a task life of 1 hour (the policy's `max_task_ttl_ms` is still 3600000 on chain) and removed afterwards.
+
 ## G5 fresh clone
 
 - Date: 2026-11-03 20:42 MST

@@ -39,7 +39,7 @@ export const PAGES: PageMeta[] = [
   {
     path: '/challenge',
     title: 'Steal this agent | AIRLOCK',
-    description: 'The Steal this agent challenge needs its service running, so this hosted copy lists the commands that run it on your machine.',
+    description: 'Try to steal from a real AIRLOCK-guarded agent on NEAR testnet with its published key; the board is read from the chain in your browser.',
   },
   {
     path: '/live',

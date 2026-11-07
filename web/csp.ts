@@ -8,6 +8,9 @@ import snapshot from './src/wallet/manifest-snapshot.json' with { type: 'json' }
 /** The NEAR Connect manifest and fallback host and Intear's executor (notes/wallet_display section 0). AIR-182 confirms and extends it. */
 export const WALLET_ORIGINS = ['https://raw.githubusercontent.com', 'https://cdn.jsdelivr.net', 'https://wallet.intear.tech'] as const;
 
+/** AIR-320: the public read-only FastNEAR testnet transaction API the Steal this agent board reads (web/src/challenge/chainBoard.ts). */
+export const FASTNEAR_TX = 'https://tx.test.fastnear.com';
+
 /** A starting list for wallet icon images, extended by AIR-182. */
 export const ICON_ORIGINS = ['https://raw.githubusercontent.com'] as const;
 
@@ -122,8 +125,9 @@ export function buildStaticCsp(opts: { header: boolean; nonce: string }): string
     join("style-src 'self' 'unsafe-inline'", uiOrigins(ids, 'style')),
     join(`img-src 'self' data: ${ICON_ORIGINS.join(' ')}`, uiOrigins(ids, 'img')),
     join("font-src 'self'", uiOrigins(ids, 'font')),
-    // only the NEAR testnet nodes of plan/STACK.md (the page's reads) and the wallet hosts of the pinned manifest
-    join(`connect-src 'self' ${NEAR_RPC.join(' ')} ${WALLET_ORIGINS.join(' ')}`, uiOrigins(ids, 'connect')),
+    // only the NEAR testnet nodes of plan/STACK.md (the page's reads), the FastNEAR testnet transaction API (AIR-320 Steal this agent board)
+    // and the wallet hosts of the pinned manifest
+    join(`connect-src 'self' ${NEAR_RPC.join(' ')} ${FASTNEAR_TX} ${WALLET_ORIGINS.join(' ')}`, uiOrigins(ids, 'connect')),
     `frame-src ${WALLET_ORIGINS.join(' ')}`,
     ...(opts.header ? ["frame-ancestors 'none'"] : []),
     "base-uri 'none'",

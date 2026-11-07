@@ -14,7 +14,7 @@ https://airlock-ere.pages.dev, project `airlock`, built from main at 6d43e54 wit
 | `/replay` | the three recorded acts: invoice paid, correction held with the real approval card, the replayed approval, the tampered approve |
 | `/bench` | the recorded bench results (`bench.json`) |
 | `/proven` | the proven claims (`docs/proven.json`) |
-| `/challenge` | says it needs the challenge service and lists the commands (`pnpm challenge`, `pnpm try`) |
+| `/challenge` | the published key, signed tasks and a near-cli command from `challenge-public.json`, and a board read from public testnet APIs (tx.test.fastnear.com and test.rpc.fastnear.com) in the browser; door one (pasted text) says it needs a server |
 | `/live` | says a live run needs a server, a model key and funded testnet accounts, and lists `pnpm demo`, `pnpm demo:live` |
 
 The replay data is the answer of the replay server to each read the console makes, saved byte for byte at build time to `data/`. The console parses

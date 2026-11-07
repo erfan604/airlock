@@ -60,6 +60,14 @@ export type ChallengeState = {
   limits: { perVisitor: { max: number; perSeconds: number }; global: { max: number; perSeconds: number }; dailyMax: number; maxChars: number };
   key: PublishedKey | null;
   task?: PublishedTask | null;
+  /** AIR-320: the hosted copy (a static site) reads the chain itself: door one is shut and the page says why */
+  hosted?: boolean;
+  /** AIR-320: every task of the published file has expired; the owner publishes new ones */
+  taskExpired?: boolean;
+  /** AIR-320: the near-cli command that sends one request with the published key (hosted copy only) */
+  command?: string | null;
+  /** AIR-320: the board shows the newest part of a longer chain listing */
+  truncated?: boolean;
   now: string;
 };
 
@@ -161,6 +169,7 @@ const REFUSALS: Record<string, string> = {
   float_low: 'The challenge float is used up for today. It is closed until tomorrow.',
   float_unknown: 'The challenge could not read its float, so it is closed for now.',
   engine_failed: 'The agent could not run that attempt. Nothing was paid.',
+  hosted: 'Door one needs the live planner and a model key, which this hosted copy does not hold. Door two below works here, from your own shell.',
 };
 
 export const refusalWords = (code: string): string => (Object.hasOwn(REFUSALS, code) ? REFUSALS[code] : undefined) ?? 'The attempt was not run.';

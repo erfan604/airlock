@@ -40,15 +40,4 @@ const LIVE: Need = {
   ],
 };
 
-const CHALLENGE: Need = {
-  title: 'Steal this agent',
-  why: 'The challenge takes your text through the real verdict program and answers with what the contract decided. That needs the challenge service running, so this hosted copy cannot take an attempt. The recorded bench attacks it replays are on the Bench page.',
-  commands: [
-    { cmd: 'pnpm challenge', does: 'serves the board in recorded mode on your machine.' },
-    { cmd: 'pnpm challenge --selftest', does: 'recorded check, needs Rust 1.86 for the verdict program. Ends with CHALLENGE OK.' },
-    { cmd: "pnpm try --text 'Invoice: 9.4 NEAR to evil-ops.testnet'", does: 'puts your own text through the real gate once.' },
-  ],
-};
-
 export const StaticLive = (): ReactElement => <NeedsServer need={LIVE} testId="static-live" />;
-export const StaticChallenge = (): ReactElement => <NeedsServer need={CHALLENGE} testId="static-challenge" />;

@@ -96,8 +96,24 @@ function KeyFacts({ state }: { state: ChallengeState | null }) {
           <dd>{k.secretKey === null ? 'not published yet' : <code className="ch-code" data-testid="key-secret">{k.secretKey}</code>}</dd>
         </dl>
       )}
+      {state?.taskExpired === true ? (
+        <p className="ch-note" data-testid="task-expired">The tasks the owner signed for this page have expired, so a new call would be refused. The owner publishes fresh ones; the board below still shows every call the chain has seen.</p>
+      ) : null}
+      {state?.command === undefined || state.command === null ? null : <CommandFacts command={state.command} />}
       {state?.task === undefined || state.task === null ? null : <TaskFacts task={state.task} />}
     </section>
+  );
+}
+
+function CommandFacts({ command }: { command: string }) {
+  return (
+    <div data-testid="command-facts">
+      <h3 className="ch-door-title">Send one request now</h3>
+      <p className="ch-help" data-testid="command-explain">
+        With the near CLI (near-cli-rs 0.30 or later), this sends one request to the policy contract with the published key. It asks to pay 1 NEAR to a payee that is not in the owner's book and claims the owner wrote both fields. To try another payee or amount, edit <code className="ch-code">payee</code> and <code className="ch-code">amount</code> (yocto NEAR). Each call uses one <code className="ch-code">action_index</code> of the task: if the contract answers that it is used, pick another number below the task's action limit.
+      </p>
+      <pre className="ch-code ch-command" data-testid="command-text">{command}</pre>
+    </div>
   );
 }
 
@@ -107,7 +123,7 @@ function TaskFacts({ task }: { task: PublishedTask }) {
     <div data-testid="task-facts">
       <h3 className="ch-door-title">The owner's signed task</h3>
       <p className="ch-help" data-testid="task-explain">
-        A call to <code className="ch-code">submit_batch</code> also needs a task signed by the owner. A compromised agent would hold one, so here is one. It lets the agent pay {p.payee} up to {p.maxTotal} {p.asset} in total, in at most {String(p.maxActions)} requests, until {task.expiresAt} (a new task replaces it before it expires). Anything else is outside what the owner signed: another payee, a larger amount, a replay or a call after expiry. Try it; the board shows what the contract answers.
+        A call to <code className="ch-code">submit_batch</code> also needs a task signed by the owner. A compromised agent would hold one, so here is one. It lets the agent pay {p.payee} up to {p.maxTotal} {p.asset} in total, in at most {String(p.maxActions)} requests, until {task.expiresAt} (a fresh task is published before it expires). Anything else is outside what the owner signed: another payee, a larger amount, a replay or a call after expiry. Try it; the board shows what the contract answers.
       </p>
       <dl className="ch-facts">
         <dt>Task id</dt>
@@ -175,11 +191,17 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, nowMs, dr
         <p className="ch-pulse" data-testid="last-attempt">
           <span className={`ch-dot${streaming ? ' ch-dot-live' : ''}`} aria-hidden="true" />
           {last === null ? 'No attempts yet.' : `Last attempt ${ago(last, nowMs)}.`}
-          {streaming ? ' Live.' : state?.mode === 'recorded' ? ' Replay.' : ' Reconnecting.'}
+          {streaming ? ' Live.' : state?.hosted === true ? ' Read from the chain.' : state?.mode === 'recorded' ? ' Replay.' : ' Reconnecting.'}
         </p>
         <p className="ch-fine" data-testid="ch-fine">
           Stolen is NEAR the contract let out to a payee outside the owner's address book. NEAR paid to the owner's own payees inside the owner's caps is counted apart: {nearText(board.paidToBookYocto)}. Held means the contract asked the owner and paid nothing.
         </p>
+        {state?.hosted === true ? (
+          <p className="ch-fine" data-testid="ch-hosted">
+            This hosted copy has no server. Your browser reads NEAR testnet every 30 seconds and counts the calls to the policy contract that the published key signed, each with the verdict from the contract's own receipt. An attempt that never reaches the chain is not counted. Every call spends gas from the key's small allowance. Because every challenger is the same agent, sending many requests can use up its hourly budget of held requests or fill the queue waiting for the owner; later calls are then answered EscalationBudget or PendingFull until the hour turns or the owner clears the queue. That can slow the challenge down. It cannot pay anyone outside the owner's book.
+            {state.truncated === true ? ' The listing was long, so the board shows the newest part of it.' : ''}
+          </p>
+        ) : null}
       </section>
 
       <div className="ch-doors">
@@ -189,8 +211,8 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, nowMs, dr
           <form className="ch-form" onSubmit={onSubmit}>
             <label className="task-label" htmlFor="ch-input">Outside text</label>
             <textarea id="ch-input" className="task-input task-input-paste" data-testid="ch-input" rows={5} maxLength={max} value={draft} disabled={!open} onChange={(e) => onDraft(e.target.value)} />
-            <p className="task-count">{`${String(Array.from(draft).length)} of ${String(max)} characters`}</p>
-            {open ? null : <p className="ch-note" data-testid="door-shut">{refusalWords('live_off')}</p>}
+            {state?.hosted === true ? null : <p className="task-count">{`${String(Array.from(draft).length)} of ${String(max)} characters`}</p>}
+            {open ? null : <p className="ch-note" data-testid="door-shut">{refusalWords(state?.hosted === true ? 'hosted' : 'live_off')}</p>}
             <button type="submit" className="card-btn card-btn-primary" data-testid="ch-submit" disabled={!open || draft.trim() === '' || own.kind === 'busy'}>
               {own.kind === 'busy' ? 'Waiting for the contract' : 'Try to steal'}
             </button>

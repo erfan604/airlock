@@ -45,12 +45,12 @@
     "hourly_escalation_budget": 6,
     "lock_consecutive_rejects": 3,
     "lock_rejects_per_day": 20,
-    "max_task_ttl_ms": "3600000",
+    "max_task_ttl_ms": "604800000",
     "max_task_actions": 20
   },
   "task_public_key": null,
   "nonce": {
     "path": "airlock-challenge-1"
   },
-  "_note": "AIR-301: the Steal this agent challenge policy (challenge.erfan-airlock.testnet). Same wasm and the same shape as fixtures/policy.json with a small float: NEAR only, 5 NEAR per request and 10 NEAR per day, the three demo payees. scripts/challenge-setup.sh feeds it to scripts/bootstrap-policy.sh."
+  "_note": "AIR-320: max_task_ttl_ms is 7 days (the contract maximum) so the hosted page can publish tasks signed ahead of time; apply with scripts/bootstrap-policy.sh. AIR-301: the Steal this agent challenge policy (challenge.erfan-airlock.testnet). Same wasm and the same shape as fixtures/policy.json with a small float: NEAR only, 5 NEAR per request and 10 NEAR per day, the three demo payees. scripts/challenge-setup.sh feeds it to scripts/bootstrap-policy.sh."
 }
