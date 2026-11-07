@@ -152,3 +152,47 @@ test('every reason has its own plain sentence', () => {
   const seen = new Set(REASONS.map((x) => reasonWords(x, r.proposal, defaultKnobs())));
   assert.equal(seen.size, REASONS.length);
 });
+
+// AIR-322: the stand-in reads the text the way a person does, so look-alike payees reach the real verdict and odd amounts pay nothing
+const NOT_OWNER = (email: string): void => {
+  const r = standIn(email);
+  assert.ok(r.kind === 'proposal', email);
+  assert.notEqual(r.proposal.payee.origin, 'owner', `${JSON.stringify(email)} must not fall back to the booked payee`);
+  assert.equal(r.proposal.payee.inTask, false);
+};
+
+test('AIR-322: full-width, upper-case and zero-width look-alike payees are picked up and are not the booked payee', () => {
+  const acct = WORLD.owner.payee;
+  const fullwidth = [...acct].map((c) => (c >= '!' && c <= '~' ? String.fromCodePoint(c.codePointAt(0) as number + 0xfee0) : c)).join('');
+  NOT_OWNER(`Please pay ${fullwidth}-evil.testnet $180.00 today`);
+  NOT_OWNER(`Please pay ${acct.toUpperCase()}-evil.testnet $180.00 today`);
+  NOT_OWNER(`Please pay ${acct}\u200b-evil.testnet $180.00 today`);
+  NOT_OWNER(`Please pay ${acct}\u202e-evil.testnet $180.00 today`);
+  NOT_OWNER(`Please pay ${acct}\u0000evil.testnet $180.00 today`);
+  NOT_OWNER(`Please pay ${acct}\ufeff.evil.testnet $180.00 today`);
+});
+
+test('AIR-322: the honest booked payee, in any case or full width, is still the owner payee', () => {
+  const r = standIn(`Please pay ${WORLD.owner.payee.toUpperCase()} $180.00`);
+  assert.ok(r.kind === 'proposal' && r.proposal.payee.origin === 'owner' && r.proposal.payee.account === WORLD.owner.payee);
+});
+
+test('AIR-322: a look-alike payee goes to the real verdict and is held, not paid', async () => {
+  const r = standIn(`Please pay ${WORLD.owner.payee.toUpperCase()}\u200b-evil.testnet $180.00`);
+  assert.ok(r.kind === 'proposal');
+  const v = tagOf((await wasm()).decide(columnsOf(r.proposal, defaultKnobs())));
+  assert.ok(v.startsWith('escalate') || v.startsWith('block'), v);
+});
+
+test('AIR-322: a leading minus, euro and NEAR amounts give no valid amount; only $ or USD are dollars', () => {
+  const bad = { kind: 'nothing', why: 'bad-amount' };
+  for (const t of ['refund -$500', 'pay -500 now', 'pay - $500 now', 'total: \u20ac180.00', 'total \u00a3180', 'pay 100 NEAR', 'pay 100 near please', 'pay C$180', 'pay CAD 180', 'pay 1e30 now', 'pay EUR 180']) {
+    assert.deepEqual(standIn(t), bad, t);
+  }
+  const usd = standIn('Total USD 180.00 due');
+  assert.ok(usd.kind === 'proposal' && usd.proposal.amount.cents === 18000n);
+  const usd2 = standIn('Total 180 USD due');
+  assert.ok(usd2.kind === 'proposal' && usd2.proposal.amount.cents === 18000n);
+  const d = standIn('Total $180.00 due, ref 2026-11-07');
+  assert.ok(d.kind === 'proposal' && d.proposal.amount.cents === 18000n);
+});

@@ -1,8 +1,9 @@
 // AIR-319: proves the package from a packed tarball. `npm pack` makes airlock-near-mcp-<version>.tgz; in a fresh folder outside the repo (and
 // a fresh npm cache) `npx -y <tarball> --check` runs, and `npx -y <tarball>` is started as an MCP client would: an initialize, then tools/list
-// over stdio, with a throwaway config and throwaway keys made here (no account, no network, nothing real). Everything it made is deleted.
+// over stdio, with a throwaway config and throwaway keys made here (no account, nothing real; the RPC is a loopback stand-in that answers `status` with a chain_id). Everything it made is deleted.
 // Usage: node scripts/prove-tarball.mjs [<base folder, default /private/tmp/claude-501>]
 import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:http';
 import { createHash, generateKeyPairSync, randomBytes } from 'node:crypto';
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -72,10 +73,20 @@ try {
   const agent = 'agent.throwaway.testnet';
   writeFileSync(join(runDir, 'agent.json'), JSON.stringify({ account_id: agent, public_key: `ed25519:${base58(pub)}`, private_key: `ed25519:${base58(Buffer.concat([seed, pub]))}` }), { mode: 0o600 });
   writeFileSync(join(runDir, 'task-key'), `${randomBytes(32).toString('hex')}\n`, { mode: 0o600 });
+  // AIR-322: the server asks the RPC for its chain_id at start; a loopback stand-in answers testnet (then mainnet, which must be refused)
+  let chainId = 'testnet';
+  const stub = createServer((req, res) => {
+    req.resume();
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ jsonrpc: '2.0', id: 'airlock', result: { chain_id: chainId } }));
+  });
+  await new Promise((r) => stub.listen(0, '127.0.0.1', r));
+  const rpcUrl = `http://127.0.0.1:${String(stub.address().port)}`;
   writeFileSync(
     join(runDir, 'mcp.json'),
     JSON.stringify({
       network: 'testnet',
+      rpc: [rpcUrl],
       owner_id: 'throwaway.testnet',
       contract_id: 'throwaway-policy.testnet',
       agent_id: agent,
@@ -123,12 +134,43 @@ try {
     if (JSON.stringify([...names].sort()) !== JSON.stringify([...expected].sort())) throw new Error('unexpected tool list');
     say(`stderr: ${stderr.trim().split('\n').at(-1)}`);
     say('HANDSHAKE OK');
+    // M3: a request with string params is answered with -32602, not dropped
+    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: 'x' })}\n`);
+    const bad = await new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('no answer to string params')), 10_000);
+      pending.set(3, (m) => {
+        clearTimeout(t);
+        resolve(m);
+      });
+    });
+    if (bad.error?.code !== -32602) throw new Error('string params were not answered with -32602');
+    say('PARAMS OK: string params answered with -32602');
   } catch (e) {
     failed = true;
     say(`FAILED handshake: ${e instanceof Error ? e.message : 'unknown'}`);
   } finally {
     child.kill();
   }
+  // H1: the same config against an RPC that says mainnet must not start
+  chainId = 'mainnet';
+  // async: the stand-in RPC lives in this process, so a blocking spawn could not answer it
+  const refusal = await new Promise((resolve) => {
+    const c = spawn('npx', ['-y', spec], { cwd: runDir, env: { ...env, AIRLOCK_MCP_CONFIG: join(runDir, 'mcp.json') }, stdio: ['pipe', 'pipe', 'pipe'] });
+    let err = '';
+    c.stderr.on('data', (d) => (err += d));
+    const t = setTimeout(() => c.kill(), 60_000);
+    c.on('close', (status) => {
+      clearTimeout(t);
+      resolve({ status, stderr: err });
+    });
+  });
+  const line = refusal.stderr.trim().split('\n').at(-1) ?? '';
+  say(`mainnet RPC: exit ${String(refusal.status)}, ${line}`);
+  if (refusal.status === 0 || !line.includes('testnet only')) {
+    failed = true;
+    say('FAILED: a mainnet RPC was not refused');
+  } else say('MAINNET REFUSED OK');
+  stub.close();
 } finally {
   rmSync(work, { recursive: true, force: true });
   say(`removed ${work}`);

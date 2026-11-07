@@ -76,7 +76,7 @@ Settings: a config file, or the flags below (each flag has an environment variab
   --fetch-host <host>       AIRLOCK_FETCH_HOSTS     a host fetch_page may fetch live (repeat, or commas); none by default
 
 Keys are read from the files you name and never from the command line or the printed output. The network is testnet: an account that
-does not end in .testnet or a mainnet RPC is refused. Docs: https://github.com/erfan604/airlock/blob/main/docs/QUICKSTART.md
+does not end in .testnet is refused, and at start the server asks every RPC for its chain_id and refuses to run unless it is testnet. Docs: https://github.com/erfan604/airlock/blob/main/docs/QUICKSTART.md
 `;
 
 const list = (env: string | undefined): string[] => (env === undefined || env === '' ? [] : env.split(',').map((s) => s.trim()).filter((s) => s !== ''));

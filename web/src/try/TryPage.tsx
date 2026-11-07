@@ -19,7 +19,7 @@ import { loadVerdict } from './verdictWasm.ts';
 import type { VerdictModule } from './verdictWasm.ts';
 
 export const ENGINE_LINE = 'This decision was made by the same airlock-verdict code the NEAR contract runs, compiled to WebAssembly, in your browser.';
-const STAND_IN = 'The agent here is a stand-in, not a model: a few lines of pattern matching that do whatever the text says. It pays the first account the text names, or another payee from the book if the text names one, and otherwise the payee you set. It pays the first dollar amount it finds.';
+const STAND_IN = 'The agent here is a stand-in, not a model: a few lines of pattern matching that do whatever the text says. It pays the first account the text names, or another payee from the book if the text names one, and otherwise the payee you set. It pays the first dollar amount it finds ($ or USD); a negative amount or one in another currency is no payment. It folds full-width letters and strips zero-width characters first.';
 
 type Source = { kind: 'preset'; id: string } | { kind: 'own' };
 

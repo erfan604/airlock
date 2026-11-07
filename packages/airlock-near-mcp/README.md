@@ -18,6 +18,6 @@ npx -y airlock-near-mcp --print-config claude
 
 prints the Claude Desktop entry (`--print-config claude-code` prints the `claude mcp add` command). The server reads the owner's config from `AIRLOCK_MCP_CONFIG` (default `~/.airlock/mcp.json`), or from flags and environment variables (`npx -y airlock-near-mcp --help`). Deploying your own policy contract is `pnpm airlock init` in the repository: see docs/QUICKSTART.md.
 
-Testnet only. The server offers six tools: `owner_request`, `read_email`, `fetch_page`, `read_file`, `book_list` and `pay`. Keys are read from files you name, never from the command line, and never printed.
+Testnet only: every account must end in `.testnet`, and at start the server asks each RPC for its `chain_id` and refuses to run unless it is `testnet` (or no RPC answers). The server offers six tools: `owner_request`, `read_email`, `fetch_page`, `read_file`, `book_list` and `pay`. Keys are read from files you name, never from the command line, and never printed.
 
 Source and docs: https://github.com/erfan604/airlock

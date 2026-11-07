@@ -107,8 +107,24 @@ const cents = (text: string): bigint => {
 
 /** A NEAR account id of the two suffixes. Adapted from bench/src/try/extract.ts (the `pnpm try` stand-in), NEAR ids only. */
 const ACCOUNT = /(?<![A-Za-z0-9_.-])[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.(?:testnet|near)(?![A-Za-z0-9_-]|\.[a-z0-9_-])/;
-const DOLLAR_AMOUNT = /\$\s?([0-9][0-9,]*(?:\.[0-9]+)?)/;
-const PLAIN_AMOUNT = /(?<![A-Za-z0-9.,])([0-9][0-9,]*(?:\.[0-9]+)?)/;
+// the amount: `$` or `USD` marks dollars; a bare number is dollars only when no other currency sits next to it
+const DOLLAR_AMOUNT = /(?<![a-z0-9])(?:\$|usd)\s?([0-9][0-9,]*(?:\.[0-9]+)?)(?![0-9])|([0-9][0-9,]*(?:\.[0-9]+)?)\s?usd\b/;
+const PLAIN_AMOUNT = /(?<![a-z0-9.,])([0-9][0-9,]*(?:\.[0-9]+)?)/;
+const FOREIGN_BEFORE = /(?:[\u20ac\u00a3\u00a5\u20b9]|[a-z]\$|\b(?:eur|gbp|cad|aud|nzd|inr|near|btc|eth)\b)\s?$/;
+const FOREIGN_AFTER = /^\s?(?:[\u20ac\u00a3\u00a5\u20b9]|\b(?:eur|euros?|gbp|cad|aud|nzd|inr|near|btc|eth)\b|e[+-]?[0-9])/;
+/** A minus right before the number or its `$`, not part of a word or a date. */
+const NEGATIVE_BEFORE = /(?<![a-z0-9])-\s?(?:\$\s?)?$/;
+
+/**
+ * AIR-322: the text as a person reads it. NFKC folds full-width letters and digits to ASCII, zero-width, bidi and control characters are
+ * removed (a zero-width space inside an account id no longer splits it), and case is folded: NEAR account ids are lower case.
+ */
+export function normalizeEmail(text: string): string {
+  return text
+    .normalize('NFKC')
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u00ad\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g, '')
+    .toLowerCase();
+}
 
 /** Where a field's value came from: the owner's own request, the email choosing among the owner's book entries, or the email alone. */
 export type Origin = 'owner' | 'email-book' | 'email';
@@ -130,7 +146,7 @@ const bookByAccount = (w: World, account: string): BookEntry | undefined => w.bo
  */
 export function standIn(email: string, w: World = WORLD, source: Source = EMAIL_SOURCE): AgentResult {
   if (email.trim() === '') return { kind: 'nothing', why: 'empty' };
-  const text = email.slice(0, MAX_EMAIL);
+  const text = normalizeEmail(email.slice(0, MAX_EMAIL));
   const ownerEntry = bookByAccount(w, w.owner.payee);
   let payee: Proposal['payee'];
   const acct = ACCOUNT.exec(text);
@@ -146,11 +162,29 @@ export function standIn(email: string, w: World = WORLD, source: Source = EMAIL_
         ? { account: other.account, name: other.name, origin: 'email-book', inBook: true, inTask: false }
         : { account: w.owner.payee, name: ownerEntry?.name ?? null, origin: 'owner', inBook: ownerEntry !== undefined, inTask: true };
   }
-  const m = DOLLAR_AMOUNT.exec(rest) ?? PLAIN_AMOUNT.exec(rest);
-  if (m === null) return { kind: 'nothing', why: 'no-amount' };
-  const amount = parseDollars((m[1] as string).replace(/[.,]$/, ''));
-  if (amount === null) return { kind: 'nothing', why: 'bad-amount' };
+  const read = readAmount(rest);
+  if (read.kind !== 'amount') return { kind: 'nothing', why: read.kind };
+  const amount = read.cents;
   return { kind: 'proposal', proposal: { payee, amount: { cents: amount, origin: 'email' }, source } };
+}
+
+/** The first amount in the text, as cents, or why there is none. A leading minus, a foreign currency or an exponent is not a payment. */
+function readAmount(rest: string): { kind: 'amount'; cents: bigint } | { kind: 'no-amount' | 'bad-amount' } {
+  const d = DOLLAR_AMOUNT.exec(rest);
+  if (d !== null) {
+    const digits = (d[1] ?? d[2]) as string;
+    if (NEGATIVE_BEFORE.test(rest.slice(0, d.index))) return { kind: 'bad-amount' };
+    if (/^e[+-]?[0-9]/.test(rest.slice(d.index + d[0].length))) return { kind: 'bad-amount' };
+    const c = parseDollars(digits.replace(/[.,]$/, ''));
+    return c === null ? { kind: 'bad-amount' } : { kind: 'amount', cents: c };
+  }
+  const p = PLAIN_AMOUNT.exec(rest);
+  if (p === null) return { kind: 'no-amount' };
+  const before = rest.slice(0, p.index);
+  const after = rest.slice(p.index + p[0].length);
+  if (NEGATIVE_BEFORE.test(before) || FOREIGN_BEFORE.test(before) || FOREIGN_AFTER.test(after)) return { kind: 'bad-amount' };
+  const c = parseDollars((p[1] as string).replace(/[.,]$/, ''));
+  return c === null ? { kind: 'bad-amount' } : { kind: 'amount', cents: c };
 }
 
 // the request the verdict reads

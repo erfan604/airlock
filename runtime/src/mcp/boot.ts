@@ -47,6 +47,7 @@ export function sessionFromConfig(cfg: McpConfig): Session {
       maxActions: cfg.max_actions,
       ttlMs: cfg.task_ttl_minutes * 60_000,
       explorer: cfg.network === 'testnet' ? 'https://testnet.nearblocks.io/txns/' : null,
+      rpcHost: new URL((cfg.rpc ?? [...DEFAULT_RPC_URLS])[0] as string).host,
     },
     chain,
     sources: {

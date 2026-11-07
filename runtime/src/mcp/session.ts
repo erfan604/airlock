@@ -40,6 +40,8 @@ export interface SessionConfig {
   ttlMs: number;
   /** the explorer base for an Allow's transaction link, or null (a local sandbox has none) */
   explorer: string | null;
+  /** the host of the first RPC, named in a chain read failure; no secret */
+  rpcHost?: string;
 }
 
 export interface SessionSources {
@@ -121,6 +123,9 @@ interface ActiveTask {
   next: number;
 }
 
+/** The most handles a session keeps (AIR-322). */
+export const HANDLE_MAX = 4096;
+
 const refused = (code: string, message: string): PayResult => ({
   verdict: 'Refused',
   reason: code,
@@ -161,6 +166,11 @@ export class Session {
     this.counter += 1;
     const h = `h${this.counter}`;
     this.handles.set(h, { text, labels: new Set([label]), source });
+    // AIR-322: a looping agent cannot grow the table without bound; the oldest handles go first (a Map keeps insertion order)
+    if (this.handles.size > HANDLE_MAX) {
+      const oldest = this.handles.keys().next();
+      if (oldest.done !== true) this.handles.delete(oldest.value);
+    }
     if (!TRUSTED_NAMES.has(label)) {
       this.seen.add(label);
       if (source !== null) this.seenSources.set(`${source.kind}\n${source.identity}`, source);
@@ -235,14 +245,28 @@ export class Session {
       throw new SessionRefusal('NoFile', 'no such file');
     }
     if (!stat.isFile()) throw new SessionRefusal('NotAFile', 'only regular files are read, never links or directories');
+    // AIR-322: a hardlink is a regular file that can point outside the directory; a file with more than one link is refused
+    if (stat.nlink > 1) throw new SessionRefusal('NotAFile', 'the file has more than one link (a hardlink), so it is not read');
     const rel = relative(root, realpathSync(path));
     if (rel.startsWith('..') || isAbsolute(rel) || rel.split(sep).includes('..')) throw new SessionRefusal('BadName', 'the path leaves the file directory');
     if (stat.size > READ_FILE_MAX) throw new SessionRefusal('TooLarge', 'the file is over 256 KB');
     return { labels: [label], name, content: this.wrap(readFileSync(path, 'utf8'), label, { kind: 'file', identity: name }) };
   }
 
+  /** AIR-322: a chain read that fails is a clear refusal, never a bare TypeError. */
+  private async chainRead<T>(read: () => Promise<T>): Promise<T> {
+    try {
+      return await read();
+    } catch (e) {
+      // the host only, and a status when the error carries one; never the error's own text (it can come from the network)
+      const status = typeof (e as { status?: unknown }).status === 'number' ? String((e as { status: number }).status) : 'no usable answer';
+      const host = this.deps.config.rpcHost;
+      throw new SessionRefusal('ChainReadFailed', `could not read the policy from the chain: ${host === undefined ? '' : `${host} `}${status}`);
+    }
+  }
+
   async bookList(): Promise<{ labels: LabelName[]; book: unknown }> {
-    const rows = await this.deps.chain.getBook();
+    const rows = await this.chainRead(() => this.deps.chain.getBook());
     const book = rows.map(([key, entry]) => ({ alias: entry.label, key }));
     return { labels: ['Book'], book: this.wrap(book, 'Book') };
   }
@@ -330,8 +354,15 @@ export class Session {
   private async payNow(args: PayArgs): Promise<PayResult> {
     const asset = args.asset ?? 'near';
     if (asset !== 'near') return refused('UnsupportedAsset', 'this server pays NEAR only');
-    const rows = await this.deps.chain.getBook();
-    const registry = registryFromRows(await this.deps.chain.listAssets());
+    let rows: BookRows;
+    let registry: ReturnType<typeof registryFromRows>;
+    try {
+      rows = await this.chainRead(() => this.deps.chain.getBook());
+      registry = registryFromRows(await this.chainRead(() => this.deps.chain.listAssets()));
+    } catch (e) {
+      if (e instanceof SessionRefusal) return refused(e.code, e.message);
+      throw e;
+    }
     const decimals = registry.get(asset)?.decimals;
     if (decimals === undefined) return refused('UnknownAsset', 'the policy has no NEAR asset registered');
 

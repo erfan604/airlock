@@ -1,11 +1,12 @@
 // AIR-319: the entry of the npm package airlock-near-mcp (the bin of the bundle). `--check` and `--print-config` need no key; the default mode
 // serves the six tools of runtime/src/mcp over stdio, the same session and server as AIR-313 (runtime/src/mcp/boot.ts and server.ts).
 // stdout carries the MCP protocol only in serve mode; every log line goes to stderr.
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { sessionFromConfig } from '../../../runtime/src/mcp/boot.ts';
+import { assertTestnetNetwork } from '../../../runtime/src/mcp/network.ts';
 import { createMcpServer } from '../../../runtime/src/mcp/server.ts';
 import { parseArgs, resolveConfig } from './args.ts';
 import { run } from './run.ts';
+import { createStdioTransport } from '../../../runtime/src/mcp/stdio.ts';
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
@@ -15,8 +16,9 @@ async function main(): Promise<void> {
     return;
   }
   const cfg = resolveConfig(parseArgs(argv), process.env);
+  await assertTestnetNetwork(cfg);
   const server = createMcpServer(sessionFromConfig(cfg));
-  await server.connect(new StdioServerTransport());
+  await server.connect(createStdioTransport());
   process.stderr.write(`airlock-near-mcp ready: policy ${cfg.contract_id}, agent ${cfg.agent_id}, ${cfg.network}\n`);
 }
 

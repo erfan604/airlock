@@ -52,7 +52,9 @@ export function resolvePath(p: string, base: string): string {
   return isAbsolute(p) ? p : resolve(base, p);
 }
 
-const MAINNET = /\.near$|mainnet/i;
+const LOOPBACK = new Set(['127.0.0.1', '::1', '[::1]', 'localhost']);
+const MAINNET_HOST = /\.near$|mainnet/i;
+const TESTNET_ONLY = 'testnet only';
 
 export function parseConfig(raw: unknown, base: string): McpConfig {
   const parsed = McpConfigSchema.safeParse(raw);
@@ -61,12 +63,17 @@ export function parseConfig(raw: unknown, base: string): McpConfig {
     throw new ConfigError(`the config does not match its schema at: ${paths.join(', ')}`);
   }
   const c = parsed.data;
-  if (c.network === 'testnet') {
-    for (const id of [c.owner_id, c.contract_id, c.agent_id]) {
-      if (!id.endsWith('.testnet')) throw new ConfigError('testnet only: every account id must end in .testnet');
+  // accounts: .testnet on testnet; the local sandbox's own root (.test.near) is allowed only with a loopback RPC (below)
+  const suffixes = c.network === 'testnet' ? ['.testnet'] : ['.testnet', '.test.near'];
+  for (const id of [c.owner_id, c.contract_id, c.agent_id]) {
+    if (!suffixes.some((x) => id.endsWith(x))) throw new ConfigError(`${TESTNET_ONLY}: every account id must end in ${suffixes.join(' or ')}`);
+  }
+  if (c.network === 'sandbox') {
+    if (c.rpc === undefined || !c.rpc.every((u) => LOOPBACK.has(new URL(u).hostname.toLowerCase()))) {
+      throw new ConfigError(`${TESTNET_ONLY}: network sandbox needs a loopback RPC (127.0.0.1, ::1 or localhost) for every rpc entry`);
     }
   }
-  for (const url of c.rpc ?? []) if (MAINNET.test(new URL(url).hostname)) throw new ConfigError('testnet only: a mainnet RPC is refused');
+  for (const url of c.rpc ?? []) if (MAINNET_HOST.test(new URL(url).hostname)) throw new ConfigError(`${TESTNET_ONLY}: a mainnet RPC is refused`);
   return {
     ...c,
     agent_credentials: resolvePath(c.agent_credentials, base),
