@@ -265,7 +265,7 @@ const origins = new WeakMap<object, Origin>();
  */
 export function rootForCasesDir(dir: string): string {
   const full = resolve(dir);
-  const parent = dirname(basename(full) === 'should' || basename(full) === 'adaptive' || basename(full) === 'redteam' ? dirname(full) : full);
+  const parent = dirname(basename(full) === 'should' || basename(full) === 'adaptive' || basename(full) === 'redteam' || basename(full) === 'crazy' ? dirname(full) : full);
   return basename(parent) === 'fixtures' ? dirname(parent) : parent;
 }
 

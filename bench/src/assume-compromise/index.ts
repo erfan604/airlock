@@ -287,7 +287,7 @@ function writeSection(args: CompromiseArgs, summaries: Record<string, Summary>):
 
 /** `--mode assume-compromise`: prints one line per configuration, writes the section and returns 1 when anything got through. */
 export async function compromiseCommand(args: CompromiseArgs, opts: { inject?: (world: SimWorld) => void } = {}): Promise<number> {
-  const summaries = await assumeCompromise({ configs: args.configs as CompromiseConfig[], out: args.out, inject: opts.inject });
+  const summaries = await assumeCompromise({ configs: args.configs as CompromiseConfig[], out: args.out, inject: opts.inject, ...(args.cases === undefined ? {} : { cases: args.cases.filter((c) => c.attacker_goal !== null && c.gate !== null) }) });
   writeSection(args, summaries);
   return Object.values(summaries).some((s) => s.value_to_nonbook > 0 || s.violations > 0) ? 1 : 0;
 }

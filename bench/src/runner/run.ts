@@ -40,6 +40,8 @@ export interface CompromiseRun {
   name: string;
   resultsDir: string;
   out: (line: string) => void;
+  /** AIR-321: the attack cases whose gate paths play the attacker's plans (`--cases`); absent means the cases of own-abc.jsonl and own-sxp.jsonl */
+  cases?: readonly Case[];
 }
 
 /** What a caller passes in: the V1 numbers, the not-run rows of the results file, and the seams of later tickets. */

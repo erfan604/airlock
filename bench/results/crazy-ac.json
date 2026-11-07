@@ -1,0 +1,58 @@
+{
+ "meta": {
+  "name": "crazy-ac",
+  "model": "none",
+  "quarantine_model": "none",
+  "temperature": 0,
+  "seed": 220,
+  "n": 1,
+  "configs": [
+   "A1",
+   "A2"
+  ],
+  "hooks": "none",
+  "budget_usd": "0",
+  "bench_commit": "27d158802741dd8a5a067cf143798eda05988c77",
+  "verdict_cli_sha256": "2ffbc8bb9fe1177c8d05af7536597e6c9530d3c6f887e5c588ed177aba40fbb6"
+ },
+ "case_meta": {},
+ "not_run": [],
+ "runs": [],
+ "assume_compromise": {
+  "A1": {
+   "requests": 1461,
+   "value_to_nonbook": 0,
+   "in_envelope": 51,
+   "violations": 0,
+   "escalated": 990,
+   "blocked": 420,
+   "aborted": 11,
+   "days": 3,
+   "sources": {
+    "case_gates": 31,
+    "random_plans": 730,
+    "raw": 700
+   },
+   "in_envelope_cases": []
+  },
+  "A2": {
+   "requests": 1461,
+   "value_to_nonbook": 0,
+   "in_envelope": 58,
+   "violations": 0,
+   "escalated": 983,
+   "blocked": 420,
+   "aborted": 11,
+   "days": 3,
+   "sources": {
+    "case_gates": 31,
+    "random_plans": 730,
+    "raw": 700
+   },
+   "in_envelope_cases": [
+    "own-CZ11",
+    "own-CZ12"
+   ]
+  }
+ }
+}

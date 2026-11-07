@@ -156,7 +156,22 @@ async function runCommand(flags: Flags, io: Io): Promise<number> {
       io.out('assume-compromise: no handler is registered (AIR-222)');
       return 0;
     }
-    return io.deps.compromise({ configs: wanted as Array<'A1' | 'A2'>, name: acName, resultsDir: io.paths.results, out: (l) => io.out(l) });
+    // AIR-321: `--cases` names the attack cases whose gate paths are played (the default is own-abc.jsonl and own-sxp.jsonl)
+    const given = str(flags['cases']);
+    let chosen: Case[] | undefined;
+    if (given !== undefined) {
+      try {
+        chosen = loadByGlob(resolve(io.initCwd, given));
+      } catch (e) {
+        if (e instanceof CaseLoadError) {
+          io.out(e.message);
+          return 1;
+        }
+        throw e;
+      }
+      if (chosen.length === 0) return usage(io);
+    }
+    return io.deps.compromise({ configs: wanted as Array<'A1' | 'A2'>, name: acName, resultsDir: io.paths.results, out: (l) => io.out(l), ...(chosen === undefined ? {} : { cases: chosen }) });
   }
   const hooksName = str(flags['hooks']) ?? 'none';
   if (hooksName !== 'none' && hooksName !== 'product') return usage(io);
