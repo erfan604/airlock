@@ -60,7 +60,7 @@ let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
 let setupHandle: Awaited<ReturnType<E2ESetup>> | undefined;
 try {
   // AIR-310: `static` (and AIR-311's `nojs`) serve web/dist-static as plain files, the way a static host does: no preview server, no proxy, no runtime
-  const isStatic = name === 'static' || name === 'nojs';
+  const isStatic = name.startsWith('static') || name === 'nojs';
   if (!isStatic && !existsSync(join(webRoot, 'dist', 'index.html'))) throw new Error('web/dist/index.html is missing: run `pnpm -C web build` first');
   const setup = new URL(`./${name}.setup.ts`, import.meta.url);
   if (existsSync(fileURLToPath(setup))) {

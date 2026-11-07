@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Page } from 'playwright';
 import type { RequestView } from '@airlock/runtime/chain-types';
-import { buildStaticCsp } from '../csp.ts';
+import { buildStaticCsp, normalizeNonce } from '../csp.ts';
 import { approveArgs } from '../src/approvals/cardModel.ts';
 import { clipAudit } from './audit.ts';
 import { checkHired, checkLanding, checkTry, showPreset } from './site.ts';
@@ -197,8 +197,8 @@ const run: E2E = async ({ page, baseUrl }) => {
   const origin = new URL(baseUrl).host;
   assert.deepEqual([...hosts], [origin], `every request goes to ${origin}, got ${[...hosts].join(', ')}`);
   assert.deepEqual(failed, [], 'no request failed');
-  const want = buildStaticCsp({ header: true });
-  assert.ok(csp.length > 0 && csp.every((c) => c === want), 'every document carries the static Content-Security-Policy');
+  const want = normalizeNonce(buildStaticCsp({ header: true, nonce: 'x' }));
+  assert.ok(csp.length > 0 && csp.every((c) => normalizeNonce(c) === want), 'every document carries the static Content-Security-Policy');
 };
 
 export default run;

@@ -46,7 +46,12 @@ export const PAGES: PageMeta[] = [
     title: 'Live demo | AIRLOCK',
     description: 'A live run needs a runtime server, a model key and funded NEAR testnet accounts. This page lists the commands that run it from the repository.',
   },
-  { path: '/approvals', title: 'Approvals, recorded | AIRLOCK', description: 'The held request of the recorded testnet run and its approval card.', alias: '/replay' },
+  {
+    path: '/approvals',
+    title: 'Live approvals | AIRLOCK',
+    description:
+      'Requests held for the owner on the testnet policy contract, read from the chain with no server. Each shows the payee, the amount, where each value came from, why it was held and the exact values the wallet signs. Only the policy owner can approve or reject.',
+  },
   { path: '/task', title: 'Task, recorded | AIRLOCK', description: 'The recorded testnet run under the name a live operator reads.', alias: '/replay' },
 ];
 

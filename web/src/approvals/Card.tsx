@@ -44,6 +44,8 @@ export type CardProps = {
   scope?: CounterScope;
   /** The clock of "2 min ago" as decimal milliseconds; the current time when absent. A fixture passes a fixed one. */
   nowMs?: string;
+  /** AIR-318: show the request with no buttons (a visitor who is not the owner, or an expired request). */
+  viewOnly?: boolean;
 };
 
 // ---- stamps and lines ----
@@ -177,14 +179,16 @@ export type CardViewProps = {
   remember?: RememberForm & { onField(field: RememberField, value: string): void; onRemember(): void; unit: string };
   /** The approve that just succeeded also remembered the payee. */
   remembered?: boolean;
+  /** AIR-318: no action bar and no sheet. */
+  viewOnly?: boolean;
 };
 
-export function CardView({ model, readOnly, state, onOpen, onCancel, onConfirm, onReject, rejectRef, sheetRejectRef, forcingInput = '', onForcingInput, remember, remembered = false }: CardViewProps) {
+export function CardView({ viewOnly = false, model, readOnly, state, onOpen, onCancel, onConfirm, onReject, rejectRef, sheetRejectRef, forcingInput = '', onForcingInput, remember, remembered = false }: CardViewProps) {
   const sheetTitleId = useId();
   const forcingId = useId();
   const stamp = stampFor(readOnly, state, remembered);
   const rememberIds = useId();
-  const live = readOnly === 'Pending' && state.kind !== 'approved' && state.kind !== 'rejected';
+  const live = readOnly === 'Pending' && !viewOnly && state.kind !== 'approved' && state.kind !== 'rejected';
   const approveOn = live && canApprove(state);
   const sheetOpen = approveOn && (state.kind === 'confirming' || state.kind === 'wallet_pending');
   const stopped = live && state.failures >= MAX_FAILURES;
@@ -363,9 +367,9 @@ function snapshot(p: CardProps): Snapshot {
 
 const errorName = (e: unknown): string | undefined => (e instanceof Error ? e.name : undefined);
 
-type LiveProps = Pick<CardProps, 'onApprove' | 'onApproveAndRemember' | 'onReject'> & { model: CardModel; readOnly: RequestState; scope: CounterScope; decimals: number; bookLabels?: Readonly<Record<string, string>> };
+type LiveProps = Pick<CardProps, 'onApprove' | 'onApproveAndRemember' | 'onReject'> & { viewOnly?: boolean; model: CardModel; readOnly: RequestState; scope: CounterScope; decimals: number; bookLabels?: Readonly<Record<string, string>> };
 
-function LiveCard({ model, readOnly, scope, onApprove, onApproveAndRemember, onReject, decimals, bookLabels }: LiveProps) {
+function LiveCard({ viewOnly, model, readOnly, scope, onApprove, onApproveAndRemember, onReject, decimals, bookLabels }: LiveProps) {
   const [state, dispatch] = useReducer(cardReducer, undefined, () => initialState(readFailures(scope, model.no)));
   const [forcingInput, setForcingInput] = useState('');
   // the daily limit follows the cap until the owner types in it
@@ -432,6 +436,7 @@ function LiveCard({ model, readOnly, scope, onApprove, onApproveAndRemember, onR
       remember={remember}
       remembered={remembered}
       readOnly={readOnly}
+      viewOnly={viewOnly}
       state={state}
       rejectRef={rejectRef}
       sheetRejectRef={sheetRejectRef}
@@ -464,5 +469,5 @@ export function Card(props: CardProps) {
       </section>
     );
   }
-  return <LiveCard model={snap.model} readOnly={props.view.state} scope={scope} onApprove={props.onApprove} onApproveAndRemember={props.onApproveAndRemember} onReject={props.onReject} decimals={props.asset.decimals} bookLabels={props.bookLabels} />;
+  return <LiveCard viewOnly={props.viewOnly} model={snap.model} readOnly={props.view.state} scope={scope} onApprove={props.onApprove} onApproveAndRemember={props.onApproveAndRemember} onReject={props.onReject} decimals={props.asset.decimals} bookLabels={props.bookLabels} />;
 }

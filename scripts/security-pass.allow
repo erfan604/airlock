@@ -21,3 +21,5 @@
 ^web/src/landing/TubeBand\.tsx:[0-9]+:.*src=\{(poster|near \? url\(`media/\$\{cut\}\.mp4`\) : undefined)\}
 # AIR-311: one-shot clips (stamp desk, switchyard): same-origin media named from `cut`, built from the `name` prop, a literal or a closed set at every call site.
 ^web/src/landing/OneShot\.tsx:[0-9]+:.*src=\{url\(`media/\$\{cut\}(-end\.jpg|\.mp4)`\)\}
+# AIR-318: the live approvals page links a transaction through explorerTx (approvals/staticChain.ts), which returns the testnet explorer URL only for a bare base58 transaction hash of 43 or 44 characters and null otherwise.
+^web/src/approvals/StaticApprovals\.tsx:[0-9]+:.*<a href=\{link\} target="_blank"

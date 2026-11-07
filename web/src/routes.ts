@@ -9,6 +9,7 @@ import { ReplayAware } from './replay/ReplayAware.tsx';
 import { TaskPage } from './task/TaskPage.tsx';
 import { STATIC } from './static.ts';
 import { StaticChallenge, StaticLive } from './static/StaticPages.tsx';
+import { StaticApprovals } from './approvals/StaticApprovals.tsx';
 import { Landing } from './landing/Landing.tsx';
 import { TryPage } from './try/TryPage.tsx';
 import { UsePage } from './use/UsePage.tsx';
@@ -25,7 +26,8 @@ export const ROUTES: Record<string, () => ReactElement> = {
   '/proven': () => createElement(ProvenPage),
   // AIR-313: the quickstart for people, the same steps as docs/QUICKSTART.md
   '/use': () => createElement(UsePage),
-  '/approvals': () => createElement(ReplayAware, { live: () => createElement(ApprovalsRoute) }),
+  // AIR-318: the hosted static copy reads the pending requests from the chain and lets the owner act in a wallet; the replay stays at /replay
+  '/approvals': () => (STATIC ? createElement(StaticApprovals) : createElement(ReplayAware, { live: () => createElement(ApprovalsRoute) })),
   // AIR-301: the public Steal this agent page; it reads the challenge service and needs no session
   // AIR-310: a hosted static copy has no challenge service, so the page says so and points at the commands
   '/challenge': () => createElement(STATIC ? StaticChallenge : ChallengeView),

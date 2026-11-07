@@ -105,21 +105,26 @@ export function previewProxy(runtimeOrigin: string): Record<string, { target: st
 }
 
 /**
- * AIR-310: the policy of the static build (`web/dist-static`). It is the preview policy with everything the replay never uses taken away: the
- * runtime origin, the NEAR RPC hosts, the wallet origins and the wallet frames are gone, so the page can talk to its own origin only. There is no
- * nonce because the built page has no inline script (a module script by `src` only). AIR-311 adds 'wasm-unsafe-eval' (the Try page compiles
- * its same-origin verdict.wasm; no JavaScript eval); the landing loop is same-origin media under default-src. `frame-ancestors` cannot be set from a meta tag, so it is
- * in the header form only (`_headers`); a host that ignores `_headers` (GitHub Pages) still gets everything else from the meta tag.
+ * AIR-310: the policy of the static build (`web/dist-static`). AIR-318 widens it for the live approvals page and nothing else: connect-src names the
+ * NEAR testnet RPC hosts and the wallet hosts of the pinned manifest, frame-src the wallet host, and scripts need a per-build nonce for the wallet frame.
+ * The runtime origin is not in it. AIR-311 adds 'wasm-unsafe-eval' (the Try page compiles its same-origin verdict.wasm; no JavaScript eval); the landing
+ * loop is same-origin media under default-src. `frame-ancestors` cannot be set from a meta tag, so it is in the header form only (`_headers`); a host
+ * that ignores `_headers` (GitHub Pages) still gets everything else from the meta tag.
  */
-export function buildStaticCsp(opts: { header: boolean }): string {
+export function buildStaticCsp(opts: { header: boolean; nonce: string }): string {
+  const ids = snapshot.wallets.map((w) => w.id);
   return [
     "default-src 'self'",
-    "script-src 'self' 'wasm-unsafe-eval'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
-    "font-src 'self'",
-    "connect-src 'self'",
-    "frame-src 'none'",
+    // AIR-318: the wallet's executor frame writes an inline script that must carry this nonce (NEAR Connect cspNonce). The nonce is drawn once per
+    // build, so unlike the console's per-response nonce it is the same for every visitor of a build; the built pages hold no inline script and no
+    // markup built from outside text, so it admits nothing but the wallet frame's own script.
+    `script-src 'self' 'nonce-${opts.nonce}' 'wasm-unsafe-eval'`,
+    join("style-src 'self' 'unsafe-inline'", uiOrigins(ids, 'style')),
+    join(`img-src 'self' data: ${ICON_ORIGINS.join(' ')}`, uiOrigins(ids, 'img')),
+    join("font-src 'self'", uiOrigins(ids, 'font')),
+    // only the NEAR testnet nodes of plan/STACK.md (the page's reads) and the wallet hosts of the pinned manifest
+    join(`connect-src 'self' ${NEAR_RPC.join(' ')} ${WALLET_ORIGINS.join(' ')}`, uiOrigins(ids, 'connect')),
+    `frame-src ${WALLET_ORIGINS.join(' ')}`,
     ...(opts.header ? ["frame-ancestors 'none'"] : []),
     "base-uri 'none'",
     "object-src 'none'",

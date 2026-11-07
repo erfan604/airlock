@@ -56,6 +56,7 @@ export type Actions = {
 };
 
 const DECIMAL = /^[0-9]{1,10}$/;
+const TASK_HASH = /^[0-9a-f]{64}$/;
 const FIELD_ORDER = ['amount', 'recipient', 'pc'] as const;
 
 /**
@@ -109,7 +110,8 @@ export async function loadApprovals(deps: LoadDeps): Promise<ApprovalsData> {
       const entry = assets.find(([id]) => id === view.asset)?.[1];
       if (entry === undefined) throw new Error(`asset ${view.asset} is not in the registry`);
       const [ledgers, ownEntry, raw] = await Promise.all([
-        deps.view('get_ledgers', { payee: view.payee, asset: view.asset, task: view.task_id }),
+        // the contract takes a task hash (64 lowercase hex) and panics on any other text, so a request whose task id is a label is read without a task
+        deps.view('get_ledgers', { payee: view.payee, asset: view.asset, task: TASK_HASH.test(view.task_id) ? view.task_id : null }),
         deps.view('get_book_entry', { key: view.payee }),
         view.id === null ? Promise.resolve(null) : deps.evidence(view.id).catch(() => null),
       ]);
@@ -134,7 +136,7 @@ export type ApprovalsViewProps = {
   attestations?: readonly Attestation[];
 };
 
-function ApprovalCard({ card, ownerId, contractId, actions, scope, nowMs, onDone, attestations }: { card: CardData } & Omit<ApprovalsViewProps, 'data'>) {
+export function ApprovalCard({ viewOnly = false, card, ownerId, contractId, actions, scope, nowMs, onDone, attestations }: { card: CardData; viewOnly?: boolean } & Omit<ApprovalsViewProps, 'data'>) {
   const no = card.view.id ?? '';
   const [failures, setFailures] = useState(() => readFailures(scope ?? { network: 'testnet', contractId }, no));
   const walletOffered = allowedWallet(PRIMARY_WALLET_ID) !== null;
@@ -168,10 +170,10 @@ function ApprovalCard({ card, ownerId, contractId, actions, scope, nowMs, onDone
   } catch {
     cliArgs = null;
   }
-  const showCli = cliArgs !== null && (!walletOffered || failures >= MAX_FAILURES);
+  const showCli = !viewOnly && cliArgs !== null && (!walletOffered || failures >= MAX_FAILURES);
   return (
     <div className="approval-item" data-testid="approval-item">
-      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onApproveAndRemember={actions.approveAndRemember === undefined ? undefined : wrapped.approveAndRemember} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} />
+      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onApproveAndRemember={actions.approveAndRemember === undefined ? undefined : wrapped.approveAndRemember} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} viewOnly={viewOnly} />
       {showCli && cliArgs !== null ? <CliPanel args={cliArgs} contractId={contractId} ownerId={ownerId} /> : null}
       {attestations !== undefined ? <VerifiedPanel attestations={attestations} /> : null}
     </div>
@@ -238,7 +240,7 @@ export function liveDeps(): ApprovalsDeps {
 }
 
 /** After a result the pending list is read again; a card the owner just acted on stays, so its final stamp is not pulled from under them. */
-function merge(prev: ApprovalsData | null, next: ApprovalsData, acted: ReadonlySet<string>): ApprovalsData {
+export function merge(prev: ApprovalsData | null, next: ApprovalsData, acted: ReadonlySet<string>): ApprovalsData {
   if (prev === null) return next;
   const have = new Set(next.cards.map((c) => c.view.request_id));
   const kept = prev.cards.filter((c) => acted.has(c.view.request_id) && !have.has(c.view.request_id));
