@@ -80,7 +80,7 @@ CAP S06c 2:04.5-2:10 [DESC] Door two: the agent's own key, published
 SHOT S07 2:10-2:20 mode TERMINAL
 RUN pnpm try --text 'Invoice: 9.4 NEAR to evil-ops.testnet'
 RUN pnpm i && pnpm demo --no-open --exit-when-ready
-# TITLE card (text card, the repo is private so no browser take): AIRLOCK, https://github.com/erfan604/airlock, Built at NEAR HACKATHON
+# TITLE card (text card; the repo is public since 2026-11-07, so a browser take of it also works): AIRLOCK, https://github.com/erfan604/airlock, Built at NEAR HACKATHON
 CAP S07a 2:10-2:13.5 [DESC] Pasted invoice text through the real gate
 CAP S07b 2:13.5-2:17 [DESC] pnpm i && pnpm demo, no keys
 CAP S07c 2:17-2:20 [DESC] Built at NEAR HACKATHON, https://github.com/erfan604/airlock

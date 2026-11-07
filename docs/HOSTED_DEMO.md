@@ -1,7 +1,7 @@
 # Hosted replay demo
 
 Anyone can open one URL and see the console replay the recorded runs with no server, no key and no chain write. It is the same console as
-`pnpm demo`, built as plain files. Every screen of the replay says `Replay of recorded run <name>`. Published 2026-11-04 on Cloudflare Pages (owner's yes: "host it regardless", Cloudflare chosen because GitHub Pages refuses a private repository on this plan):
+`pnpm demo`, built as plain files. Every screen of the replay says `Replay of recorded run <name>`. Published 2026-11-04 on Cloudflare Pages (owner's yes: "host it regardless", Cloudflare chosen because GitHub Pages refused the repository while it was still private on this plan (it was made public on 2026-11-07 with the owner's yes)):
 https://airlock-ere.pages.dev, project `airlock`, built from main at 6d43e54 with `pnpm -C web build:static` and deployed with
 `npx wrangler@3 pages deploy web/dist-static --project-name airlock --branch main`. Kept up at least until 2026-11-25.
 
@@ -71,7 +71,7 @@ To take it down: `npx wrangler pages project delete airlock-demo`.
 
 ## Publish to GitHub Pages
 
-This repository is private and must not be made public for this. Publish the built files to a separate public repository that holds nothing else.
+This repository is public since 2026-11-07, so GitHub Pages can serve the built files from it directly, or from a separate repository that holds only the build.
 GitHub Pages serves a project site under `/<repo>/`, so build with that base:
 
 ```
@@ -81,7 +81,7 @@ npx gh-pages -d web/dist-static --dotfiles -b gh-pages -r https://github.com/<ow
 
 Then in that repository: Settings, Pages, Source `gh-pages` branch, folder `/ (root)`. The URL is `https://<owner>.github.io/airlock-demo/`. `404.html` and
 the per-route `index.html` files are in the build, so `/airlock-demo/proven` works. Cost: free for a public repository (soft limits of 1 GB of site
-and 100 GB of bandwidth per month). A private repository needs a paid GitHub plan for Pages. `_headers` is ignored, so only the meta tag policy applies.
+and 100 GB of bandwidth per month). A public repository gets Pages on the free plan. `_headers` is ignored, so only the meta tag policy applies.
 
 ## Keep it up
 
