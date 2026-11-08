@@ -491,27 +491,104 @@ fn setup_card() -> Contract {
     c
 }
 
+/// A held payment to a payee in the book: a data recipient to Alice with her proof, held `UntrustedRecipient` with `book_in` true.
+fn escalate_booked(c: &mut Contract, task_id: &str) -> u32 {
+    escalate_one(c, task_id, 40)
+}
+
+/// A held payment to a payee that is not in the book (`payee`, no proof): `book_in` false.
+fn escalate_new(c: &mut Contract, task_id: &str, payee: &str) -> u32 {
+    let t = task_for(task_id, &[(payee, 1_000)], 1);
+    let out = submit(c, &t, vec![data_payee(&t, 0, payee, 40)]);
+    assert_eq!(out[0].outcome, "escalated", "{:?}", out[0]);
+    out[0]
+        .pending_id
+        .as_ref()
+        .expect("a pending id")
+        .parse()
+        .unwrap()
+}
+
+fn approved_logged() -> bool {
+    near_sdk::test_utils::get_logs()
+        .iter()
+        .any(|l| l.contains("\"event\":\"approved\""))
+}
+
 #[test]
-fn rt_con_owner_cannot_approve_when_approver_set() {
+fn rt_con_borrower_pays_himself_is_refused() {
+    // the borrower runs the agent and holds the approver key: he asks his own account to be paid and taps approve
     let mut c = setup_card();
-    let no = escalate_one(&mut c, "task-card-1", 40);
+    let himself = format!("near:{APPROVER_ACCOUNT}");
+    let no = escalate_new(&mut c, "task-self", &himself);
     let k = card(&c, no);
-    assert!(panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("Caller is not the approver"));
+    assert_eq!(k[5], "new");
+    let text = panics(|| approve_as(&mut c, APPROVER_ACCOUNT, NOW, &k));
+    assert!(text.contains("not in the book"), "{text}");
+    assert!(!approved_logged());
+    assert!(c.pending_record(no).is_some(), "still pending");
+    // only the issuer can override
+    approve_as(&mut c, OWNER, NOW, &k);
+    assert!(approved_logged());
+}
+
+#[test]
+fn rt_con_approver_cannot_approve_a_new_payee_of_anyone() {
+    let mut c = setup_card();
+    let no = escalate_new(&mut c, "task-new", EVIL);
+    let k = card(&c, no);
+    assert!(panics(|| approve_as(&mut c, APPROVER_ACCOUNT, NOW, &k)).contains("not in the book"));
+    // the approver can still reject it
+    testing_env!(ctx(APPROVER_ACCOUNT, NOW, 1).build());
+    c.reject(no.to_string());
+}
+
+#[test]
+fn rt_con_withheld_proof_makes_the_payee_new_for_the_approver() {
+    let mut c = setup_card();
+    let t = task_for("task-withheld", &[(ALICE, 1_000)], 1);
+    let mut r = data_payee(&t, 0, ALICE, 40);
+    r.book = None;
+    let out = submit(&mut c, &t, vec![r]);
+    assert_eq!(out[0].outcome, "escalated", "{:?}", out[0]);
+    let no: u32 = out[0].pending_id.as_ref().unwrap().parse().unwrap();
+    let k = card(&c, no);
+    assert_eq!(k[5], "new", "a booked payee without its proof is new");
+    assert!(panics(|| approve_as(&mut c, APPROVER_ACCOUNT, NOW, &k)).contains("not in the book"));
+}
+
+#[test]
+fn rt_con_stale_book_status_needs_the_owner() {
+    let mut c = setup_card();
+    let no = escalate_booked(&mut c, "task-stale");
+    let k = card(&c, no);
+    assert_eq!(k[5], "in_book");
+    // the issuer changes the book after the escalation: the stored status is stale
+    testing_env!(ctx(OWNER, NOW, 1).build());
+    let old = Hex32(c.book_root);
+    c.book_set_root(old, Hex32([9; 32]));
+    assert!(panics(|| approve_as(&mut c, APPROVER_ACCOUNT, NOW, &k)).contains("not in the book"));
+    approve_as(&mut c, OWNER, NOW, &k);
+    assert!(approved_logged());
+}
+
+#[test]
+fn rt_con_approver_approves_a_booked_merchant_and_the_owner_does_not() {
+    let mut c = setup_card();
+    let no = escalate_booked(&mut c, "task-booked");
+    let k = card(&c, no);
+    assert_eq!(k[5], "in_book");
+    assert!(panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("the approver settles"));
+    assert!(!approved_logged());
+    // a stranger is refused at the gate
+    assert!(
+        panics(|| approve_as(&mut c, "stranger.test.near", NOW, &k))
+            .contains("Caller is not the approver or the owner")
+    );
     testing_env!(ctx(OWNER, NOW, 1).build());
     assert!(panics(|| c.reject(no.to_string())).contains("Caller is not the approver"));
-    assert!(c.pending_record(no).is_some(), "still pending");
-    assert!(
-        !near_sdk::test_utils::get_logs()
-            .iter()
-            .any(|l| l.contains("\"event\":\"approved\""))
-    );
     approve_as(&mut c, APPROVER_ACCOUNT, NOW, &k);
-    assert!(
-        near_sdk::test_utils::get_logs()
-            .iter()
-            .any(|l| l.contains("\"event\":\"approved\"")),
-        "the approver's approve moved it on"
-    );
+    assert!(approved_logged());
 }
 
 #[test]

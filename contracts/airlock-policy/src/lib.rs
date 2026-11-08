@@ -184,6 +184,10 @@ impl Contract {
         sponsor: Option<AccountId>,
     ) -> Self {
         require!(
+            approver.as_ref() != Some(&owner_id),
+            "the approver cannot be the owner"
+        );
+        require!(
             sponsor.as_ref() != Some(&env::current_account_id()),
             "the sponsor cannot be this account"
         );

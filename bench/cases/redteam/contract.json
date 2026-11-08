@@ -79,9 +79,9 @@
  },
  {
   "id": "RT-CON-14",
-  "test": "rt_con_owner_cannot_approve_when_approver_set",
-  "attack": "the card's issuer (owner) approves or rejects a held payment when an approver is set",
-  "expect": "revert: Caller is not the approver, the request stays pending"
+  "test": "rt_con_approver_approves_a_booked_merchant_and_the_owner_does_not",
+  "attack": "the issuer (owner) approves a held payment to a booked merchant when an approver is set, or a stranger approves it",
+  "expect": "revert: the approver settles it; Caller is not the approver or the owner; the approver's approve succeeds"
  },
  {
   "id": "RT-CON-15",
@@ -94,6 +94,30 @@
   "test": "rt_con_sweep_pays_only_the_sponsor",
   "attack": "sweep called by the approver, the agent or a stranger; the owner's sweep checked for its receivers",
   "expect": "revert (owner only); the owner's sweep creates a call to the sponsor and the result callback, nothing else"
+ },
+ {
+  "id": "RT-CON-17",
+  "test": "rt_con_borrower_pays_himself_is_refused",
+  "attack": "the borrower runs the agent, asks his own account to be paid and taps approve as the approver",
+  "expect": "revert: approve refused for the approver (payee not in the book); only the owner's override approves"
+ },
+ {
+  "id": "RT-CON-18",
+  "test": "rt_con_approver_cannot_approve_a_new_payee_of_anyone",
+  "attack": "the approver approves a held payment to any account that is not in the book",
+  "expect": "revert: approve refused for the approver; the approver can still reject"
+ },
+ {
+  "id": "RT-CON-19",
+  "test": "rt_con_withheld_proof_makes_the_payee_new_for_the_approver",
+  "attack": "the agent sends a booked payee without its proof so that the card says new, then the approver approves",
+  "expect": "the card says new and the approver's approve reverts"
+ },
+ {
+  "id": "RT-CON-20",
+  "test": "rt_con_stale_book_status_needs_the_owner",
+  "attack": "the approver approves a held payment whose book status is older than a book change",
+  "expect": "revert: approve refused for the approver; the owner may approve"
  },
  {
   "id": "RT-APPR-01",

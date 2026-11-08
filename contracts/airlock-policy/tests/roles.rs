@@ -13,6 +13,8 @@ use serde_json::{Value, json};
 use std::sync::Arc;
 
 const OWNER_MASK: u16 = airlock_verdict::OWNER;
+const BOOK_MASK: u16 = airlock_verdict::BOOK;
+const EMAIL_MASK: u16 = airlock_verdict::labels::EMAIL;
 const ONE_NEAR: u128 = 1_000_000_000_000_000_000_000_000;
 
 static SLOTS: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(3);
@@ -48,23 +50,20 @@ fn ok(r: &ExecutionFinalResult) {
     assert!(got.is_empty(), "failed: {got}");
 }
 
-/// A held payment: an Owner labelled request to a new payee (`bob.sandbox`, created here) is escalated NewRecipient. Returns the card
-/// arguments of `approve`.
-async fn held(w: &World, name: &str, amount: u128) -> (Value, String) {
-    let (bob, _) = create_user_account(&w.net, &w.root, &w.owner_signer, name)
-        .await
-        .expect("the payee exists");
-    let payee = format!("near:{bob}");
-    let task = w.signed_task(&[(&payee, 10 * ONE_NEAR)], 1);
-    let req = w.request_json(
-        &task.0,
-        0,
-        "near",
-        &payee,
-        amount,
-        (OWNER_MASK, OWNER_MASK, OWNER_MASK),
-        None,
-    );
+/// A held payment to `payee` (a key of an account that exists): the request is sent with the given labels and optional `book` field, and
+/// must be escalated. Returns the card arguments of `approve` and the request id.
+async fn held_to(
+    w: &World,
+    payee: &str,
+    amount: u128,
+    labels: (u16, u16, u16),
+    book: Option<Value>,
+) -> (Value, String) {
+    let task = w.signed_task(&[(payee, 10 * ONE_NEAR)], 1);
+    let mut req = w.request_json(&task.0, 0, "near", payee, amount, labels, None);
+    if let Some(b) = book {
+        req["book"] = b;
+    }
     let result = w.submit(vec![req], &task).await;
     ok(&result);
     let outs: Value = result.json().expect("outcomes");
@@ -73,6 +72,52 @@ async fn held(w: &World, name: &str, amount: u128) -> (Value, String) {
     let v = w.request(&id).await.expect("a request");
     let card = json!({ "id": v["id"], "to": v["payee"], "asset": v["display"]["asset_symbol"], "amount": v["display"]["amount_decimal"], "why": v["reason"], "book": v["book_status"] });
     (card, id)
+}
+
+/// A held payment to a NEW payee (`name.sandbox`, created here): an Owner labelled request, escalated NewRecipient.
+async fn held(w: &World, name: &str, amount: u128) -> (Value, String) {
+    let (acc, _) = create_user_account(&w.net, &w.root, &w.owner_signer, name)
+        .await
+        .expect("the payee exists");
+    held_to(
+        w,
+        &format!("near:{acc}"),
+        amount,
+        (OWNER_MASK, OWNER_MASK, OWNER_MASK),
+        None,
+    )
+    .await
+}
+
+/// Alice (the world's book payee) with a small cap, so that 2 NEAR from untrusted text is held `UntrustedAmount` and stays a book payee.
+async fn small_alice(w: &World) {
+    owner_call_ok(&w.policy, &w.owner, &w.owner_signer, &w.net, "book_add", json!({
+        "key": format!("near:{}", w.payee_near), "cap": ONE_NEAR.to_string(), "daily_untrusted_budget": (10 * ONE_NEAR).to_string(),
+        "daily_limit": (5 * ONE_NEAR).to_string(), "label": "Alice" })).await;
+}
+
+/// A held payment to the booked merchant Alice, `in_book` (the amount comes from untrusted text and is over her cap).
+async fn held_booked(w: &World) -> (Value, String) {
+    small_alice(w).await;
+    held_to(
+        w,
+        &format!("near:{}", w.payee_near),
+        2 * ONE_NEAR,
+        (BOOK_MASK, EMAIL_MASK, OWNER_MASK),
+        None,
+    )
+    .await
+}
+
+async fn account_balance(w: &World, who: &AccountId) -> u128 {
+    near_api::Account(who.clone())
+        .view()
+        .fetch_from(&w.net)
+        .await
+        .expect("the account exists")
+        .data
+        .amount
+        .as_yoctonear()
 }
 
 async fn state(w: &World, id: &str) -> String {
@@ -102,7 +147,7 @@ async fn the_default_world_has_no_approver_and_no_sponsor() {
 }
 
 #[tokio::test]
-async fn the_borrower_approves_and_the_issuer_cannot() {
+async fn the_borrower_settles_booked_merchants_and_the_issuer_overrides_the_rest() {
     let _s = SLOTS.acquire().await.unwrap();
     let w = world_with(WorldOpts {
         roles: true,
@@ -116,37 +161,109 @@ async fn the_borrower_approves_and_the_issuer_cannot() {
         .data;
     assert_eq!(roles["approver"], approver.as_str());
     assert_eq!(roles["sponsor"], w.sponsor.as_ref().unwrap().as_str());
+    // a NEW payee: a stranger and the agent are refused at the gate, the approver by the rule, and only the issuer's override settles it
     let (card, id) = held(&w, "bob", ONE_NEAR).await;
-    // the issuer (owner) cannot approve or reject, a stranger neither
-    fails_with(
-        &call(&w, &w.owner, &w.owner_signer, "approve", card.clone(), 1).await,
-        "Caller is not the approver",
-    );
-    fails_with(
-        &call(
-            &w,
-            &w.owner,
-            &w.owner_signer,
-            "reject",
-            json!({ "id": card["id"] }),
-            1,
-        )
-        .await,
-        "Caller is not the approver",
-    );
+    assert_eq!(card["book"], "new");
     fails_with(
         &call(&w, &w.agent, &w.agent_signer, "approve", card.clone(), 1).await,
-        "Caller is not the approver",
+        "Caller is not the approver or the owner",
     );
-    // the approver needs exactly one yocto
     fails_with(
         &call(&w, &approver, &approver_signer, "approve", card.clone(), 0).await,
         "Requires attached deposit of exactly 1 yoctoNEAR",
     );
+    fails_with(
+        &call(&w, &approver, &approver_signer, "approve", card.clone(), 1).await,
+        "not in the book",
+    );
     assert_eq!(state(&w, &id).await, "Pending");
-    // the approver approves
+    ok(&call(&w, &w.owner, &w.owner_signer, "approve", card, 1).await);
+    assert_eq!(state(&w, &id).await, "Executed");
+    // a BOOKED merchant: the issuer is refused, the approver settles it
+    let (card, id) = held_booked(&w).await;
+    assert_eq!(card["book"], "in_book");
+    fails_with(
+        &call(&w, &w.owner, &w.owner_signer, "approve", card.clone(), 1).await,
+        "the approver settles it",
+    );
+    assert_eq!(state(&w, &id).await, "Pending");
     ok(&call(&w, &approver, &approver_signer, "approve", card, 1).await);
     assert_eq!(state(&w, &id).await, "Executed");
+}
+
+/// The hole of the credit claim: the borrower controls the agent and holds the approver key. He asks his own account to be paid and taps
+/// approve: held as a new payee, the approver is refused, and nothing leaves the card.
+#[tokio::test]
+async fn the_borrower_cannot_pay_himself_through_his_agent() {
+    let _s = SLOTS.acquire().await.unwrap();
+    let w = world_with(WorldOpts {
+        roles: true,
+        ..WorldOpts::default()
+    })
+    .await;
+    let (approver, approver_signer) = w.approver.clone().expect("an approver");
+    let himself = format!("near:{approver}");
+    let before = account_balance(&w, &approver).await;
+    let (card, id) = held_to(
+        &w,
+        &himself,
+        ONE_NEAR,
+        (OWNER_MASK, OWNER_MASK, OWNER_MASK),
+        None,
+    )
+    .await;
+    assert_eq!(card["book"], "new");
+    fails_with(
+        &call(&w, &approver, &approver_signer, "approve", card.clone(), 1).await,
+        "not in the book",
+    );
+    assert_eq!(state(&w, &id).await, "Pending");
+    assert!(
+        account_balance(&w, &approver).await <= before,
+        "the borrower received nothing"
+    );
+    // he can only reject, and nothing is paid
+    ok(&call(
+        &w,
+        &approver,
+        &approver_signer,
+        "reject",
+        json!({ "id": card["id"] }),
+        1,
+    )
+    .await);
+    assert_eq!(state(&w, &id).await, "Rejected");
+    assert!(
+        account_balance(&w, &approver).await <= before,
+        "the borrower received nothing"
+    );
+}
+
+/// A booked payee sent without its proof is new: the approver cannot approve it either.
+#[tokio::test]
+async fn a_withheld_proof_makes_the_payee_new_for_the_approver() {
+    let _s = SLOTS.acquire().await.unwrap();
+    let w = world_with(WorldOpts {
+        roles: true,
+        ..WorldOpts::default()
+    })
+    .await;
+    let (approver, approver_signer) = w.approver.clone().expect("an approver");
+    small_alice(&w).await;
+    let (card, id) = held_to(
+        &w,
+        &format!("near:{}", w.payee_near),
+        2 * ONE_NEAR,
+        (OWNER_MASK, EMAIL_MASK, OWNER_MASK),
+        Some(json!("withhold")),
+    )
+    .await;
+    assert_eq!(card["book"], "new");
+    fails_with(
+        &call(&w, &approver, &approver_signer, "approve", card, 1).await,
+        "not in the book",
+    );
+    assert_eq!(state(&w, &id).await, "Pending");
 }
 
 #[tokio::test]

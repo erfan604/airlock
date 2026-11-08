@@ -18,7 +18,44 @@ pub struct RolesView {
 }
 
 impl Contract {
-    /// The guard of `approve`, `approve_and_remember` and `reject`: exactly one yoctoNEAR, then the predecessor is the approver (the owner
+    /// The guard of `approve` and `approve_and_remember` (AIR-327): exactly one yoctoNEAR, then the predecessor is the approver or the
+    /// owner when an approver is set (which of them may settle which escalation is `require_settle_role`), the owner alone when none is.
+    pub(crate) fn settle_call(&mut self) {
+        match &self.approver {
+            None => self.owner_call(),
+            Some(approver) => {
+                assert_one_yocto();
+                let who = env::predecessor_account_id();
+                require!(
+                    &who == approver || who == self.owner_id,
+                    "Caller is not the approver or the owner"
+                );
+            }
+        }
+    }
+
+    /// The split of `approve` when an approver is set. The borrower holds the approver key and controls the agent, so he must never be
+    /// able to approve a payment to an account the issuer did not put in the book (his own, say): the approver settles only an escalation
+    /// whose payee is in the book at the current epoch (`in_book_now`: the stored status is `in_book` and the book has not changed
+    /// since, which needs a valid proof, AIR-326). Any other escalation (a new payee, a withheld proof, a stale status) is the issuer's
+    /// to override, and the approver can still reject it. Without an approver nothing is checked here.
+    pub(crate) fn require_settle_role(&self, in_book_now: bool) {
+        if let Some(approver) = &self.approver {
+            if &env::predecessor_account_id() == approver {
+                require!(
+                    in_book_now,
+                    "approve refused for the approver: the payee is not in the book at this epoch (a new payee, a withheld proof or a book change since); reject it, or the owner may approve it as an override"
+                );
+            } else {
+                require!(
+                    !in_book_now,
+                    "approve refused for the owner: the payee is in the book, the approver settles it"
+                );
+            }
+        }
+    }
+
+    /// The guard of `reject`: exactly one yoctoNEAR, then the predecessor is the approver (the owner
     /// when no approver is set, with the text every deployment had before AIR-327). The owner is refused when an approver is set.
     pub(crate) fn approver_call(&mut self) {
         match &self.approver {
@@ -186,37 +223,37 @@ mod tests {
     // ---- an approver is set ----
 
     #[test]
-    fn roles_approver_approves_and_rejects_and_the_owner_cannot() {
+    fn roles_gates_with_an_approver_set() {
         let mut c = fresh_roles(Some(APPROVER), None);
         assert_eq!(c.get_roles().approver.unwrap().as_str(), APPROVER);
+        let approve = |c: &mut Contract| {
+            c.approve(
+                "1".into(),
+                "x".into(),
+                "x".into(),
+                "1".into(),
+                "x".into(),
+                "x".into(),
+            )
+        };
+        // the approver and the owner pass the gate of approve (the role split on the escalation is tested in the red-team cases)
+        for who in [APPROVER, OWNER] {
+            as_caller(who, 1);
+            assert!(panics(|| approve(&mut c)).contains("unknown id"), "{who}");
+        }
+        // reject is the approver's alone
         as_caller(APPROVER, 1);
-        assert!(
-            panics(|| c.approve(
-                "1".into(),
-                "x".into(),
-                "x".into(),
-                "1".into(),
-                "x".into(),
-                "x".into()
-            ))
-            .contains("unknown id")
-        );
         assert!(panics(|| c.reject("1".into())).contains("unknown id"));
-        as_caller(OWNER, 1);
-        assert!(
-            panics(|| c.approve(
-                "1".into(),
-                "x".into(),
-                "x".into(),
-                "1".into(),
-                "x".into(),
-                "x".into()
-            ))
-            .contains("Caller is not the approver")
-        );
-        assert!(panics(|| c.reject("1".into())).contains("Caller is not the approver"));
+        for who in [OWNER, STRANGER] {
+            as_caller(who, 1);
+            assert!(
+                panics(|| c.reject("1".into())).contains("Caller is not the approver"),
+                "{who}"
+            );
+        }
+        // a stranger cannot approve
         as_caller(STRANGER, 1);
-        assert!(panics(|| c.reject("1".into())).contains("Caller is not the approver"));
+        assert!(panics(|| approve(&mut c)).contains("Caller is not the approver or the owner"));
     }
 
     #[test]
@@ -268,18 +305,14 @@ mod tests {
                     entry.clone(),
                 )
             });
-            if who == APPROVER {
-                assert!(
-                    text.contains("approve_and_remember is refused when an approver is set"),
-                    "{text}"
-                );
-                assert!(
-                    text.contains("book_set_root"),
-                    "the text says who adds merchants: {text}"
-                );
-            } else {
-                assert!(text.contains("Caller is not the approver"), "{text}");
-            }
+            assert!(
+                text.contains("approve_and_remember is refused when an approver is set"),
+                "{who}: {text}"
+            );
+            assert!(
+                text.contains("book_set_root"),
+                "the text says who adds merchants: {text}"
+            );
         }
     }
 

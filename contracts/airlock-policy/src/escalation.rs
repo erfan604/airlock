@@ -312,12 +312,14 @@ impl Contract {
         if let Err(e) = approve_check(&stored, &args, &rec.to_verdict(), limits, &live) {
             revert_approve(e);
         }
+        // AIR-327: with an approver the borrower settles only payees in the book at this epoch, the issuer the rest
+        let in_book_now = pending.book_in && pending.book_epoch == self.book_epoch;
+        self.require_settle_role(in_book_now);
         // the escalation leaves the agent's pending count and the consecutive reject streak ends (AIR-083); a revert after this point
         // reverts the counters with the call
         self.flood_after_approve_request(&rec.agent, &request_key);
         // charge: the payee limit is the one stored with the escalation when the book is unchanged since (AIR-326); after a book change
         // the payee has no limit (as a payee that left the book had), and its day ledger still records the payment
-        let in_book_now = pending.book_in && pending.book_epoch == self.book_epoch;
         let payee_limit = if pending.book_epoch == self.book_epoch {
             pending.payee_limit
         } else {
@@ -416,7 +418,7 @@ impl Contract {
         why: String,
         book: String,
     ) {
-        self.approver_call();
+        self.settle_call();
         self.approve_stored(&id, &to, &asset, &amount, &why, &book);
     }
 
@@ -441,7 +443,7 @@ impl Contract {
         new_root: Hex32,
         entry: crate::book::BookProof,
     ) {
-        self.approver_call();
+        self.settle_call();
         // the issuer adds merchants, the borrower only approves (AIR-327): with an approver the remember half is closed
         require!(
             self.approver.is_none(),

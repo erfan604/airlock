@@ -8,17 +8,26 @@ A credit line funds an AIRLOCK policy, the card. Three accounts stand around it:
 
 | Role | Account | What it can do |
 | --- | --- | --- |
-| issuer | `owner_id` (the pool's issuer) | everything the owner could do before: book (`book_set_root`), assets, flags, pause, task key, agents, `reset_escalations`, and `sweep` |
-| borrower | `approver` (set at init) | `approve` and `reject` of held payments, nothing else |
+| issuer | `owner_id` (the pool's issuer) | everything the owner could do before: book (`book_set_root`), assets, flags, pause, task key, agents, `reset_escalations`, and `sweep`; `approve` as an override for a payment to a payee that is not in the book (never for a booked one) |
+| borrower | `approver` (set at init) | `reject` any held payment; `approve` a held payment only to a payee in the book at the current epoch; nothing else |
 | pool | `sponsor` (set at init) | the only account `sweep` can pay |
 
 `approver` and `sponsor` are `Option<AccountId>` arguments of `new`, last fields of the state, fixed for the life of the account: no method
 changes them. With neither set, nothing changes: the owner approves and rejects with the same guard text (`Caller is not the owner`), there
 is no sweep, and an init call without the two keys is the init call of before (a missing option key is None).
 
-- `approve`, `reject` and `approve_and_remember` run `approver_call`: exactly one yoctoNEAR, then the predecessor must be the approver
-  (the owner when none is set). With an approver the owner is refused (`Caller is not the approver`), because the person who tops up or
-  rules the card must not be the one who taps for it.
+- `reject` runs `approver_call`: exactly one yoctoNEAR, then the predecessor must be the approver (the owner when none is set).
+- `approve` and `approve_and_remember` run `settle_call`: the approver or the owner may pass the gate, a stranger is refused
+  (`Caller is not the approver or the owner`); with no approver only the owner, with the text of before. Which of the two may settle
+  which escalation is the rule below.
+- The borrower rule (found in review, tests RT-CON-14 and RT-CON-17 to RT-CON-20): the borrower controls the agent and holds the approver
+  key, so he could ask his own account to be paid, see it held as a new payee and tap approve. With an approver set, `approve` settles
+  an escalation only as follows: the approver may approve it only when its payee is in the book at the current epoch (the stored
+  `in_book` status and an unchanged book epoch, which need a valid proof, AIR-326); the owner may approve it only when it is not (an
+  explicit override by the issuer). So a new payee, a payee whose proof the agent withheld and a stale status are refused to the approver
+  (`approve refused for the approver`), who can still reject them, and a booked payee is refused to the owner (`approve refused for
+  the owner: ... the approver settles it`). The approver may therefore settle held payments to booked merchants (an amount read from
+  untrusted text, or over the soft limit within the caps) and nothing else. `init` refuses an approver equal to the owner.
 - `approve_and_remember` is refused when an approver is set (`approve_and_remember is refused when an approver is set: the owner adds
   merchants with book_set_root`): the borrower cannot add a payee, so a line can only reach merchants the issuer put in the book.
 - `sweep(amount)`, owner only, one yocto, only with a sponsor. Reverts, in order: `no sponsor`, `sweep amount must be positive`,
@@ -34,13 +43,13 @@ is no sweep, and an init call without the two keys is the init call of before (a
 Not changed: `contracts/airlock-verdict` and the proofs (no diff). The roles are access control around the verdict, tested, not part of
 Kani or Lean.
 
-Trust assumptions, stated once: the pool checks off chain that a card was created with the issuer as owner, the borrower as approver and
+Trust assumptions, stated once (the borrower rule above is one of them: the borrower can never move pool money to an account the issuer did not put in the book, because only the issuer can settle such a payment, and a withheld or stale proof counts as not in the book): the pool checks off chain that a card was created with the issuer as owner, the borrower as approver and
 the pool as sponsor (AIR-328 registers cards on that statement); an owner key that is stolen can still change the book and sweep, as an
 owner key always could.
 
 ### Mutation check
 
-Each mutant was applied alone and the library tests run (cargo test on the library target, 327 tests including the unit tests of `src/roles.rs` and the
+Each mutant was applied alone and the library tests run (cargo test on the library target, 331 tests including the unit tests of `src/roles.rs` and the
 three red-team cases RT-CON-14 to RT-CON-16); the sandbox suite `tests/roles.rs` covers the same rules against the wasm.
 
 | Mutant | Killed by |
@@ -52,6 +61,12 @@ three red-team cases RT-CON-14 to RT-CON-16); the sandbox suite `tests/roles.rs`
 | `sweep` without the owner guard | `roles_sweep_is_owner_only_with_one_yocto`, `roles_approver_cannot_change_policy`, `rt_con_sweep_pays_only_the_sponsor` |
 | `sweep` ignores pending escalations | `roles_sweep_refuses_zero_more_than_spendable_and_pending_escalations` |
 | `sweep` ignores the spendable balance | `roles_sweep_never_goes_below_the_storage_cost` |
+| the approver may approve a payee that is not in the book (the hole: the borrower pays himself) | `rt_con_borrower_pays_himself_is_refused`, `rt_con_approver_cannot_approve_a_new_payee_of_anyone`, `rt_con_withheld_proof_makes_the_payee_new_for_the_approver`, `rt_con_stale_book_status_needs_the_owner`; sandbox `the_borrower_cannot_pay_himself_through_his_agent` |
+| the owner may approve a booked payee | `rt_con_approver_approves_a_booked_merchant_and_the_owner_does_not` |
+| the stored book epoch is ignored (a stale status counts as in the book) | `rt_con_stale_book_status_needs_the_owner` |
+| the role split is not applied at all | five red-team tests above |
+| the gate lets anyone settle | `rt_con_approver_approves_a_booked_merchant_and_the_owner_does_not`, `roles_gates_with_an_approver_set` |
+| `book_in` is true whatever the proof | `store_pending_fills_display_digest_and_indexes`, `rt_con_borrower_pays_himself_is_refused`, `rt_con_withheld_proof_makes_the_payee_new_for_the_approver` |
 
 ## AIR-328: the credit pool contract (design, waiting for approval)
 
