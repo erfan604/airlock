@@ -451,19 +451,34 @@ async fn eddsa_domain_1_answers_ed25519() -> R<()> {
     let r = call(&w, "sign", eddsa(&message), 30, 1).await?;
     assert!(r.is_success(), "{}", failure_text(&r));
     let answer: Value = r.json()?;
-    assert_eq!(answer, json!({"scheme": "Ed25519", "signature": vec![0x33u8; 64]}));
+    assert_eq!(
+        answer,
+        json!({"scheme": "Ed25519", "signature": vec![0x33u8; 64]})
+    );
     assert_eq!(
         view::<Value>(&w, "last_request").await?,
         json!({"path": "sol-1", "payload_hex": message})
     );
     let sig: Vec<u8> = (0u8..64).collect();
     let sig_hex: String = sig.iter().map(|b| format!("{b:02x}")).collect();
-    let set = call(&w, "set_ed25519_signature", json!({"signature_hex": sig_hex}), 30, 0).await?;
+    let set = call(
+        &w,
+        "set_ed25519_signature",
+        json!({"signature_hex": sig_hex}),
+        30,
+        0,
+    )
+    .await?;
     assert!(set.is_success(), "{}", failure_text(&set));
     let r = call(&w, "sign", eddsa(&message), 30, 1).await?;
     let answer: Value = r.json()?;
     assert_eq!(answer, json!({"scheme": "Ed25519", "signature": sig}));
-    for bad in [String::new(), "0".to_string(), "zz".to_string(), "01".repeat(1233)] {
+    for bad in [
+        String::new(),
+        "0".to_string(),
+        "zz".to_string(),
+        "01".repeat(1233),
+    ] {
         let r = call(&w, "sign", eddsa(&bad), 30, 1).await?;
         assert_failed_with(&r, "Eddsa payload must be 1 to 1232 bytes of hex");
     }

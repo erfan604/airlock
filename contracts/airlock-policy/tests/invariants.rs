@@ -456,8 +456,14 @@ async fn i03_every_callback_is_private() {
         .filter(|n| {
             !is_view(n)
                 && !rows.contains(n)
-                && !["new", "expire", "register_agent", "submit_batch", "sign_sol"]
-                    .contains(&n.as_str())
+                && ![
+                    "new",
+                    "expire",
+                    "register_agent",
+                    "submit_batch",
+                    "sign_sol",
+                ]
+                .contains(&n.as_str())
         })
         .collect();
     let expected: BTreeSet<String> = CALLBACKS.iter().map(|s| (*s).to_string()).collect();

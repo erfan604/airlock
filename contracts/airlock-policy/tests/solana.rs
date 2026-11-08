@@ -79,10 +79,15 @@ async fn sol_world() -> World {
         json!({ "asset": ASSET, "sender": sender_b58() }),
     )
     .await;
-    let registered = call_view::<Option<String>>(&w.policy, "get_sol_sender", json!({ "asset": ASSET }), &w.net)
-        .await
-        .expect("get_sol_sender answers")
-        .data;
+    let registered = call_view::<Option<String>>(
+        &w.policy,
+        "get_sol_sender",
+        json!({ "asset": ASSET }),
+        &w.net,
+    )
+    .await
+    .expect("get_sol_sender answers")
+    .data;
     assert_eq!(registered, Some(sender_b58()));
     owner(
         "book_add",
@@ -99,10 +104,20 @@ async fn sol_world() -> World {
 }
 
 fn task_of(w: &World) -> Task {
-    w.signed_task(&[(&key(PAYEE), 5 * SOL), (&key(STRANGER_PAYEE), 5 * SOL)], 5)
+    w.signed_task(
+        &[(&key(PAYEE), 5 * SOL), (&key(STRANGER_PAYEE), 5 * SOL)],
+        5,
+    )
 }
 
-fn req(w: &World, task: &Task, index: u8, payee: &str, amount: u128, labels: (u16, u16, u16)) -> Value {
+fn req(
+    w: &World,
+    task: &Task,
+    index: u8,
+    payee: &str,
+    amount: u128,
+    labels: (u16, u16, u16),
+) -> Value {
     w.request_json(&task.0, index, ASSET, &key(payee), amount, labels, None)
 }
 
@@ -227,11 +242,20 @@ async fn allowed_payment_is_signed_by_sign_sol() {
     let w = sol_world().await;
     let task = task_of(&w);
     let amount = SOL / 2;
-    let outcomes = submit_ok(&w, vec![req(&w, &task, 0, PAYEE, amount, (BOOK, OWNER, OWNER))], &task).await;
+    let outcomes = submit_ok(
+        &w,
+        vec![req(&w, &task, 0, PAYEE, amount, (BOOK, OWNER, OWNER))],
+        &task,
+    )
+    .await;
     assert_eq!(outcomes[0]["outcome"], "allowed", "{outcomes}");
     let id = id_of(&task, 0);
     assert_eq!(state_of(&w, &id).await, "Executing");
-    assert_eq!(mock_calls(&w).await, 0, "submit_batch must not sign a Solana request");
+    assert_eq!(
+        mock_calls(&w).await,
+        0,
+        "submit_batch must not sign a Solana request"
+    );
 
     let message = expected(amount, BLOCKHASH);
     mock_signs(&w, &message).await;
@@ -258,7 +282,13 @@ async fn allowed_payment_is_signed_by_sign_sol() {
     assert_eq!(last["path"], PATH, "{last}");
     assert_eq!(last["payload_hex"], hex::encode(&message), "{last}");
     assert_eq!(state_of(&w, &id).await, "Executed");
-    let attempt = view(&w, &w.policy, "get_sol_attempt", json!({ "request_id": id })).await;
+    let attempt = view(
+        &w,
+        &w.policy,
+        "get_sol_attempt",
+        json!({ "request_id": id }),
+    )
+    .await;
     assert_eq!(attempt["sender"], sender_b58());
     assert_eq!(attempt["blockhash"], BLOCKHASH);
     assert_eq!(attempt["message_hex"], hex::encode(&message));
@@ -278,7 +308,12 @@ async fn held_payment_is_signed_after_approval() {
     let w = sol_world().await;
     let task = task_of(&w);
     let amount = 2 * SOL;
-    let outcomes = submit_ok(&w, vec![req(&w, &task, 0, PAYEE, amount, (BOOK, EMAIL, OWNER))], &task).await;
+    let outcomes = submit_ok(
+        &w,
+        vec![req(&w, &task, 0, PAYEE, amount, (BOOK, EMAIL, OWNER))],
+        &task,
+    )
+    .await;
     assert_eq!(outcomes[0]["outcome"], "escalated", "{outcomes}");
     assert_eq!(outcomes[0]["reason"], "UntrustedAmount", "{outcomes}");
     let id = id_of(&task, 0);
@@ -297,9 +332,16 @@ async fn held_payment_is_signed_after_approval() {
     let message = expected(amount, OTHER_BLOCKHASH);
     mock_signs(&w, &message).await;
     let signed = sign_sol(&w, &id, OTHER_BLOCKHASH).await;
-    assert!(failure_text(&signed).is_empty(), "{}", failure_text(&signed));
+    assert!(
+        failure_text(&signed).is_empty(),
+        "{}",
+        failure_text(&signed)
+    );
     assert_eq!(names(&signed), ["sol_unsigned", "sol_signed"]);
-    assert_eq!(one_event(&signed, "sol_signed")["message_hex"], hex::encode(&message));
+    assert_eq!(
+        one_event(&signed, "sol_signed")["message_hex"],
+        hex::encode(&message)
+    );
     assert_eq!(state_of(&w, &id).await, "Executed");
 }
 
@@ -311,7 +353,14 @@ async fn payee_outside_the_book_is_blocked() {
     let task = task_of(&w);
     let outcomes = submit_ok(
         &w,
-        vec![req(&w, &task, 0, STRANGER_PAYEE, SOL / 10, (BOOK, OWNER, OWNER))],
+        vec![req(
+            &w,
+            &task,
+            0,
+            STRANGER_PAYEE,
+            SOL / 10,
+            (BOOK, OWNER, OWNER),
+        )],
         &task,
     )
     .await;
@@ -329,12 +378,18 @@ async fn only_the_agent_or_the_owner_signs() {
     let _slot = slot().await;
     let w = sol_world().await;
     let task = task_of(&w);
-    let outcomes = submit_ok(&w, vec![req(&w, &task, 0, PAYEE, SOL / 4, (BOOK, OWNER, OWNER))], &task).await;
+    let outcomes = submit_ok(
+        &w,
+        vec![req(&w, &task, 0, PAYEE, SOL / 4, (BOOK, OWNER, OWNER))],
+        &task,
+    )
+    .await;
     assert_eq!(outcomes[0]["outcome"], "allowed", "{outcomes}");
     let id = id_of(&task, 0);
-    let (stranger, stranger_signer) = create_user_account(&w.net, &w.root, &w.owner_signer, "stranger")
-        .await
-        .expect("the account is created");
+    let (stranger, stranger_signer) =
+        create_user_account(&w.net, &w.root, &w.owner_signer, "stranger")
+            .await
+            .expect("the account is created");
     let refused = call_300_tgas(
         &w.policy,
         &w.net,
@@ -361,7 +416,11 @@ async fn only_the_agent_or_the_owner_signs() {
         json!({ "request_id": id, "recent_blockhash": BLOCKHASH }),
     )
     .await;
-    assert!(failure_text(&by_owner).is_empty(), "{}", failure_text(&by_owner));
+    assert!(
+        failure_text(&by_owner).is_empty(),
+        "{}",
+        failure_text(&by_owner)
+    );
     assert_eq!(state_of(&w, &id).await, "Executed");
 }
 
@@ -372,7 +431,12 @@ async fn signature_for_another_key_fails_closed() {
     let _slot = slot().await;
     let w = sol_world().await;
     let task = task_of(&w);
-    submit_ok(&w, vec![req(&w, &task, 0, PAYEE, SOL / 4, (BOOK, OWNER, OWNER))], &task).await;
+    submit_ok(
+        &w,
+        vec![req(&w, &task, 0, PAYEE, SOL / 4, (BOOK, OWNER, OWNER))],
+        &task,
+    )
+    .await;
     let id = id_of(&task, 0);
     let charged = w.ledgers(&key(PAYEE), ASSET).await;
     let r = sign_sol(&w, &id, BLOCKHASH).await;

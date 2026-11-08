@@ -144,7 +144,10 @@ impl MockMpc {
                 PromiseOrValue::Promise(promise)
             }
             _ if eddsa => {
-                let signature = self.ed25519_signature.clone().unwrap_or_else(|| vec![0x33; 64]);
+                let signature = self
+                    .ed25519_signature
+                    .clone()
+                    .unwrap_or_else(|| vec![0x33; 64]);
                 PromiseOrValue::Value(ed25519_response(&signature))
             }
             _ => PromiseOrValue::Value(ok_response()),

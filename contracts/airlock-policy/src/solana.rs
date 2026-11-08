@@ -201,10 +201,7 @@ impl Contract {
             entry.max_fee_per_gas.0 == 0 && entry.max_gas.0 == 0,
             "fee and gas caps only for evm"
         );
-        require!(
-            entry.hard_cap.0 <= MAX_SOL_LAMPORTS,
-            "sol caps above u64"
-        );
+        require!(entry.hard_cap.0 <= MAX_SOL_LAMPORTS, "sol caps above u64");
     }
 
     /// Who may call `sign_sol` for `rec`: the owner, or the agent that submitted it while it is still a valid, allowed agent. Returns the
@@ -438,7 +435,11 @@ mod tests {
                 lamports,
                 &b58(m["blockhash"].as_str().unwrap()),
             );
-            assert_eq!(hex::encode(&bytes), m["message_hex"].as_str().unwrap(), "{m}");
+            assert_eq!(
+                hex::encode(&bytes),
+                m["message_hex"].as_str().unwrap(),
+                "{m}"
+            );
             // the fixed shape the relayer relies on: 150 bytes, one signer, three keys, the payer first
             assert_eq!(bytes.len(), 150);
             assert_eq!(&bytes[..4], &[1, 0, 1, 3]);
@@ -459,15 +460,25 @@ mod tests {
         let derivations = doc["derivations"].as_array().unwrap();
         assert!(derivations.len() >= 3);
         for d in derivations {
-            let root = b58(d["root"].as_str().unwrap().strip_prefix("ed25519:").unwrap());
-            let want = d["public_key"].as_str().unwrap().strip_prefix("ed25519:").unwrap();
+            let root = b58(d["root"]
+                .as_str()
+                .unwrap()
+                .strip_prefix("ed25519:")
+                .unwrap());
+            let want = d["public_key"]
+                .as_str()
+                .unwrap()
+                .strip_prefix("ed25519:")
+                .unwrap();
             let text = format!(
                 "near-mpc-recovery v0.1.0 epsilon derivation:{},{}",
                 d["predecessor"].as_str().unwrap(),
                 d["path"].as_str().unwrap()
             );
             let tweak: [u8; 32] = Sha3_256::digest(text.as_bytes()).into();
-            let point = CompressedEdwardsY(root).decompress().expect("the root is a point")
+            let point = CompressedEdwardsY(root)
+                .decompress()
+                .expect("the root is a point")
                 + ED25519_BASEPOINT_POINT * Scalar::from_bytes_mod_order(tweak);
             assert_eq!(sol_base58(&point.compress().to_bytes()), want, "{d}");
         }
@@ -495,7 +506,14 @@ mod tests {
             assert!(is_sol_asset(id), "{id}");
             assert!(crate::policy::valid_asset_id(id), "{id}");
         }
-        for id in ["sol", "sol:", "sol:Devnet", "sol:devnet:native", "sol:localnet", "SOL:devnet"] {
+        for id in [
+            "sol",
+            "sol:",
+            "sol:Devnet",
+            "sol:devnet:native",
+            "sol:localnet",
+            "SOL:devnet",
+        ] {
             assert!(!is_sol_asset(id), "{id}");
             assert!(!crate::policy::valid_asset_id(id), "{id}");
         }
@@ -513,9 +531,13 @@ mod tests {
     fn sol_response_parsing() {
         let sig: Vec<u8> = (0u8..64).collect();
         let ok = serde_json::json!({ "scheme": "Ed25519", "signature": sig }).to_string();
-        assert_eq!(parse_ed25519_signature(ok.as_bytes()).unwrap().to_vec(), sig);
+        assert_eq!(
+            parse_ed25519_signature(ok.as_bytes()).unwrap().to_vec(),
+            sig
+        );
         // extra fields are ignored
-        let extra = serde_json::json!({ "scheme": "Ed25519", "signature": sig, "x": 1 }).to_string();
+        let extra =
+            serde_json::json!({ "scheme": "Ed25519", "signature": sig, "x": 1 }).to_string();
         assert!(parse_ed25519_signature(extra.as_bytes()).is_ok());
         let long: Vec<u8> = (0u8..65).collect();
         for bad in [
@@ -647,7 +669,9 @@ mod tests {
             SigningKey::from_bytes(&[9; 32]).sign(b"x").to_bytes(),
             {
                 let (_, _, attempt) = with_attempt(RequestState::Executing);
-                SigningKey::from_bytes(&[9; 32]).sign(&attempt.message).to_bytes()
+                SigningKey::from_bytes(&[9; 32])
+                    .sign(&attempt.message)
+                    .to_bytes()
             },
             sender_key().sign(b"other bytes").to_bytes(),
             [0u8; 64],
@@ -804,7 +828,11 @@ mod tests {
         });
         assert!(text.contains("bad blockhash"), "{text}");
         // a record that is not Executing
-        for state in [RequestState::Pending, RequestState::Blocked, RequestState::Executed] {
+        for state in [
+            RequestState::Pending,
+            RequestState::Blocked,
+            RequestState::Executed,
+        ] {
             let (mut c, id) = ready();
             let mut rec = c.records.get(&id).cloned().unwrap();
             rec.state = state;
@@ -812,7 +840,10 @@ mod tests {
             let text = panic_text(|| {
                 let _ = c.sign_sol(id.clone(), BLOCKHASH.to_string());
             });
-            assert!(text.contains("request is not executing"), "{state:?}: {text}");
+            assert!(
+                text.contains("request is not executing"),
+                "{state:?}: {text}"
+            );
         }
         // an EVM or NEAR record
         let (mut c, id) = ready();
@@ -886,8 +917,18 @@ mod tests {
         };
         let cases: [(serde_json::Value, &str, &str, &str); 4] = [
             (serde_json::Value::Null, "1000", "0", "sol path required"),
-            (serde_json::json!("Bad Path"), "1000", "0", "sol path invalid"),
-            (serde_json::json!("sol-devnet-1"), "1000", "1", "fee and gas caps only for evm"),
+            (
+                serde_json::json!("Bad Path"),
+                "1000",
+                "0",
+                "sol path invalid",
+            ),
+            (
+                serde_json::json!("sol-devnet-1"),
+                "1000",
+                "1",
+                "fee and gas caps only for evm",
+            ),
             (
                 serde_json::json!("sol-devnet-1"),
                 "18446744073709551616",
@@ -897,14 +938,19 @@ mod tests {
         ];
         for (path, hard, fee, want) in cases {
             let mut c = fresh();
-            let text = panic_text(|| c.asset_set(ASSET.to_string(), entry(hard, path.clone(), fee)));
+            let text =
+                panic_text(|| c.asset_set(ASSET.to_string(), entry(hard, path.clone(), fee)));
             assert!(text.contains(want), "{want}: {text}");
         }
         // the largest u64 is allowed
         let mut c = fresh();
         c.asset_set(
             ASSET.to_string(),
-            entry(&u64::MAX.to_string(), serde_json::json!("sol-devnet-1"), "0"),
+            entry(
+                &u64::MAX.to_string(),
+                serde_json::json!("sol-devnet-1"),
+                "0",
+            ),
         );
         // a second Solana asset, or an EVM asset, cannot take the same path
         let text = panic_text(|| {
@@ -919,12 +965,16 @@ mod tests {
         });
         assert!(text.contains("sol path already used"), "{text}");
         // the sender: only for a registered Solana asset, only 32 bytes of base58
-        let text = panic_text(|| c.sol_sender_set("sol:mainnet".to_string(), PAYEE_B58.to_string()));
+        let text =
+            panic_text(|| c.sol_sender_set("sol:mainnet".to_string(), PAYEE_B58.to_string()));
         assert!(text.contains("unknown sol asset"), "{text}");
         let text = panic_text(|| c.sol_sender_set(ASSET.to_string(), "1".repeat(31)));
         assert!(text.contains("bad sol sender"), "{text}");
         c.sol_sender_set(ASSET.to_string(), PAYEE_B58.to_string());
-        assert_eq!(c.get_sol_sender(ASSET.to_string()).as_deref(), Some(PAYEE_B58));
+        assert_eq!(
+            c.get_sol_sender(ASSET.to_string()).as_deref(),
+            Some(PAYEE_B58)
+        );
         testing_env!(ctx(AGENT, 2_000, 1).build());
         let text = panic_text(|| c.sol_sender_set(ASSET.to_string(), PAYEE_B58.to_string()));
         assert!(text.contains("Caller is not the owner"), "{text}");

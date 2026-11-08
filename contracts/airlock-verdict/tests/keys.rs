@@ -324,7 +324,8 @@ fn sol_address_edges() {
     let base = "9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa";
     assert!(sol_bytes(base).is_ok());
     for b in 0u8..=0x7f {
-        let in_alphabet = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".contains(&b);
+        let in_alphabet =
+            b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".contains(&b);
         let first = format!("{}{}", b as char, &base[1..]);
         let last = format!("{}{}", &base[..43], b as char);
         if in_alphabet {
@@ -350,7 +351,14 @@ fn sol_clusters_are_exact() {
         assert_eq!(check(&format!("sol:{cluster}:{addr}")), Ok(()));
     }
     for cluster in [
-        "", "Devnet", "DEVNET", "devnet ", "mainnet-beta", "localnet", "devnet1", "dev",
+        "",
+        "Devnet",
+        "DEVNET",
+        "devnet ",
+        "mainnet-beta",
+        "localnet",
+        "devnet1",
+        "dev",
     ] {
         assert!(!is_sol_cluster(cluster.as_bytes()), "{cluster:?}");
         assert_eq!(
