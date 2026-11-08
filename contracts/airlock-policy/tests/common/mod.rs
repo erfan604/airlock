@@ -263,7 +263,38 @@ pub async fn deploy_policy(
     mpc_contract: &AccountId,
     attestation_expiration_time_ms: &str,
 ) -> Result<AccountId, Box<dyn std::error::Error + Send + Sync>> {
+    deploy_policy_with(
+        network_config,
+        genesis_account_id,
+        genesis_signer,
+        account_id,
+        mpc_contract,
+        attestation_expiration_time_ms,
+        json!({}),
+    )
+    .await
+}
+
+/// `deploy_policy` with extra fields in the init call (AIR-327: `approver` and `sponsor`). `{}` gives the exact init call of before.
+pub async fn deploy_policy_with(
+    network_config: &NetworkConfig,
+    genesis_account_id: &AccountId,
+    genesis_signer: &Arc<Signer>,
+    account_id: Option<AccountId>,
+    mpc_contract: &AccountId,
+    attestation_expiration_time_ms: &str,
+    extra_init: Value,
+) -> Result<AccountId, Box<dyn std::error::Error + Send + Sync>> {
     let owner = genesis_account_id.clone();
+    let mut init = json!({
+        "owner_id": owner,
+        "mpc_contract_id": mpc_contract,
+        "requires_tee": false,
+        "attestation_expiration_time_ms": attestation_expiration_time_ms
+    });
+    for (k, v) in extra_init.as_object().into_iter().flatten() {
+        init[k] = v.clone();
+    }
 
     let contract_id = deploy_contract(
         network_config,
@@ -271,12 +302,7 @@ pub async fn deploy_policy(
         genesis_signer,
         &contract_wasm_path(),
         Some("new"),
-        Some(json!({
-            "owner_id": owner,
-            "mpc_contract_id": mpc_contract,
-            "requires_tee": false,
-            "attestation_expiration_time_ms": attestation_expiration_time_ms
-        })),
+        Some(init),
         account_id,
     )
     .await?;
@@ -1122,6 +1148,10 @@ pub struct World {
     pub payee_near: AccountId,
     /// 40 lowercase hex characters (`WORLD_EVM_PAYEE`).
     pub payee_evm: String,
+    /// AIR-327: the approver account and key when the world was started with one (`WorldOpts::roles`), else `None`.
+    pub approver: Option<(AccountId, Arc<Signer>)>,
+    /// AIR-327: the sponsor account when the world was started with one.
+    pub sponsor: Option<AccountId>,
 }
 
 /// What `world_with` varies. The default is `nonce: Some(0)`: `set_nonce("base-sepolia-1", 0)` has run; `None` skips it (the nonce is then
@@ -1129,11 +1159,16 @@ pub struct World {
 #[derive(Clone, Copy, Debug)]
 pub struct WorldOpts {
     pub nonce: Option<u64>,
+    /// AIR-327: start the policy with an approver (`approver.sandbox`) and a sponsor (`sponsor.sandbox`); false: the init call of before.
+    pub roles: bool,
 }
 
 impl Default for WorldOpts {
     fn default() -> Self {
-        Self { nonce: Some(0) }
+        Self {
+            nonce: Some(0),
+            roles: false,
+        }
     }
 }
 
@@ -1161,13 +1196,29 @@ pub async fn world_with(o: WorldOpts) -> World {
     let (root, root_signer) = setup_genesis_account().await;
     let mpc = deploy_checked_mock_mpc(&net, &root, &root_signer, "mpc").await;
     let policy: AccountId = format!("policy.{root}").parse().unwrap();
-    deploy_policy(
+    let roles = if o.roles {
+        let approver = create_user_account(&net, &root, &root_signer, "approver")
+            .await
+            .expect("the approver account is created");
+        let (sponsor, _) = create_user_account(&net, &root, &root_signer, "sponsor")
+            .await
+            .expect("the sponsor account is created");
+        Some((approver, sponsor))
+    } else {
+        None
+    };
+    let extra = match &roles {
+        Some(((approver, _), sponsor)) => json!({ "approver": approver, "sponsor": sponsor }),
+        None => json!({}),
+    };
+    deploy_policy_with(
         &net,
         &root,
         &root_signer,
         Some(policy.clone()),
         &mpc,
         "86400000",
+        extra,
     )
     .await
     .expect("the policy contract deploys and initializes");
@@ -1251,6 +1302,8 @@ pub async fn world_with(o: WorldOpts) -> World {
         mpc,
         payee_near,
         payee_evm: WORLD_EVM_PAYEE.to_string(),
+        approver: roles.as_ref().map(|((a, s), _)| (a.clone(), s.clone())),
+        sponsor: roles.map(|(_, s)| s),
     }
 }
 
@@ -1437,6 +1490,8 @@ pub fn inproc_contract() -> airlock_policy::Contract {
         U64(86_400_000),
         "owner.test.near".parse().unwrap(),
         "mpc.test.near".parse().unwrap(),
+        None,
+        None,
     );
     near_sdk::testing_env!(inproc_ctx("owner.test.near", T0, 1).build());
     c.asset_set(

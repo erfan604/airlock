@@ -300,7 +300,11 @@ async fn batch_of_three_gets_three_nonces_and_signatures() {
 #[tokio::test]
 async fn nonce_not_set_reverts_whole_batch() {
     let _slot = slot().await;
-    let w = world_with(WorldOpts { nonce: None }).await;
+    let w = world_with(WorldOpts {
+        nonce: None,
+        ..WorldOpts::default()
+    })
+    .await;
     let task = task_of(&w, 3);
     let before = ledgers_of(&w).await;
     let result = w.submit(vec![clean(&w, &task, 0, AMOUNT)], &task).await;

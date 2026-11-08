@@ -36,6 +36,8 @@ pub fn fresh() -> Contract {
         U64(100_000),
         OWNER.parse().unwrap(),
         MPC.parse().unwrap(),
+        None,
+        None,
     );
     contract.approve_measurements(create_mock_full_measurements_hex());
     contract.approve_ppids(vec![Ppid::default()]);
@@ -73,3 +75,23 @@ pub fn one_book(payee: &str, e: &crate::policy::BookEntry) -> ([u8; 32], crate::
     let (root, mut proofs) = crate::book::build(&[entry], &[7; 32]);
     (root, proofs.remove(0))
 }
+
+/// AIR-327: a contract like `fresh()` with an approver and a sponsor (`None` keeps the default: the owner approves, no sweep).
+pub fn fresh_roles(approver: Option<&str>, sponsor: Option<&str>) -> Contract {
+    testing_env!(ctx(OWNER, 1_000, 1).build());
+    let mut contract = Contract::new(
+        false,
+        U64(100_000),
+        OWNER.parse().unwrap(),
+        MPC.parse().unwrap(),
+        approver.map(|a| a.parse().unwrap()),
+        sponsor.map(|s| s.parse().unwrap()),
+    );
+    contract.approve_measurements(create_mock_full_measurements_hex());
+    contract.approve_ppids(vec![Ppid::default()]);
+    contract
+}
+
+/// The approver and the sponsor of the AIR-327 tests.
+pub const APPROVER: &str = "approver.test.near";
+pub const SPONSOR: &str = "sponsor.test.near";

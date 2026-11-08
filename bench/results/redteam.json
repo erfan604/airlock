@@ -2279,6 +2279,36 @@
       "fix": null
     },
     {
+      "id": "RT-CON-14",
+      "family": "CON",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_con_owner_cannot_approve_when_approver_set",
+      "attack": "the card's issuer (owner) approves or rejects a held payment when an approver is set",
+      "expect": "revert: Caller is not the approver, the request stays pending",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-CON-15",
+      "family": "CON",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_con_approver_cannot_add_a_payee",
+      "attack": "the card's borrower (approver) adds a payee with approve_and_remember or book_set_root",
+      "expect": "revert (refused for an approver, owner only), book unchanged",
+      "before": null,
+      "fix": null
+    },
+    {
+      "id": "RT-CON-16",
+      "family": "CON",
+      "file": "contracts/airlock-policy/src/redteam.rs",
+      "test": "rt_con_sweep_pays_only_the_sponsor",
+      "attack": "sweep called by the approver, the agent or a stranger; the owner's sweep checked for its receivers",
+      "expect": "revert (owner only); the owner's sweep creates a call to the sponsor and the result callback, nothing else",
+      "before": null,
+      "fix": null
+    },
+    {
       "id": "RT-APPR-01",
       "family": "APPR",
       "file": "contracts/airlock-policy/src/redteam.rs",

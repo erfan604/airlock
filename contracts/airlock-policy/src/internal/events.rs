@@ -78,6 +78,16 @@ pub enum Event<'a> {
     AssetRemoved {
         asset: &'a str,
     },
+    // AIR-327: `sweep` asked the sponsor to credit `amount` (the funds leave the card only as that call), and what the credit answered.
+    Swept {
+        sponsor: &'a AccountId,
+        amount: U128,
+    },
+    SweepResult {
+        sponsor: &'a AccountId,
+        amount: U128,
+        ok: bool,
+    },
     // AIR-326: the whole book change is two roots; no payee, label or number is emitted.
     BookRootSet {
         old: &'a str,

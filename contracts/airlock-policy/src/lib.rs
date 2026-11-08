@@ -43,6 +43,7 @@ pub mod policy;
 mod redteam;
 pub mod request;
 pub mod solana;
+pub mod roles;
 pub mod task;
 #[cfg(test)]
 pub mod testutil;
@@ -112,6 +113,10 @@ pub struct Contract {
     // replaced or removed, so a retry re-signs the identical digest and one id can never yield two valid authorizations. Last field,
     // after `evm_attempts`.
     pub x402_attempts: LookupMap<String, x402::X402Attempt>,
+    // AIR-327: the roles of a credit card policy (src/roles.rs). `approver` None: the owner approves and rejects (every deployment before
+    // AIR-327). `sponsor` None: no sweep. Both are fixed at init, last fields of the state.
+    pub approver: Option<AccountId>,
+    pub sponsor: Option<AccountId>,
 }
 
 #[near(serializers = [borsh])]
@@ -175,7 +180,13 @@ impl Contract {
         attestation_expiration_time_ms: U64,
         owner_id: AccountId,
         mpc_contract_id: AccountId,
+        approver: Option<AccountId>,
+        sponsor: Option<AccountId>,
     ) -> Self {
+        require!(
+            sponsor.as_ref() != Some(&env::current_account_id()),
+            "the sponsor cannot be this account"
+        );
         Self {
             requires_tee,
             attestation_expiration_time_ms: attestation_expiration_time_ms.into(),
@@ -207,6 +218,8 @@ impl Contract {
             nonces: LookupMap::new(StorageKey::Nonces),
             evm_attempts: LookupMap::new(StorageKey::EvmAttempts),
             x402_attempts: LookupMap::new(StorageKey::X402Attempts),
+            approver,
+            sponsor,
         }
     }
 

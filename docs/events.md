@@ -81,6 +81,8 @@ Types: `string`, `number`, `boolean`, `object`, `array of strings`; `string or n
 | `task_revoked` | `task_hash: string` | `revoke_task` (AIR-045). 64 lowercase hex. |
 | `asset_set` | `asset: string`, `symbol: string`, `decimals: number`, `hard_cap: string`, `daily_cap: string`, `quick_task_cap: string`, `path: string or null` | `asset_set` (AIR-042). `path` is the EVM or (AIR-325) Solana signing path, `null` for NEAR. |
 | `asset_removed` | `asset: string` | `asset_remove` (AIR-042). |
+| `swept` | `sponsor: string`, `amount: string` | `sweep` (AIR-327), owner only: the card asked its sponsor to credit `amount` (a decimal string of yoctoNEAR) with `on_card_return`. |
+| `sweep_result` | `sponsor: string`, `amount: string`, `ok: boolean` | `on_sweep` (AIR-327): `ok` is false when the sponsor's credit failed and the deposit came back to the card. |
 | `book_root_set` | `old: string`, `new: string`, `epoch: string` | `book_set_root` and `approve_and_remember` (AIR-326). The two roots are 64 hex characters; the event names no payee, label or number. `epoch` is the count of root changes after this one, a decimal string. |
 | `sol_sender_set` | `asset: string`, `sender: string` | `sol_sender_set` (AIR-325), owner only. `sender` is the base58 Ed25519 public key the MPC signer derives for (policy account, asset path). |
 | `flags_set` | `flags: object` | `set_flags` (AIR-040). The object holds the seven flags listed below. |

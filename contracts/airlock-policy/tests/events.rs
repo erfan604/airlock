@@ -24,7 +24,7 @@ use std::sync::Arc;
 use tokio::sync::OnceCell;
 
 /// The closed list of docs/events.md, in the order of the ticket.
-const CLOSED_LIST: [&str; 29] = [
+const CLOSED_LIST: [&str; 31] = [
     "submitted",
     "allowed",
     "escalated",
@@ -54,6 +54,8 @@ const CLOSED_LIST: [&str; 29] = [
     "paused",
     "agent_registered",
     "agent_removed",
+    "swept",
+    "sweep_result",
 ];
 
 /// The events the contract emits today: the scenario must produce every one of them. Later tickets add the rest of the closed

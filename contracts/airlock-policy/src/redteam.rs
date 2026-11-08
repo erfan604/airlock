@@ -475,6 +475,100 @@ fn rt_con_book_set_root_by_agent_reverts() {
     assert_eq!(c.book_root, old.0);
 }
 
+// ---------------------------------------------------------------------------------------------------------------- credit roles (AIR-327)
+
+const APPROVER_ACCOUNT: &str = "approver.test.near";
+const SPONSOR_ACCOUNT: &str = "sponsor.test.near";
+
+/// `setup()` with a card's roles: the owner is the issuer, `approver.test.near` the borrower, `sponsor.test.near` the pool.
+fn setup_card() -> Contract {
+    let mut c = crate::testutil::fresh_roles(Some(APPROVER_ACCOUNT), Some(SPONSOR_ACCOUNT));
+    c.assets.insert("near".to_string(), asset_entry());
+    c.book_root = one_book(ALICE, &alice_entry()).0;
+    c.task_key = Some(task_public_key());
+    allow_agent(&mut c, AGENT);
+    allow_agent(&mut c, OTHER_AGENT);
+    c
+}
+
+#[test]
+fn rt_con_owner_cannot_approve_when_approver_set() {
+    let mut c = setup_card();
+    let no = escalate_one(&mut c, "task-card-1", 40);
+    let k = card(&c, no);
+    assert!(panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("Caller is not the approver"));
+    testing_env!(ctx(OWNER, NOW, 1).build());
+    assert!(panics(|| c.reject(no.to_string())).contains("Caller is not the approver"));
+    assert!(c.pending_record(no).is_some(), "still pending");
+    assert!(
+        !near_sdk::test_utils::get_logs()
+            .iter()
+            .any(|l| l.contains("\"event\":\"approved\""))
+    );
+    approve_as(&mut c, APPROVER_ACCOUNT, NOW, &k);
+    assert!(
+        near_sdk::test_utils::get_logs()
+            .iter()
+            .any(|l| l.contains("\"event\":\"approved\"")),
+        "the approver's approve moved it on"
+    );
+}
+
+#[test]
+fn rt_con_approver_cannot_add_a_payee() {
+    let mut c = setup_card();
+    let before = c.book_root;
+    let no = escalate_one(&mut c, "task-card-2", 40);
+    let k = card(&c, no);
+    let (old, new_root, entry) = remember_book(&c, EVIL, 100, 1_000);
+    testing_env!(ctx(APPROVER_ACCOUNT, NOW, 1).build());
+    let text = panics(|| {
+        c.approve_and_remember(
+            k[0].clone(),
+            k[1].clone(),
+            k[2].clone(),
+            k[3].clone(),
+            k[4].clone(),
+            k[5].clone(),
+            old.clone(),
+            new_root.clone(),
+            entry.clone(),
+        )
+    });
+    assert!(
+        text.contains("approve_and_remember is refused when an approver is set"),
+        "{text}"
+    );
+    assert!(panics(|| c.book_set_root(old, new_root)).contains("Caller is not the owner"));
+    assert_eq!(c.book_root, before, "the book did not move");
+    assert!(c.pending_record(no).is_some(), "still pending");
+}
+
+#[test]
+fn rt_con_sweep_pays_only_the_sponsor() {
+    let mut c = setup_card();
+    for who in [APPROVER_ACCOUNT, AGENT, "stranger.test.near"] {
+        testing_env!(ctx(who, NOW, 1).build());
+        assert!(
+            panics(|| c.sweep(U128(1))).contains("Caller is not the owner"),
+            "{who}"
+        );
+    }
+    owner(NOW);
+    let _ = c.sweep(U128(10));
+    let receipts = near_sdk::test_utils::get_created_receipts();
+    assert!(
+        receipts
+            .iter()
+            .all(|r| r.receiver_id.as_str() == SPONSOR_ACCOUNT || r.receiver_id.as_str() == POLICY)
+    );
+    assert!(
+        receipts
+            .iter()
+            .any(|r| r.receiver_id.as_str() == SPONSOR_ACCOUNT)
+    );
+}
+
 // ---------------------------------------------------------------------------------------------------------------- APPR: approval abuse
 
 fn one_pending(c: &mut Contract) -> u32 {

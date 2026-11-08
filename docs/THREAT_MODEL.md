@@ -119,3 +119,7 @@ The policy contract stores one Merkle root of the owner's book, not the book. Th
 - The residual: a model that types a raw account id it guessed learns from the verdict whether that account is in the book; each successful probe is a real capped payment visible in the owner's ledger.
 - Duplicate leaves: the contract cannot list its book, so `approve_and_remember` catches a duplicate only when the escalated request carried a valid proof; the owner's vault refuses a second leaf for one payee.
 - Not claimed: Merkle soundness is the collision resistance of SHA-256 and is covered by tests, not by Kani or Lean. Proving that a payee is absent would need a sorted tree with adjacent-leaf proofs; that is a possible later design, not part of this version.
+
+## Card roles (AIR-327)
+A card policy of AIRLOCK Credit has an issuer (the owner), a borrower (the approver) and a pool (the sponsor); the design is in `docs/design/credit.md`. The borrower approves and rejects held payments and cannot change the book, so a line reaches only merchants the issuer listed; the owner cannot approve while an approver is set; `sweep` pays only the sponsor with the function call `on_card_return`. A stolen owner key can still change the book and sweep, as before. Whether the card was created with these three roles is a statement the pool checks off chain.
+

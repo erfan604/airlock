@@ -309,6 +309,7 @@ const NOT_OWNER_METHODS: &[&str] = &[
     "sign_sol",
     "on_signed",
     "on_transfer",
+    "on_sweep",
     "fail_on_invalid_agent",
     "on_sol_signed",
 ];

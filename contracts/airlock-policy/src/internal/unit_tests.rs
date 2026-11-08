@@ -82,6 +82,8 @@ fn setup_contract() -> Contract {
         U64::from(100000u64), // 100 seconds in milliseconds
         owner,
         mpc_contract,
+        None,
+        None,
     );
     contract.approve_measurements(create_mock_full_measurements_hex());
     contract.approve_ppids(vec![Ppid::default()]);
@@ -110,6 +112,8 @@ fn test_new() {
         attestation_expiration_time_ms,
         owner.clone(),
         mpc_contract.clone(),
+        None,
+        None,
     );
 
     let contract_info = contract.get_contract_info();

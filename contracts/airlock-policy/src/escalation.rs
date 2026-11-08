@@ -416,7 +416,7 @@ impl Contract {
         why: String,
         book: String,
     ) {
-        self.owner_call();
+        self.approver_call();
         self.approve_stored(&id, &to, &asset, &amount, &why, &book);
     }
 
@@ -441,7 +441,12 @@ impl Contract {
         new_root: Hex32,
         entry: crate::book::BookProof,
     ) {
-        self.owner_call();
+        self.approver_call();
+        // the issuer adds merchants, the borrower only approves (AIR-327): with an approver the remember half is closed
+        require!(
+            self.approver.is_none(),
+            "approve_and_remember is refused when an approver is set: the owner adds merchants with book_set_root"
+        );
         let (payee, stored_amount, asset_id, in_book) =
             self.approve_stored(&id, &to, &asset, &amount, &why, &book);
         // the contract cannot list the book, but the escalation says whether the payee was in it when it was stored and the book has
@@ -466,7 +471,7 @@ impl Contract {
     /// emitted, and the flood counters of the record's agent take the reject (`escalations_locked` follows when it newly locks).
     #[payable]
     pub fn reject(&mut self, id: String) {
-        self.owner_call();
+        self.approver_call();
         let (no, key, mut rec) = self.resolve_escalation(&id);
         require!(rec.state == RequestState::Pending, "NotPending");
         let agent = rec.agent.clone();

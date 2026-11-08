@@ -78,6 +78,24 @@
   "expect": "revert (owner only), book root unchanged"
  },
  {
+  "id": "RT-CON-14",
+  "test": "rt_con_owner_cannot_approve_when_approver_set",
+  "attack": "the card's issuer (owner) approves or rejects a held payment when an approver is set",
+  "expect": "revert: Caller is not the approver, the request stays pending"
+ },
+ {
+  "id": "RT-CON-15",
+  "test": "rt_con_approver_cannot_add_a_payee",
+  "attack": "the card's borrower (approver) adds a payee with approve_and_remember or book_set_root",
+  "expect": "revert (refused for an approver, owner only), book unchanged"
+ },
+ {
+  "id": "RT-CON-16",
+  "test": "rt_con_sweep_pays_only_the_sponsor",
+  "attack": "sweep called by the approver, the agent or a stranger; the owner's sweep checked for its receivers",
+  "expect": "revert (owner only); the owner's sweep creates a call to the sponsor and the result callback, nothing else"
+ },
+ {
   "id": "RT-APPR-01",
   "test": "rt_appr_changed_amount_reverts",
   "attack": "approve with a different amount than the stored request",

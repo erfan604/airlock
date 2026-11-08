@@ -27,6 +27,7 @@ approve
 approve_and_remember
 reject
 reset_escalations
+sweep
 pause
 # AIR-325
 sol_sender_set
@@ -45,6 +46,7 @@ on_signed
 on_transfer
 # AIR-325
 on_sol_signed
+on_sweep
 fail_on_invalid_agent
 #
 # Views
@@ -56,6 +58,7 @@ get_asset
 list_assets
 get_book_root
 get_book_epoch
+get_roles
 get_task_state
 get_task_key
 get_allowed_agents
