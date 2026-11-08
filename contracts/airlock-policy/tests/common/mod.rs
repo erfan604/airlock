@@ -378,6 +378,10 @@ pub async fn create_user_account(
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// NOTE FOR READERS: the contract has NO `book_add`, `book_remove`, `get_book` or `get_book_entry`. The helpers below keep those names
+// only as test vocabulary: they compute the new Merkle root and the entry's proof off chain, the way the runtime vault does in M2, and
+// then call `book_set_root`. A request that must reach the contract without its proof carries `"book": "withhold"`.
+// ---------------------------------------------------------------------------------------------------------------------
 // AIR-326: the address book is a Merkle root, so a test cannot `book_add` or read `get_book` any more. This shim keeps the tests that
 // only need "a payee that is in the book" unchanged: it holds each contract's book here, answers `book_add` and `book_remove` with one
 // `book_set_root`, and adds the entry's proof to every request of `submit_batch`, `preview` and `get_ledgers` that pays a booked payee.
@@ -418,6 +422,17 @@ pub fn shim_proof(contract: &AccountId, net: &NetworkConfig, payee: &str) -> Opt
     })
 }
 
+/// Adds the shim's proof to a request unless it already has one; `"book": "withhold"` becomes null and gets none.
+fn shim_attach(contract: &AccountId, net: &NetworkConfig, r: &mut Value, payee: &str) {
+    if r.get("book") == Some(&json!("withhold")) {
+        r["book"] = Value::Null;
+    } else if r.get("book").is_none_or(Value::is_null) {
+        if let Some(p) = shim_proof(contract, net, payee) {
+            r["book"] = p;
+        }
+    }
+}
+
 /// `args` of a call with the book proofs added where the method takes a payee.
 pub fn shim_args(
     contract: &AccountId,
@@ -430,22 +445,14 @@ pub fn shim_args(
             if let Some(reqs) = args.get_mut("reqs").and_then(Value::as_array_mut) {
                 for r in reqs {
                     let payee = r["payee"].as_str().unwrap_or_default().to_string();
-                    if r.get("book").is_none_or(Value::is_null) {
-                        if let Some(p) = shim_proof(contract, net, &payee) {
-                            r["book"] = p;
-                        }
-                    }
+                    shim_attach(contract, net, r, &payee);
                 }
             }
         }
         "preview" => {
             if let Some(r) = args.get_mut("req") {
                 let payee = r["payee"].as_str().unwrap_or_default().to_string();
-                if r.get("book").is_none_or(Value::is_null) {
-                    if let Some(p) = shim_proof(contract, net, &payee) {
-                        r["book"] = p;
-                    }
-                }
+                shim_attach(contract, net, r, &payee);
             }
         }
         "get_ledgers" => {

@@ -254,3 +254,44 @@ and the lane works 10 h a day, the plan is: Nov 8 contract and tests green (M1),
 testnet run (M3), Nov 11 docs, `check.sh full`, fixes, with about 8 h of slack for the testnet signer and RPC weather. It fits
 with little margin. Risks: re-recording the chain recordings and goldens, the sandbox suites at about 25 s each across 20 files, and
 `check.sh full` (Kani, Lean, web build) being slow. If M1 slips past Nov 9 morning, cut to scheme B.
+
+## Withheld proofs
+
+In-book status comes from the request: the contract treats a payee as booked only when the request carries a proof that verifies for
+its own payee string against the current root. A compromised agent can therefore leave the proof out for a payee that is in the book.
+
+- What a compromised agent can do: hold a booked payment as new. The request becomes `NewRecipient` (or `BookLabelNotInBook` when it
+  also claims the Book label), the card says `new`, and the owner is asked. That costs the owner attention, nothing more.
+- What it cannot do: pay anyone without the owner's tap, and fake in-book status. A proof for payee A on a request to payee B, a proof
+  of an earlier root, a tampered number and a proof of another slot all fail the same way (tests in `tests/withheld_proof.rs` and
+  `tests/book.rs`).
+- The residual: an owner-approved charge for a payee held as `new` is bounded by the asset caps and the task bound, not by that payee's
+  daily limit (the approval path has no limit for a payee outside the book). The owner sees `new` on the card and the real payee
+  and amount; the daily limit is a control on automatic payments, and an approval is the owner's decision.
+- Duplicate leaves: `approve_and_remember` can add a second leaf for a payee when the escalated request carried no proof, because the
+  contract cannot list its book. The runtime vault refuses a duplicate (M2), and the owner's approval surface says "in your book, but
+  the agent sent no proof" when an escalation says `new` for a payee the vault holds, flagged as a sign the agent may be compromised.
+- Why the contract cannot check non-membership today: proving that a payee is absent needs a sorted tree with adjacent-leaf proofs,
+  which hides less (leaf order reveals ranges) and costs a different leaf design. That is a later option, not a claim of this version.
+
+## Mutation check
+
+Each mutant was applied alone to the committed M1 code, the named suites were run, and the file was restored with `git checkout`.
+Each run is cargo test with the failing-test list kept, for the suites named, and the wasm is rebuilt for the sandbox ones.
+
+| Mutant | Killed by |
+| --- | --- |
+| a. the proof check ignores the root (any path is in the book) | `book::tests::book_a_proof_fails_for_another_payee_number_index_path_or_root`, `book::tests::book_an_inner_node_is_not_a_leaf`, `policy::tests::book_root_starts_zero_and_every_payee_is_new`, `policy::tests::book_set_root_swaps_checks_the_old_root_and_counts_epochs` |
+| b. the epoch is ignored on approve and on remember | `approve_after_the_payee_left_the_book` (both places at once); the remember part alone (b2) is killed by `remember_after_the_book_changed_is_not_already_in_book` |
+| c. `book_set_root` without its compare and swap | `policy::tests::book_set_root_swaps_checks_the_old_root_and_counts_epochs` |
+| d. `book_set_root` callable by the agent | `policy::tests::book_set_root_is_owner_only_with_one_yocto`, `redteam::rt_con_book_set_root_by_agent_reverts` |
+| e. an approval ignores the payee limit stored with the escalation (the limit would have to come from somewhere other than the record) | `approve_at_the_same_epoch_saturates_the_payee_ledger_at_the_stored_limit` (added by this check; the old suites missed it) |
+| f. `book_in` is true whatever the proof | `escalation::tests::store_pending_fills_display_digest_and_indexes`, `redteam::rt_appr_remember_cannot_set_cap_below_amount`, `redteam::rt_appr_remembered_payee_has_no_untrusted_budget`, and in the sandbox `a_withheld_proof_is_held_as_new_and_the_approval_ignores_the_payee_limit`, `another_payees_proof_does_not_make_a_payee_a_book_payee`, `a_proof_of_the_previous_root_is_not_in_the_book` |
+
+Mutants b (remember part) and e survived the first run of the suites; the two tests named above were added and now kill them.
+
+## Test helpers
+
+`tests/common/mod.rs` keeps the old names `book_add` and `book_remove` as test vocabulary only. The contract has neither method: the
+helpers compute the new root and the entry's proof off chain, the way the runtime vault does, and call `book_set_root`. A request
+that must reach the contract without its proof carries `"book": "withhold"`.

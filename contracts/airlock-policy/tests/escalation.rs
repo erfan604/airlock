@@ -828,6 +828,31 @@ async fn approve_after_the_payee_left_the_book() {
     assert_eq!(l["task_spent"], near(25).to_string(), "{l}");
 }
 
+/// Approving at the same book epoch charges the payee's day ledger with the limit stored at escalation (AIR-326): 25 NEAR over a daily
+/// limit of 20 NEAR leaves the ledger at the limit, while the asset ledger shows the whole 25.
+#[tokio::test]
+async fn approve_at_the_same_epoch_saturates_the_payee_ledger_at_the_stored_limit() {
+    let _slot = slot().await;
+    let fx = fixture().await;
+    let task = fx.task(&[(ALICE, near(100))], 20);
+    let esc = fx
+        .escalate(
+            &task,
+            0,
+            ALICE,
+            near(25),
+            [BOOK, OWNER, OWNER],
+            "OverPayeeLimit",
+        )
+        .await;
+    let card = fx.card(&esc).await;
+    assert_eq!(card["book"], "in_book", "{card}");
+    let _ = fx.approve_ok(card).await;
+    let l = fx.ledgers(ALICE, &task).await;
+    assert_eq!(l["payee_day"]["spent"], near(20).to_string(), "{l}");
+    assert_eq!(l["asset_day"]["spent"], near(25).to_string(), "{l}");
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // 6. The ledgers
 // ---------------------------------------------------------------------------------------------------------------------

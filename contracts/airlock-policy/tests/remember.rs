@@ -434,6 +434,30 @@ async fn remember_rejects_already_in_book() {
     assert_eq!(fx.book_entry(ALICE).await["cap"], near(1).to_string());
 }
 
+/// The book changed after the escalation (the payee left it): the stored `in_book` is stale, so the remember is allowed (AIR-326).
+#[tokio::test]
+async fn remember_after_the_book_changed_is_not_already_in_book() {
+    let _slot = slot().await;
+    let fx = fixture().await;
+    let task = fx.task(&[(ALICE, near(100))], 20);
+    let esc = fx
+        .escalate(
+            &task,
+            0,
+            ALICE,
+            near(25),
+            [BOOK, OWNER, OWNER],
+            "OverPayeeLimit",
+        )
+        .await;
+    owner_ok(&fx.s, "book_remove", json!({ "key": ALICE })).await;
+    let args = fx.remember_args(&esc, near(30), near(40), "Alice").await;
+    let result = fx.remember(args).await;
+    let text = failure_text(&result);
+    assert!(text.is_empty(), "approve_and_remember failed: {text}");
+    assert_eq!(fx.state(&esc).await, "Executed");
+}
+
 #[tokio::test]
 async fn remember_agent_cannot_call() {
     let _slot = slot().await;

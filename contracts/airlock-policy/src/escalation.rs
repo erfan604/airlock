@@ -13,7 +13,7 @@
 // Placement (security): `approve`, `approve_and_remember` (AIR-299, the same body through the private `approve_stored`) and `get_pending` are the
 // only `pub fn`s in a `#[near]` impl here. Every other item is a free function
 // or lives in a plain `impl Contract`, so none is an exported method: `approve` reaches the execution lanes through `start_execution`.
-// the nine-argument signature of `approve_and_remember` is fixed by AIR-299 (the five card values plus the owner's three limits); the
+// the signature of `approve_and_remember` is fixed by AIR-299 plus AIR-326 (the six card values, then the old root, the new root and the entry path); the
 // lint also fires on the wrapper `#[near]` generates, which only a module-wide allow reaches
 #![allow(clippy::too_many_arguments)]
 use crate::gate::EvalCtx;
@@ -424,8 +424,10 @@ impl Contract {
     /// the same private function, so a refused approve reverts here with its own text. Then, from the stored request (never from an
     /// argument): `cap` must be at least the stored amount (`remember rejected: CapBelowAmount`) and at most the asset's hard cap
     /// (`CapAboveAssetCap`), `daily_limit` at least `cap` (`DailyBelowCap`), the untrusted budget 0 (`BudgetNotZero`), `expected_old` the
-    /// current book root (`stale book root`), the payee not in the book (`AlreadyInBook`, known from the escalation when the book is unchanged) and `entry` a path that verifies for the stored payee against `new_root`
-    /// (`EntryNotInNewRoot`). `book_root_set` is emitted after `approved`. Any revert leaves no state change (AIR-326).
+    /// current book root (`stale book root`), `entry` a path that verifies for the stored payee against `new_root` (`EntryNotInNewRoot`). `AlreadyInBook` catches a duplicate leaf
+    /// only when the escalated request carried a valid proof and the book has not changed since: the contract cannot list its book, so a payee
+    /// the agent sent without a proof (held as `new`) can be added a second time. The owner's own client is the real duplicate check (the
+    /// runtime vault refuses a second leaf for one payee and says to use plain `approve`). `book_root_set` is emitted after `approved`. Any revert leaves no state change (AIR-326).
     #[payable]
     pub fn approve_and_remember(
         &mut self,
