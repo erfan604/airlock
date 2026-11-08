@@ -3,7 +3,7 @@
 // chain's events, or comes from the page's fixture and says so in a badge that cannot be missed. When the chain cannot be read the page shows no
 // numbers at all (AIR-323: never zeros).
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { explorerTx } from '../approvals/staticChain.ts';
 import { NEAR_RPC } from '../../csp.ts';
 import { PRERENDER } from '../static.ts';
@@ -11,7 +11,7 @@ import { readLp } from './chain.ts';
 import { connectWallet } from '../wallet/connector.ts';
 import { DEFAULT_POOL, poolFromSearch, useCredit } from './useCredit.ts';
 import type { CreditState } from './useCredit.ts';
-import { assetsFor, derive, formatNear, parseNear, passportOf, percent, refusedSum, shortId, sharesFor } from './model.ts';
+import { assetsFor, derive, explorerAccount, shownAccount, formatNear, parseNear, passportOf, percent, refusedSum, shortId, sharesFor } from './model.ts';
 import type { CreditEvent, EventKind, Line, PoolView } from './model.ts';
 import { depositCall, sendPoolCall, withdrawCall } from './wallet.ts';
 import type { SendResult } from './wallet.ts';
@@ -44,6 +44,18 @@ const TONE: Record<EventKind, 'ok' | 'held' | 'bad' | 'plain' | 'fee'> = {
   repaid: 'fee',
   defaulted: 'bad',
 };
+/** An account name, never one that contains the owner's name: that one is shown as a neutral label and linked to the explorer. */
+function Account({ id, max, what = 'demo account' }: { id: string; max: number; what?: string }) {
+  if (!/erfan/i.test(id)) return <>{shortId(id, max)}</>;
+  const link = explorerAccount(id);
+  if (link === null) return <>{what}</>;
+  return (
+    <a href={link} target="_blank" rel="noopener noreferrer" aria-label={`View the ${what} on the explorer`}>
+      {what}
+    </a>
+  );
+}
+
 const CHAIN_NAME = { near: 'NEAR', base: 'Base', solana: 'Solana' } as const;
 
 export function agoText(ms: number): string {
@@ -77,18 +89,32 @@ export function pickStage(): { mode: StageMode; why: 'reduced' | 'weak' | 'nogl'
 }
 
 function Badge({ state }: { state: CreditState }) {
-  const [text, source] =
+  const link = state.kind === 'live' ? explorerAccount(state.poolId) : null;
+  // the pool is named by what it is and linked to the explorer: its account name is data, not part of the design
+  const pool = link === null ? 'the pool contract' : (
+    <a href={link} target="_blank" rel="noopener noreferrer">
+      the pool contract
+    </a>
+  );
+  const [text, source]: [ReactNode, string] =
     state.kind === 'fixture'
       ? ['Fixture data. The pool contract is not deployed yet; nothing here is on a chain.', 'fixture']
       : state.kind === 'live'
-        ? [state.stale ? `Live, testnet pool ${state.poolId}. The last refresh failed, so this may be out of date.` : `Live, testnet pool ${state.poolId}.`, state.stale ? 'stale' : 'live']
+        ? [
+            state.stale ? (
+              <>Live, reading {pool}. The last refresh failed, so this may be out of date.</>
+            ) : (
+              <>Live, reading {pool}.</>
+            ),
+            state.stale ? 'stale' : 'live',
+          ]
         : state.kind === 'unreadable'
-          ? [`The chain could not be read (pool ${state.poolId}).`, 'unreadable']
+          ? ['The chain could not be read.', 'unreadable']
           : ['Reading the pool.', 'loading'];
   return (
     <p className="cr-badge" data-testid="credit-badge" data-source={source} role="status">
       <span className="cr-badge-dot" aria-hidden="true" />
-      {text}
+      <span>{text}</span>
     </p>
   );
 }
@@ -221,7 +247,7 @@ export function MoneyPanel({ state, nowMs }: { state: CreditState; nowMs: bigint
         ))}
       </div>
       <label className="cr-field">
-        <span className="cr-field-label">{side === 'deposit' ? 'Amount in NEAR (testnet)' : 'Pool shares to redeem'}</span>
+        <span className="cr-field-label">{side === 'deposit' ? 'Amount in NEAR' : 'Pool shares to redeem'}</span>
         <input className="cr-input" inputMode="decimal" autoComplete="off" spellCheck={false} placeholder={side === 'deposit' ? '10' : '1000000000000000000000000'} value={text} onChange={(e) => setText(e.target.value)} disabled={closed} data-testid="money-input" />
       </label>
       <p className="cr-preview" data-testid="money-preview" aria-live="polite">
@@ -239,7 +265,7 @@ export function MoneyPanel({ state, nowMs }: { state: CreditState; nowMs: bigint
       )}
       <div className="cr-actions">
         {live === null ? null : wallet.kind === 'on' ? (
-          <p className="cr-who" data-testid="wallet-account">{`Connected as ${wallet.account}`}</p>
+          <p className="cr-who" data-testid="wallet-account">{`Connected as ${shownAccount(wallet.account)}`}</p>
         ) : (
           <button type="button" className="cr-btn cr-btn-ghost" onClick={onConnect} disabled={wallet.kind === 'connecting'} data-testid="wallet-connect" data-state={wallet.kind}>
             {wallet.kind === 'connecting' ? 'Waiting for your wallet' : 'Connect wallet'}
@@ -259,7 +285,7 @@ export function MoneyPanel({ state, nowMs }: { state: CreditState; nowMs: bigint
           {sent.side === 'deposit' ? 'Deposit sent. ' : 'Withdrawal sent. '}
           {link === null ? null : (
             <a href={link} target="_blank" rel="noopener noreferrer">
-              View the transaction on the testnet explorer
+              View the transaction on the explorer
             </a>
           )}
         </p>
@@ -291,14 +317,17 @@ export function Ticker({ events, nowMs, live }: { events: readonly CreditEvent[]
             <li key={e.id} className={`cr-ev cr-ev-${TONE[e.kind]}`} data-testid="ticker-row" data-kind={e.kind} data-fixture={e.fixture ? 'true' : 'false'}>
               <span className="cr-ev-word">{WORD[e.kind]}</span>
               <span className="cr-ev-amt">{e.amount === '0' ? '' : `${formatNear(e.amount)} NEAR`}</span>
-              <span className="cr-ev-who">{`${shortId(e.who, 26)}${e.chain === null ? '' : ` on ${CHAIN_NAME[e.chain]}`}`}</span>
+              <span className="cr-ev-who">
+                <Account id={e.who} max={26} />
+                {e.chain === null ? '' : ` on ${CHAIN_NAME[e.chain]}`}
+              </span>
               <span className="cr-ev-when">
                 {agoText(nowMs - e.atMs)}
                 {e.fixture ? <span className="cr-fx"> fixture</span> : null}
                 {link !== null ? (
                   <>
                     {' '}
-                    <a href={link} target="_blank" rel="noopener noreferrer" aria-label={`View ${WORD[e.kind]} transaction on the testnet explorer`}>
+                    <a href={link} target="_blank" rel="noopener noreferrer" aria-label={`View ${WORD[e.kind]} transaction on the explorer`}>
                       tx
                     </a>
                   </>
@@ -342,11 +371,13 @@ export function LinesTable({ lines, selected, onSelect, nowMs }: { lines: readon
               return (
                 <tr key={l.card} data-testid="line-row" data-state={l.state} aria-selected={selected === l.card}>
                   <th scope="row">
-                    <button type="button" className="cr-link" onClick={() => onSelect(l.card)} aria-label={`Show credit line ${l.card} in the scene`} data-testid="line-select">
-                      {shortId(l.card, 24)}
+                    <button type="button" className="cr-link" onClick={() => onSelect(l.card)} aria-label={`Show credit line ${shownAccount(l.card, 'demo line')} in the scene`} data-testid="line-select">
+                      {shortId(shownAccount(l.card, 'demo line'), 24)}
                     </button>
                   </th>
-                  <td>{shortId(l.borrower, 24)}</td>
+                  <td>
+                    <Account id={l.borrower} max={24} />
+                  </td>
                   <td className="cr-num">{formatNear(l.limit, 0)}</td>
                   <td className="cr-num">{formatNear(l.drawn, 0)}</td>
                   <td className="cr-num">{formatNear(l.returned, 0)}</td>
@@ -389,7 +420,7 @@ export function Passports({ lines, events, fixture }: { lines: readonly Line[]; 
                 </text>
               </svg>
               <div className="cr-pass-body">
-                <p className="cr-pass-name">{shortId(l.card, 24)}</p>
+                <p className="cr-pass-name">{shortId(shownAccount(l.card, 'demo line'), 24)}</p>
                 <p className="cr-pass-line">{`${String(p.allowed)} allowed, ${String(p.held)} held, ${String(p.refused)} refused`}</p>
                 <p className="cr-pass-line">{p.defaulted ? 'Defaulted' : `${String(p.repaid)} repaid on time`}</p>
               </div>
@@ -503,14 +534,14 @@ export function CreditPage(): ReactElement {
       {state.kind === 'unreadable' ? (
         <section className="cr-wide" data-testid="credit-unreadable" role="alert">
           <h2 className="cr-h2">The chain could not be read</h2>
-          <p className="cr-note">{`The pool ${state.poolId} did not answer through any NEAR testnet node, so no numbers are shown. The page tries again by itself.`}</p>
+          <p className="cr-note">{'The pool contract did not answer through any NEAR node, so no numbers are shown. The page tries again by itself.'}</p>
         </section>
       ) : null}
       {state.kind === 'loading' ? (
         <section className="cr-wide" data-testid="credit-loading" aria-busy="true">
-          <p className="cr-note">Reading the pool contract on NEAR testnet.</p>
+          <p className="cr-note">Reading the pool contract.</p>
           <noscript>
-            <p className="cr-note">This page needs JavaScript. It reads the pool contract's get_pool view and the chain's events from public NEAR testnet hosts and draws them as a scene.</p>
+            <p className="cr-note">This page needs JavaScript. It reads the pool contract's get_pool view and the chain's events from public NEAR hosts and draws them as a scene.</p>
           </noscript>
         </section>
       ) : null}
@@ -537,7 +568,7 @@ export function CreditPage(): ReactElement {
                     </span>
                   ))}
                   <span className="cr-label cr-label-card" ref={(el) => { if (el === null) labels.current.delete('card'); else labels.current.set('card', el); }}>
-                    {sel === undefined ? '' : shortId(sel.card, 24)}
+                    {sel === undefined ? '' : shortId(shownAccount(sel.card, 'demo line'), 24)}
                   </span>
                 </div>
               ) : null}
@@ -559,7 +590,7 @@ export function CreditPage(): ReactElement {
                 </>
               ) : sel !== undefined ? (
                 <>
-                  <p className="cr-note" data-testid="scene-selected">{`Credit line ${shortId(sel.card, 26)}, ${percent(BigInt(sel.feeBps))} fee`}</p>
+                  <p className="cr-note" data-testid="scene-selected">{`Credit line ${shortId(shownAccount(sel.card, 'demo line'), 26)}, ${percent(BigInt(sel.feeBps))} fee`}</p>
                   <button type="button" className="cr-btn cr-btn-ghost" onClick={() => setSelected(null)} data-testid="scene-back">
                     Back to the network
                   </button>
@@ -581,6 +612,9 @@ export function CreditPage(): ReactElement {
           <Passports lines={pool.lines} events={events} fixture={state.kind === 'fixture'} />
         </>
       )}
+      <footer className="cr-foot" data-testid="credit-foot">
+        <p className="cr-note">The pool runs on NEAR&apos;s test network. Nothing here moves real money.</p>
+      </footer>
     </main>
   );
 }

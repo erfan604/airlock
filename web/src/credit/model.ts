@@ -258,3 +258,13 @@ export function homeChain(card: string): Chain {
   for (let i = 0; i < card.length; i += 1) h = (h * 31 + card.charCodeAt(i)) % 9973;
   return CHAINS[h % CHAINS.length] ?? 'near';
 }
+
+/** An account as the page may print it: a name that contains "erfan" is never shown, a neutral label stands for it (the owner's rule for /credit). */
+export function shownAccount(id: string, what = 'demo account'): string {
+  return /erfan/i.test(id) ? what : id;
+}
+
+/** The testnet explorer page of an account, or null unless the id is a plain lowercase NEAR account name. */
+export function explorerAccount(id: string): string | null {
+  return /^[a-z0-9][a-z0-9._-]{1,63}$/.test(id) ? `https://testnet.nearblocks.io/address/${id}` : null;
+}

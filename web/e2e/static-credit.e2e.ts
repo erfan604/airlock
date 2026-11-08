@@ -73,6 +73,7 @@ const run: E2E = async ({ page, baseUrl }) => {
     await shot(page, 'fixture', viewport.width);
     await audit(page, 'fixture');
     assert.equal(await id('stat-stolen', page).locator('dd').first().innerText(), '0.00 NEAR');
+    assert.ok(!/testnet|erfan/i.test(await page.locator('main').innerText()), 'the word testnet and the owner name are never shown on /credit');
     assert.ok((await id('money-why', page).innerText()).includes('not deployed'), 'deposits are closed on the fixture');
     assert.equal(await id('money-submit', page).isDisabled(), true);
     assert.equal(await id('wallet-connect', page).count(), 0, 'no wallet button while there is no pool');
@@ -90,7 +91,8 @@ const run: E2E = async ({ page, baseUrl }) => {
     await routeChain(page, 'live');
     await page.goto(`${baseUrl}/credit/?pool=pool.test.testnet`);
     await page.waitForFunction(() => document.querySelector('[data-testid="credit-badge"]')?.getAttribute('data-source') === 'live');
-    assert.ok((await id('credit-badge', page).innerText()).includes('pool.test.testnet'));
+    assert.ok((await id('credit-badge', page).innerText()).startsWith('Live, reading the pool contract'));
+    assert.ok(((await id('credit-badge', page).locator('a').getAttribute('href')) ?? '').endsWith('/address/pool.test.testnet'), 'the pool is linked through the explorer');
     assert.ok((await id('stat-tvl', page).innerText()).includes('5,000.00 NEAR'));
     assert.ok((await id('stat-util', page).innerText()).includes('30.00%'));
     assert.equal(await page.locator('[data-testid="line-row"]').count(), FIXTURE_POOL.lines.length);
@@ -104,6 +106,8 @@ const run: E2E = async ({ page, baseUrl }) => {
     assert.ok((await id('money-preview', page).innerText()).includes('Enter a plain amount'));
     await id('money-withdraw', page).click();
     assert.equal(await id('money-withdraw', page).getAttribute('aria-pressed'), 'true');
+    assert.ok(!/testnet|erfan/i.test(await page.locator('main').innerText()), 'live: no testnet or owner name in the text');
+    assert.ok((await id('credit-foot', page).innerText()).includes("NEAR's test network"), 'one plain factual line says it is the test network');
     await page.waitForTimeout(1500);
     await shot(page, 'live', viewport.width);
     await audit(page, 'live');

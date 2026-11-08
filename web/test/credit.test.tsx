@@ -8,6 +8,8 @@ import { MoneyPanel, Stats, Ticker, agoText } from '../src/credit/CreditPage.tsx
 import { FIXTURE_NOW, FIXTURE_POOL, fixtureEvent, fixtureHistory } from '../src/credit/fixture.ts';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { LinesTable, Passports } from '../src/credit/CreditPage.tsx';
+import { explorerAccount, shownAccount } from '../src/credit/model.ts';
 import { CreditHeroMedia } from '../src/credit/HeroMedia.tsx';
 import { CREDIT_LOOP, CREDIT_MEDIA, CREDIT_POSTER } from '../src/credit/media.ts';
 import { parseLp, assetsFor, bps, derive, formatNear, parseEventLog, parseNear, parsePool, passportOf, percent, refusedSum, returnBps, sharesFor } from '../src/credit/model.ts';
@@ -250,4 +252,24 @@ test('hero media: off without the files, the slot renders nothing; the flag matc
   assert.equal(renderToStaticMarkup(<CreditHeroMedia enabled={false} />), '');
   const on = renderToStaticMarkup(<CreditHeroMedia enabled />);
   assert.ok(on.includes('credit-card-poster.jpg') && on.includes('<video') && on.includes('muted') && on.includes('credit-media-pause'));
+});
+
+test('owner rule: an account name that contains erfan is never printed, it is a neutral label linked through the explorer', () => {
+  assert.equal(shownAccount('policy-v3.erfan-airlock.testnet'), 'demo account');
+  assert.equal(shownAccount('policy-v3.ERFAN-airlock.testnet', 'demo pool'), 'demo pool');
+  assert.equal(shownAccount('alice.testnet'), 'alice.testnet');
+  assert.equal(explorerAccount('policy-v3.erfan-airlock.testnet'), 'https://testnet.nearblocks.io/address/policy-v3.erfan-airlock.testnet');
+  assert.equal(explorerAccount('bad name'), null);
+  assert.equal(explorerAccount('A.testnet'), null);
+  const lines = FIXTURE_POOL.lines.map((l, i) => (i === 0 ? { ...l, card: 'card.erfan-airlock.testnet', borrower: 'agent.erfan-airlock.testnet' } : l));
+  const html = renderToStaticMarkup(
+    <>
+      <LinesTable lines={lines} selected={null} onSelect={() => undefined} nowMs={BigInt(FIXTURE_NOW)} />
+      <Passports lines={lines} events={[]} fixture />
+      <Ticker events={[{ id: 'x', kind: 'card_paid', atMs: 1, who: 'agent.erfan-airlock.testnet', amount: '1', chain: 'near', requestId: null, tx: null, fixture: false }]} nowMs={5} live="live" />
+    </>,
+  );
+  const text = html.replace(/href="[^"]*"/g, '').replace(/aria-label="[^"]*"/g, '');
+  assert.ok(!/erfan/i.test(text), 'no owner name in the text');
+  assert.ok(html.includes('href="https://testnet.nearblocks.io/address/agent.erfan-airlock.testnet"') && html.includes('>demo account</a>'));
 });
