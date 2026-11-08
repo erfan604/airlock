@@ -852,3 +852,85 @@ fn property_random_operations_keep_the_accounting() {
             .unwrap_or_else(|_| panic!("seed {seed} broke an invariant"));
     }
 }
+
+// ---- the storage layout, pinned (airlock-credit has not been deployed; once it is, any change here needs a migration) ----
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+#[test]
+fn layout_the_storage_keys_follow_declaration_order() {
+    let keys = [StorageKey::Lps, StorageKey::Cards, StorageKey::Unclaimed];
+    let bytes: Vec<Vec<u8>> = keys
+        .iter()
+        .map(|k| near_sdk::borsh::to_vec(k).unwrap())
+        .collect();
+    assert_eq!(
+        bytes,
+        vec![vec![0u8], vec![1u8], vec![2u8]],
+        "a StorageKey is appended, never inserted"
+    );
+}
+
+#[test]
+fn layout_the_stored_structs_keep_their_borsh_bytes() {
+    let line = Line {
+        limit: 1,
+        returned: 2,
+        fee_bps: 3,
+        due_ms: 4,
+        collateral: 5,
+        state: LineState::Open,
+    };
+    let card = Card {
+        borrower: acct(BORROWER),
+        line: Some(line.clone()),
+        loss: 6,
+    };
+    let line_hex = hex(&near_sdk::borsh::to_vec(&line).unwrap());
+    let card_hex = hex(&near_sdk::borsh::to_vec(&card).unwrap());
+    assert_eq!(
+        line_hex,
+        "01000000000000000000000000000000020000000000000000000000000000000300000004000000000000000500000000000000000000000000000001",
+        "Line: limit u128, returned u128, fee_bps u32, due_ms u64, collateral u128, state u8"
+    );
+    assert_eq!(
+        card_hex,
+        "12000000626f72726f7765722e746573742e6e656172010100000000000000000000000000000002000000000000000000000000000000030000000400000000000000050000000000000000000000000000000106000000000000000000000000000000",
+        "Card: borrower string, Option<Line>, loss u128"
+    );
+    let states: Vec<u8> = [
+        LineState::Collecting,
+        LineState::Open,
+        LineState::Repaid,
+        LineState::Defaulted,
+    ]
+    .iter()
+    .map(|s| near_sdk::borsh::to_vec(s).unwrap()[0])
+    .collect();
+    assert_eq!(
+        states,
+        vec![0, 1, 2, 3],
+        "a LineState is appended, never inserted"
+    );
+}
+
+#[test]
+fn layout_the_pool_state_keeps_its_field_order_and_prefixes() {
+    let mut p = pool();
+    p.total_shares = 1;
+    p.idle = 2;
+    p.lent = 3;
+    p.staked = 4;
+    p.fees_earned = 5;
+    p.losses = 6;
+    p.collateral_held = 7;
+    p.collateral_bps = 8;
+    let pool_hex = hex(&near_sdk::borsh::to_vec(&p).unwrap());
+    assert_eq!(
+        pool_hex,
+        "0f0000006f776e65722e746573742e6e656172080000000100000000000000000000000000000002000000000000000000000000000000030000000000000000000000000000000400000000000000000000000000000005000000000000000000000000000000060000000000000000000000000000000700000000000000000000000000000001000000000000000002000000017602000000016d0100000002",
+        "Pool: owner, collateral_bps u32, total_shares, idle, lent, staked, fees_earned, losses, collateral_held (u128), then the prefixes of lps, cards, unclaimed"
+    );
+}
