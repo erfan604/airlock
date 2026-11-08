@@ -28,6 +28,8 @@ approve_and_remember
 reject
 reset_escalations
 pause
+# AIR-325
+sol_sender_set
 #
 # Anyone
 expire
@@ -35,10 +37,14 @@ expire
 # Agent
 register_agent
 submit_batch
+# AIR-325: the record's agent or the owner
+sign_sol
 #
 # Callbacks (`#[private]`)
 on_signed
 on_transfer
+# AIR-325
+on_sol_signed
 fail_on_invalid_agent
 #
 # Views
@@ -58,6 +64,9 @@ is_agent_valid
 get_nonce
 get_ledgers
 get_escalation_state
+# AIR-325
+get_sol_sender
+get_sol_attempt
 #
 # Template views
 get_contract_info

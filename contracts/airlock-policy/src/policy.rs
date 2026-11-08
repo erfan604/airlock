@@ -243,8 +243,8 @@ fn valid_chain_id(chain: &str) -> bool {
 }
 
 /// The asset id grammar: `near`, `evm:<chain_id>:native` (a decimal u64 of at least 1 without a leading zero), `evm:<chain_id>:erc20:0x<40
-/// lowercase hex token>` (AIR-109) or `ft:<account>` where the part after `ft:` parses as an `AccountId` (accepted so the bench can name
-/// tokens; there is no execution lane).
+/// lowercase hex token>` (AIR-109), `sol:<cluster>` (AIR-325, cluster `devnet`, `testnet` or `mainnet`) or `ft:<account>` where the part
+/// after `ft:` parses as an `AccountId` (accepted so the bench can name tokens; there is no execution lane).
 pub fn valid_asset_id(id: &str) -> bool {
     if id == "near" {
         return true;
@@ -254,6 +254,10 @@ pub fn valid_asset_id(id: &str) -> bool {
             return valid_chain_id(chain);
         }
         return crate::x402::is_erc20_asset(id);
+    }
+    // AIR-325: `sol:<cluster>`
+    if id.starts_with("sol:") {
+        return crate::solana::is_sol_asset(id);
     }
     id.strip_prefix("ft:")
         .is_some_and(|account| AccountId::from_str(account).is_ok())
@@ -417,6 +421,9 @@ impl Contract {
                     "evm fee and gas caps required"
                 );
             }
+        } else if crate::solana::is_sol_asset(&asset) {
+            // AIR-325
+            self.check_sol_asset(&asset, &entry);
         } else {
             require!(entry.path.is_none(), "path not allowed");
             require!(

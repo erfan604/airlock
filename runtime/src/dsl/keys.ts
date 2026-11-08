@@ -10,6 +10,9 @@
 // chain id) and an address of exactly `0x` plus 40 lowercase hex digits (BadLength for any other length, BadChar for a wrong prefix
 // letter or a digit that is uppercase or not hex; a valid chain id and no second colon is an empty address, BadLength).
 // Chain ids stay strings or bigint here; no number parsing.
+// AIR-325: `sol:<cluster>:<base58 address>`, cluster `devnet`, `testnet` or `mainnet` (else BadChainId), the address 32 to 44 characters
+// (BadLength), of the base58 alphabet (BadChar), decoding to exactly 32 bytes (BadLength); a cluster and no second colon is an empty
+// address, BadLength. fixtures/sol-vectors.json is the shared contract with contracts/airlock-verdict/src/keys.rs.
 
 export type KeyErrorCode = 'NonAscii' | 'BadLength' | 'BadChar' | 'BadSeparator' | 'BadChainId' | 'UnknownScheme' | 'TargetMismatch';
 
@@ -64,6 +67,43 @@ function evmAddressError(addr: string): KeyErrorCode | null {
   return null;
 }
 
+const SOL_CLUSTERS = ['devnet', 'testnet', 'mainnet'];
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+const SOL_ADDRESS_MIN = 32;
+const SOL_ADDRESS_MAX = 44;
+const TWO_256 = 1n << 256n;
+
+/** The 32 bytes a base58 Solana address spells, or the KeyError code of the first rule it breaks (length, alphabet, exactly 32 bytes). */
+export function solAddressBytes(addr: string): Uint8Array | KeyErrorCode {
+  if (!isAscii(addr)) return 'NonAscii';
+  if (addr.length < SOL_ADDRESS_MIN || addr.length > SOL_ADDRESS_MAX) return 'BadLength';
+  let value = 0n;
+  let zeros = 0;
+  let leading = true;
+  for (let i = 0; i < addr.length; i++) {
+    const digit = BASE58_ALPHABET.indexOf(addr.charAt(i));
+    if (digit < 0) return 'BadChar';
+    if (leading && digit === 0) zeros += 1;
+    else leading = false;
+    value = value * 58n + BigInt(digit);
+  }
+  if (value >= TWO_256) return 'BadLength';
+  // big-endian bytes through the hex text (no number conversion on the money path)
+  const text = value.toString(16).padStart(64, '0');
+  const out = new Uint8Array(32);
+  for (let i = 0; i < 32; i++) out[i] = HEX_DIGITS.indexOf(text.charAt(2 * i)) * 16 + HEX_DIGITS.indexOf(text.charAt(2 * i + 1));
+  let valueZeros = 0;
+  while (valueZeros < 32 && out[valueZeros] === 0) valueZeros += 1;
+  return zeros === valueZeros ? out : 'BadLength';
+}
+
+function solKeyError(rest: string): KeyErrorCode | null {
+  const c = rest.indexOf(':');
+  if (!SOL_CLUSTERS.includes(c < 0 ? rest : rest.slice(0, c))) return 'BadChainId';
+  const bytes = solAddressBytes(c < 0 ? '' : rest.slice(c + 1));
+  return typeof bytes === 'string' ? bytes : null;
+}
+
 // AIR-109: `erc20:<chain id>:0x<token>:0x<payee>`, checked in the order chain id, token, payee (a missing token or payee is an empty
 // address, BadLength). The token inside the key gives each token its own bounds, caps and ledgers.
 function erc20KeyError(rest: string): KeyErrorCode | null {
@@ -99,10 +139,15 @@ export function validatePayeeKey(key: string): void {
     if (error !== null) throw new KeyError(error);
     return;
   }
+  if (key.startsWith('sol:')) {
+    const error = solKeyError(key.slice(4));
+    if (error !== null) throw new KeyError(error);
+    return;
+  }
   throw new KeyError('UnknownScheme');
 }
 
-/** The asset a payee key implies: `near`, `evm:<chain id>:native` or `evm:<chain id>:erc20:0x<token>`. Call it after validatePayeeKey. */
+/** The asset a payee key implies: `near`, `evm:<chain id>:native`, `evm:<chain id>:erc20:0x<token>` or (AIR-325) `sol:<cluster>`. Call it after validatePayeeKey. */
 export function assetForPayeeKey(key: string): string {
   if (typeof key !== 'string') throw new KeyError('UnknownScheme');
   if (key.startsWith('near:')) return 'near';
@@ -120,6 +165,13 @@ export function assetForPayeeKey(key: string): string {
     if (!chainIdOk(id)) throw new KeyError('BadChainId');
     const token = c1 < 0 ? '' : rest.slice(c1 + 1).split(':')[0] ?? '';
     return `evm:${id}:erc20:${token}`;
+  }
+  if (key.startsWith('sol:')) {
+    const rest = key.slice(4);
+    const c = rest.indexOf(':');
+    const cluster = c < 0 ? rest : rest.slice(0, c);
+    if (!SOL_CLUSTERS.includes(cluster)) throw new KeyError('BadChainId');
+    return `sol:${cluster}`;
   }
   throw new KeyError('UnknownScheme');
 }

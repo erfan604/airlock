@@ -14,8 +14,8 @@ use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// The number of `StorageKey` variants that exist (the template's four, `RevokedTasks` and `TaskActions` from AIR-045, `AllowedAgents` from AIR-046, `Assets` and `AssetSymbols` from AIR-042 (AIR-326 removed `Book`: the book is a root, not a collection), the four ledger keys from AIR-062, `Records` from AIR-063, `PendingByNo` and `PendingNos` from AIR-080, `Flood` from AIR-083, `Nonces` and `EvmAttempts` from AIR-104, `X402Attempts` from AIR-109, the four flood keys of AIR-315).
-const VARIANT_COUNT: usize = 24;
+/// The number of `StorageKey` variants that exist (the template's four, `RevokedTasks` and `TaskActions` from AIR-045, `AllowedAgents` from AIR-046, `Assets` and `AssetSymbols` from AIR-042 (AIR-326 removed `Book`: the book is a root, not a collection), the four ledger keys from AIR-062, `Records` from AIR-063, `PendingByNo` and `PendingNos` from AIR-080, `Flood` from AIR-083, `Nonces` and `EvmAttempts` from AIR-104, `X402Attempts` from AIR-109, the four flood keys of AIR-315, `SolSenders` and `SolAttempts` from AIR-325).
+const VARIANT_COUNT: usize = 26;
 
 /// Every `StorageKey` variant, in declaration order, with its name as written in the enum.
 fn variants() -> Vec<(&'static str, StorageKey)> {
@@ -47,6 +47,8 @@ fn variants() -> Vec<(&'static str, StorageKey)> {
         ("FloodBackstop", StorageKey::FloodBackstop),
         ("FloodEpoch", StorageKey::FloodEpoch),
         ("FloodRequestOrigin", StorageKey::FloodRequestOrigin),
+        ("SolSenders", StorageKey::SolSenders),
+        ("SolAttempts", StorageKey::SolAttempts),
     ]
 }
 

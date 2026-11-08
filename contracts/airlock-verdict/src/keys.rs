@@ -4,7 +4,10 @@
 //!
 //! Forms: `near:<account>`, `evm:<chain id>:0x<40 lowercase hex>` and (AIR-109) `erc20:<chain id>:0x<40 lowercase hex token>:0x<40 lowercase hex payee>`;
 //! the token inside the key gives each token its own bounds, caps and ledgers. The P16 proofs cover the `near:` and `evm:` forms; the erc20 form is
-//! covered by the vectors and unit tests. `ft:` keys are rejected on purpose (`UnknownScheme`): the NEP-141
+//! covered by the vectors and unit tests. AIR-325 adds `sol:<cluster>:<base58 address>` (cluster `devnet`, `testnet` or `mainnet`; the address
+//! 32 to 44 base58 characters that decode to exactly 32 bytes), covered by fixtures/sol-vectors.json and unit tests: a wrong cluster is
+//! `BadChainId`, a character outside the base58 alphabet `BadChar`, any other length or a value that is not exactly 32 bytes `BadLength`.
+//! Base58 decoding is injective, so a string that decodes to exactly 32 bytes is the one canonical spelling of those bytes. `ft:` keys are rejected on purpose (`UnknownScheme`): the NEP-141
 //! lane is not shipped, so R5-04's `ft:<token>:<account>` form is documented, not accepted.
 //!
 //! The ASCII check runs on the raw bytes first, before any case folding: a validator that lowercased first would accept U+212A (the
@@ -227,7 +230,115 @@ pub fn validate_payee_key(key: &[u8]) -> Result<(), KeyError> {
             None => Ok(()),
         };
     }
+    if starts_with(key, b"sol:") {
+        return sol_key_error(&key[4..]);
+    }
     Err(KeyError::UnknownScheme)
+}
+
+/// AIR-325: the Solana clusters a `sol:` key may name. A Solana message carries no chain id, so the cluster lives in the key (and so in the
+/// asset `sol:<cluster>`), and the registry gives each Solana asset its own signing path.
+pub const SOL_CLUSTERS: [&[u8]; 3] = [b"devnet", b"testnet", b"mainnet"];
+/// A base58 spelling of 32 bytes is 32 (all leading zero bytes) to 44 characters long.
+pub const SOL_ADDRESS_MIN: usize = 32;
+pub const SOL_ADDRESS_MAX: usize = 44;
+
+fn bytes_eq(a: &[u8], b: &[u8]) -> bool {
+    a.len() == b.len() && starts_with(a, b)
+}
+
+/// Whether `s` is one of `SOL_CLUSTERS`, exactly (lowercase, no padding).
+pub fn is_sol_cluster(s: &[u8]) -> bool {
+    bytes_eq(s, SOL_CLUSTERS[0]) || bytes_eq(s, SOL_CLUSTERS[1]) || bytes_eq(s, SOL_CLUSTERS[2])
+}
+
+/// The value of one base58 digit (alphabet `1-9 A-H J-N P-Z a-k m-z`: no `0`, `I`, `O` or `l`), `None` for any other byte. Written with
+/// ranges, no loop over the alphabet, so the Kani harnesses of this module unwind no further.
+fn base58_digit(b: u8) -> Option<u32> {
+    let v = match b {
+        b'1'..=b'9' => b - b'1',
+        b'A'..=b'H' => 9 + (b - b'A'),
+        b'J'..=b'N' => 17 + (b - b'J'),
+        b'P'..=b'Z' => 22 + (b - b'P'),
+        b'a'..=b'k' => 33 + (b - b'a'),
+        b'm'..=b'z' => 44 + (b - b'm'),
+        _ => return None,
+    };
+    Some(u32::from(v))
+}
+
+/// The 32 bytes a base58 Solana address spells. Errors, in this order: `NonAscii` (any byte above 0x7f), `BadLength` (fewer than 32 or more
+/// than 44 characters, checked before any decoding), `BadChar` (a byte outside the base58 alphabet), `BadLength` (the value needs more than
+/// 32 bytes, or the leading `1`s (zero bytes) plus the bytes of the value are not exactly 32). `out` is only meaningful on `Ok`. The value is
+/// kept in eight 32-bit limbs, so no loop runs more than 44 times and the inner one 8 times.
+pub fn sol_address_bytes(text: &[u8], out: &mut [u8; 32]) -> Result<(), KeyError> {
+    if !is_ascii(text) {
+        return Err(KeyError::NonAscii);
+    }
+    if text.len() < SOL_ADDRESS_MIN || text.len() > SOL_ADDRESS_MAX {
+        return Err(KeyError::BadLength);
+    }
+    let mut limbs = [0u32; 8];
+    let mut zeros = 0usize;
+    let mut leading = true;
+    let mut i = 0;
+    while i < text.len() {
+        let Some(digit) = base58_digit(text[i]) else {
+            return Err(KeyError::BadChar);
+        };
+        if leading && digit == 0 {
+            zeros += 1;
+        } else {
+            leading = false;
+        }
+        let mut carry = u64::from(digit);
+        let mut j = 0;
+        while j < 8 {
+            let v = u64::from(limbs[j]) * 58 + carry;
+            limbs[j] = v as u32;
+            carry = v >> 32;
+            j += 1;
+        }
+        if carry != 0 {
+            return Err(KeyError::BadLength);
+        }
+        i += 1;
+    }
+    // big-endian bytes of the value
+    let mut k = 0;
+    while k < 8 {
+        let word = limbs[7 - k].to_be_bytes();
+        out[4 * k] = word[0];
+        out[4 * k + 1] = word[1];
+        out[4 * k + 2] = word[2];
+        out[4 * k + 3] = word[3];
+        k += 1;
+    }
+    let mut value_zeros = 0usize;
+    while value_zeros < 32 && out[value_zeros] == 0 {
+        value_zeros += 1;
+    }
+    // the leading `1`s must spell exactly the leading zero bytes: zeros + (32 - value_zeros) == 32
+    if zeros != value_zeros {
+        return Err(KeyError::BadLength);
+    }
+    Ok(())
+}
+
+/// The first reason what follows `sol:` is not `<cluster>:<base58 address>`; `Ok` when it is. A key with a cluster and no second colon has
+/// an empty address: `BadLength`.
+fn sol_key_error(rest: &[u8]) -> Result<(), KeyError> {
+    let c = colon_at(rest);
+    if !is_sol_cluster(&rest[..c]) {
+        return Err(KeyError::BadChainId);
+    }
+    let addr = if c < rest.len() {
+        &rest[c + 1..]
+    } else {
+        &rest[rest.len()..]
+    };
+    let mut out = [0u8; 32];
+    sol_address_bytes(addr, &mut out)
 }
 
 /// The index of the first `:` in `s`, or `s.len()` when there is none.

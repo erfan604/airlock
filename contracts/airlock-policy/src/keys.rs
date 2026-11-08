@@ -16,8 +16,14 @@ pub fn validate_payee_key(key: &str) {
 }
 
 /// The asset a payee is paid in: `near` for a `near:` key, `evm:<chain_id>:native` for an `evm:` key and (AIR-109)
-/// `evm:<chain_id>:erc20:0x<token>` for an `erc20:<chain_id>:0x<token>:0x<payee>` key. Call it after `validate_payee_key`.
+/// `evm:<chain_id>:erc20:0x<token>` for an `erc20:<chain_id>:0x<token>:0x<payee>` key and (AIR-325) `sol:<cluster>` for a
+/// `sol:<cluster>:<base58 address>` key. Call it after `validate_payee_key`.
 pub fn asset_for_payee_key(key: &str) -> String {
+    // AIR-325: `sol:<cluster>:<address>` is paid in `sol:<cluster>`
+    if let Some(rest) = key.strip_prefix("sol:") {
+        let cluster = rest.split(':').next().unwrap_or("");
+        return format!("sol:{cluster}");
+    }
     if let Some(rest) = key.strip_prefix("erc20:") {
         let mut parts = rest.split(':');
         let chain_id = parts.next().unwrap_or("");

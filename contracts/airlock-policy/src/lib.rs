@@ -42,6 +42,7 @@ pub mod policy;
 #[cfg(test)]
 mod redteam;
 pub mod request;
+pub mod solana;
 pub mod task;
 #[cfg(test)]
 pub mod testutil;
@@ -158,6 +159,9 @@ pub enum StorageKey {
     FloodBackstop,
     FloodEpoch,
     FloodRequestOrigin,
+    // AIR-325 (appended last). Neither is a field of `Contract`: `solana.rs` opens both maps where it uses them (the AIR-315 pattern).
+    SolSenders,
+    SolAttempts,
 }
 
 const STORAGE_BYTES_TO_REGISTER: u128 = 486;

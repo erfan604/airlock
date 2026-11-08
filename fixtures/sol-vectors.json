@@ -1,0 +1,171 @@
+{
+  "format": "airlock-sol-vectors-v1",
+  "sources": {
+    "messages": "@solana/web3.js 1.99.0",
+    "derivations": "chainsig.js 1.1.16 getDerivedPublicKey (offline, testnet root)"
+  },
+  "payee_keys": {
+    "accept": [
+      {
+        "key": "sol:devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "bytes_hex": "7ac9d28d114d0c15cf885ade0ed0168e52501eda6e7849f014f4dc849ad9059d"
+      },
+      {
+        "key": "sol:devnet:AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9",
+        "bytes_hex": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c"
+      },
+      {
+        "key": "sol:testnet:8opHzTAnfzRpPEx21XtnrVTX28YQuCpAjcn1PczScKh",
+        "bytes_hex": "0200000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "key": "sol:mainnet:11111111111111111111111111111111",
+        "bytes_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "key": "sol:devnet:JEKNVnkbo3jma5nREBBJCDoXFVeKkD56V3xKrvRmWxFG",
+        "bytes_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      {
+        "key": "sol:devnet:11111111111111111111111111111112",
+        "bytes_hex": "0000000000000000000000000000000000000000000000000000000000000001"
+      }
+    ],
+    "reject": [
+      {
+        "key": "SOL:devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "UnknownScheme"
+      },
+      {
+        "key": "solana:devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "UnknownScheme"
+      },
+      {
+        "key": "sol:localnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "BadChainId"
+      },
+      {
+        "key": "sol:Devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "BadChainId"
+      },
+      {
+        "key": "sol::9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "BadChainId"
+      },
+      {
+        "key": "sol:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "BadChainId"
+      },
+      {
+        "key": "sol:devnet",
+        "error": "BadLength"
+      },
+      {
+        "key": "sol:devnet:",
+        "error": "BadLength"
+      },
+      {
+        "key": "sol:devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao7",
+        "error": "BadLength"
+      },
+      {
+        "key": "sol:devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFaz",
+        "error": "BadLength"
+      },
+      {
+        "key": "sol:devnet:zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+        "error": "BadLength"
+      },
+      {
+        "key": "sol:devnet:111111111111111111111111111111111",
+        "error": "BadLength"
+      },
+      {
+        "key": "sol:devnet:21111111111111111111111111111111",
+        "error": "BadLength"
+      },
+      {
+        "key": "sol:devnet:0GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "BadChar"
+      },
+      {
+        "key": "sol:devnet:OGKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "BadChar"
+      },
+      {
+        "key": "sol:devnet:IGKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "BadChar"
+      },
+      {
+        "key": "sol:devnet:lGKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+        "error": "BadChar"
+      },
+      {
+        "key": "sol:devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZF:",
+        "error": "BadChar"
+      },
+      {
+        "key": "sol:devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZF ",
+        "error": "BadChar"
+      },
+      {
+        "key": "sol:devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa ",
+        "error": "BadLength"
+      },
+      {
+        "key": "sol:devnet:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZF\u00e9",
+        "error": "NonAscii"
+      }
+    ]
+  },
+  "messages": [
+    {
+      "from": "AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9",
+      "to": "8opHzTAnfzRpPEx21XtnrVTX28YQuCpAjcn1PczScKh",
+      "blockhash": "EETubP5AKHgjPAhzPAFcb8BAY1hMH639CWCFTqi3hq1k",
+      "lamports": "42",
+      "message_hex": "010001038a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c02000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c49ae77603782054f17a9decea43b444eba0edb12c6f1d31c6e0e4a84bf052eb01020200010c020000002a00000000000000"
+    },
+    {
+      "from": "AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9",
+      "to": "8opHzTAnfzRpPEx21XtnrVTX28YQuCpAjcn1PczScKh",
+      "blockhash": "EETubP5AKHgjPAhzPAFcb8BAY1hMH639CWCFTqi3hq1k",
+      "lamports": "1000000",
+      "message_hex": "010001038a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c02000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c49ae77603782054f17a9decea43b444eba0edb12c6f1d31c6e0e4a84bf052eb01020200010c0200000040420f0000000000"
+    },
+    {
+      "from": "9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+      "to": "AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9",
+      "blockhash": "11111111111111111111111111111111",
+      "lamports": "1",
+      "message_hex": "010001037ac9d28d114d0c15cf885ade0ed0168e52501eda6e7849f014f4dc849ad9059d8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001020200010c020000000100000000000000"
+    },
+    {
+      "from": "9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa",
+      "to": "JEKNVnkbo3jma5nREBBJCDoXFVeKkD56V3xKrvRmWxFG",
+      "blockhash": "11111111111111111111111111111112",
+      "lamports": "18446744073709551615",
+      "message_hex": "010001037ac9d28d114d0c15cf885ade0ed0168e52501eda6e7849f014f4dc849ad9059dffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000101020200010c02000000ffffffffffffffff"
+    }
+  ],
+  "derivations": [
+    {
+      "predecessor": "policy-sol.erfan-airlock.testnet",
+      "path": "sol-devnet-1",
+      "root": "ed25519:6vSEtQxrQj6txUMh33WC4ERyCWmNMRTdufDWAaDY3Un2",
+      "public_key": "ed25519:9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa"
+    },
+    {
+      "predecessor": "policy.test.near",
+      "path": "sol-devnet-1",
+      "root": "ed25519:6vSEtQxrQj6txUMh33WC4ERyCWmNMRTdufDWAaDY3Un2",
+      "public_key": "ed25519:6fcvzfoWYJr1gGfbmeSMYjgvJ4yQrpMGcLNmdRwZdasc"
+    },
+    {
+      "predecessor": "policy.sandbox",
+      "path": "sol-devnet-1",
+      "root": "ed25519:6vSEtQxrQj6txUMh33WC4ERyCWmNMRTdufDWAaDY3Un2",
+      "public_key": "ed25519:8VMxcvutATmsiFb4WmKP1YG8tukU8MXW6GePHPibqxXe"
+    }
+  ]
+}

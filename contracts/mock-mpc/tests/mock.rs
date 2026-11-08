@@ -273,9 +273,10 @@ async fn sign_rejects_a_bad_payload_or_domain() -> R<()> {
     let domain = json!({"request": {"path": "p1", "payload_v2": {"Ecdsa": A64}, "domain_id": 1}});
     let r = call(&w, "sign", domain, 30, 1).await?;
     assert_failed_with(&r, "Unknown domain");
+    // AIR-325: an Eddsa payload needs domain 1, like the real signer
     let eddsa = json!({"request": {"path": "p1", "payload_v2": {"Eddsa": A64}, "domain_id": 0}});
     let r = call(&w, "sign", eddsa, 30, 1).await?;
-    assert_failed_with(&r, "Eddsa is not supported by the mock");
+    assert_failed_with(&r, "Unknown domain");
     // upper case hex is fine, the real signer takes either case
     let upper = A64.to_uppercase();
     let r = sign_ok(&w, "p1", &upper).await?;
@@ -437,5 +438,36 @@ async fn yield_mode_times_out() -> R<()> {
     let v: Value = fin2.json()?;
     assert_eq!(v["scheme"], "Secp256k1", "{v}");
     assert_eq!(view::<u64>(&w, "parked").await?, 0);
+    Ok(())
+}
+
+/// AIR-325: an Eddsa request with domain 1 is answered in the Ed25519 shape: the signature handed over with `set_ed25519_signature`, or 64
+/// bytes of 0x33 when none was. A payload must be 1 to 1232 bytes of hex; `last_request` records it.
+#[tokio::test]
+async fn eddsa_domain_1_answers_ed25519() -> R<()> {
+    let w = world().await?;
+    let eddsa = |payload: &str| json!({"request": {"path": "sol-1", "payload_v2": {"Eddsa": payload}, "domain_id": 1}});
+    let message = "01".repeat(150);
+    let r = call(&w, "sign", eddsa(&message), 30, 1).await?;
+    assert!(r.is_success(), "{}", failure_text(&r));
+    let answer: Value = r.json()?;
+    assert_eq!(answer, json!({"scheme": "Ed25519", "signature": vec![0x33u8; 64]}));
+    assert_eq!(
+        view::<Value>(&w, "last_request").await?,
+        json!({"path": "sol-1", "payload_hex": message})
+    );
+    let sig: Vec<u8> = (0u8..64).collect();
+    let sig_hex: String = sig.iter().map(|b| format!("{b:02x}")).collect();
+    let set = call(&w, "set_ed25519_signature", json!({"signature_hex": sig_hex}), 30, 0).await?;
+    assert!(set.is_success(), "{}", failure_text(&set));
+    let r = call(&w, "sign", eddsa(&message), 30, 1).await?;
+    let answer: Value = r.json()?;
+    assert_eq!(answer, json!({"scheme": "Ed25519", "signature": sig}));
+    for bad in [String::new(), "0".to_string(), "zz".to_string(), "01".repeat(1233)] {
+        let r = call(&w, "sign", eddsa(&bad), 30, 1).await?;
+        assert_failed_with(&r, "Eddsa payload must be 1 to 1232 bytes of hex");
+    }
+    let r = call(&w, "sign", eddsa(&"ab".repeat(1232)), 30, 1).await?;
+    assert!(r.is_success(), "{}", failure_text(&r));
     Ok(())
 }

@@ -299,19 +299,27 @@ fn is_view(name: &str) -> bool {
         || name == "preview"
 }
 
-/// Exports that are neither views nor owner methods: the constructor, the two anyone/agent methods and the three callbacks.
+/// Exports that are neither views nor owner methods: the constructor, the anyone/agent methods (AIR-325: `sign_sol`, the record's agent
+/// or the owner) and the four callbacks.
 const NOT_OWNER_METHODS: &[&str] = &[
     "new",
     "expire",
     "register_agent",
     "submit_batch",
+    "sign_sol",
     "on_signed",
     "on_transfer",
     "fail_on_invalid_agent",
+    "on_sol_signed",
 ];
 
 /// The self-calls of the contract: every one needs a row in `i03_every_callback_is_private`.
-const CALLBACKS: &[&str] = &["on_signed", "on_transfer", "fail_on_invalid_agent"];
+const CALLBACKS: &[&str] = &[
+    "on_signed",
+    "on_transfer",
+    "fail_on_invalid_agent",
+    "on_sol_signed",
+];
 
 /// The lines of a list file: trimmed, with blank lines and `#` comments dropped.
 fn rows_of(file: &str) -> Vec<String> {
@@ -438,7 +446,7 @@ fn i03_owner_method_list_is_complete() {
 }
 
 /// NEAR audit detector `non-private-callback` (plan/reuse/AUDIT_MAP.md): every self-callback is `#[private]`. The callbacks are
-/// exactly the exports that are not views, not owner rows and not `new`, `expire`, `register_agent`, `submit_batch`; a new one
+/// exactly the exports that are not views, not owner rows and not `new`, `expire`, `register_agent`, `submit_batch`, `sign_sol`; a new one
 /// fails the first half until it has a row here.
 #[tokio::test]
 async fn i03_every_callback_is_private() {
@@ -448,13 +456,14 @@ async fn i03_every_callback_is_private() {
         .filter(|n| {
             !is_view(n)
                 && !rows.contains(n)
-                && !["new", "expire", "register_agent", "submit_batch"].contains(&n.as_str())
+                && !["new", "expire", "register_agent", "submit_batch", "sign_sol"]
+                    .contains(&n.as_str())
         })
         .collect();
     let expected: BTreeSet<String> = CALLBACKS.iter().map(|s| (*s).to_string()).collect();
     assert_eq!(
         found, expected,
-        "the self-callbacks of tests/abi_expected.txt are not the three tested here"
+        "the self-callbacks of tests/abi_expected.txt are not the four tested here"
     );
     let _slot = slot().await;
     let w = world().await;
@@ -466,6 +475,7 @@ async fn i03_every_callback_is_private() {
         ),
         ("on_transfer", json!({ "request_id": "x" })),
         ("fail_on_invalid_agent", json!({ "reasons": [] })),
+        ("on_sol_signed", json!({ "request_id": "x" })),
     ];
     for (method, args) in args {
         for (who_name, who) in [("stranger", &stranger), ("agent", &agent_of(&w))] {

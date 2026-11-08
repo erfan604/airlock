@@ -4,7 +4,8 @@
 //! backslash and `u`: characters are built from their code points.
 
 use airlock_verdict::keys::{
-    canonical_evm_address, validate_near_account, validate_payee_key, KeyError,
+    canonical_evm_address, is_sol_cluster, sol_address_bytes, validate_near_account,
+    validate_payee_key, KeyError,
 };
 use serde_json::Value;
 
@@ -242,4 +243,122 @@ fn del_is_ascii_and_a_bad_character() {
         check(&format!("near:a{}b", code_point(0x80))),
         Err(KeyError::NonAscii)
     );
+}
+
+// ---- AIR-325: Solana keys `sol:<cluster>:<base58 address>` ------------------------------------------------------------------
+
+const SOL_JSON: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../fixtures/sol-vectors.json"
+));
+
+fn hex32(text: &str) -> [u8; 32] {
+    assert_eq!(text.len(), 64, "{text}");
+    let mut out = [0u8; 32];
+    for (i, byte) in out.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(&text[2 * i..2 * i + 2], 16).unwrap();
+    }
+    out
+}
+
+fn sol_bytes(text: &str) -> Result<[u8; 32], KeyError> {
+    let mut out = [0u8; 32];
+    sol_address_bytes(text.as_bytes(), &mut out)?;
+    Ok(out)
+}
+
+/// Every `accept` key of fixtures/sol-vectors.json (written from @solana/web3.js) is `Ok` and its address decodes to the listed 32 bytes;
+/// every `reject` key fails with exactly its `error` variant name.
+#[test]
+fn sol_key_vectors() {
+    let doc: Value = serde_json::from_str(SOL_JSON).unwrap();
+    let keys = &doc["payee_keys"];
+    let accept = keys["accept"].as_array().unwrap();
+    let reject = keys["reject"].as_array().unwrap();
+    assert!(accept.len() >= 6 && reject.len() >= 20);
+    for entry in accept {
+        let key = entry["key"].as_str().unwrap();
+        assert_eq!(check(key), Ok(()), "accept {key:?}");
+        let addr = key.rsplit(':').next().unwrap();
+        assert_eq!(
+            sol_bytes(addr),
+            Ok(hex32(entry["bytes_hex"].as_str().unwrap())),
+            "{key}"
+        );
+    }
+    for entry in reject {
+        let key = entry["key"].as_str().unwrap();
+        let want = entry["error"].as_str().unwrap();
+        match check(key) {
+            Ok(()) => panic!("reject {key:?} was accepted"),
+            Err(e) => assert_eq!(format!("{e:?}"), want, "reject {key:?}"),
+        }
+    }
+    println!("SOL_KEY_VECTORS {}", accept.len() + reject.len());
+}
+
+/// The base58 decoder at its edges: the shortest and longest spellings, a value one bit too large, and leading `1`s that do not match the
+/// leading zero bytes.
+#[test]
+fn sol_address_edges() {
+    assert_eq!(sol_bytes(&"1".repeat(32)), Ok([0u8; 32]));
+    assert_eq!(sol_bytes(&"1".repeat(31)), Err(KeyError::BadLength));
+    assert_eq!(sol_bytes(&"1".repeat(45)), Err(KeyError::BadLength));
+    // 2^256 - 1 is the largest value; its spelling is 44 characters
+    let max = "JEKNVnkbo3jma5nREBBJCDoXFVeKkD56V3xKrvRmWxFG";
+    assert_eq!(sol_bytes(max), Ok([0xff; 32]));
+    // the next base58 strings of 44 characters overflow 32 bytes
+    assert_eq!(
+        sol_bytes("JEKNVnkbo3jma5nREBBJCDoXFVeKkD56V3xKrvRmWxFH"),
+        Err(KeyError::BadLength)
+    );
+    assert_eq!(sol_bytes(&"z".repeat(44)), Err(KeyError::BadLength));
+    // a leading 1 adds a zero byte: 33 bytes
+    assert_eq!(sol_bytes(&format!("1{max}")), Err(KeyError::BadLength));
+    // no leading 1 but a value of fewer than 32 bytes
+    assert_eq!(
+        sol_bytes(&format!("2{}", "1".repeat(31))),
+        Err(KeyError::BadLength)
+    );
+    // every byte outside the alphabet, at the first and the last position
+    let base = "9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa";
+    assert!(sol_bytes(base).is_ok());
+    for b in 0u8..=0x7f {
+        let in_alphabet = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".contains(&b);
+        let first = format!("{}{}", b as char, &base[1..]);
+        let last = format!("{}{}", &base[..43], b as char);
+        if in_alphabet {
+            assert_ne!(sol_bytes(&first), Err(KeyError::BadChar), "{b}");
+            assert_ne!(sol_bytes(&last), Err(KeyError::BadChar), "{b}");
+        } else {
+            assert_eq!(sol_bytes(&first), Err(KeyError::BadChar), "{b}");
+            assert_eq!(sol_bytes(&last), Err(KeyError::BadChar), "{b}");
+        }
+    }
+    assert_eq!(
+        sol_bytes(&format!("{}{}", code_point(0xe9), &base[2..])),
+        Err(KeyError::NonAscii)
+    );
+}
+
+/// Only the three cluster names, exactly; the cluster is checked before the address.
+#[test]
+fn sol_clusters_are_exact() {
+    let addr = "9GKETEu2cwxNLj4QXDpkirLuEUqqao77Q9HLqTqHbZFa";
+    for cluster in ["devnet", "testnet", "mainnet"] {
+        assert!(is_sol_cluster(cluster.as_bytes()));
+        assert_eq!(check(&format!("sol:{cluster}:{addr}")), Ok(()));
+    }
+    for cluster in [
+        "", "Devnet", "DEVNET", "devnet ", "mainnet-beta", "localnet", "devnet1", "dev",
+    ] {
+        assert!(!is_sol_cluster(cluster.as_bytes()), "{cluster:?}");
+        assert_eq!(
+            check(&format!("sol:{cluster}:{addr}")),
+            Err(KeyError::BadChainId),
+            "{cluster:?}"
+        );
+    }
+    assert_eq!(check("sol:devnet:0"), Err(KeyError::BadLength));
+    assert_eq!(check("sol:bad:0"), Err(KeyError::BadChainId));
 }

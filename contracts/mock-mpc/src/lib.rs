@@ -4,12 +4,19 @@
 //! shape and the `Request has timed out.` text) follows near/mpc 3.17.0 `crates/contract/src/api/sign.rs` (MIT); the yield and resume
 //! pattern follows near-sdk 5.26.1 `examples/mpc-contract` (MIT OR Apache-2.0). Modes: `ok`, `fail`, `garbage` (an unexpected object) and
 //! `yield` (parks the request until `resume()`, or fails after 200 blocks).
+//!
+//! AIR-325: `Eddsa` payloads with domain 1 (hex, 1 to 1232 bytes, as the real signer) answer `{"scheme":"Ed25519","signature":[64 numbers]}`
+//! in `ok` mode. The mock holds no key: the test computes the signature over the bytes it expects and hands it over first with
+//! `set_ed25519_signature`; without one the answer is 64 bytes of 0x33, which verifies against no key. `fail` and `garbage` work as for
+//! Ecdsa; `yield` is Ecdsa only.
 use near_sdk::{
     Gas, GasWeight, NearToken, PanicOnDefault, Promise, PromiseError, PromiseOrValue, YieldId, env,
     near, require, serde_json,
 };
 
 const MIN_SIGN_GAS: Gas = Gas::from_tgas(15);
+/// The longest Eddsa payload the real signer takes, in bytes (the Solana packet size).
+const MAX_EDDSA_BYTES: usize = 1232;
 const YIELD_CALLBACK_GAS: Gas = Gas::from_tgas(5);
 
 #[near(serializers = [json])]
@@ -38,6 +45,11 @@ pub struct MockMpc {
     last: Option<(String, String)>,
     calls: u64,
     pending: Vec<YieldId>,
+    ed25519_signature: Option<Vec<u8>>,
+}
+
+fn ed25519_response(signature: &[u8]) -> serde_json::Value {
+    serde_json::json!({ "scheme": "Ed25519", "signature": signature })
 }
 
 fn ok_response() -> serde_json::Value {
@@ -55,7 +67,18 @@ impl MockMpc {
             last: None,
             calls: 0,
             pending: Vec::new(),
+            ed25519_signature: None,
         }
+    }
+
+    /// Test only, no access control: the 64-byte signature (128 hex characters) the next Eddsa `sign` answers in `ok` mode.
+    pub fn set_ed25519_signature(&mut self, signature_hex: String) {
+        let ok = signature_hex.len() == 128 && signature_hex.bytes().all(|b| b.is_ascii_hexdigit());
+        require!(ok, "signature must be 64 bytes of hex");
+        let bytes = (0..64)
+            .map(|i| u8::from_str_radix(&signature_hex[2 * i..2 * i + 2], 16).unwrap_or(0))
+            .collect();
+        self.ed25519_signature = Some(bytes);
     }
 
     /// Test only, no access control.
@@ -84,8 +107,17 @@ impl MockMpc {
                 require!(ok, "Ecdsa payload must be exactly 32 bytes");
                 h.clone()
             }
-            Payload::Eddsa(_) => env::panic_str("Eddsa is not supported by the mock"),
+            Payload::Eddsa(h) => {
+                require!(request.domain_id == 1, "Unknown domain");
+                let ok = !h.is_empty()
+                    && h.len() % 2 == 0
+                    && h.len() <= 2 * MAX_EDDSA_BYTES
+                    && h.bytes().all(|b| b.is_ascii_hexdigit());
+                require!(ok, "Eddsa payload must be 1 to 1232 bytes of hex");
+                h.clone()
+            }
         };
+        let eddsa = matches!(request.payload_v2, Payload::Eddsa(_));
         self.last = Some((request.path.clone(), payload_hex));
         self.calls += 1;
         match self.mode.as_str() {
@@ -100,6 +132,7 @@ impl MockMpc {
                 ))
             }
             "garbage" => PromiseOrValue::Value(serde_json::json!({ "unexpected": true })),
+            "yield" if eddsa => env::panic_str("yield mode is Ecdsa only"),
             "yield" => {
                 let (promise, id) = Promise::new_yield(
                     "sign_on_finish",
@@ -109,6 +142,10 @@ impl MockMpc {
                 );
                 self.pending.push(id);
                 PromiseOrValue::Promise(promise)
+            }
+            _ if eddsa => {
+                let signature = self.ed25519_signature.clone().unwrap_or_else(|| vec![0x33; 64]);
+                PromiseOrValue::Value(ed25519_response(&signature))
             }
             _ => PromiseOrValue::Value(ok_response()),
         }

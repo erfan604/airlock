@@ -1,6 +1,6 @@
 # Contract events
 
-The policy contract logs one line per event. The closed list below has 26 names. A name outside it is an error for every reader: the
+The policy contract logs one line per event. The closed list below has 29 names. A name outside it is an error for every reader: the
 TypeScript chain client (AIR-160) and the approval verifier (AIR-085) refuse an event they do not know. Each row names the data fields
 of the event as the ticket that emits it fixes them. `tests/events.rs` runs a mixed scenario in the sandbox and checks every emitted
 event against this file: the name, and the exact set of data field names.
@@ -25,7 +25,7 @@ EVENT_JSON:{"standard":"airlock","version":"1.0.0","event":"<snake_case name>","
    registry asset ids, canonical payee keys, account ids, closed reason names and numbers. The task id, the plan hash, the trace
    digest, the label masks and the EVM parameters an agent sends in a request are never copied into an event.
 2. `request_id` is the derived id `<64 lowercase hex task hash>:<decimal action index>`. Every lane event (`evm_unsigned`, `signed`,
-   `paid`, `failed`) and every gate event names the request `request_id`.
+   `sol_unsigned`, `sol_signed`, `paid`, `failed`) and every gate event names the request `request_id`.
 3. `id` is the decimal pending number of an escalation, the value `approve` and `reject` take. It appears in `escalated`, `approved`,
    `rejected` and `expired`, and in no other event.
 4. `reason` is a closed name. In `escalated` and `blocked` it is a verdict reason: `UnknownAsset`, `Paused`, `AmountOutOfBounds`,
@@ -33,7 +33,7 @@ EVENT_JSON:{"standard":"airlock","version":"1.0.0","event":"<snake_case name>","
    `UntrustedRecipient`, `NewRecipient`, `OverPayeeLimit`, `UntrustedAmount`, `PendingFull`, `EscalationsLocked` or
    `EscalationBudget`. In `failed` it is `MpcFailed`, `MpcBadResponse`, `TransferFailed`, `InsufficientBalance` or `AuthorizationExpired`.
 5. The list grows only by a ticket that adds the emitting code and its row here in the same change (AIR-080, AIR-081, AIR-083, AIR-100,
-   AIR-101, AIR-104 and AIR-105 add the rows that no code emits yet).
+   AIR-101, AIR-104 and AIR-105 add the rows that no code emits yet; AIR-325 adds the three Solana rows with their code).
 
 ## The closed list
 
@@ -58,7 +58,7 @@ Types: `string`, `number`, `boolean`, `object`, `array of strings`; `string or n
 | `escalations_locked` | `agent: string`, `consecutive: number`, `today: number` | `reject` when it newly locks the agent's per-agent counters (AIR-083), the counters of requests that name no origin. `consecutive` and `today` are the counters after the reject, plain JSON numbers. A lock of one origin (AIR-315) emits nothing, because the origin is text the runtime chose; `get_escalation_state(agent, origin)` shows it. |
 | `escalations_reset` | `agent: string` | `reset_escalations` (AIR-081), owner only, with or without its optional origin (AIR-315); the origin is not in the event. |
 
-### Execution lanes (AIR-100, AIR-101, AIR-104, AIR-105)
+### Execution lanes (AIR-100, AIR-101, AIR-104, AIR-105, AIR-325)
 
 | Event | Data fields | Emitted by |
 | --- | --- | --- |
@@ -68,6 +68,8 @@ Types: `string`, `number`, `boolean`, `object`, `array of strings`; `string or n
 | `paid` | `request_id: string`, `payee: string`, `amount: string` | `on_transfer` (AIR-101), the NEAR lane. `payee` is the stored canonical key, `amount` decimal base units. |
 | `failed` | `request_id: string`, `reason: string`, `retryable: boolean` | The failure path (AIR-105, AIR-101). `reason` is one of the failed reasons of rule 4. `MpcFailed`, `TransferFailed`, `InsufficientBalance` and `AuthorizationExpired` (AIR-109: the retry of an x402 request whose stored authorization has expired signs nothing) refund the request's charges; `MpcBadResponse` (the signer answered, but the answer is unusable) keeps them, and `retryable` is then always false. |
 | `nonce_set` | `path: string`, `nonce: string` | `set_nonce` (AIR-104), owner only. `nonce` is a decimal string. |
+| `sol_unsigned` | `request_id: string`, `message_hex: string` | `sign_sol` (AIR-325), the Solana lane, before the signature exists. `message_hex` is the legacy SystemProgram transfer message in lowercase hex (150 bytes); its blockhash is the one the agent named, as hex. A retry emits it again with the same value. |
+| `sol_signed` | `request_id: string`, `message_hex: string`, `signature: string` | `on_sol_signed` (AIR-325), once the Ed25519 signature verified against the asset's sender over `message_hex`. `signature` is 128 lowercase hex. |
 
 ### Owner and agent plane (AIR-040, AIR-042, AIR-043, AIR-045, AIR-046, template)
 
@@ -77,9 +79,10 @@ Types: `string`, `number`, `boolean`, `object`, `array of strings`; `string or n
 | `agent_revoked` | `account_id: string` | `revoke_agent` (AIR-046). |
 | `task_key_set` | `public_key: string` | `set_task_key` (AIR-045). `public_key` is `ed25519:` and base58. |
 | `task_revoked` | `task_hash: string` | `revoke_task` (AIR-045). 64 lowercase hex. |
-| `asset_set` | `asset: string`, `symbol: string`, `decimals: number`, `hard_cap: string`, `daily_cap: string`, `quick_task_cap: string`, `path: string or null` | `asset_set` (AIR-042). `path` is the EVM signing path, `null` for NEAR. |
+| `asset_set` | `asset: string`, `symbol: string`, `decimals: number`, `hard_cap: string`, `daily_cap: string`, `quick_task_cap: string`, `path: string or null` | `asset_set` (AIR-042). `path` is the EVM or (AIR-325) Solana signing path, `null` for NEAR. |
 | `asset_removed` | `asset: string` | `asset_remove` (AIR-042). |
 | `book_root_set` | `old: string`, `new: string`, `epoch: string` | `book_set_root` and `approve_and_remember` (AIR-326). The two roots are 64 hex characters; the event names no payee, label or number. `epoch` is the count of root changes after this one, a decimal string. |
+| `sol_sender_set` | `asset: string`, `sender: string` | `sol_sender_set` (AIR-325), owner only. `sender` is the base58 Ed25519 public key the MPC signer derives for (policy account, asset path). |
 | `flags_set` | `flags: object` | `set_flags` (AIR-040). The object holds the seven flags listed below. |
 | `paused` | `paused: boolean` | `pause` (AIR-040). |
 | `agent_registered` | `account_id: string`, `measurements: object`, `ppid: string`, `advisory_ids_truncated: array of strings`, `number_of_advisory_ids: number`, `current_time_ms: string`, `valid_until_ms: string` | `register_agent` (the template's event, payload kept by AIR-040). At most 8 advisory ids are listed; `number_of_advisory_ids` is the true count. |
