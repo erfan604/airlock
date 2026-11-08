@@ -384,11 +384,19 @@ export class Session {
 
     // the payee: a book alias or key gives the book's key with bookResult (R5), anything else stays an address with its own labels
     if (typeof to.raw !== 'string') return refused('BadRecipient', 'the payee is not text');
-    const found = resolveAlias(rows, to.raw.trim());
+    // AIR-326: with a private book the model resolves only the aliases the owner listed; an unlisted alias takes the unknown-alias path and
+    // gets its reply. The owner's task bounds (owner text) resolve every alias, in `task()`, with the full rows.
+    const listed = this.deps.chain.listedAliases?.() ?? null;
+    const listedSet = listed === null ? null : new Set(listed.map((a) => a.trim().toLowerCase()));
+    const modelRows = listedSet === null ? rows : rows.filter(([, entry]) => listedSet.has(entry.label.trim().toLowerCase()));
+    const found = resolveAlias(modelRows, to.raw.trim());
     let payee: string;
     let recipient: LVal;
+    // what the reply shows: with a private book a book payee is shown by its alias, never by its account (book_list parity)
+    let payeeShown: string | null = null;
     if (found !== undefined) {
       payee = found;
+      if (listedSet !== null) payeeShown = modelRows.find(([key]) => key === found)?.[1].label ?? null;
       recipient = bookResult(found, to, ROOT_PC.labels);
     } else {
       try {
@@ -428,7 +436,7 @@ export class Session {
       hints: { plan_hash: task.plan_sha256, trace_digest: sha256Hex(utf8.encode(JSON.stringify(trace))), origin: requestOrigin(bits, sources) },
     });
 
-    const shown = { payee, amount: formatBaseUnits(amount, decimals), labels };
+    const shown = { payee: payeeShown ?? payee, amount: formatBaseUnits(amount, decimals), labels };
     let batch;
     try {
       batch = await this.deps.chain.submitBatch([req], task, sig);
@@ -443,7 +451,7 @@ export class Session {
     if (o.outcome === 'allowed') {
       const tx = batch.txHash;
       const explorer = tx !== null && this.deps.config.explorer !== null ? `${this.deps.config.explorer}${tx}` : null;
-      return { ...base, verdict: 'Allow', pending_id: null, tx, explorer, approve: null, message: `paid ${shown.amount} NEAR to ${payee}` };
+      return { ...base, verdict: 'Allow', pending_id: null, tx, explorer, approve: null, message: `paid ${shown.amount} NEAR to ${shown.payee}` };
     }
     if (o.outcome === 'escalated') {
       const id = o.pending_id;

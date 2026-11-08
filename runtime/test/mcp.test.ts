@@ -132,6 +132,46 @@ test('AIR-326: with a private book book_list shows only the aliases the owner li
   assert.deepEqual(((await none.s.bookList()).book as unknown[]).length, 0);
 });
 
+const SECRET = 'near:secret.test.near';
+function privateChain(): Double {
+  const chain = chainDouble();
+  const acme = { cap: (2n * NEAR).toString(), daily_untrusted_budget: (5n * NEAR).toString(), daily_limit: (20n * NEAR).toString() };
+  chain.getBook = async () => [
+    [ACME, { ...acme, label: 'Acme' }],
+    [SECRET, { ...acme, label: 'Secret' }],
+  ];
+  chain.listedAliases = () => ['Acme'];
+  return chain;
+}
+
+test('AIR-326: an unlisted alias gets the reply of an unknown alias and sends nothing', async () => {
+  const { s, chain } = session({}, privateChain());
+  const unlisted = await s.pay({ payee: 'Secret', amount: '1' });
+  const unknown = await s.pay({ payee: 'Nobody', amount: '1' });
+  assert.deepEqual(unlisted, unknown);
+  assert.equal(unlisted.verdict, 'Refused');
+  assert.equal(chain.sent.length, 0);
+  assert.equal(JSON.stringify(unlisted).includes('secret.test.near'), false);
+});
+
+test('AIR-326: a listed alias pays, and the reply names the alias and no account', async () => {
+  const { s, chain } = session({}, privateChain());
+  const r = await s.pay({ payee: 'Acme', amount: '1' });
+  assert.equal(r.verdict, 'Allow');
+  assert.equal(r.payee, 'Acme');
+  assert.equal(r.message.includes('acme.test.near'), false);
+  assert.equal(JSON.stringify(r).includes('acme.test.near'), false);
+  assert.equal((chain.sent[0]?.reqs[0] as ActionRequest).payee, ACME, 'the contract still gets the key');
+});
+
+test('AIR-326: with no vault the reply shows the resolved account as before', async () => {
+  const { s } = session();
+  const r = await s.pay({ payee: 'acme', amount: '1' });
+  assert.equal(r.verdict, 'Allow');
+  assert.equal(r.payee, ACME);
+  assert.match(r.message, /acme\.test\.near/);
+});
+
 test('labels: a whole handle keeps its label (book key is Book), the payee resolves through the book', async () => {
   const { s, chain } = session();
   const book = (await s.bookList()).book as { alias: Leaf; key: Leaf }[];

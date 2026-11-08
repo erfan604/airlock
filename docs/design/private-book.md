@@ -295,3 +295,14 @@ Mutants b (remember part) and e survived the first run of the suites; the two te
 `tests/common/mod.rs` keeps the old names `book_add` and `book_remove` as test vocabulary only. The contract has neither method: the
 helpers compute the new root and the entry's proof off chain, the way the runtime vault does, and call `book_set_root`. A request
 that must reach the contract without its proof carries `"book": "withhold"`.
+
+## What the model can learn
+
+The MCP server holds the vault; the model never gets a salt, a proof or a number. `book_list` returns only the aliases the owner marked
+`listed`. `pay` resolves only listed aliases for the model: an unlisted alias takes the unknown-alias path and gets the same reply, and a
+book payee is shown by its alias, never by its account (the owner's task bounds, which are owner text, still resolve every alias).
+
+The residual: a model that types a raw account id it guessed can tell from the verdict whether that account is in the book (an
+in-book payee within its cap is allowed, a stranger is held). Each successful probe is a real capped payment to that payee and shows
+in the owner's ledger, so a probe costs money inside the envelope the owner already set and is visible. The payee becomes public at
+that payment anyway.
