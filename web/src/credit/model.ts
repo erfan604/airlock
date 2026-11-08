@@ -264,7 +264,11 @@ export function shownAccount(id: string, what = 'demo account'): string {
   return /erfan/i.test(id) ? what : id;
 }
 
-/** The testnet explorer page of an account, or null unless the id is a plain lowercase NEAR account name. */
+/**
+ * The testnet explorer page of an account, or null unless the id is a plain lowercase testnet account: at most 64 characters, ending in `.testnet`,
+ * or an implicit account of 64 lowercase hex digits. No slash, query, quote, space or uppercase can pass.
+ */
 export function explorerAccount(id: string): string | null {
-  return /^[a-z0-9][a-z0-9._-]{1,63}$/.test(id) ? `https://testnet.nearblocks.io/address/${id}` : null;
+  const named = id.length <= 64 && /^[a-z0-9][a-z0-9._-]*\.testnet$/.test(id);
+  return named || /^[0-9a-f]{64}$/.test(id) ? `https://testnet.nearblocks.io/address/${id}` : null;
 }

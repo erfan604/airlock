@@ -273,3 +273,16 @@ test('owner rule: an account name that contains erfan is never printed, it is a 
   assert.ok(!/erfan/i.test(text), 'no owner name in the text');
   assert.ok(html.includes('href="https://testnet.nearblocks.io/address/agent.erfan-airlock.testnet"') && html.includes('>demo account</a>'));
 });
+
+test('explorerAccount rejects injection, wrong suffixes and over-long names', () => {
+  const ok = 'agent.erfan-airlock.testnet';
+  assert.equal(explorerAccount(ok), `https://testnet.nearblocks.io/address/${ok}`);
+  assert.ok(explorerAccount('g'.repeat(64)) === null, 'a 64 character name that is not hex and has no suffix');
+  assert.ok(explorerAccount('f'.repeat(64)) !== null, 'an implicit account of 64 hex digits');
+  for (const bad of [
+    'a.testnet"><script>x</script>', 'a.testnet/../../x', 'a.testnet?next=https://evil.example', 'a.testnet#x', 'a.testnet\n', ' a.testnet', 'a b.testnet',
+    'javascript:alert(1).testnet', 'a.testnet@evil.example', 'a.testnet.evil.example', 'A.testnet', '\u0430.testnet',
+    'a.near', 'a.mainnet', 'testnet', '.testnet', 'a.TESTNET', 'a.testnet ',
+    `${'a'.repeat(60)}.testnet`, `${'f'.repeat(63)}`, `${'F'.repeat(64)}`, '',
+  ]) assert.equal(explorerAccount(bad), null, JSON.stringify(bad));
+});
