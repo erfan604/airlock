@@ -320,6 +320,7 @@ const CALLBACKS: &[&str] = &[
     "on_transfer",
     "fail_on_invalid_agent",
     "on_sol_signed",
+    "on_sweep",
 ];
 
 /// The lines of a list file: trimmed, with blank lines and `#` comments dropped.
@@ -481,6 +482,10 @@ async fn i03_every_callback_is_private() {
             json!({ "request_id": "x", "unsigned_hex": "02" }),
         ),
         ("on_transfer", json!({ "request_id": "x" })),
+        (
+            "on_sweep",
+            json!({ "sponsor": "sponsor.test.near", "amount": "1" }),
+        ),
         ("fail_on_invalid_agent", json!({ "reasons": [] })),
         ("on_sol_signed", json!({ "request_id": "x" })),
     ];
