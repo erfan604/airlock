@@ -52,7 +52,8 @@ export interface NewEntry {
   listed?: boolean;
 }
 
-const KEY = /^(near:[a-z0-9._-]{2,64}|evm:[0-9]{1,10}:0x[0-9a-f]{40}|evm:[0-9]{1,10}:erc20:0x[0-9a-f]{40}:0x[0-9a-f]{40})$/;
+// AIR-325: `sol:<cluster>:<base58>` keys too (the full check, exactly 32 decoded bytes, is validatePayeeKey's)
+const KEY = /^(near:[a-z0-9._-]{2,64}|evm:[0-9]{1,10}:0x[0-9a-f]{40}|evm:[0-9]{1,10}:erc20:0x[0-9a-f]{40}:0x[0-9a-f]{40}|sol:(devnet|testnet|mainnet):[1-9A-HJ-NP-Za-km-z]{32,44})$/;
 
 const input = (e: VaultEntry): LeafInput => ({
   salt: hexToBytes(e.salt),

@@ -20,7 +20,8 @@ import { loadVault } from '../runtime/src/vault/file.ts';
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MAIN = join(REPO, 'runtime', 'src', 'mcp', 'main.ts');
 const TSX = join(REPO, 'node_modules', 'tsx', 'dist', 'cli.mjs');
-const WASM = join(REPO, 'contracts', 'airlock-policy', 'res', 'airlock_policy.wasm');
+// AIRLOCK_WASM: another policy wasm to deploy (AIR-325's live run deploys the lane's own build); the default is the committed release
+const WASM = process.env.AIRLOCK_WASM ?? join(REPO, 'contracts', 'airlock-policy', 'res', 'airlock_policy.wasm');
 const RPC = 'https://test.rpc.fastnear.com';
 const NEAR = process.env.NEAR ?? 'near';
 // the policy pays storage for the wasm (1e19 yocto per byte) plus 1 NEAR margin (deploy-testnet.sh), plus the 2 NEAR the sample invoices pay
