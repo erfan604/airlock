@@ -40,6 +40,14 @@ test('H1: a sandbox config with a mainnet account (x.near) is refused', () => {
   assert.equal(parseConfig({ ...sb, owner_id: 'o.test.near', contract_id: 'p.test.near', agent_id: 'a.test.near' }, '/c').owner_id, 'o.test.near');
 });
 
+test('H1: the sandbox root account itself (test.near, the validator the sandbox tests use as owner) is allowed on a loopback sandbox only', () => {
+  const sb = { ...base, network: 'sandbox', rpc: ['http://127.0.0.1:3030'], contract_id: 'p.test.near', agent_id: 'a.test.near' };
+  assert.equal(parseConfig({ ...sb, owner_id: 'test.near' }, '/c').owner_id, 'test.near');
+  assert.throws(() => parseConfig({ ...sb, owner_id: 'xtest.near' }, '/c'), /testnet only/);
+  assert.throws(() => parseConfig({ ...sb, owner_id: 'test.near', rpc: ['https://rpc.testnet.near.org'] }, '/c'), /testnet only/);
+  assert.throws(() => parseConfig({ ...base, owner_id: 'test.near' }, '/c'), /testnet only/);
+});
+
 test('H1: a testnet config still needs .testnet accounts', () => {
   assert.throws(() => parseConfig({ ...base, owner_id: 'x.near' }, '/c'), /testnet only/);
   assert.throws(() => parseConfig({ ...base, agent_id: 'x.test.near' }, '/c'), /testnet only/);

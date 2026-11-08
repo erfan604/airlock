@@ -63,10 +63,14 @@ export function parseConfig(raw: unknown, base: string): McpConfig {
     throw new ConfigError(`the config does not match its schema at: ${paths.join(', ')}`);
   }
   const c = parsed.data;
-  // accounts: .testnet on testnet; the local sandbox's own root (.test.near) is allowed only with a loopback RPC (below)
+  // accounts: .testnet on testnet; on the local sandbox also its root account test.near (the validator, which the sandbox tests use as
+  // owner) and its subaccounts, allowed only with a loopback RPC (below)
   const suffixes = c.network === 'testnet' ? ['.testnet'] : ['.testnet', '.test.near'];
+  const sandboxRoot = (id: string): boolean => c.network === 'sandbox' && id === 'test.near';
   for (const id of [c.owner_id, c.contract_id, c.agent_id]) {
-    if (!suffixes.some((x) => id.endsWith(x))) throw new ConfigError(`${TESTNET_ONLY}: every account id must end in ${suffixes.join(' or ')}`);
+    if (!sandboxRoot(id) && !suffixes.some((x) => id.endsWith(x))) {
+      throw new ConfigError(`${TESTNET_ONLY}: every account id must end in ${suffixes.join(' or ')}`);
+    }
   }
   if (c.network === 'sandbox') {
     if (c.rpc === undefined || !c.rpc.every((u) => LOOPBACK.has(new URL(u).hostname.toLowerCase()))) {
