@@ -1161,6 +1161,9 @@ pub struct WorldOpts {
     pub nonce: Option<u64>,
     /// AIR-327: start the policy with an approver (`approver.sandbox`) and a sponsor (`sponsor.sandbox`); false: the init call of before.
     pub roles: bool,
+    /// AIR-327 and AIR-328: with `roles`, the sponsor is the account `<name>.<root>` (the credit pool, deployed after the card) instead of a
+    /// plain `sponsor.sandbox` account.
+    pub sponsor_is: Option<&'static str>,
 }
 
 impl Default for WorldOpts {
@@ -1168,6 +1171,7 @@ impl Default for WorldOpts {
         Self {
             nonce: Some(0),
             roles: false,
+            sponsor_is: None,
         }
     }
 }
@@ -1200,9 +1204,15 @@ pub async fn world_with(o: WorldOpts) -> World {
         let approver = create_user_account(&net, &root, &root_signer, "approver")
             .await
             .expect("the approver account is created");
-        let (sponsor, _) = create_user_account(&net, &root, &root_signer, "sponsor")
-            .await
-            .expect("the sponsor account is created");
+        let sponsor = match o.sponsor_is {
+            Some(name) => format!("{name}.{root}").parse().unwrap(),
+            None => {
+                create_user_account(&net, &root, &root_signer, "sponsor")
+                    .await
+                    .expect("the sponsor account is created")
+                    .0
+            }
+        };
         Some((approver, sponsor))
     } else {
         None

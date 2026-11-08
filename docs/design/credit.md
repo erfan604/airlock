@@ -1,6 +1,6 @@
 # Decision AIR-327 and AIR-328: AIRLOCK Credit
 
-Status: AIR-327 (the roles) is built; the AIR-328 design (the pool contract) follows in this file and waits for the coordinator's OK.
+Status: AIR-327 (the roles) and AIR-328 (the pool contract, `contracts/airlock-credit`) are built; the coordinator approved the design and decisions D1 to D5 on 2026-11-08.
 
 ## AIR-327: the card policy has three roles
 
@@ -68,7 +68,7 @@ three red-team cases RT-CON-14 to RT-CON-16); the sandbox suite `tests/roles.rs`
 | the gate lets anyone settle | `rt_con_approver_approves_a_booked_merchant_and_the_owner_does_not`, `roles_gates_with_an_approver_set` |
 | `book_in` is true whatever the proof | `store_pending_fills_display_digest_and_indexes`, `rt_con_borrower_pays_himself_is_refused`, `rt_con_withheld_proof_makes_the_payee_new_for_the_approver` |
 
-## AIR-328: the credit pool contract (design, waiting for approval)
+## AIR-328: the credit pool contract
 
 A new crate `contracts/airlock-credit` (near-sdk =5.26.1, rustc 1.86.0, its own `Cargo.lock`, same layout as `contracts/mock-mpc`). LPs stake
 NEAR and hold shares; the pool's issuer opens credit lines that fund cards (AIRLOCK policies, AIR-327); what a card spends comes back through
@@ -167,3 +167,42 @@ Hours after approval: contract and unit tests 5, property test 1, sandbox suites
 the approval comes on 2026-11-08. Decisions I need: D1 on chain role check at `register_card` (the ticket says off chain; this removes a
 trust assumption for one cross-contract view call), D2 fee on the net outstanding at repay (the ticket's formula), D3 `MIN_DEPOSIT` 0.001 NEAR,
 D4 excess of a return or a repay is sent back, D5 a sweep after a default is credited as recovery.
+
+### AIR-328 as built
+
+`contracts/airlock-credit`: `src/math.rs` (256 bit `mul_div`, share, fee and collateral math), `src/lib.rs` (the contract), `src/tests.rs`
+(27 unit tests including a property test of the accounting over 12 random sequences of 120 operations), `tests/pool.rs` (sandbox, with the
+real airlock-policy wasm and the mock signer, reusing the policy crate's test helpers; `tests/contracts` is a symlink to the policy
+crate's). Two details beyond the design: failed payouts (the collateral, a refund, an excess) are parked in `unclaimed` and taken with
+`claim`, so no accounting is lost on a transfer to a deleted account; and `register_card` and `open_line` are not payable (the pool never
+needs a deposit from the issuer).
+
+The sandbox suite pins: the happy path (LPs deposit 60 and 40, the issuer registers the card, the pool checks its roles on chain, the
+borrower posts collateral, the line funds the card, the agent pays a book merchant through the verdict, an injected payee is held and
+nothing moves, a sweep is refused while an escalation is pending, then credited, the borrower repays with the fee, an LP withdraws more
+than it deposited); a default after the due date with the collateral seized and a recovery sweep after the issuer pauses the card;
+`register_card` refusing a card whose roles are not the pool's; and the case the review asked for, "the borrower tries to pay himself
+through his agent": held as a new payee, the approver refused, `approve_and_remember` and `book_set_root` refused to him, the pool and
+the card untouched.
+
+#### Mutation check of the money paths
+
+Each mutant was applied alone and the library tests run (the unit tests of `src/tests.rs` and `src/math.rs`).
+
+| Mutant | Killed by |
+| --- | --- |
+| shares round up on deposit | `deposit_then_withdraw_never_gains`, `first_deposit_is_one_to_one_and_later_ones_round_down`, `deposit_refusals` |
+| amounts round up on withdraw | `withdraw_rounds_down_and_never_pays_more_than_pro_rata`, the property test |
+| the fee rounds down | `fee_and_collateral_round_up` |
+| `on_card_return` accepts any caller | `only_the_card_returns_funds_and_the_excess_goes_back` |
+| repay accepts less than owed | `repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral` |
+| `open_line` without the collateral requirement | `open_line_needs_collateral_liquidity_and_sane_terms` |
+| `open_line` without the idle liquidity check | `open_line_needs_collateral_liquidity_and_sane_terms` |
+| `default` before the due date | `default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss` |
+| `default` seizes all the collateral, not only what is owed | `default_with_collateral_above_what_is_owed_returns_the_rest` |
+| the collateral is not returned on repay | `repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral` (it first survived a weaker assertion; the test now pins the amounts sent) |
+| the leftover collateral is not returned on default | `default_with_collateral_above_what_is_owed_returns_the_rest` |
+| the excess of a return is not sent back | `only_the_card_returns_funds_and_the_excess_goes_back` |
+| `register_card` without the owner check | `register_card_is_owner_only_and_never_the_pool_or_the_issuer_as_borrower` |
+| `withdraw` does not lower idle | `withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond`, `a_failed_withdraw_transfer_gives_the_shares_back` |
+| the fee is not added to the fees earned | `repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral` |

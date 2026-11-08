@@ -1,0 +1,38 @@
+[package]
+name = "airlock-credit"
+version = "0.1.0"
+edition = "2024"
+description = "AIRLOCK Credit: an LP pool that funds AIRLOCK card policies for agents (AIR-328)"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "=5.26.1"
+
+[dev-dependencies]
+# the sandbox suite reuses the policy contract's test helpers (tests/common of airlock-policy) and its wasm
+airlock-policy = { path = "../airlock-policy" }
+airlock-verdict = { path = "../airlock-verdict" }
+hex = { version = "=0.4.3", default-features = false, features = ["alloc"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+shade-attestation = "=0.2.0"
+ed25519-dalek = { version = "=2.2.0", default-features = false, features = ["std"] }
+sha3 = "=0.10.9"
+wasmparser = { version = "=0.244.0", default-features = false, features = ["std"] }
+near-api = "=0.8.6"
+near-api-types = "=0.8.6"
+near-sandbox = "=0.3.9"
+near-sdk = { version = "=5.26.1", features = ["unit-testing"] }
+serde_json = "=1.0.149"
+tokio = { version = "=1.52.1", features = ["full"] }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true
