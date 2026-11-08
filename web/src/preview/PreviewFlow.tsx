@@ -4,7 +4,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { registryFromRows } from '@airlock/runtime/analyze';
 import type { OwnerTask } from '@airlock/runtime/dsl';
-import { readSnapshot } from '../chain/reads.ts';
+import { BookNotLoaded, readSnapshot } from '../chain/reads.ts';
+import { VaultDrop } from '../approvals/VaultDrop.tsx';
 import type { ChainReads, ChainSnapshot } from '../chain/reads.ts';
 import { guardRuntime, isReadOnlyDraft } from './api.ts';
 import type { RuntimeDraft } from './api.ts';
@@ -31,7 +32,7 @@ export type PreviewFlowProps = { instruction: string; paste: string | null; deps
 
 type Phase =
   | { kind: 'loading' }
-  | { kind: 'failed'; text: string }
+  | { kind: 'failed'; text: string; needsBook?: boolean }
   | { kind: 'refused'; refusal: Refusal }
   | { kind: 'readonly'; draftId: string }
   | { kind: 'ready'; draftId: string; build: BuildOk; snap: ChainSnapshot; key: TaskKey };
@@ -60,7 +61,13 @@ export function PreviewFlow({ instruction, paste, deps, onConfirmed, onEdit }: P
         const key = await ensureKey(deps.keys);
         setPhase({ kind: 'ready', draftId: draft.draftId, build: guarded.build, snap, key });
       } catch (e) {
-        setPhase(e instanceof KeyUnsupported ? { kind: 'refused', refusal: refusal('KeyUnsupported') } : { kind: 'failed', text: FAILED_READ });
+        setPhase(
+          e instanceof KeyUnsupported
+            ? { kind: 'refused', refusal: refusal('KeyUnsupported') }
+            : e instanceof BookNotLoaded
+              ? { kind: 'failed', text: 'Your policy keeps a private book, and your book file is not loaded here. Load it, then try again. Nothing was signed.', needsBook: true }
+              : { kind: 'failed', text: FAILED_READ },
+        );
       }
     })();
   }, [deps, instruction, paste]);
@@ -113,6 +120,7 @@ export function PreviewFlow({ instruction, paste, deps, onConfirmed, onEdit }: P
       <section className="preview preview-refusal" data-testid="refusal" data-code={phase.kind === 'refused' ? phase.refusal.code : 'ReadFailed'} role="alert">
         <h2 className="preview-title">Not signing</h2>
         <p className="preview-text">{text}</p>
+        {phase.kind === 'failed' && phase.needsBook === true ? <VaultDrop /> : null}
         <button type="button" className="card-btn card-btn-outline" data-testid="edit" onClick={onEdit}>
           Edit
         </button>

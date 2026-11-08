@@ -38,14 +38,16 @@ test('getBook pages 50 at a time and stops on the short page (50 plus 3 rows)', 
   const { fetchImpl, calls } = fake(Array.from({ length: 53 }, (_, i) => row(i)));
   const rows = await rpcChainReads(cfg(fetchImpl)).getBook();
   assert.equal(rows.length, 53);
-  const pages = calls.map((c) => JSON.parse(Buffer.from(String(c.params.args_base64), 'base64').toString('utf8')));
+  // the first call probes for a private book (AIR-326); an older policy has no such view and the listing follows
+  assert.equal(calls[0]?.params.method_name, 'get_book_root');
+  const pages = calls.filter((c) => c.params.method_name === 'get_book').map((c) => JSON.parse(Buffer.from(String(c.params.args_base64), 'base64').toString('utf8')));
   assert.deepEqual(pages, [{ from_index: 0, limit: 50 }, { from_index: 50, limit: 50 }]);
 });
 
 test('getBook with exactly 50 rows asks for a second, empty page', async () => {
   const { fetchImpl, calls } = fake(Array.from({ length: 50 }, (_, i) => row(i)));
   assert.equal((await rpcChainReads(cfg(fetchImpl)).getBook()).length, 50);
-  assert.equal(calls.length, 2);
+  assert.equal(calls.filter((c) => c.params.method_name === 'get_book').length, 2);
 });
 
 test('latestBlockMs divides the nanosecond string with BigInt, truncating', async () => {

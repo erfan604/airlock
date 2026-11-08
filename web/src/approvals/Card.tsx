@@ -32,6 +32,8 @@ export type CardProps = {
   ledgers: LedgersView;
   asset: AssetEntryViewJson;
   book: BookEntryJson | null;
+  /** false: the policy keeps a private book and the owner's book file is not loaded (AIR-326); the look-alike check cannot run. */
+  bookLoaded?: boolean;
   /** The canonical keys of the `get_book` rows (AIR-190): the look-alike check and the diff read them. */
   bookKeys: readonly string[];
   /** Label per book key, for the diff sentence. A missing label leaves the sentence without one. */
@@ -125,6 +127,13 @@ function sourceLineOf(row: CardRow, model: CardModel): ReactNode {
     parts.push(
       <p key="mismatch" className="label-mismatch" data-testid="label-mismatch">
         label says book, payee is not in your book
+      </p>,
+    );
+  }
+  if (row.name === 'TO' && model.bookNotLoaded) {
+    parts.push(
+      <p key="book-not-loaded" className="label-mismatch" data-testid="book-not-loaded">
+        Book not loaded: the look-alike check did not run. Load your book file to run it.
       </p>,
     );
   }
@@ -366,7 +375,7 @@ function snapshot(p: CardProps): Snapshot {
   try {
     const now = p.nowMs !== undefined ? (DECIMAL.test(p.nowMs) ? BigInt(p.nowMs) : null) : BigInt(Date.now());
     if (now === null) return { ok: false, code: 'BadClock' };
-    return { ok: true, model: buildCardModel(p.view, p.evidence, p.ledgers, p.asset, p.book, now, { bookKeys: p.bookKeys, bookLabels: p.bookLabels }) };
+    return { ok: true, model: buildCardModel(p.view, p.evidence, p.ledgers, p.asset, p.book, now, { bookLoaded: p.bookLoaded ?? true, bookKeys: p.bookKeys, bookLabels: p.bookLabels }) };
   } catch (e) {
     return { ok: false, code: e instanceof CardError ? e.code : 'BadView' };
   }

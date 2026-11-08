@@ -7,6 +7,7 @@ import { mkdtempSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Vault, VaultError, buildTree, proofVerifies, withheldProofNotice } from '../src/vault/index.ts';
+import { loadVault, saveVault } from '../src/vault/file.ts';
 import { ChainClient } from '../src/chain/near.ts';
 import { ChainError } from '../src/chain/errors.ts';
 import { ScriptedTransport, okTx, req, sig, task } from './helpers/chain-double.ts';
@@ -25,15 +26,15 @@ const entry = (payee: string, label = 'x', over: Partial<{ cap: bigint | null; l
 
 test('the tree equals the contract: the same three entries and seed give the same root and path', () => {
   const es = [0, 1, 2].map((i) => ({
-    salt: Buffer.alloc(32, i + 1),
+    salt: new Uint8Array(32).fill(i + 1),
     payee: `near:payee${String(i).padStart(3, '0')}.test.near`,
     cap: i % 2 === 0 ? BigInt(100 + i) : null,
     budget: BigInt(1000 + i),
     limit: BigInt(5000 + i),
   }));
-  const b = buildTree(es, Buffer.alloc(32, 9));
-  assert.equal(b.root.toString('hex'), '06a143a32025ed470b890fcfdd8d4f14279bf1b410f7b319be8830f5c2f8d2a9');
-  assert.equal((b.proofs[1]?.siblings[0] as Buffer).toString('hex'), 'f2ddf0ad63aa6cdc78a93e75e016fc54a792eda756f9eff9b819d4d38bb9f0b3');
+  const b = buildTree(es, new Uint8Array(32).fill(9));
+  assert.equal(Buffer.from(b.root).toString('hex'), '06a143a32025ed470b890fcfdd8d4f14279bf1b410f7b319be8830f5c2f8d2a9');
+  assert.equal(Buffer.from(b.proofs[1]?.siblings[0] as Uint8Array).toString('hex'), 'f2ddf0ad63aa6cdc78a93e75e016fc54a792eda756f9eff9b819d4d38bb9f0b3');
 });
 
 test('every entry has a proof that verifies for its own payee only, and a changed number or another payee fails', () => {
@@ -75,9 +76,9 @@ test('the file round trips with the same root and is written with mode 0600', ()
   const dir = mkdtempSync(join(tmpdir(), 'vault-'));
   const path = join(dir, 'book.vault.json');
   const v = Vault.empty().add(entry(ALICE, 'Alice')).add(entry(BOB, 'Bob'));
-  v.save(path);
+  saveVault(v, path);
   assert.equal(statSync(path).mode & 0o777, 0o600);
-  assert.equal(Vault.load(path).root(), v.root());
+  assert.equal(loadVault(path).root(), v.root());
   assert.throws(() => Vault.parse({ version: 1 }), (e) => e instanceof VaultError && e.code === 'BadFile');
 });
 

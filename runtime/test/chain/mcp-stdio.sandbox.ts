@@ -4,6 +4,7 @@
 // asset's hard cap (Block). Every verdict is the contract's own outcome. Needs the policy wasm and NEAR_SANDBOX_BIN_PATH (scripts/env.sh).
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
+import { saveVault } from '../../src/vault/file.ts';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
@@ -43,7 +44,7 @@ before(async () => {
   // the sandbox world's task key: the seed of 32 bytes of 01 (helpers/sandbox.ts)
   writeFileSync(join(dir, 'task-key'), `${'01'.repeat(32)}\n`, { mode: 0o600 });
   // AIR-326: the owner's private book, as the config names it
-  world.vault.save(join(dir, 'book.vault.json'));
+  saveVault(world.vault, join(dir, 'book.vault.json'));
   writeFileSync(
     join(dir, 'inbox.json'),
     JSON.stringify([

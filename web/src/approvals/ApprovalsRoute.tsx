@@ -7,6 +7,9 @@ import { BookPageSchema } from '@airlock/runtime/chain-types';
 import type { AssetEntryViewJson, LedgersView, RequestView } from '@airlock/runtime/chain-types';
 import type { BookEntryJson } from '@airlock/runtime/dsl';
 import { rpcView } from '../chain/rpc.ts';
+import { getVault, setVault } from '../chain/vaultStore.ts';
+import type { Vault } from '@airlock/runtime/vault';
+import { VaultDrop } from './VaultDrop.tsx';
 import { CliPanel } from '../wallet/CliPanel.tsx';
 import { makeApprove } from '../wallet/approve.ts';
 import { allowedWallet, revealInstruction } from '../wallet/capabilities.ts';
@@ -35,17 +38,22 @@ export type CardData = {
   ledgers: LedgersView;
   asset: AssetEntryViewJson;
   book: BookEntryJson | null;
+  /** false: the policy keeps a private book and the owner's book file is not loaded (AIR-326). */
+  bookLoaded: boolean;
   /** The keys and labels of the `get_book` rows (AIR-190); empty when no shown card has a payee outside the book. */
   bookKeys: readonly string[];
   bookLabels: Readonly<Record<string, string>>;
 };
-export type ApprovalsData = { cards: CardData[]; more: number };
+/** `privateBook`: the policy contract holds only a book root (AIR-326), so the book comes from the owner's file. */
+export type ApprovalsData = { cards: CardData[]; more: number; privateBook: boolean };
 
 export type LoadDeps = {
   pending(): Promise<RequestView[]>;
   view(method: string, args: object): Promise<unknown>;
   /** the body of GET /api/evidence/<no>, or null for a 404 */
   evidence(no: string): Promise<unknown>;
+  /** the owner's loaded book file; defaults to the console's in-memory one (AIR-326) */
+  vault?(): Vault | null;
 };
 
 export type Actions = {
@@ -85,8 +93,27 @@ function newestFirst(views: RequestView[]): RequestView[] {
 const BOOK_PAGE = 50;
 const MAX_BOOK_PAGES = 20;
 
-/** Every row of `get_book`, page by page, as keys and labels. A failed or malformed page fails the whole load: a missing book must not read as "no close match". */
-async function readBook(view: LoadDeps['view']): Promise<{ keys: string[]; labels: Record<string, string> }> {
+type BookRead = { keys: string[]; labels: Record<string, string>; loaded: boolean; privateBook: boolean; entryOf(payee: string): BookEntryJson | null | undefined };
+
+/**
+ * The owner's book. A policy with a private book (AIR-326) answers `get_book_root`: the rows then come from the owner's book file, and only
+ * when the file's root equals the chain's (otherwise the book is "not loaded" and the card says the look-alike check did not run). An older
+ * policy has no such view and lists its book: every row of `get_book`, page by page. A failed or malformed page fails the whole load: a
+ * missing book must not read as "no close match".
+ */
+async function readBook(view: LoadDeps['view'], vault: Vault | null, needListing: boolean): Promise<BookRead> {
+  let root: unknown;
+  try {
+    root = await view('get_book_root', {});
+  } catch {
+    root = undefined;
+  }
+  if (typeof root === 'string' && /^[0-9a-f]{64}$/.test(root)) {
+    if (vault === null || vault.root() !== root) return { keys: [], labels: {}, loaded: false, privateBook: true, entryOf: () => null };
+    const rows = vault.rows();
+    return { keys: rows.map(([k]) => k), labels: Object.fromEntries(rows.map(([k, e]) => [k, e.label])), loaded: true, privateBook: true, entryOf: (p) => rows.find(([k]) => k === p)?.[1] ?? null };
+  }
+  if (!needListing) return { keys: [], labels: {}, loaded: true, privateBook: false, entryOf: () => undefined };
   const keys: string[] = [];
   const labels: Record<string, string> = {};
   for (let page = 0; page < MAX_BOOK_PAGES; page++) {
@@ -95,7 +122,7 @@ async function readBook(view: LoadDeps['view']): Promise<{ keys: string[]; label
       keys.push(key);
       labels[key] = entry.label;
     }
-    if (rows.length < BOOK_PAGE) return { keys, labels };
+    if (rows.length < BOOK_PAGE) return { keys, labels, loaded: true, privateBook: false, entryOf: () => undefined };
   }
   throw new Error('get_book kept answering full pages');
 }
@@ -104,7 +131,7 @@ export async function loadApprovals(deps: LoadDeps): Promise<ApprovalsData> {
   const all = newestFirst(await deps.pending());
   const shown = all.slice(0, MAX_CARDS);
   const assets = shown.length > 0 ? ((await deps.view('list_assets', {})) as ReadonlyArray<readonly [string, AssetEntryViewJson]>) : [];
-  const bookRows = shown.some((v) => v.book_status === 'new') ? await readBook(deps.view) : { keys: [], labels: {} };
+  const bookRows = shown.length > 0 ? await readBook(deps.view, (deps.vault ?? getVault)(), shown.some((v) => v.book_status === 'new')) : ({ keys: [], labels: {}, loaded: true, privateBook: false, entryOf: () => undefined } satisfies BookRead);
   const cards = await Promise.all(
     shown.map(async (view): Promise<CardData> => {
       const entry = assets.find(([id]) => id === view.asset)?.[1];
@@ -112,13 +139,14 @@ export async function loadApprovals(deps: LoadDeps): Promise<ApprovalsData> {
       const [ledgers, ownEntry, raw] = await Promise.all([
         // the contract takes a task hash (64 lowercase hex) and panics on any other text, so a request whose task id is a label is read without a task
         deps.view('get_ledgers', { payee: view.payee, asset: view.asset, task: TASK_HASH.test(view.task_id) ? view.task_id : null }),
-        deps.view('get_book_entry', { key: view.payee }),
+        // a private book has no `get_book_entry`: the entry of a payee in the book comes from the owner's file
+        bookRows.privateBook ? Promise.resolve(view.book_status === 'in_book' ? bookRows.entryOf(view.payee) ?? null : null) : deps.view('get_book_entry', { key: view.payee }),
         view.id === null ? Promise.resolve(null) : deps.evidence(view.id).catch(() => null),
       ]);
-      return { view, evidence: { ...parseEvidence(evidenceBody(raw), view.labels), counterparty: counterpartyOf(raw) }, ledgers: ledgers as LedgersView, asset: entry, book: (ownEntry ?? null) as BookEntryJson | null, bookKeys: bookRows.keys, bookLabels: bookRows.labels };
+      return { view, evidence: { ...parseEvidence(evidenceBody(raw), view.labels), counterparty: counterpartyOf(raw) }, ledgers: ledgers as LedgersView, asset: entry, book: (ownEntry ?? null) as BookEntryJson | null, bookLoaded: bookRows.loaded, bookKeys: bookRows.keys, bookLabels: bookRows.labels };
     }),
   );
-  return { cards, more: all.length - shown.length };
+  return { cards, more: all.length - shown.length, privateBook: bookRows.privateBook };
 }
 
 // ---- view ----
@@ -134,6 +162,8 @@ export type ApprovalsViewProps = {
   onDone?(id: string): void;
   /** AIR-303: the attestation records of GET /api/attestation; the `Verified` panel shows under each card when there are any */
   attestations?: readonly Attestation[];
+  /** reload the cards, called after the owner loads a book file */
+  onReload?(): void;
 };
 
 export function ApprovalCard({ viewOnly = false, card, ownerId, contractId, actions, scope, nowMs, onDone, attestations }: { card: CardData; viewOnly?: boolean } & Omit<ApprovalsViewProps, 'data'>) {
@@ -173,14 +203,14 @@ export function ApprovalCard({ viewOnly = false, card, ownerId, contractId, acti
   const showCli = !viewOnly && cliArgs !== null && (!walletOffered || failures >= MAX_FAILURES);
   return (
     <div className="approval-item" data-testid="approval-item">
-      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onApproveAndRemember={actions.approveAndRemember === undefined ? undefined : wrapped.approveAndRemember} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} viewOnly={viewOnly} />
+      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookLoaded={card.bookLoaded} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onApproveAndRemember={actions.approveAndRemember === undefined || !card.bookLoaded ? undefined : wrapped.approveAndRemember} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} viewOnly={viewOnly} />
       {showCli && cliArgs !== null ? <CliPanel args={cliArgs} contractId={contractId} ownerId={ownerId} /> : null}
       {attestations !== undefined ? <VerifiedPanel attestations={attestations} /> : null}
     </div>
   );
 }
 
-export function ApprovalsView({ data, ownerId, contractId, actions, scope, nowMs, onDone, attestations }: ApprovalsViewProps) {
+export function ApprovalsView({ data, ownerId, contractId, actions, scope, nowMs, onDone, attestations, onReload }: ApprovalsViewProps) {
   const reveal = revealInstruction(PRIMARY_WALLET_ID);
   if (data.cards.length === 0) {
     return (
@@ -195,6 +225,7 @@ export function ApprovalsView({ data, ownerId, contractId, actions, scope, nowMs
   return (
     <main className="page approvals" data-testid="approvals">
       <h1 className="approvals-title">Waiting for you</h1>
+      {data.privateBook ? <VaultDrop onLoaded={onReload} /> : null}
       {reveal !== '' ? (
         <p className="approvals-reveal" data-testid="reveal-instruction">
           {reveal}
@@ -214,6 +245,22 @@ export function ApprovalsView({ data, ownerId, contractId, actions, scope, nowMs
 
 export type ApprovalsDeps = { contractId: string; load(): Promise<ApprovalsData>; actions: Actions; nowMs?: string; /** AIR-303: GET /api/attestation; a failure shows no panel */ attestations?(): Promise<Attestation[]> };
 
+/** AIR-326: what the wallet calls need to know about the owner's private book. */
+export function bookDeps(view: (method: string, args: object) => Promise<unknown>): Pick<Parameters<typeof makeApprove>[0], 'vault' | 'bookRoot' | 'onVault'> {
+  return {
+    vault: getVault,
+    bookRoot: async () => {
+      try {
+        const root = await view('get_book_root', {});
+        return typeof root === 'string' && /^[0-9a-f]{64}$/.test(root) ? root : null;
+      } catch {
+        return null;
+      }
+    },
+    onVault: (next) => setVault(next, true),
+  };
+}
+
 export function liveDeps(): ApprovalsDeps {
   const cfg = walletConfig();
   const read = rpcGetRequest(cfg);
@@ -229,7 +276,7 @@ export function liveDeps(): ApprovalsDeps {
           return res.ok ? ((await res.json()) as unknown) : null;
         },
       }),
-    actions: makeApprove({ wallet: currentWallet, contractId: cfg.contractId, read }),
+    actions: makeApprove({ wallet: currentWallet, contractId: cfg.contractId, read, ...bookDeps(view) }),
     attestations: async () => {
       const res = await fetch('/api/attestation', { credentials: 'same-origin' });
       if (!res.ok) return [];
@@ -244,7 +291,7 @@ export function merge(prev: ApprovalsData | null, next: ApprovalsData, acted: Re
   if (prev === null) return next;
   const have = new Set(next.cards.map((c) => c.view.request_id));
   const kept = prev.cards.filter((c) => acted.has(c.view.request_id) && !have.has(c.view.request_id));
-  return { cards: [...next.cards, ...kept].sort((a, b) => (BigInt(a.view.id ?? '0') < BigInt(b.view.id ?? '0') ? 1 : -1)), more: next.more };
+  return { cards: [...next.cards, ...kept].sort((a, b) => (BigInt(a.view.id ?? '0') < BigInt(b.view.id ?? '0') ? 1 : -1)), more: next.more, privateBook: next.privateBook };
 }
 
 function ApprovalsPage({ ownerId, deps }: { ownerId: string; deps: ApprovalsDeps }) {
@@ -294,7 +341,7 @@ function ApprovalsPage({ ownerId, deps }: { ownerId: string; deps: ApprovalsDeps
           The list could not be refreshed. What you see may be out of date.
         </p>
       ) : null}
-      <ApprovalsView data={data} ownerId={ownerId} contractId={deps.contractId} actions={deps.actions} nowMs={deps.nowMs} onDone={onDone} attestations={attestations} />
+      <ApprovalsView data={data} ownerId={ownerId} contractId={deps.contractId} actions={deps.actions} nowMs={deps.nowMs} onDone={onDone} attestations={attestations} onReload={load} />
     </>
   );
 }

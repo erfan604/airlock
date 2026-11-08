@@ -14,7 +14,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { Vault, noticeFromRequestView } from '../runtime/src/vault/index.ts';
+import { noticeFromRequestView } from '../runtime/src/vault/index.ts';
+import { loadVault } from '../runtime/src/vault/file.ts';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MAIN = join(REPO, 'runtime', 'src', 'mcp', 'main.ts');
@@ -146,7 +147,9 @@ async function init(argv: string[]): Promise<void> {
   // 4. deploy the committed wasm (no Rust needed) and configure the policy
   const accounts = join(dir, 'accounts.json');
   writeFileSync(accounts, `${JSON.stringify({ owner, policy, agent, acme }, null, 2)}\n`);
-  const env = { AIRLOCK_ACCOUNTS_FILE: accounts, AIRLOCK_TASK_KEY_FILE: keyFile };
+  // AIR-326: the owner's private book lives here; the policy contract holds only its Merkle root
+  const bookVault = join(dir, 'book.vault.json');
+  const env = { AIRLOCK_ACCOUNTS_FILE: accounts, AIRLOCK_TASK_KEY_FILE: keyFile, AIRLOCK_BOOK_VAULT: bookVault };
   const code = await codeHash(policy);
   if (code === null) {
     const d = sh('bash', [join(REPO, 'scripts', 'deploy-testnet.sh')], {
@@ -182,6 +185,7 @@ async function init(argv: string[]): Promise<void> {
     task_ttl_minutes: 60,
     inbox: join(dir, 'inbox.json'),
     files_dir: files,
+    book_vault: bookVault,
   };
   writeFileSync(join(dir, 'mcp.json'), `${JSON.stringify(cfg, null, 2)}\n`, { mode: 0o600 });
   console.log(`wrote ${join(dir, 'mcp.json')}`);
@@ -252,7 +256,7 @@ function decide(cmd: 'pending' | 'approve' | 'reject', argv: string[]): number {
     const view = spawnSync(NEAR, ['contract', 'call-function', 'as-read-only', cfg.contract_id, 'get_request', 'json-args', JSON.stringify({ id }), 'network-config', 'testnet', 'now'], { encoding: 'utf8' });
     if (view.status === 0) {
       try {
-        const vault = Vault.load(resolve(dir, cfg.book_vault));
+        const vault = loadVault(resolve(dir, cfg.book_vault));
         const notice = noticeFromRequestView(vault, JSON.parse(view.stdout) as unknown);
         if (notice !== null) console.error(notice);
       } catch {

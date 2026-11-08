@@ -10,11 +10,13 @@ import { connectWallet, currentWallet } from '../wallet/connector.ts';
 import { makeApprove } from '../wallet/approve.ts';
 import { PRIMARY_WALLET_ID } from '../wallet/snapshot.ts';
 import { rpcGetRequest } from '../wallet/status.ts';
-import { ApprovalCard, merge } from './ApprovalsRoute.tsx';
+import { ApprovalCard, bookDeps, merge } from './ApprovalsRoute.tsx';
+import { rpcView } from '../chain/rpc.ts';
 import type { Actions, ApprovalsData } from './ApprovalsRoute.tsx';
 import type { ApproveResult } from './Card.tsx';
 import { DEFAULT_POLICY, accessOf, explorerTx, isExpired, policyFromSearch, readStaticChain } from './staticChain.ts';
 import type { Access } from './staticChain.ts';
+import { VaultDrop } from './VaultDrop.tsx';
 
 export type TxRecord = { kind: 'approve' | 'reject'; hash: string };
 
@@ -31,6 +33,8 @@ export type StaticViewProps = {
   connectError: string | null;
   /** by pending number */
   txs: Readonly<Record<string, TxRecord>>;
+  /** reload the cards after the owner loads a book file (AIR-326) */
+  onReload?(): void;
 };
 
 function AccessLine({ access, ownerId, onConnect, connecting, connectError }: Pick<StaticViewProps, 'access' | 'ownerId' | 'onConnect' | 'connecting' | 'connectError'>) {
@@ -59,7 +63,7 @@ function AccessLine({ access, ownerId, onConnect, connecting, connectError }: Pi
   );
 }
 
-export function StaticApprovalsView({ policy, ownerId, data, access, actions, nowMs, onConnect, onDone, connecting, connectError, txs }: StaticViewProps) {
+export function StaticApprovalsView({ policy, ownerId, data, access, actions, nowMs, onConnect, onDone, connecting, connectError, txs, onReload }: StaticViewProps) {
   const reveal = revealInstruction(PRIMARY_WALLET_ID);
   const now = BigInt(nowMs ?? Date.now());
   return (
@@ -67,6 +71,7 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
       <h1 className="approvals-title" data-testid="approvals-policy">{`Held requests on ${policy}`}</h1>
       <p className="approvals-more">Read from the policy contract on NEAR testnet through a public RPC node, with no server in between. Only the policy owner can approve or reject.</p>
       <AccessLine access={access} ownerId={ownerId} onConnect={onConnect} connecting={connecting} connectError={connectError} />
+      {data.privateBook ? <VaultDrop onLoaded={onReload} /> : null}
       {access.kind === 'owner' && reveal !== '' && data.cards.length > 0 ? (
         <p className="approvals-reveal" data-testid="reveal-instruction">
           {reveal}
@@ -159,7 +164,7 @@ export function StaticApprovals() {
   }, [load]);
 
   const actions = useMemo<Actions>(() => {
-    const inner = makeApprove({ wallet: currentWallet, contractId: policy, read: rpcGetRequest(cfg) });
+    const inner = makeApprove({ wallet: currentWallet, contractId: policy, read: rpcGetRequest(cfg), ...bookDeps(rpcView(cfg)) });
     const record = (kind: TxRecord['kind'], id: string) => async (r: ApproveResult): Promise<ApproveResult> => {
       if (r.ok && r.tx !== '') setTxs((t) => ({ ...t, [id]: { kind, hash: r.tx } }));
       return r;
@@ -211,7 +216,7 @@ export function StaticApprovals() {
           The list could not be refreshed. What you see may be out of date.
         </p>
       ) : null}
-      <StaticApprovalsView policy={policy} ownerId={read.ownerId} data={read.data} access={accessOf(account, read.ownerId)} actions={actions} onConnect={onConnect} onDone={onDone} connecting={connecting} connectError={connectError} txs={txs} />
+      <StaticApprovalsView policy={policy} ownerId={read.ownerId} data={read.data} access={accessOf(account, read.ownerId)} actions={actions} onConnect={onConnect} onDone={onDone} connecting={connecting} connectError={connectError} txs={txs} onReload={load} />
     </>
   );
 }

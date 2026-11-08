@@ -16,6 +16,8 @@ BASE_RPC="${BASE_RPC:-https://sepolia.base.org}"
 ACCOUNTS="${AIRLOCK_ACCOUNTS_FILE:-$ROOT/fixtures/accounts.testnet.json}"
 POLICY_FILE="${AIRLOCK_POLICY_FILE:-$ROOT/fixtures/policy.json}"
 LOCAL_MODE="${AIRLOCK_LOCAL_MODE_FILE:-$ROOT/fixtures/local-mode.json}"
+# AIR-326: the owner's private book file (mode 0600); the policy contract holds only its root
+BOOK_VAULT="${AIRLOCK_BOOK_VAULT:-$HOME/.airlock/book.vault.json}"
 
 VERIFY=0
 FORCE_NONCE=0
@@ -61,6 +63,16 @@ clean() { sed $'s/\x1b\\[[0-9;]*m//g'; }
 
 view() {   # view <method> <json args>: the near CLI prints the return value on stdout and decoration on stderr
   "$NEAR" contract call-function as-read-only "$POLICY" "$1" json-args "$2" network-config testnet now 2> /dev/null
+}
+
+vault_root() {   # builds or updates the vault from the policy file's book and prints its root (the vault file is the owner's secret)
+  local f
+  f="$(mktemp)" || return 1
+  printf '%s' "$EXPECTED" > "$f"
+  (cd "$ROOT" && npx --no-install tsx scripts/book-vault.ts sync "$f" "$BOOK_VAULT")
+  local rc=$?
+  rm -f "$f"
+  return $rc
 }
 
 tx() {   # tx <signer> <method> <json args> <deposit>
@@ -125,12 +137,11 @@ bootstrap() {
     owner_tx asset_set "$(jq -nc --arg id "$id" --argjson e "$entry" '{asset:$id,entry:$e}')"
   done
 
-  # 8: address book
-  n="$(printf '%s' "$EXPECTED" | jq '.book | length')"
-  for ((i = 0; i < n; i++)); do
-    entry="$(printf '%s' "$EXPECTED" | jq -c --argjson i "$i" '.book[$i] | {key, cap, daily_untrusted_budget, daily_limit, label}')"
-    owner_tx book_add "$entry"
-  done
+  # 8: address book (AIR-326): the owner's vault holds the book, the contract holds only its Merkle root; one transaction sets it
+  local root chain_root
+  root="$(vault_root)" || die "FAILED: could not build the book vault $BOOK_VAULT"
+  chain_root="$(view get_book_root '{}' | jq -r .)" || die "FAILED: get_book_root view"
+  if [ "$chain_root" = "$root" ]; then echo "book root kept"; else owner_tx book_set_root "$(jq -nc --arg o "$chain_root" --arg n "$root" '{expected_old:$o,new_root:$n}')"; fi
 
   # 9, 10: flags and the task key
   owner_tx set_flags "$(printf '%s' "$EXPECTED" | jq -c '{flags: .flags}')"
@@ -163,7 +174,7 @@ item_end() { [ "$ITEM_BAD" = "1" ] || echo "ok $1"; }
 unreadable() { echo "DRIFT $1 field view expected readable got error"; DRIFTS=$((DRIFTS + 1)); }
 
 verify() {
-  local got exp id key name f i n chain cur d vuntil
+  local got exp id key name f i n chain cur d vuntil vroot
   # get_policy: not paused, flags equal
   item_start
   if got="$(view get_policy '{}')"; then
@@ -201,25 +212,10 @@ verify() {
     item_end assets
   else unreadable assets; fi
 
-  # address book, every entry, then the exact key set
-  n="$(printf '%s' "$EXPECTED" | jq '.book | length')"
-  for ((i = 0; i < n; i++)); do
-    key="$(printf '%s' "$EXPECTED" | jq -r --argjson i "$i" '.book[$i].key')"
-    name="$(printf '%s' "$EXPECTED" | jq -r --argjson i "$i" '.book[$i].name')"
-    item_start
-    if got="$(view get_book_entry "$(jq -nc --arg k "$key" '{key:$k}')")" && [ "$(printf '%s' "$got" | jq -r 'type')" = "object" ]; then
-      for f in cap daily_untrusted_budget daily_limit label; do
-        check "book $name" "$f" "$(printf '%s' "$EXPECTED" | jq -r --argjson i "$i" --arg f "$f" '.book[$i][$f] | if . == null then "null" else tostring end')" "$(jqs "$got" "$f")"
-      done
-      item_end "book $name"
-    else
-      echo "DRIFT book $name field present expected yes got no"
-      DRIFTS=$((DRIFTS + 1))
-    fi
-  done
+  # address book (AIR-326): the vault built from the policy file must hold exactly the root the contract stores
   item_start
-  if got="$(view get_book '{}')"; then
-    check book keys "$(printf '%s' "$EXPECTED" | jq -r '[.book[].key] | sort | join(",")')" "$(printf '%s' "$got" | jq -r '[.[][0]] | sort | join(",")')"
+  if got="$(view get_book_root '{}')" && vroot="$(vault_root)"; then
+    check book root "$vroot" "$(printf '%s' "$got" | jq -r .)"
     item_end book
   else unreadable book; fi
 

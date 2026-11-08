@@ -2,6 +2,8 @@
 // and exactly 1 yoctoNEAR. The arguments are the object `approveArgs` built from the stored request, so the five values the wallet shows are
 // the five values the card shows. The failure counter and the state machine are AIR-181's cardReducer; this file only maps results.
 import type { RequestState, RequestView } from '@airlock/runtime/chain-types';
+import { VaultError } from '@airlock/runtime/vault';
+import type { Vault } from '@airlock/runtime/vault';
 import type { NearWalletBase } from '@hot-labs/near-connect';
 import type { ApproveArgs, ApproveResult } from '../approvals/Card.tsx';
 import type { RememberArgs } from '../approvals/cardModel.ts';
@@ -20,6 +22,14 @@ export type ApproveDeps = {
   wallet(): Promise<Pick<NearWalletBase, 'signAndSendTransaction'>>;
   contractId: string;
   read: (id: string) => Promise<RequestView | null>;
+  /**
+   * AIR-326: the owner's book file and what to do with it. `bookRoot` reads `get_book_root` (null when the contract has none: an older policy);
+   * with a root, approve-and-remember needs the loaded vault and sends the new root and the new entry's path, and `onVault` gets the vault
+   * to save once the call succeeded.
+   */
+  vault?: () => Vault | null;
+  bookRoot?: () => Promise<string | null>;
+  onVault?: (next: Vault) => void;
   /** tests only: how long to wait for the wallet (default 120000) and for the chain (60000), and the poll interval (1000) */
   uiTimeoutMs?: number;
   pollTimeoutMs?: number;
@@ -86,7 +96,7 @@ export function makeApprove(deps: ApproveDeps): {
   approveAndRemember(a: RememberArgs): Promise<ApproveResult>;
   reject(id: string): Promise<ApproveResult>;
 } {
-  async function send(methodName: 'approve' | 'approve_and_remember' | 'reject', args: Record<string, string>, tgas: number, id: string, until: ReadonlySet<RequestState>): Promise<ApproveResult> {
+  async function send(methodName: 'approve' | 'approve_and_remember' | 'reject', args: Record<string, unknown>, tgas: number, id: string, until: ReadonlySet<RequestState>): Promise<ApproveResult> {
     const call = {
       receiverId: deps.contractId,
       actions: [{ type: 'FunctionCall' as const, params: { methodName, args, gas: (BigInt(tgas) * TGAS).toString(), deposit: '1' } }],
@@ -116,14 +126,26 @@ export function makeApprove(deps: ApproveDeps): {
 
   return {
     approve: (a) => send('approve', { id: a.id, to: a.to, asset: a.asset, amount: a.amount, why: a.why, book: a.book }, APPROVE_PREPAID_TGAS, a.id, APPROVED),
-    approveAndRemember: (a) =>
-      send(
-        'approve_and_remember',
-        { id: a.id, to: a.to, asset: a.asset, amount: a.amount, why: a.why, book: a.book, cap: a.cap, daily_limit: a.daily_limit, label: a.label },
-        APPROVE_PREPAID_TGAS,
-        a.id,
-        APPROVED,
-      ),
+    approveAndRemember: async (a) => {
+      const card = { id: a.id, to: a.to, asset: a.asset, amount: a.amount, why: a.why, book: a.book };
+      const root = (await deps.bookRoot?.()) ?? null;
+      if (root === null) {
+        // a policy that predates the private book: the owner's three limits go in the call
+        return send('approve_and_remember', { ...card, cap: a.cap, daily_limit: a.daily_limit, label: a.label }, APPROVE_PREPAID_TGAS, a.id, APPROVED);
+      }
+      const vault = deps.vault?.() ?? null;
+      if (vault === null || vault.root() !== root) return { ok: false, kind: 'contract', name: 'BookNotLoaded' };
+      let plan;
+      try {
+        plan = vault.prepareRemember({ payee: a.to, cap: BigInt(a.cap), dailyUntrustedBudget: 0n, dailyLimit: BigInt(a.daily_limit), label: a.label });
+      } catch (e) {
+        // the owner's file already holds the payee: plain approve is the right action
+        return { ok: false, kind: 'contract', name: e instanceof VaultError && e.code === 'Duplicate' ? 'AlreadyInBook' : 'BadBookEntry' };
+      }
+      const r = await send('approve_and_remember', { ...card, expected_old: plan.expected_old, new_root: plan.new_root, entry: plan.entry }, APPROVE_PREPAID_TGAS, a.id, APPROVED);
+      if (r.ok) deps.onVault?.(plan.next);
+      return r;
+    },
     reject: (id) => send('reject', { id }, REJECT_PREPAID_TGAS, id, REJECTED),
   };
 }

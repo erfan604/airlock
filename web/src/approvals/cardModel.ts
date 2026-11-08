@@ -84,7 +84,7 @@ export type DiffModel = { result: LookalikeResult | null; label: BookLabel | nul
 export type ForcingModel = { required: boolean; target: string; label: string };
 
 /** What the card needs besides the request: the keys and labels of the book rows, and the forcing minimum. */
-export type CardExtras = { bookKeys?: readonly string[]; bookLabels?: Readonly<Record<string, string>>; forcingMinAmount?: bigint };
+export type CardExtras = { /** false: the policy keeps a private book and the owner's book file is not loaded here (AIR-326) */ bookLoaded?: boolean; bookKeys?: readonly string[]; bookLabels?: Readonly<Record<string, string>>; forcingMinAmount?: bigint };
 
 export type SourceChip = { row: RowName; from: string | null; sender: Untrusted | null; age: string | null };
 
@@ -112,6 +112,8 @@ export type CardModel = {
   args: ApproveArgs;
   /** Set when `book_status` is `new`. */
   diff: DiffModel | null;
+  /** `new` payee, private book, book file not loaded: the look-alike check did not run (AIR-326). */
+  bookNotLoaded: boolean;
   magnitude: MagnitudeText;
   forcing: ForcingModel | null;
   /** The recipient label says Book but the payee is not in the book: the Book seal is dropped and the card says so (AIR-190). */
@@ -329,7 +331,8 @@ export function buildCardModel(
     specimenChannel,
     ageText: age,
     args,
-    diff: isNew ? { result: found, label: found === null ? null : bookLabelOf(extras.bookLabels ?? {}, found.nearest) } : null,
+    bookNotLoaded: isNew && extras.bookLoaded === false,
+    diff: isNew && extras.bookLoaded !== false ? { result: found, label: found === null ? null : bookLabelOf(extras.bookLabels ?? {}, found.nearest) } : null,
     magnitude: magnitudeText(amount, l, book, args.asset, a.decimals),
     labelMismatch,
     displayMismatch: displayMismatch(v, a),

@@ -4,6 +4,15 @@
 import type { AssetEntryViewJson } from '@airlock/runtime/analyze';
 import type { BookRows } from '@airlock/runtime/dsl';
 import { RpcError, rpcCall, rpcView } from './rpc.ts';
+import { getVault } from './vaultStore.ts';
+
+/** The policy keeps a private book (AIR-326) and the owner's book file is not loaded, or is not the book the contract holds. */
+export class BookNotLoaded extends Error {
+  constructor() {
+    super('the policy keeps a private book: load your book file');
+    this.name = 'BookNotLoaded';
+  }
+}
 
 export type AssetRows = ReadonlyArray<readonly [string, AssetEntryViewJson]>;
 export type PolicyFlags = { flags: { max_task_actions: number; max_task_ttl_ms: string } };
@@ -25,6 +34,18 @@ export function rpcChainReads(cfg: { contractId: string; rpcUrls: readonly strin
   const view = rpcView(cfg);
   return {
     async getBook() {
+      // a private book answers get_book_root; an older policy has no such view and lists its book
+      let root: unknown;
+      try {
+        root = await view('get_book_root', {});
+      } catch {
+        root = undefined;
+      }
+      if (typeof root === 'string' && /^[0-9a-f]{64}$/.test(root)) {
+        const vault = getVault();
+        if (vault === null || vault.root() !== root) throw new BookNotLoaded();
+        return vault.rows();
+      }
       const rows: [string, BookRows[number][1]][] = [];
       for (let from = 0; ; from += PAGE) {
         const page = await view('get_book', { from_index: from, limit: PAGE });

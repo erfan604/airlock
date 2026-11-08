@@ -91,7 +91,7 @@ test('approvals: no line when nothing is held back, and an empty state when noth
   const one = await loadApprovals({ pending: async () => [pending(1)], view: chain(), evidence: evidenceOk });
   const html = renderToStaticMarkup(<ApprovalsView data={one} {...viewProps} />);
   assert.ok(!html.includes('more held'));
-  const none: ApprovalsData = { cards: [], more: 0 };
+  const none: ApprovalsData = { cards: [], more: 0, privateBook: false };
   const empty = renderToStaticMarkup(<ApprovalsView data={none} {...viewProps} />);
   assert.ok(empty.includes('data-testid="approvals-empty"'));
   assert.ok(!empty.includes('data-testid="card"'));

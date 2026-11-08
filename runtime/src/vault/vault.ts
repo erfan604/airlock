@@ -1,11 +1,12 @@
 // The owner's private address book (AIR-326): payee, salt, numbers and label of every entry, plus the filler seed. The contract holds only
 // the Merkle root; this object builds the root and the proof a request carries. It lives in a file the owner and the runtime read
 // (`book.vault.json`, mode 0600, next to mcp.json), never on chain and never in a model's context.
-import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { z } from 'zod';
 import type { BookRows } from '../dsl/book.ts';
-import { buildTree, foldPath, leafHash, SLOTS } from './tree.ts';
+import { buildTree, bytesToHex, foldPath, hexToBytes, leafHash, SLOTS } from './tree.ts';
+
+/** 32 random bytes as hex (the Web Crypto of Node 22 and of the browser). */
+const randomHex32 = (): string => bytesToHex(globalThis.crypto.getRandomValues(new Uint8Array(32)));
 import type { LeafInput } from './tree.ts';
 
 export class VaultError extends Error {
@@ -54,7 +55,7 @@ export interface NewEntry {
 const KEY = /^(near:[a-z0-9._-]{2,64}|evm:[0-9]{1,10}:0x[0-9a-f]{40}|evm:[0-9]{1,10}:erc20:0x[0-9a-f]{40}:0x[0-9a-f]{40})$/;
 
 const input = (e: VaultEntry): LeafInput => ({
-  salt: Buffer.from(e.salt, 'hex'),
+  salt: hexToBytes(e.salt),
   payee: e.payee,
   cap: e.cap === null ? null : BigInt(e.cap),
   budget: BigInt(e.daily_untrusted_budget),
@@ -77,7 +78,7 @@ export class Vault {
   ) {}
 
   static empty(): Vault {
-    return new Vault([], randomBytes(32).toString('hex'));
+    return new Vault([], randomHex32());
   }
 
   static parse(raw: unknown): Vault {
@@ -91,31 +92,17 @@ export class Vault {
     return new Vault(parsed.data.entries, parsed.data.filler_seed);
   }
 
-  static load(path: string): Vault {
-    try {
-      return Vault.parse(JSON.parse(readFileSync(path, 'utf8')));
-    } catch (e) {
-      if (e instanceof VaultError) throw e;
-      throw new VaultError('BadFile', 'the book vault file cannot be read');
-    }
-  }
-
-  save(path: string): void {
-    writeFileSync(path, `${JSON.stringify(this.toJSON(), null, 2)}\n`, { mode: 0o600 });
-    chmodSync(path, 0o600);
-  }
-
   toJSON(): { version: 1; filler_seed: string; entries: VaultEntry[] } {
     return { version: 1, filler_seed: this.fillerSeed, entries: [...this.entries] };
   }
 
   private tree() {
-    return buildTree(this.entries.map(input), Buffer.from(this.fillerSeed, 'hex'));
+    return buildTree(this.entries.map(input), hexToBytes(this.fillerSeed));
   }
 
   /** The 64 hex characters the contract stores (`get_book_root`). */
   root(): string {
-    return this.tree().root.toString('hex');
+    return bytesToHex(this.tree().root);
   }
 
   has(payee: string): boolean {
@@ -127,14 +114,14 @@ export class Vault {
     const i = this.entries.findIndex((e) => e.payee === payee);
     if (i < 0) return null;
     const e = this.entries[i] as VaultEntry;
-    const p = this.tree().proofs[i] as { index: number; siblings: Buffer[] };
+    const p = this.tree().proofs[i] as { index: number; siblings: Uint8Array[] };
     return {
       salt: e.salt,
       cap: e.cap,
       daily_untrusted_budget: e.daily_untrusted_budget,
       daily_limit: e.daily_limit,
       index: p.index,
-      siblings: p.siblings.map((s) => s.toString('hex')),
+      siblings: p.siblings.map((s) => bytesToHex(s)),
     };
   }
 
@@ -155,7 +142,7 @@ export class Vault {
     for (const v of [n.dailyUntrustedBudget, n.dailyLimit, n.cap ?? 0n]) if (v < 0n || v >= 1n << 128n) throw new VaultError('BadNumber', 'a number is not a u128');
     const entry: VaultEntry = {
       payee: n.payee,
-      salt: randomBytes(32).toString('hex'),
+      salt: randomHex32(),
       cap: n.cap === null ? null : n.cap.toString(),
       daily_untrusted_budget: n.dailyUntrustedBudget.toString(),
       daily_limit: n.dailyLimit.toString(),
@@ -187,13 +174,13 @@ export class Vault {
 export function proofVerifies(root: string, payee: string, p: WireProof): boolean {
   try {
     const leaf = leafHash({
-      salt: Buffer.from(p.salt, 'hex'),
+      salt: hexToBytes(p.salt),
       payee,
       cap: p.cap === null ? null : BigInt(p.cap),
       budget: BigInt(p.daily_untrusted_budget),
       limit: BigInt(p.daily_limit),
     });
-    return foldPath(leaf, p.index, p.siblings.map((s) => Buffer.from(s, 'hex'))).toString('hex') === root;
+    return bytesToHex(foldPath(leaf, p.index, p.siblings.map((s) => hexToBytes(s)))) === root;
   } catch {
     return false;
   }

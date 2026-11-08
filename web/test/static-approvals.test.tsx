@@ -146,7 +146,7 @@ test('view: an expired request is view only and says so, even for the owner', as
 });
 
 test('view: the empty state says how to make a held request and shows no card', () => {
-  const html = renderToStaticMarkup(<StaticApprovalsView {...common} data={{ cards: [], more: 0 }} access={{ kind: 'signed-out' }} />);
+  const html = renderToStaticMarkup(<StaticApprovalsView {...common} data={{ cards: [], more: 0, privateBook: false }} access={{ kind: 'signed-out' }} />);
   assert.ok(html.includes('data-testid="approvals-empty"'));
   assert.ok(html.includes('pnpm demo:live'));
   assert.ok(!html.includes('data-testid="card"'));

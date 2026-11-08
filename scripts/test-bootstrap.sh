@@ -8,7 +8,7 @@
 # A read prints $FAKE_STATE/<method>.<first json arg value, non-alphanumerics as _>.json, else $FAKE_STATE/<method>.json.
 # A transaction prints `Transaction ID: FAKE<n>` and exits 0. The fake curl answers eth_getTransactionCount ($FAKE_CHAIN_NONCE)
 # and view_account ($FAKE_AMOUNT, $FAKE_USAGE; its `locked` field is deliberately wrong).
-# Cases: order, deposits_and_signers, verify_detects_drift, nonce_never_lowered, payee_keys_are_canonical, policy_json_schema,
+# AIR-326: the book is a vault file and one book_set_root; get_book_root is the fake chain's root. Cases: order, deposits_and_signers, verify_detects_drift, nonce_never_lowered, payee_keys_are_canonical, policy_json_schema,
 # storage_budget_math, task_key_seed_never_printed. Last line: BOOTSTRAP TESTS OK
 set -uo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -55,6 +55,9 @@ esac
 EOF
 chmod +x "$T/bin/near" "$T/bin/curl"
 
+# AIR-326: the owner's private book of these tests, and the root the fake chain reports (zeros until a run has built the vault)
+export AIRLOCK_BOOK_VAULT="$T/book.vault.json"
+BOOK_ROOT="$(printf '0%.0s' $(seq 1 64))"
 export TASK_PUBLIC_KEY="ed25519:AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9"
 export FAKE_CHAIN_NONCE=5 FAKE_AMOUNT=40000000000000000000000000 FAKE_USAGE=900000
 POLICY_ACC="$(jq -r .policy "$ACCTS")"
@@ -71,24 +74,7 @@ mkstate() {   # mkstate <dir>: every fake view equals the fixture (nonce 5 equal
     jq -c --arg a "$a" '.assets[$a]' "$POLICYJ" > "$d/get_asset.$(printf '%s' "$a" | tr -c 'A-Za-z0-9' '_').json"
   done
   jq -c '[.assets | to_entries[] | [.key, .value]]' "$POLICYJ" > "$d/list_assets.json"
-  : > "$d/get_book.json"
-  local keys=("near:$(jq -r .accountant "$ACCTS")" "near:$(jq -r .landlord "$ACCTS")" "near:$(jq -r .sam "$ACCTS")" "$EVM_KEY")
-  local names=(accountant landlord sam contractor) i
-  for i in 0 1 2 3; do
-    jq -c --arg n "${names[$i]}" '.book[] | select(.name == $n) | {cap, daily_untrusted_budget, daily_limit, label}' "$POLICYJ" \
-      > "$d/get_book_entry.$(printf '%s' "${keys[$i]}" | tr -c 'A-Za-z0-9' '_').json"
-  done
-  # get_book answers [[key, entry], ...] in insertion order
-  {
-    printf '['
-    for i in 0 1 2 3; do
-      [ "$i" = 0 ] || printf ','
-      printf '["%s",' "${keys[$i]}"
-      cat "$d/get_book_entry.$(printf '%s' "${keys[$i]}" | tr -c 'A-Za-z0-9' '_').json" | tr -d '\n'
-      printf ']'
-    done
-    printf ']\n'
-  } > "$d/get_book.json"
+  printf '"%s"\n' "$BOOK_ROOT" > "$d/get_book_root.json"
   printf '"%s"\n' "$TASK_PUBLIC_KEY" > "$d/get_task_key.json"
   echo true > "$d/is_agent_allowed.json"
   echo true > "$d/is_agent_valid.json"
@@ -108,10 +94,14 @@ txlines() { awk -F'|' '$4 == "as-transaction"' "$FAKE_LOG"; }
 S="$T/s1"; mkstate "$S"; echo null > "$S/get_agent.json"; echo null > "$S/get_nonce.json"
 run "$S" "$BOOT"
 GOT="$(txlines | awk -F'|' '{print $6}' | tr '\n' ' ')"
-WANT="update_attestation_expiration_time approve_measurements approve_ppids whitelist_agent_for_local register_agent allow_agent asset_set asset_set book_add book_add book_add book_add set_flags set_task_key set_nonce "
+WANT="update_attestation_expiration_time approve_measurements approve_ppids whitelist_agent_for_local register_agent allow_agent asset_set asset_set book_set_root set_flags set_task_key set_nonce "
 [ "$GOT" = "$WANT" ] || fail order "got: $GOT"
-[ "$(printf '%s\n' "$OUT" | grep -c '^TX ')" -ge 15 ] || fail order "fewer than 15 TX lines"
+[ "$(printf '%s\n' "$OUT" | grep -c '^TX ')" -ge 12 ] || fail order "fewer than 12 TX lines"
 echo "ok order"
+# the vault the first run built; later states report its root as the chain root
+BOOK_ROOT="$(cd "$here/.." && npx --no-install tsx scripts/book-vault.ts root "$AIRLOCK_BOOK_VAULT")"
+[ "${#BOOK_ROOT}" = 64 ] || fail order "no vault root"
+[ "$(stat -f '%Lp' "$AIRLOCK_BOOK_VAULT")" = "600" ] || fail order "the vault is not mode 600"
 
 # case 2: deposits_and_signers
 OTHERS="$(txlines | awk -F'|' '$6 != "register_agent" && ($12 != "1 yoctoNEAR" || $14 != "'"$OWNER_ACC"'") {print $6}')"
@@ -136,21 +126,18 @@ run "$S" "$BOOT" --verify
 printf '%s\n' "$OUT" | grep -q '^DRIFT' && fail verify_detects_drift "DRIFT on matching state: $OUT"
 printf '%s\n' "$OUT" | grep -q '^agent valid until 2030-01-01T00:00:00Z$' || fail verify_detects_drift "no agent valid until line: $OUT"
 [ -z "$(txlines)" ] || fail verify_detects_drift "--verify sent a transaction"
-ACC_KEY="near_$(jq -r .accountant "$ACCTS" | tr -c 'A-Za-z0-9\n' '_')"
-jq -c '.cap = "6000000000000000000000000"' "$S/get_book_entry.$ACC_KEY.json" > "$S/x.json" && mv "$S/x.json" "$S/get_book_entry.$ACC_KEY.json"
+OTHER_ROOT="$(printf 'f%.0s' $(seq 1 64))"
+echo "\"$OTHER_ROOT\"" > "$S/get_book_root.json"
 run "$S" "$BOOT" --verify
-[ "$RC" -eq 1 ] || fail verify_detects_drift "cap drift exited $RC"
-printf '%s\n' "$OUT" | grep -qx 'DRIFT book accountant field cap expected 5000000000000000000000000 got 6000000000000000000000000' \
-  || fail verify_detects_drift "no cap DRIFT line: $OUT"
+[ "$RC" -eq 1 ] || fail verify_detects_drift "book root drift exited $RC"
+printf '%s\n' "$OUT" | grep -qx "DRIFT book field root expected $BOOK_ROOT got $OTHER_ROOT" \
+  || fail verify_detects_drift "no book root DRIFT line: $OUT"
 printf '%s\n' "$OUT" | tail -1 | grep -qx 'POLICY MATCHES fixtures/policy.json' && fail verify_detects_drift "MATCHES printed with drift"
 S="$T/s3b"; mkstate "$S"
 jq -c '. + [["extra", {"symbol":"X","decimals":1,"hard_cap":"1","daily_cap":"1","max_fee_per_gas":"0","max_gas":"0","quick_task_cap":"1","path":null}]]' "$S/list_assets.json" > "$S/x.json" && mv "$S/x.json" "$S/list_assets.json"
 run "$S" "$BOOT" --verify
 [ "$RC" -eq 1 ] || fail verify_detects_drift "extra asset exited $RC"
 printf '%s\n' "$OUT" | grep -q '^DRIFT assets field ids' || fail verify_detects_drift "extra asset is not a DRIFT: $OUT"
-S="$T/s3c"; mkstate "$S"; echo '[]' > "$S/get_book.json"
-run "$S" "$BOOT" --verify
-[ "$RC" -eq 1 ] && printf '%s\n' "$OUT" | grep -q '^DRIFT book field keys' || fail verify_detects_drift "book key set drift not caught: $OUT"
 echo "ok verify_detects_drift"
 
 # case 4: nonce_never_lowered
@@ -177,10 +164,11 @@ S="$T/s5"; mkstate "$S"
 UPPER="0x7EAFCB38A7DE2A6805DB7C93CCEC6365A5C7528F"
 jq --arg u "$UPPER" '.contractor_evm = $u' "$ACCTS" > "$T/accts_upper.json"
 export AIRLOCK_ACCOUNTS_FILE="$T/accts_upper.json"
+rm -f "$AIRLOCK_BOOK_VAULT"
 run "$S" "$BOOT"
 unset AIRLOCK_ACCOUNTS_FILE
-txlines | awk -F'|' '$6 == "book_add" {print $8}' | jq -e --arg k "$EVM_KEY" 'select(.key | startswith("evm:")) | .key == $k' > /dev/null \
-  || fail payee_keys_are_canonical "the EVM book_add key is not lowercase"
+jq -e --arg k "$EVM_KEY" '[.entries[].payee] | index($k) != null' "$AIRLOCK_BOOK_VAULT" > /dev/null \
+  || fail payee_keys_are_canonical "the EVM payee key of the vault is not lowercase"
 jq 'del(.sam)' "$ACCTS" > "$T/accts_nosam.json"
 export AIRLOCK_ACCOUNTS_FILE="$T/accts_nosam.json"
 run "$S" "$BOOT"
