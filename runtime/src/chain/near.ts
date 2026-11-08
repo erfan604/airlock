@@ -11,6 +11,7 @@ import { ChainError, ChainWaitError } from './errors.ts';
 import { requestId } from './ids.ts';
 import { DEFAULT_RPC_URLS, RpcPool } from './rpc.ts';
 import { LiveTransport } from './transport.ts';
+import type { Vault } from '../vault/index.ts';
 import type { ChainTransport, PreparedTx, RpcTx } from './transport.ts';
 import {
   AssetListSchema,
@@ -40,6 +41,8 @@ interface CommonConfig {
   pollMs?: number;
   /** How long an unknown outcome is polled before a resend, and again after it (tests shrink it). */
   windowMs?: number;
+  /** AIR-326: the owner's private book. With it the client reads the book from the vault (after checking the chain's root) and attaches the proof to every request that pays a booked payee. Without it the client reads `get_book` (an account that predates AIR-326). */
+  vault?: Vault;
 }
 
 /** The live client: a signer, and the client builds the pool and the live transport itself. */
@@ -86,6 +89,7 @@ export class ChainClient {
   private readonly gas: bigint;
   private readonly pollMs: number;
   private readonly windowMs: number;
+  private readonly vault: Vault | undefined;
 
   constructor(cfg: LiveChainClientConfig);
   constructor(cfg: SeamChainClientConfig);
@@ -95,6 +99,7 @@ export class ChainClient {
     this.gas = cfg.gas ?? DEFAULT_GAS;
     this.pollMs = cfg.pollMs ?? DEFAULT_POLL_MS;
     this.windowMs = cfg.windowMs ?? DEFAULT_WINDOW_MS;
+    this.vault = cfg.vault;
     if (cfg.transport !== undefined) {
       this.transport = cfg.transport;
     } else if (cfg.signer !== undefined) {
@@ -124,11 +129,33 @@ export class ChainClient {
   /** `task` is a task hash in 64 lowercase hex, or omitted. */
   async getLedgers(payee: string, asset: string, task?: string): Promise<LedgersView> {
     if (task !== undefined && !TASK_HASH.test(task)) throw new RangeError('task must be 64 lowercase hex characters');
-    const raw = await this.transport.view('get_ledgers', { payee, asset, task: task ?? null });
+    const book = this.vault?.proofFor(payee) ?? null;
+    const raw = await this.transport.view('get_ledgers', this.vault === undefined ? { payee, asset, task: task ?? null } : { payee, asset, task: task ?? null, book });
     return parseAnswer(LedgersViewSchema, raw, 'get_ledgers');
   }
 
+  /** The aliases the owner marked `listed` in the vault (the only book text a model may read), or null without a vault. */
+  listedAliases(): string[] | null {
+    return this.vault === undefined ? null : this.vault.listedAliases();
+  }
+
+  /** The book root the contract holds, 64 lowercase hex characters (AIR-326). */
+  async getBookRoot(): Promise<string> {
+    return parseAnswer(z.string().regex(/^[0-9a-f]{64}$/), await this.transport.view('get_book_root', {}), 'get_book_root');
+  }
+
+  /**
+   * The owner's book. With a vault: its rows, after the chain's root equals the vault's root (otherwise `BookStale`: the book changed
+   * on one side only, and a run must not start on a book the contract no longer holds). Without a vault: the listing of an account
+   * that predates AIR-326.
+   */
   async getBook(): Promise<BookRows> {
+    if (this.vault !== undefined) {
+      if ((await this.getBookRoot()) !== this.vault.root()) {
+        throw new ChainError('BookStale', 'the book vault is not the book the policy contract holds: the root differs');
+      }
+      return this.vault.rows();
+    }
     const rows: BookRows[number][] = [];
     for (let page = 0; page < MAX_BOOK_PAGES; page++) {
       const raw = await this.transport.view('get_book', { from_index: page * BOOK_PAGE, limit: BOOK_PAGE });
@@ -214,7 +241,9 @@ export class ChainClient {
       return this.recovered(ctx, before as RequestView[]);
     }
 
-    const args = { reqs, task, task_sig: Buffer.from(taskSig).toString('base64') };
+    // AIR-326: a request that pays a payee of the owner's book always carries its proof (withholding it only makes the contract hold the payment as new)
+    const wire = this.vault === undefined ? reqs : reqs.map((req) => ({ ...req, book: this.vault?.proofFor(req.payee) ?? null }));
+    const args = { reqs: wire, task, task_sig: Buffer.from(taskSig).toString('base64') };
     const first = await this.transport.prepare('submit_batch', args, this.gas);
     let firstError: unknown;
     try {

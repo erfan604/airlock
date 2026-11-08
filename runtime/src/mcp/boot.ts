@@ -10,6 +10,7 @@ import type { OwnerTask } from '../dsl/index.ts';
 import { loadInbox } from './config.ts';
 import type { McpConfig } from './config.ts';
 import { makeFetchLive } from './fetch.ts';
+import { Vault } from '../vault/index.ts';
 import { Session } from './session.ts';
 
 // the fixed PKCS8 prefix of an Ed25519 private key; the 32 byte seed follows
@@ -36,6 +37,8 @@ export function sessionFromConfig(cfg: McpConfig): Session {
     agentAccountId: cfg.agent_id,
     signer: signerFromCredentials(cfg.agent_credentials, cfg.agent_id),
     rpcUrls: cfg.rpc ?? [...DEFAULT_RPC_URLS],
+    // AIR-326: the owner's private book, when the config names one
+    ...(cfg.book_vault === undefined ? {} : { vault: Vault.load(cfg.book_vault) }),
   });
   return new Session({
     config: {

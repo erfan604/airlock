@@ -234,4 +234,19 @@ mod tests {
         let (_, p) = build(&entries(3), &[1; 32]);
         assert_eq!(p[0].siblings.len(), DEPTH);
     }
+
+    /// The same three entries and seed as runtime/test/vault.test.ts: the TypeScript vault and this module agree on the root byte for byte.
+    #[test]
+    fn book_root_matches_the_typescript_vault_vector() {
+        fresh();
+        let (root, proofs) = build(&entries(3), &[9; 32]);
+        assert_eq!(
+            hex::encode(root),
+            "06a143a32025ed470b890fcfdd8d4f14279bf1b410f7b319be8830f5c2f8d2a9"
+        );
+        assert_eq!(
+            hex::encode(proofs[1].siblings[0].0),
+            "f2ddf0ad63aa6cdc78a93e75e016fc54a792eda756f9eff9b819d4d38bb9f0b3"
+        );
+    }
 }

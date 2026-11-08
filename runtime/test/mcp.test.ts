@@ -117,6 +117,21 @@ test('MCP tools: read_email over the protocol returns handles labelled Untrusted
   await client.close();
 });
 
+test('AIR-326: with a private book book_list shows only the aliases the owner listed, no key, no number and no unlisted label', async () => {
+  const chain = chainDouble();
+  chain.listedAliases = () => ['Acme'];
+  const { s } = session({}, chain);
+  const out = await s.bookList();
+  const text = JSON.stringify(out);
+  assert.equal(text.includes(ACME), false, 'no key');
+  assert.equal(text.includes((2n * NEAR).toString()), false, 'no cap');
+  const book = out.book as { alias: Leaf; key?: unknown }[];
+  assert.equal(book.length, 1);
+  assert.equal(book[0]?.key, undefined);
+  const none = session({}, Object.assign(chainDouble(), { listedAliases: () => [] as string[] }));
+  assert.deepEqual(((await none.s.bookList()).book as unknown[]).length, 0);
+});
+
 test('labels: a whole handle keeps its label (book key is Book), the payee resolves through the book', async () => {
   const { s, chain } = session();
   const book = (await s.bookList()).book as { alias: Leaf; key: Leaf }[];

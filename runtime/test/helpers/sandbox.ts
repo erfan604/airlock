@@ -13,6 +13,7 @@ import type { KeyPairString } from 'near-api-js';
 import { Sandbox } from 'near-sandbox';
 import { ownerTaskBorsh } from '../../src/dsl/index.ts';
 import type { OwnerTask } from '../../src/dsl/index.ts';
+import { Vault } from '../../src/vault/index.ts';
 
 export interface SandboxWorld {
   /** the sandbox's own RPC URL */
@@ -24,6 +25,8 @@ export interface SandboxWorld {
   agentId: string;
   mpcId: string;
   payeeId: string;
+  /** AIR-326: the owner's private book (one payee, `Payee`); the contract holds only its root */
+  vault: Vault;
   agentSigner: KeyPairSigner;
   /** the agent's secret key, for a test that writes a credentials file (AIR-313); never printed */
   agentKey: KeyPairString;
@@ -185,13 +188,16 @@ export async function startWorld(opts: { dropSendTxReplies?: boolean } = {}): Pr
         path: null,
       },
     });
-    await ownerCall('book_add', {
-      key: `near:${payee.id}`,
-      cap: near('100'),
-      daily_untrusted_budget: near('1000'),
-      daily_limit: near('5000'),
+    // AIR-326: the book is a root; the vault builds it and the runtime keeps the entry's proof
+    const vault = Vault.empty().add({
+      payee: `near:${payee.id}`,
+      cap: BigInt(near('100')),
+      dailyUntrustedBudget: BigInt(near('1000')),
+      dailyLimit: BigInt(near('5000')),
       label: 'Payee',
+      listed: true,
     });
+    await ownerCall('book_set_root', { expected_old: '0'.repeat(64), new_root: vault.root() });
 
     if (opts.dropSendTxReplies === true) proxy = await startLossyProxy(sandbox.rpcUrl);
     const taskKey = createPrivateKey({ key: Buffer.concat([PKCS8_ED25519_PREFIX, TASK_SEED]), format: 'der', type: 'pkcs8' });
@@ -204,6 +210,7 @@ export async function startWorld(opts: { dropSendTxReplies?: boolean } = {}): Pr
       agentId: agent.id,
       mpcId: mpc.id,
       payeeId: payee.id,
+      vault,
       agentSigner: agent.signer,
       agentKey: agent.secret,
       ownerCall,

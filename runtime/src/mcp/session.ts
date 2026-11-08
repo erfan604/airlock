@@ -21,7 +21,7 @@ import { TOOL_CHANNEL } from '../tools/channels.ts';
 import type { InboxItem } from '../tools/world.ts';
 
 /** What the session needs from the chain; the real ChainClient has all of it, tests pass a double. */
-export type SessionChain = Pick<ChainClient, 'getBook' | 'listAssets' | 'getPolicy' | 'latestBlockMs' | 'submitBatch'>;
+export type SessionChain = Pick<ChainClient, 'getBook' | 'listAssets' | 'getPolicy' | 'latestBlockMs' | 'submitBatch'> & Partial<Pick<ChainClient, 'listedAliases'>>;
 
 /** One bound of the owner's config: a book alias or a NEAR account, and the most the session may pay it in total, in whole NEAR. */
 export interface OwnerBound {
@@ -267,7 +267,9 @@ export class Session {
 
   async bookList(): Promise<{ labels: LabelName[]; book: unknown }> {
     const rows = await this.chainRead(() => this.deps.chain.getBook());
-    const book = rows.map(([key, entry]) => ({ alias: entry.label, key }));
+    // AIR-326: with a private book the model reads only the aliases the owner marked `listed`, never a key, a number or an unlisted label
+    const listed = this.deps.chain.listedAliases?.() ?? null;
+    const book = listed === null ? rows.map(([key, entry]) => ({ alias: entry.label, key })) : listed.map((alias) => ({ alias }));
     return { labels: ['Book'], book: this.wrap(book, 'Book') };
   }
 

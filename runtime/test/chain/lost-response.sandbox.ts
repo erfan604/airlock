@@ -21,6 +21,7 @@ before(async () => {
     agentAccountId: world.agentId,
     signer: world.agentSigner,
     rpcUrls: world.rpcUrls,
+    vault: world.vault,
     pollMs: 200,
     windowMs: 15000,
   });

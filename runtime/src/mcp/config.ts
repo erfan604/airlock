@@ -30,6 +30,8 @@ export const McpConfigSchema = z.strictObject({
   /** the only hosts fetch_page may fetch live (DNS names, https, public addresses only); empty: no live fetch */
   fetch_hosts: z.array(z.string().regex(/^[a-z0-9.-]+$/i).max(253)).max(32).default([]),
   files_dir: z.string().min(1).optional(),
+  /** AIR-326: the owner's private book (`book.vault.json`, mode 0600). Set: the policy account holds only the book's Merkle root. */
+  book_vault: z.string().min(1).optional(),
 });
 export type McpConfig = z.infer<typeof McpConfigSchema>;
 
@@ -84,6 +86,7 @@ export function parseConfig(raw: unknown, base: string): McpConfig {
     task_key_file: resolvePath(c.task_key_file, base),
     ...(c.inbox === undefined ? {} : { inbox: resolvePath(c.inbox, base) }),
     ...(c.files_dir === undefined ? {} : { files_dir: resolvePath(c.files_dir, base) }),
+    ...(c.book_vault === undefined ? {} : { book_vault: resolvePath(c.book_vault, base) }),
   };
 }
 

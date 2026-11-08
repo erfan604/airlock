@@ -1,11 +1,11 @@
 // The two error classes of the chain client. Messages never contain a key or a signature.
 
-export type ChainErrorCode = 'BadBatch' | 'RequestMismatch' | 'NotRetryable' | 'Panic' | 'BadResponse' | 'IdMismatch' | 'Unknown' | 'ReplayMiss';
+export type ChainErrorCode = 'BadBatch' | 'RequestMismatch' | 'NotRetryable' | 'Panic' | 'BadResponse' | 'IdMismatch' | 'Unknown' | 'ReplayMiss' | 'BookStale';
 
 /**
  * A refusal or a failure of one chain call. `Panic` is a contract refusal (never retried), `RequestMismatch` a bug in the caller,
  * `Unknown` an outcome that stayed unknown after the two sends the client allows itself, `ReplayMiss` a replay transport asked
- * for something that was not recorded.
+ * for something that was not recorded, `BookStale` the owner's vault root is not the root the contract holds (AIR-326).
  */
 export class ChainError extends Error {
   constructor(

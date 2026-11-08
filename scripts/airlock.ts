@@ -14,6 +14,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { Vault, noticeFromRequestView } from '../runtime/src/vault/index.ts';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MAIN = join(REPO, 'runtime', 'src', 'mcp', 'main.ts');
@@ -245,7 +246,20 @@ function decide(cmd: 'pending' | 'approve' | 'reject', argv: string[]): number {
   const id = argv[0];
   if (id === undefined) throw new Exit(2, `usage: pnpm airlock ${cmd} <pending id>`);
   const dir = homeDir(argv);
-  const cfg = JSON.parse(readFileSync(join(dir, 'mcp.json'), 'utf8')) as { owner_id: string; contract_id: string };
+  const cfg = JSON.parse(readFileSync(join(dir, 'mcp.json'), 'utf8')) as { owner_id: string; contract_id: string; book_vault?: string };
+  // AIR-326: a booked payee that the contract holds as new means the agent sent no proof for it: say so before the owner decides
+  if (cfg.book_vault !== undefined) {
+    const view = spawnSync(NEAR, ['contract', 'call-function', 'as-read-only', cfg.contract_id, 'get_request', 'json-args', JSON.stringify({ id }), 'network-config', 'testnet', 'now'], { encoding: 'utf8' });
+    if (view.status === 0) {
+      try {
+        const vault = Vault.load(resolve(dir, cfg.book_vault));
+        const notice = noticeFromRequestView(vault, JSON.parse(view.stdout) as unknown);
+        if (notice !== null) console.error(notice);
+      } catch {
+        // an unreadable vault or answer shows no notice; the card below is still the contract's own
+      }
+    }
+  }
   const args = [join(REPO, 'scripts', 'approve-cli.sh'), id, ...(cmd === 'reject' ? ['--reject'] : []), ...(cmd === 'pending' ? [] : ['--run'])];
   const r = spawnSync('bash', args, { cwd: REPO, env: { ...process.env, OWNER: cfg.owner_id, POLICY: cfg.contract_id, APPROVE_TXID_DIR: join(dir, 'txid') }, stdio: 'inherit' });
   if (r.status === 0 && cmd !== 'pending') {

@@ -28,6 +28,7 @@ before(async () => {
     agentAccountId: world.agentId,
     signer: world.agentSigner,
     rpcUrls: world.rpcUrls,
+    vault: world.vault,
     pollMs: 200,
     windowMs: 10000,
   });
@@ -179,7 +180,7 @@ test('8. a PreparedTx sent twice through LiveTransport.submit returns the same h
   const task = await newTask();
   const req = request(task, 0, 4n * NEAR);
   const live = new LiveTransport({ contractId: world.policyId, agentAccountId: world.agentId, signer: world.agentSigner, pool: new RpcPool(world.rpcUrls) });
-  const args = { reqs: [req], task, task_sig: Buffer.from(world.signTask(task)).toString('base64') };
+  const args = { reqs: [{ ...req, book: world.vault.proofFor(req.payee) }], task, task_sig: Buffer.from(world.signTask(task)).toString('base64') };
   const prepared = await live.prepare('submit_batch', args, GAS);
   const first = await live.submit(prepared);
   const second = await live.submit(prepared);

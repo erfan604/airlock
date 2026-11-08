@@ -42,6 +42,8 @@ before(async () => {
   writeFileSync(join(dir, 'agent.json'), JSON.stringify({ account_id: world.agentId, public_key: '', private_key: world.agentKey }), { mode: 0o600 });
   // the sandbox world's task key: the seed of 32 bytes of 01 (helpers/sandbox.ts)
   writeFileSync(join(dir, 'task-key'), `${'01'.repeat(32)}\n`, { mode: 0o600 });
+  // AIR-326: the owner's private book, as the config names it
+  world.vault.save(join(dir, 'book.vault.json'));
   writeFileSync(
     join(dir, 'inbox.json'),
     JSON.stringify([
@@ -62,6 +64,7 @@ before(async () => {
       request: "Pay Payee's invoices from my inbox.",
       bounds: [{ payee: 'Payee', max_total: '50' }],
       inbox: 'inbox.json',
+      book_vault: 'book.vault.json',
     }),
   );
   client = new Client({ name: 'scripted-agent', version: '0' });

@@ -37,6 +37,7 @@ import { buildAgentDeps } from './deps.ts';
 import type { Snapshot } from './deps.ts';
 import { RunStore } from './runs.ts';
 import { registerTaskRoutes } from './tasks.ts';
+import { Vault } from '../vault/index.ts';
 import type { planTask } from '../agent.ts';
 
 /** What the server needs from the chain client; the real ChainClient has all of it. */
@@ -108,6 +109,7 @@ export async function startRuntime(env: NodeJS.ProcessEnv = {}, parts: Partial<R
   // 2. the chain: live signs as the agent over one RPC pool, replay answers recorded views and cannot sign
   const pool = cfg.mode === 'live' ? new RpcPool(DEFAULT_RPC_URLS) : null;
   let chain: RuntimeChain;
+  const vault = cfg.bookVaultPath === null ? undefined : Vault.load(cfg.bookVaultPath);
   if (parts.chain !== undefined) {
     chain = parts.chain;
   } else if (pool !== null && cfg.agentCredentialsPath !== null) {
@@ -118,6 +120,7 @@ export async function startRuntime(env: NodeJS.ProcessEnv = {}, parts: Partial<R
       agentAccountId: cfg.agentAccountId,
       signer,
       transport: new LiveTransport({ contractId: cfg.contractId, agentAccountId: cfg.agentAccountId, signer, pool }),
+      ...(vault === undefined ? {} : { vault }),
     });
   } else {
     chain = new ChainClient({
@@ -125,6 +128,7 @@ export async function startRuntime(env: NodeJS.ProcessEnv = {}, parts: Partial<R
       contractId: cfg.contractId,
       agentAccountId: cfg.agentAccountId,
       transport: new ReplayTransport(join(cfg.recordingsDir, REPLAY_RECORDING)),
+      ...(vault === undefined ? {} : { vault }),
     });
   }
   const accessKeys: AccessKeyReader = parts.accessKeys ?? (pool !== null ? rpcAccessKeyReader(pool) : async () => null);

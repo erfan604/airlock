@@ -24,6 +24,8 @@ export interface RuntimeConfig {
   readonly agentAccountId: string;
   /** live mode only: an absolute path; the key itself is read by signerFromCredentials and never held here */
   readonly agentCredentialsPath: string | null;
+  /** AIR-326: the owner's private book file; null reads the policy account's book listing (an account that predates the private book). */
+  readonly bookVaultPath: string | null;
   readonly baseSepoliaRpc: string | null;
   readonly llmMode: 'live' | 'record' | 'replay';
   readonly plannerModel: string | null;
@@ -80,6 +82,7 @@ const Schema = z.object({
   AIRLOCK_HOST: HOST,
   AIRLOCK_DATA_DIR: TEXT,
   AIRLOCK_WORLD: TEXT,
+  AIRLOCK_BOOK_VAULT: TEXT.optional(),
   AIRLOCK_SCENARIO: z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/).optional(),
 });
 
@@ -136,6 +139,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): RuntimeConfig {
     ownerAccountId: v.OWNER_ACCOUNT_ID,
     contractId: v.POLICY_CONTRACT_ID,
     agentAccountId: v.AGENT_ACCOUNT_ID,
+    bookVaultPath: v.AIRLOCK_BOOK_VAULT === undefined ? null : absolute(v.AIRLOCK_BOOK_VAULT),
     agentCredentialsPath: v.AIRLOCK_MODE === 'live' && v.AGENT_CREDENTIALS_PATH !== undefined ? absolute(v.AGENT_CREDENTIALS_PATH) : null,
     baseSepoliaRpc: v.BASE_SEPOLIA_RPC ?? null,
     llmMode: v.LLM_MODE ?? 'replay',
