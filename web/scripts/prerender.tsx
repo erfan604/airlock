@@ -103,7 +103,7 @@ for (const p of PAGES) {
   const pre: Preload | null = p.path === '/' ? { facts } : p.path === '/bench' ? { bench } : replayLike ? { replay } : null;
   // AIR-318: /approvals renders fresh too: what it shows depends on ?policy= and on the chain
   // the Bench page renders fresh over its prerendered text: the prerender leaves out the dot and whisker marks (bench/DotWhisker.tsx)
-  await write(p.path, file, replayLike || p.path === '/bench' || p.path === '/approvals' ? 'replace' : 'hydrate', pre);
+  await write(p.path, file, replayLike || p.path === '/bench' || p.path === '/approvals' || p.path === '/credit' ? 'replace' : 'hydrate', pre);
 }
 await write('/no-such-page', '404.html', 'replace', null);
 

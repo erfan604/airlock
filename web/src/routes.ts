@@ -14,6 +14,7 @@ import { StaticApprovals } from './approvals/StaticApprovals.tsx';
 import { Landing } from './landing/Landing.tsx';
 import { TryPage } from './try/TryPage.tsx';
 import { UsePage } from './use/UsePage.tsx';
+import { CreditPage } from './credit/CreditPage.tsx';
 // AIR-192: the read-only Bench page loads on demand, so the shell's bundle does not grow
 const BenchPage = lazy(() => import('./bench/BenchPage.tsx'));
 
@@ -27,6 +28,8 @@ export const ROUTES: Record<string, () => ReactElement> = {
   '/replay': () => createElement(ReplayAware, { live: () => createElement(TaskPage) }),
   '/task': () => createElement(ReplayAware, { live: () => createElement(TaskPage) }),
   '/proven': () => createElement(ProvenPage),
+  // AIR-329: the credit network; its 3D scene is a lazy chunk of its own (credit/CreditPage.tsx), so no other route carries three.js
+  '/credit': () => createElement(CreditPage),
   // AIR-313: the quickstart for people, the same steps as docs/QUICKSTART.md
   '/use': () => createElement(UsePage),
   // AIR-318: the hosted static copy reads the pending requests from the chain and lets the owner act in a wallet; the replay stays at /replay

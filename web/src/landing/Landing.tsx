@@ -164,6 +164,28 @@ function Hire() {
   );
 }
 
+/** AIR-329: a teaser for /credit. The coordinator replaces the copy later (AIR-331); this is a plain statement of what the page is. */
+function CreditTeaser() {
+  return (
+    <section className="hire" aria-labelledby="credit-teaser-title" data-testid="landing-credit">
+      <div className="hire-intro">
+        <h2 id="credit-teaser-title" className="land-h2">
+          AIRLOCK Credit
+        </h2>
+        <p className="land-p">
+          LPs stake into a pool, and each agent spends from a credit line the pool funds, on NEAR, Base and Solana. Every payment goes through the guard first, so an agent that is talked into a bad payment is held or refused before the pool&apos;s money moves.
+        </p>
+      </div>
+      <p className="case-more">
+        <a href={url('credit')} data-testid="cta-credit">
+          See the credit network
+        </a>
+        , a live scene of the pool and its credit lines. It shows a clearly badged fixture until the pool contract is deployed.
+      </p>
+    </section>
+  );
+}
+
 const STEPS = [
   { title: 'Labels travel with values', body: 'Every value your agent handles carries where it came from: your own words, your address book, or outside text such as an email. No model sets a label.' },
   { title: 'The NEAR contract runs the verdict', body: 'The contract reads the labels, your book and your limits, and answers allow, hold for you, or block. The decision is a small pure function with no model in it.' },
@@ -268,6 +290,7 @@ export function Landing() {
         <HeadlineCase />
         <Numbers facts={facts} />
         <Hire />
+        <CreditTeaser />
         <How />
         <Proven />
         <footer className="land-foot">

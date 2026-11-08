@@ -52,6 +52,12 @@ export const PAGES: PageMeta[] = [
     description:
       'Requests held for the owner on the testnet policy contract, read from the chain with no server. Each shows the payee, the amount, where each value came from, why it was held and the exact values the wallet signs. Only the policy owner can approve or reject.',
   },
+  {
+    path: '/credit',
+    title: 'AIRLOCK Credit | AIRLOCK',
+    description:
+      'A credit network for AI agents on NEAR testnet: LPs stake into a pool, each agent spends from a credit line the pool funds on NEAR, Base and Solana, and every payment goes through the AIRLOCK guard. A live scene of the pool, its credit lines and their payments, read from the chain; it runs on a badged fixture until the pool contract is deployed.',
+  },
   { path: '/task', title: 'Task, recorded | AIRLOCK', description: 'The recorded testnet run under the name a live operator reads.', alias: '/replay' },
 ];
 

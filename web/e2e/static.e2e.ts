@@ -154,7 +154,7 @@ async function replayPage(page: Page, baseUrl: string, width: number): Promise<v
 
 /** AIR-323: every page loads with no CSP violation (zod's eval probe was reported on every page), the nav lists the pages and marks the current one. */
 async function cspAndNav(page: Page, baseUrl: string): Promise<void> {
-  const NAV = ['overview', 'try', 'use', 'replay', 'approvals', 'challenge', 'bench', 'proven'];
+  const NAV = ['overview', 'try', 'use', 'replay', 'credit', 'approvals', 'challenge', 'bench', 'proven'];
   for (const p of PAGES.filter((x) => x.alias === undefined)) {
     await page.goto(`${baseUrl}${p.path === '/' ? '/' : `${p.path}/`}`);
     await page.locator('main').first().waitFor();
