@@ -40,6 +40,7 @@ pub struct EvalCtx {
     pub asset: Option<AssetEntry>,
     pub payee_key: String,
     pub payee: Option<BookEntry>,
+    pub book_epoch: u64,
     pub bound: Option<u128>,
     pub key: LedgerKey,
     pub spent: Spent,
@@ -162,7 +163,7 @@ impl Contract {
     /// payee and an unbound payee, and the request from `to_verdict`: the three masks as sent, and for an EVM request the fee and gas.
     pub fn evaluate(&self, req: &SubmitRequest, vt: &VerifiedTask, now_ms: u64) -> Evaluated {
         let asset = self.asset(&req.asset);
-        let payee = self.payee(&req.payee);
+        let payee = self.book_entry(&req.payee, req.book.as_ref());
         let bound = self.bound_for(vt, &req.payee);
         let key = LedgerKey {
             asset: req.asset.clone(),
@@ -188,6 +189,7 @@ impl Contract {
                 asset,
                 payee_key: req.payee.clone(),
                 payee,
+                book_epoch: self.book_epoch,
                 bound,
                 key,
                 spent,
@@ -483,7 +485,7 @@ mod tests {
     use crate::agents::{AllowedAgent, fingerprint};
     use crate::request::{EvmParams, Hex32, Hints, Labels};
     use crate::task::{TASK_TAG, TaskBound, VerifiedBound};
-    use crate::testutil::{POLICY, ctx, fresh, sign, task_public_key};
+    use crate::testutil::{POLICY, ctx, fresh, one_book, sign, task_public_key};
     use near_sdk::test_utils::get_logs;
     use near_sdk::testing_env;
     use serde_json::Value;
@@ -532,7 +534,6 @@ mod tests {
             cap: Some(100),
             daily_untrusted_budget: 1_000,
             daily_limit: 5_000,
-            label: "Alice".to_string(),
         }
     }
 
@@ -540,7 +541,7 @@ mod tests {
     fn setup() -> Contract {
         let mut c = fresh();
         c.assets.insert("near".to_string(), asset_entry());
-        c.book.insert(ALICE.to_string(), book_entry());
+        c.book_root = one_book(ALICE, &book_entry()).0;
         c.task_key = Some(task_public_key());
         let agent: AccountId = AGENT.parse().unwrap();
         c.agents.insert(
@@ -601,6 +602,7 @@ mod tests {
                 trace_digest: Hex32([0x33; 32]),
                 origin: None,
             },
+            book: (payee == ALICE).then(|| one_book(ALICE, &book_entry()).1),
         }
     }
 
@@ -707,7 +709,7 @@ mod tests {
                     pc: OWNER_MASK,
                 },
             );
-            assert!(c.payee(key).is_none());
+            assert!(c.book_entry(key, None).is_none());
             match c.evaluate(&req, &vt, NOW).verdict {
                 Verdict::Allow => allow += 1,
                 Verdict::Escalate(Reason::NewRecipient) => new_recipient += 1,

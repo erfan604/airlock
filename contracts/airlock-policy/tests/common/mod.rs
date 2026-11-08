@@ -92,6 +92,8 @@ pub async fn deploy_contract(
     // Create contract account
     let contract_id =
         account_id.unwrap_or_else(|| format!("contract.{}", genesis_account_id).parse().unwrap());
+    // a sandbox port can be reused by a later test: a fresh deployment starts with an empty shim book
+    shim_reset(&contract_id, network_config);
     let contract_secret_key = signer::generate_secret_key()?;
 
     // The wasm is about 1 MB and storing it locks about 9.9 NEAR (1e19 yocto per byte), so 10 NEAR left room for a few dozen stored
@@ -375,6 +377,204 @@ pub async fn create_user_account(
     Ok((user_id, user_signer))
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// AIR-326: the address book is a Merkle root, so a test cannot `book_add` or read `get_book` any more. This shim keeps the tests that
+// only need "a payee that is in the book" unchanged: it holds each contract's book here, answers `book_add` and `book_remove` with one
+// `book_set_root`, and adds the entry's proof to every request of `submit_batch`, `preview` and `get_ledgers` that pays a booked payee.
+// The tests of the commitment itself (tests/book.rs, tests/private_book.rs) call `book_set_root` and build their own proofs.
+// ---------------------------------------------------------------------------------------------------------------------
+type Books = std::collections::HashMap<String, Vec<airlock_policy::book::Entry>>;
+static BOOKS: std::sync::Mutex<Option<Books>> = std::sync::Mutex::new(None);
+const SHIM_SEED: [u8; 32] = [7; 32];
+
+fn with_books<R>(f: impl FnOnce(&mut Books) -> R) -> R {
+    let mut guard = BOOKS.lock().unwrap_or_else(|e| e.into_inner());
+    f(guard.get_or_insert_with(Default::default))
+}
+
+fn num(v: &Value) -> Option<u128> {
+    v.as_str().map(|t| t.parse().expect("a decimal string"))
+}
+
+/// Forgets the shim's book of a contract (called at every deployment).
+pub fn shim_reset(contract: &AccountId, net: &NetworkConfig) {
+    with_books(|b| {
+        b.remove(&book_key(contract, net));
+    });
+}
+
+/// The proof of `payee` in the shim's book of `contract`, as the JSON a request carries.
+fn book_key(contract: &AccountId, net: &NetworkConfig) -> String {
+    // two sandboxes run at once and both deploy `policy.sandbox`: the RPC address tells them apart
+    format!("{}@{}", contract, net.rpc_endpoints[0].url)
+}
+
+pub fn shim_proof(contract: &AccountId, net: &NetworkConfig, payee: &str) -> Option<Value> {
+    with_books(|b| {
+        let entries = b.get(&book_key(contract, net))?;
+        let i = entries.iter().position(|e| e.payee == payee)?;
+        let (_, proofs) = airlock_policy::book::build(entries, &SHIM_SEED);
+        Some(serde_json::to_value(&proofs[i]).expect("a proof is json"))
+    })
+}
+
+/// `args` of a call with the book proofs added where the method takes a payee.
+pub fn shim_args(
+    contract: &AccountId,
+    net: &NetworkConfig,
+    method: &str,
+    mut args: Value,
+) -> Value {
+    match method {
+        "submit_batch" => {
+            if let Some(reqs) = args.get_mut("reqs").and_then(Value::as_array_mut) {
+                for r in reqs {
+                    let payee = r["payee"].as_str().unwrap_or_default().to_string();
+                    if r.get("book").is_none_or(Value::is_null) {
+                        if let Some(p) = shim_proof(contract, net, &payee) {
+                            r["book"] = p;
+                        }
+                    }
+                }
+            }
+        }
+        "preview" => {
+            if let Some(r) = args.get_mut("req") {
+                let payee = r["payee"].as_str().unwrap_or_default().to_string();
+                if r.get("book").is_none_or(Value::is_null) {
+                    if let Some(p) = shim_proof(contract, net, &payee) {
+                        r["book"] = p;
+                    }
+                }
+            }
+        }
+        "get_ledgers" => {
+            let payee = args["payee"].as_str().unwrap_or_default().to_string();
+            if args.get("book").is_none_or(Value::is_null) {
+                if let Some(p) = shim_proof(contract, net, &payee) {
+                    args["book"] = p;
+                }
+            }
+        }
+        _ => {}
+    }
+    args
+}
+
+static PENDING_REMEMBER: std::sync::Mutex<
+    Option<std::collections::HashMap<String, airlock_policy::book::Entry>>,
+> = std::sync::Mutex::new(None);
+
+/// The three arguments `approve_and_remember` takes after the card, for adding `payee` (cap, no untrusted budget, daily limit) to the
+/// shim's book of `contract`: `(expected_old root of the shim, new root, the new entry's proof)`. Nothing is committed to the shim
+/// until `shim_remember_done` says the call succeeded.
+pub fn shim_remember(
+    contract: &AccountId,
+    net: &NetworkConfig,
+    payee: &str,
+    cap: u128,
+    daily: u128,
+) -> (String, String, Value) {
+    let entry = airlock_policy::book::Entry {
+        salt: [0xb0; 32],
+        payee: payee.to_string(),
+        cap: Some(cap),
+        daily_untrusted_budget: 0,
+        daily_limit: daily,
+    };
+    let (old, new_root, proof) = with_books(|b| {
+        let mut entries = b.get(&book_key(contract, net)).cloned().unwrap_or_default();
+        let old = airlock_policy::book::build(&entries, &SHIM_SEED).0;
+        entries.push(entry.clone());
+        let (root, proofs) = airlock_policy::book::build(&entries, &SHIM_SEED);
+        (old, root, proofs.last().cloned().expect("a proof"))
+    });
+    PENDING_REMEMBER
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get_or_insert_with(Default::default)
+        .insert(book_key(contract, net), entry);
+    (
+        hex::encode(old),
+        hex::encode(new_root),
+        serde_json::to_value(proof).expect("json"),
+    )
+}
+
+/// Commits the entry of the last `shim_remember` to the shim's book (call it after a successful `approve_and_remember`).
+pub fn shim_remember_done(contract: &AccountId, net: &NetworkConfig) {
+    let key = book_key(contract, net);
+    let pending = PENDING_REMEMBER
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get_or_insert_with(Default::default)
+        .remove(&key);
+    if let Some(entry) = pending {
+        with_books(|b| b.entry(key).or_default().push(entry));
+    }
+}
+
+/// The shim's entry for `payee` as the old `get_book_entry` answered (numbers as decimal strings), or null.
+pub fn shim_entry_json(contract: &AccountId, net: &NetworkConfig, payee: &str) -> Value {
+    with_books(|b| {
+        b.get(&book_key(contract, net))
+            .and_then(|es| es.iter().find(|e| e.payee == payee))
+            .map_or(Value::Null, |e| {
+                json!({
+                    "cap": e.cap.map(|c| c.to_string()),
+                    "daily_untrusted_budget": e.daily_untrusted_budget.to_string(),
+                    "daily_limit": e.daily_limit.to_string()
+                })
+            })
+    })
+}
+
+/// `book_add` and `book_remove` of the old API as `(method, args)` of one `book_set_root` (None for any other method).
+async fn shim_book_call(
+    contract: &AccountId,
+    method: &str,
+    args: &Value,
+    network_config: &NetworkConfig,
+) -> Option<(String, Value)> {
+    if method != "book_add" && method != "book_remove" {
+        return None;
+    }
+    let key = args["key"].as_str().expect("a key").to_string();
+    let root = with_books(|b| {
+        let entries = b.entry(book_key(contract, network_config)).or_default();
+        if method == "book_add" {
+            let entry = airlock_policy::book::Entry {
+                salt: [entries.len() as u8 + 1; 32],
+                payee: key.clone(),
+                cap: num(&args["cap"]),
+                daily_untrusted_budget: num(&args["daily_untrusted_budget"]).unwrap_or(0),
+                daily_limit: num(&args["daily_limit"]).unwrap_or(0),
+            };
+            match entries.iter().position(|e| e.payee == key) {
+                Some(i) => {
+                    entries[i] = airlock_policy::book::Entry {
+                        salt: entries[i].salt,
+                        ..entry
+                    }
+                }
+                None => entries.push(entry),
+            }
+        } else if let Some(i) = entries.iter().position(|e| e.payee == key) {
+            // keep the slot numbers of the others stable: a removed slot becomes a filler by shifting the tail
+            entries.remove(i);
+        }
+        airlock_policy::book::build(entries, &SHIM_SEED).0
+    });
+    let old: Value = call_view::<Value>(contract, "get_book_root", json!({}), network_config)
+        .await
+        .expect("get_book_root answers")
+        .data;
+    Some((
+        "book_set_root".to_string(),
+        json!({ "expected_old": old, "new_root": hex::encode(root) }),
+    ))
+}
+
 pub async fn call_view<T: serde::de::DeserializeOwned + Send + Sync>(
     contract_id: &AccountId,
     method_name: &str,
@@ -382,6 +582,7 @@ pub async fn call_view<T: serde::de::DeserializeOwned + Send + Sync>(
     network_config: &NetworkConfig,
 ) -> Result<near_api::Data<T>, Box<dyn std::error::Error + Send + Sync>> {
     let contract = Contract(contract_id.clone());
+    let args = shim_args(contract_id, network_config, method_name, args);
     let result: near_api::Data<T> = contract
         .call_function(method_name, args)
         .read_only()
@@ -400,6 +601,15 @@ pub async fn call_transaction(
     deposit: Option<NearToken>,
 ) -> Result<ExecutionFinalResult, Box<dyn std::error::Error + Send + Sync>> {
     let contract = Contract(contract_id.clone());
+    let (method_name, args) =
+        match shim_book_call(contract_id, method_name, &args, network_config).await {
+            Some((m, a)) => (m, a),
+            None => (
+                method_name.to_string(),
+                shim_args(contract_id, network_config, method_name, args),
+            ),
+        };
+    let method_name = method_name.as_str();
     let call = contract.call_function(method_name, args);
 
     let mut tx = call.transaction();
@@ -610,7 +820,7 @@ pub async fn call_300_tgas(
     args: serde_json::Value,
 ) -> ExecutionFinalResult {
     let sent = Contract(contract.clone())
-        .call_function(method, args)
+        .call_function(method, shim_args(contract, net, method, args))
         .transaction()
         .gas(NearGas::from_tgas(300))
         .with_signer(caller.clone(), caller_signer.clone())
@@ -1236,16 +1446,23 @@ pub fn inproc_contract() -> airlock_policy::Contract {
             eip712: None,
         },
     );
-    near_sdk::testing_env!(inproc_ctx("owner.test.near", T0, 1).build());
-    c.book_add(
-        "near:alice.test.near".to_string(),
-        Some(U128(100 * ONE_NEAR)),
-        U128(1_000 * ONE_NEAR),
-        U128(5_000 * ONE_NEAR),
-        "Alice".to_string(),
-    );
+    c.book_root = inproc_alice().0;
     near_sdk::testing_env!(inproc_ctx("owner.test.near", T0, 1).build());
     c
+}
+
+/// AIR-326: the root of the in-process contract's book (one payee, `near:alice.test.near`: cap 100 NEAR, untrusted budget 1_000 NEAR,
+/// daily limit 5_000 NEAR) and that payee's proof.
+pub fn inproc_alice() -> ([u8; 32], airlock_policy::book::BookProof) {
+    let entry = airlock_policy::book::Entry {
+        salt: [1; 32],
+        payee: "near:alice.test.near".to_string(),
+        cap: Some(100 * ONE_NEAR),
+        daily_untrusted_budget: 1_000 * ONE_NEAR,
+        daily_limit: 5_000 * ONE_NEAR,
+    };
+    let (root, mut proofs) = airlock_policy::book::build(&[entry], &SHIM_SEED);
+    (root, proofs.remove(0))
 }
 
 /// 0.001 NEAR in yoctoNEAR: the unit of the sandbox flood fixtures, so an approval pays almost nothing.

@@ -79,8 +79,7 @@ Types: `string`, `number`, `boolean`, `object`, `array of strings`; `string or n
 | `task_revoked` | `task_hash: string` | `revoke_task` (AIR-045). 64 lowercase hex. |
 | `asset_set` | `asset: string`, `symbol: string`, `decimals: number`, `hard_cap: string`, `daily_cap: string`, `quick_task_cap: string`, `path: string or null` | `asset_set` (AIR-042). `path` is the EVM signing path, `null` for NEAR. |
 | `asset_removed` | `asset: string` | `asset_remove` (AIR-042). |
-| `book_added` | `key: string`, `label: string`, `cap: string or null`, `daily_untrusted_budget: string`, `daily_limit: string` | `book_add` (AIR-043). `label` is the owner's text, never an agent's. `cap` is `null` when the payee has no untrusted cap. |
-| `book_removed` | `key: string` | `book_remove` (AIR-043). |
+| `book_root_set` | `old: string`, `new: string`, `epoch: string` | `book_set_root` and `approve_and_remember` (AIR-326). The two roots are 64 hex characters; the event names no payee, label or number. `epoch` is the count of root changes after this one, a decimal string. |
 | `flags_set` | `flags: object` | `set_flags` (AIR-040). The object holds the seven flags listed below. |
 | `paused` | `paused: boolean` | `pause` (AIR-040). |
 | `agent_registered` | `account_id: string`, `measurements: object`, `ppid: string`, `advisory_ids_truncated: array of strings`, `number_of_advisory_ids: number`, `current_time_ms: string`, `valid_until_ms: string` | `register_agent` (the template's event, payload kept by AIR-040). At most 8 advisory ids are listed; `number_of_advisory_ids` is the true count. |

@@ -223,12 +223,19 @@ fn key() -> LedgerKey {
 
 fn ledgers_at(c: &airlock_policy::Contract, ms: u64) -> airlock_policy::ledgers::LedgersView {
     testing_env!(inproc_ctx("owner.test.near", ms, 0).build());
-    c.get_ledgers(PAYEE.to_string(), "near".to_string(), Some("09".repeat(32)))
+    c.get_ledgers(
+        PAYEE.to_string(),
+        "near".to_string(),
+        Some("09".repeat(32)),
+        Some(inproc_alice().1),
+    )
 }
 
 fn caps(c: &airlock_policy::Contract) -> airlock_verdict::ledger::Caps {
     let asset = c.asset("near").expect("the asset exists");
-    let payee = c.payee(PAYEE).expect("the payee exists");
+    let payee = c
+        .book_entry(PAYEE, Some(&inproc_alice().1))
+        .expect("the payee exists");
     caps_for(&asset, &payee, 100_000 * N)
 }
 

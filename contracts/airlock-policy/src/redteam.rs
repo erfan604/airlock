@@ -10,7 +10,7 @@ use crate::request::{
     EvmParams, Hex32, Hints, Labels, RequestState, SubmitOutcome, SubmitRequest, request_id,
 };
 use crate::task::{OwnerTask, TASK_TAG, TaskBound, task_hash};
-use crate::testutil::{OWNER, POLICY, ctx, fresh, sign, task_public_key};
+use crate::testutil::{OWNER, POLICY, ctx, fresh, one_book, sign, task_public_key};
 use crate::*;
 use near_sdk::PromiseOrValue;
 use near_sdk::json_types::{Base64VecU8, U128};
@@ -81,19 +81,48 @@ fn allow_agent(c: &mut Contract, agent: &str) {
     );
 }
 
+fn alice_entry() -> BookEntry {
+    BookEntry {
+        cap: Some(CAP),
+        daily_untrusted_budget: BUDGET,
+        daily_limit: DAILY,
+    }
+}
+
+/// The owner's next book for a remember: ALICE at slot 0 and `payee` at slot 1 (cap, no untrusted budget, daily limit). Returns the
+/// current root, the new root and the new entry's proof.
+fn remember_book(
+    c: &Contract,
+    payee: &str,
+    cap: u128,
+    daily: u128,
+) -> (Hex32, Hex32, crate::book::BookProof) {
+    let a = alice_entry();
+    let entries = [
+        crate::book::Entry {
+            salt: [1; 32],
+            payee: ALICE.to_string(),
+            cap: a.cap,
+            daily_untrusted_budget: a.daily_untrusted_budget,
+            daily_limit: a.daily_limit,
+        },
+        crate::book::Entry {
+            salt: [2; 32],
+            payee: payee.to_string(),
+            cap: Some(cap),
+            daily_untrusted_budget: 0,
+            daily_limit: daily,
+        },
+    ];
+    let (root, mut proofs) = crate::book::build(&entries, &[7; 32]);
+    (Hex32(c.book_root), Hex32(root), proofs.remove(1))
+}
+
 /// Asset `near`, book payee `ALICE` (cap 100, budget 1000, daily 5000), the task key, and `AGENT` and `OTHER_AGENT` allowed.
 fn setup() -> Contract {
     let mut c = fresh();
     c.assets.insert("near".to_string(), asset_entry());
-    c.book.insert(
-        ALICE.to_string(),
-        BookEntry {
-            cap: Some(CAP),
-            daily_untrusted_budget: BUDGET,
-            daily_limit: DAILY,
-            label: "Alice".to_string(),
-        },
-    );
+    c.book_root = one_book(ALICE, &alice_entry()).0;
     c.task_key = Some(task_public_key());
     allow_agent(&mut c, AGENT);
     allow_agent(&mut c, OTHER_AGENT);
@@ -144,6 +173,7 @@ fn request(t: &OwnerTask, index: u8, payee: &str, amount: u128, labels: Labels) 
             trace_digest: Hex32([0x33; 32]),
             origin: None,
         },
+        book: (payee == ALICE).then(|| one_book(ALICE, &alice_entry()).1),
     }
 }
 
@@ -437,19 +467,12 @@ fn rt_con_evm_params_on_near_lane_reverts() {
 }
 
 #[test]
-fn rt_con_book_add_by_agent_reverts() {
+fn rt_con_book_set_root_by_agent_reverts() {
     let mut c = setup();
+    let old = Hex32(c.book_root);
     testing_env!(ctx(AGENT, NOW, 1).build());
-    panics(|| {
-        c.book_add(
-            EVIL.to_string(),
-            Some(U128(CAP)),
-            U128(BUDGET),
-            U128(DAILY),
-            "Evil".to_string(),
-        )
-    });
-    assert!(c.payee(EVIL).is_none());
+    panics(|| c.book_set_root(old.clone(), Hex32([9; 32])));
+    assert_eq!(c.book_root, old.0);
 }
 
 // ---------------------------------------------------------------------------------------------------------------- APPR: approval abuse
@@ -564,6 +587,7 @@ fn rt_appr_remembered_payee_has_no_untrusted_budget() {
     assert_eq!(tags(&out), ["escalated:UntrustedRecipient"]);
     let no: u32 = out[0].pending_id.as_ref().unwrap().parse().unwrap();
     let k = card(&c, no);
+    let (old, new_root, entry) = remember_book(&c, EVIL, 100, 1_000);
     testing_env!(ctx(OWNER, NOW, 1).build());
     c.approve_and_remember(
         k[0].clone(),
@@ -572,15 +596,23 @@ fn rt_appr_remembered_payee_has_no_untrusted_budget() {
         k[3].clone(),
         k[4].clone(),
         k[5].clone(),
-        U128(100),
-        U128(1_000),
-        "Vendor".to_string(),
+        old,
+        new_root.clone(),
+        entry.clone(),
     );
-    assert_eq!(c.payee(EVIL).unwrap().daily_untrusted_budget, 0);
+    assert_eq!(c.book_root, new_root.0);
+    assert_eq!(
+        c.book_entry(EVIL, Some(&entry))
+            .unwrap()
+            .daily_untrusted_budget,
+        0
+    );
     // the next amount read from data for that payee, inside the remembered cap and the task bound, is still held
     let t2 = task_for("task-next", &[(EVIL, 50)], 1);
+    let mut held = data_amount(&t2, 0, EVIL, 10);
+    held.book = Some(entry);
     assert_eq!(
-        tags(&submit(&mut c, &t2, vec![data_amount(&t2, 0, EVIL, 10)])),
+        tags(&submit(&mut c, &t2, vec![held])),
         ["escalated:UntrustedAmount"]
     );
 }
@@ -592,7 +624,9 @@ fn rt_appr_remember_cannot_set_cap_below_amount() {
     let out = submit(&mut c, &t, vec![data_payee(&t, 0, EVIL, 40)]);
     let no: u32 = out[0].pending_id.as_ref().unwrap().parse().unwrap();
     let k = card(&c, no);
+    let (old, new_root, entry) = remember_book(&c, EVIL, 39, 1_000);
     testing_env!(ctx(OWNER, NOW, 1).build());
+    let before = c.book_root;
     let text = panics(|| {
         c.approve_and_remember(
             k[0].clone(),
@@ -601,13 +635,13 @@ fn rt_appr_remember_cannot_set_cap_below_amount() {
             k[3].clone(),
             k[4].clone(),
             k[5].clone(),
-            U128(39),
-            U128(1_000),
-            "Vendor".to_string(),
+            old,
+            new_root,
+            entry,
         )
     });
     assert!(text.contains("remember rejected: CapBelowAmount"), "{text}");
-    assert!(c.payee(EVIL).is_none());
+    assert_eq!(c.book_root, before);
 }
 
 // ---------------------------------------------------------------------------------------------------------------- TASK: task-bound reuse

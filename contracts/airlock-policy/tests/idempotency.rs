@@ -219,7 +219,12 @@ async fn submit_parked(w: &World, reqs: Vec<Value>, task: &Task, id: &str, parke
     let ex = Contract(w.policy.clone())
         .call_function(
             "submit_batch",
-            json!({ "reqs": reqs, "task": task.0, "task_sig": task.1 }),
+            common::shim_args(
+                &w.policy,
+                &w.net,
+                "submit_batch",
+                json!({ "reqs": reqs, "task": task.0, "task_sig": task.1 }),
+            ),
         )
         .transaction()
         .gas(NearGas::from_tgas(300))
@@ -389,6 +394,7 @@ async fn runtime_cannot_pick_a_nonce() {
             "action_index",
             "amount",
             "asset",
+            "book",
             "evm",
             "hints",
             "labels",

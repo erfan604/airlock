@@ -12,12 +12,11 @@ allow_agent {"account_id":"agent.sandbox","fingerprint":"106b0d2e3fab"}
 revoke_agent {"account_id":"agent.sandbox"}
 asset_set {"asset":"near","entry":{"symbol":"NEAR","decimals":24,"hard_cap":"10000000000000000000000000000","daily_cap":"100000000000000000000000000000","max_fee_per_gas":"0","max_gas":"0","quick_task_cap":"100000000000000000000000000000","path":null}}
 asset_remove {"asset":"near"}
-book_add {"key":"near:alice.sandbox","cap":null,"daily_untrusted_budget":"0","daily_limit":"1","label":"Alice"}
-book_remove {"key":"near:alice.sandbox"}
+book_set_root {"expected_old":"0000000000000000000000000000000000000000000000000000000000000000","new_root":"1111111111111111111111111111111111111111111111111111111111111111"}
 set_task_key {"public_key":"ed25519:AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9"}
 revoke_task {"task_hash":"0000000000000000000000000000000000000000000000000000000000000000"}
 set_nonce {"path":"base-sepolia-1","nonce":"0"}
 approve {"id":"1","to":"x","asset":"x","amount":"1","why":"x","book":"x"}
-approve_and_remember {"id":"1","to":"x","asset":"x","amount":"1","why":"x","book":"x","cap":"1","daily_limit":"1","label":"x"}
+approve_and_remember {"id":"1","to":"x","asset":"x","amount":"1","why":"x","book":"x","expected_old":"0000000000000000000000000000000000000000000000000000000000000000","new_root":"1111111111111111111111111111111111111111111111111111111111111111","entry":{"salt":"0000000000000000000000000000000000000000000000000000000000000000","cap":"1","daily_untrusted_budget":"0","daily_limit":"1","index":0,"siblings":[]}}
 reject {"id":"1"}
 reset_escalations {"agent":"agent.sandbox"}

@@ -269,7 +269,7 @@ mod tests {
     use crate::request::{
         ChargeRec, EvmParams, Hex32, Labels, PendingInfo, RequestRecord, RequestState, request_id,
     };
-    use crate::testutil::{POLICY, ctx, fresh};
+    use crate::testutil::{POLICY, ctx, fresh, one_book};
     use crate::time::{MS_PER_DAY, utc_day};
     use airlock_verdict::ledger::{Caps, Spent};
     use near_sdk::json_types::U128;
@@ -308,7 +308,6 @@ mod tests {
             cap: Some(100),
             daily_untrusted_budget: 1_000,
             daily_limit: 5_000,
-            label: "Alice".to_string(),
         }
     }
 
@@ -316,7 +315,7 @@ mod tests {
     fn setup() -> Contract {
         let mut c = fresh();
         c.assets.insert("near".to_string(), asset_entry());
-        c.book.insert(PAYEE.to_string(), book_entry());
+        c.book_root = one_book(PAYEE, &book_entry()).0;
         c
     }
 
@@ -909,7 +908,7 @@ mod tests {
     #[test]
     fn callback_approved_request_failure_keeps_digest_and_refunds_approval_charge() {
         let mut c = setup();
-        let approval = approval_caps(&asset_entry(), Some(&book_entry()), 700);
+        let approval = approval_caps(&asset_entry(), Some(book_entry().daily_limit), 700);
         let applied = c.charge_approval(&key(1), &approval, 600, T0);
         assert_eq!(c.spent_now(&key(1), T0).asset_day, 600);
         let mut rec = record(1, 0, RequestState::Executing, Some(applied), utc_day(T0));
@@ -919,6 +918,8 @@ mod tests {
             no: 7,
             expires_ms: T0 + 3_600_000,
             book_in: true,
+            payee_limit: Some(5_000),
+            book_epoch: 0,
             task_bound: 700,
             display_symbol: "NEAR".to_string(),
             display_amount: "0.0006".to_string(),

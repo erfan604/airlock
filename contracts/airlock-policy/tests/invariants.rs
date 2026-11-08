@@ -641,6 +641,7 @@ fn request(payee: &str, amount: u128, labels: Labels) -> SubmitRequest {
             trace_digest: Hex32([0; 32]),
             origin: None,
         },
+        book: None,
     }
 }
 
@@ -758,16 +759,26 @@ fn i06_random_sequences_over_three_days_respect_every_limit() {
             eip712: None,
         },
     );
-    for (i, p) in payees.iter().enumerate().filter(|(_, p)| p.booked) {
-        testing_env!(inproc_ctx(OWNER_ID, T0, 1).build());
-        c.book_add(
-            p.key.to_string(),
-            p.cap.map(U128),
-            U128(p.budget),
-            U128(p.limit),
-            format!("Payee{i}"),
-        );
-    }
+    // AIR-326: the booked payees are committed in one root; a request that pays one carries its proof
+    let entries: Vec<airlock_policy::book::Entry> = payees
+        .iter()
+        .filter(|p| p.booked)
+        .enumerate()
+        .map(|(i, p)| airlock_policy::book::Entry {
+            salt: [i as u8 + 1; 32],
+            payee: p.key.to_string(),
+            cap: p.cap,
+            daily_untrusted_budget: p.budget,
+            daily_limit: p.limit,
+        })
+        .collect();
+    let (root, built) = airlock_policy::book::build(&entries, &[7; 32]);
+    c.book_root = root;
+    let proofs: HashMap<&str, airlock_policy::book::BookProof> = entries
+        .iter()
+        .zip(built)
+        .map(|(e, proof)| (payees.iter().find(|p| p.key == e.payee).unwrap().key, proof))
+        .collect();
 
     let first_day = T0 / MS_PER_DAY;
     let amount_labels = [OWNER, EMAIL, ORACLE, UNRESOLVED, OWNER | EMAIL];
@@ -822,7 +833,9 @@ fn i06_random_sequences_over_three_days_respect_every_limit() {
             pc,
         };
         testing_env!(inproc_ctx(AGENT, now, 0).build());
-        let evaluated = c.evaluate(&request(p.key, amount, labels), &vt, now);
+        let mut req = request(p.key, amount, labels);
+        req.book = proofs.get(p.key).cloned();
+        let evaluated = c.evaluate(&req, &vt, now);
         match evaluated.verdict {
             Verdict::Allow => {
                 allow += 1;
@@ -877,6 +890,7 @@ fn i06_random_sequences_over_three_days_respect_every_limit() {
                     p.key.to_string(),
                     "near".to_string(),
                     Some(hex::encode(vt.hash)),
+                    proofs.get(p.key).cloned(),
                 );
                 assert_eq!(ledgers.asset_day.spent.0, asset_day[&day]);
                 assert_eq!(ledgers.payee_day.spent.0, at(&payee_day, (day, idx)));

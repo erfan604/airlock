@@ -1,27 +1,23 @@
-// AIR-043: the address book in the sandbox. Payees are matched by exact canonical ASCII keys and only the owner can add or remove one.
-// Every revert test asserts the message text, because a missing method also fails and would pass a bare `assert_failure()`. No
-// character is escaped with a backslash and `u`: non-ASCII characters are built from their code points.
+// AIR-326: the address book commitment in the sandbox. The contract stores one root; only the owner changes it (one yocto,
+// compare and swap); a request pays a booked payee only with a path that verifies for its own payee string. Every revert test
+// asserts the message text, because a missing method also fails and would pass a bare `assert_failure()`.
 //
 // Needs the wasm: `cargo near build non-reproducible-wasm --no-abi` in the crate first.
 
 mod common;
 
+use airlock_policy::book::{Entry, build};
 use common::*;
-use near_api::{AccountId, Data, NearToken, Signer};
+use near_api::NearToken;
 use near_api_types::transaction::result::ExecutionFinalResult;
 use serde_json::{Value, json};
-use std::sync::Arc;
 
 const ONE_YOCTO_TEXT: &str = "Requires attached deposit of exactly 1 yoctoNEAR";
 const NOT_OWNER_TEXT: &str = "Caller is not the owner";
-const VECTORS: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../fixtures/verdict-vectors.json"
-));
-
-const NEAR_KEY: &str = "near:accountant.test.near";
-const EVM_KEY: &str = "evm:84532:0xd8da6bf26964af9d7eed9e03e53415d37aa96045";
-const EVM_ADDR: &str = "0xd8da6bf26964af9d7eed9e03e53415d37aa96045";
+const OWNER_MASK: u16 = airlock_verdict::OWNER;
+const BOOK_MASK: u16 = airlock_verdict::BOOK;
+const ALICE: &str = "near:alice.sandbox";
+const ONE_NEAR: u128 = 1_000_000_000_000_000_000_000_000;
 
 /// At most this many sandboxes run at once (see tests/owner_plane.rs).
 static SANDBOX_SLOTS: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(3);
@@ -33,568 +29,211 @@ async fn slot() -> tokio::sync::SemaphorePermit<'static> {
         .expect("the semaphore is never closed")
 }
 
-/// 10^24 yocto: one NEAR.
-const NEAR: u128 = 1_000_000_000_000_000_000_000_000;
-
-fn near_asset() -> Value {
-    json!({
-        "symbol": "NEAR",
-        "decimals": 24,
-        "hard_cap": (10_000 * NEAR).to_string(),
-        "daily_cap": (100_000 * NEAR).to_string(),
-        "max_fee_per_gas": "0",
-        "max_gas": "0",
-        "quick_task_cap": (100_000 * NEAR).to_string(),
-        "path": null
-    })
+fn entry(payee: &str, salt: u8, cap: Option<u128>) -> Entry {
+    Entry {
+        salt: [salt; 32],
+        payee: payee.to_string(),
+        cap,
+        daily_untrusted_budget: 1_000 * ONE_NEAR,
+        daily_limit: 5_000 * ONE_NEAR,
+    }
 }
 
-/// An EVM asset with its own symbol and path (the registry wants both unique).
-fn evm_asset(symbol: &str, path: &str) -> Value {
-    json!({
-        "symbol": symbol,
-        "decimals": 18,
-        "hard_cap": "1000000000000000000",
-        "daily_cap": "10000000000000000000",
-        "max_fee_per_gas": "50000000000",
-        "max_gas": "100000",
-        "quick_task_cap": "5000000000000000000",
-        "path": path
-    })
-}
-
-async fn asset_set(s: &Started, asset: &str, entry: Value) {
-    owner_call(s, "asset_set", json!({ "asset": asset, "entry": entry }))
+async fn root_of(w: &World) -> Value {
+    call_view::<Value>(&w.policy, "get_book_root", json!({}), &w.net)
         .await
-        .assert_success();
+        .expect("get_book_root answers")
+        .data
 }
 
-/// A started sandbox with `near` and `evm:84532:native` registered.
-async fn with_assets() -> Started {
-    let s = start().await;
-    asset_set(&s, "near", near_asset()).await;
-    asset_set(
-        &s,
-        "evm:84532:native",
-        evm_asset("ETH.base", "base-sepolia-1"),
-    )
-    .await;
-    s
-}
-
-fn add_args(key: &str, cap: Option<&str>, label: &str) -> Value {
-    json!({
-        "key": key,
-        "cap": cap,
-        "daily_untrusted_budget": "1000",
-        "daily_limit": "5000",
-        "label": label
-    })
-}
-
-async fn add(s: &Started, key: &str, cap: Option<&str>, label: &str) -> ExecutionFinalResult {
-    owner_call(s, "book_add", add_args(key, cap, label)).await
-}
-
-async fn add_ok(s: &Started, key: &str, cap: Option<&str>, label: &str) {
-    let result = add(s, key, cap, label).await;
-    let text = failure_text(&result);
-    assert!(text.is_empty(), "book_add({key}) failed: {text}");
-    result.assert_success();
-}
-
-fn assert_fails_with(result: ExecutionFinalResult, text: &str) {
-    let got = failure_text(&result);
-    result.assert_failure();
-    assert!(got.contains(text), "expected `{text}` in: {got}");
-}
-
-async fn view(s: &Started, method: &str, args: Value) -> Value {
-    let answer: Data<Value> = call_view(&s.contract, method, args, &s.net)
-        .await
-        .unwrap_or_else(|e| panic!("{method} must answer: {e:?}"));
-    answer.data
-}
-
-async fn book_keys(s: &Started) -> Vec<String> {
-    view(s, "get_book", json!({ "from_index": null, "limit": 500 }))
-        .await
-        .as_array()
-        .expect("a list")
-        .iter()
-        .map(|row| row[0].as_str().unwrap().to_string())
-        .collect()
-}
-
-async fn account(s: &Started, name: &str) -> (AccountId, Arc<Signer>) {
-    create_user_account(&s.net, &s.owner, &s.owner_signer, name)
-        .await
-        .expect("the account is created")
-}
-
-fn code_point(n: u32) -> char {
-    char::from_u32(n).expect("a valid code point")
-}
-
-#[tokio::test]
-async fn owner_book_add_succeeds() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    assert_eq!(
-        view(&s, "get_book_entry", json!({ "key": NEAR_KEY })).await,
-        Value::Null
-    );
-    let result = add(&s, NEAR_KEY, Some("100"), "Accountant").await;
-    let events = extract_event_logs(&result).unwrap();
-    assert!(
-        failure_text(&result).is_empty(),
-        "{}",
-        failure_text(&result)
-    );
-    result.assert_success();
-    // the entry comes back with the cap as a decimal string
-    assert_eq!(
-        view(&s, "get_book_entry", json!({ "key": NEAR_KEY })).await,
-        json!({ "cap": "100", "daily_untrusted_budget": "1000", "daily_limit": "5000", "label": "Accountant" })
-    );
-    let event = events
-        .iter()
-        .find(|e| e["event"] == "book_added")
-        .expect("a book_added event");
-    assert_eq!(event["standard"], "airlock");
-    let data = &event["data"][0];
-    assert_eq!(data["key"], NEAR_KEY);
-    assert_eq!(data["label"], "Accountant");
-    assert_eq!(data["cap"], "100");
-    assert_eq!(data["daily_untrusted_budget"], "1000");
-    assert_eq!(data["daily_limit"], "5000");
-    // an EVM payee under the registered EVM asset
-    add_ok(&s, EVM_KEY, Some("7"), "Landlord").await;
-    assert_eq!(
-        view(&s, "get_book_entry", json!({ "key": EVM_KEY })).await["cap"],
-        "7"
-    );
-}
-
-#[tokio::test]
-async fn null_cap_means_never() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    let result = add(&s, NEAR_KEY, None, "Strict").await;
-    let events = extract_event_logs(&result).unwrap();
-    result.assert_success();
-    assert_eq!(
-        view(&s, "get_book_entry", json!({ "key": NEAR_KEY })).await["cap"],
-        Value::Null
-    );
-    let event = events.iter().find(|e| e["event"] == "book_added").unwrap();
-    assert_eq!(event["data"][0]["cap"], Value::Null);
-}
-
-/// I3: the agent account cannot edit the book.
-#[tokio::test]
-async fn book_add_by_agent_reverts() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    let (agent, signer) = account(&s, "agent").await;
-    register_local_agent(
-        &s.contract,
-        &s.owner,
-        &s.owner_signer,
-        &agent,
-        &signer,
-        &s.net,
-    )
-    .await;
-    allow_agent_for(&s.contract, &s.owner, &s.owner_signer, &agent, &s.net).await;
-    let result = call_transaction(
-        &s.contract,
-        "book_add",
-        add_args(NEAR_KEY, Some("100"), "Agent"),
-        &agent,
-        &signer,
-        &s.net,
+async fn set_root(w: &World, old: &Value, new: [u8; 32]) -> ExecutionFinalResult {
+    call_transaction(
+        &w.policy,
+        "book_set_root",
+        json!({ "expected_old": old, "new_root": hex::encode(new) }),
+        &w.owner,
+        &w.owner_signer,
+        &w.net,
         Some(NearToken::from_yoctonear(1)),
     )
     .await
-    .unwrap();
-    assert_fails_with(result, NOT_OWNER_TEXT);
-    assert!(book_keys(&s).await.is_empty());
+    .expect("the call is sent")
 }
 
-#[tokio::test]
-async fn book_add_by_stranger_reverts() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    let (stranger, signer) = account(&s, "stranger").await;
-    let result = call_transaction(
-        &s.contract,
-        "book_add",
-        add_args(NEAR_KEY, Some("100"), "Stranger"),
-        &stranger,
-        &signer,
-        &s.net,
-        Some(NearToken::from_yoctonear(1)),
-    )
-    .await
-    .unwrap();
-    assert_fails_with(result, NOT_OWNER_TEXT);
-    // book_remove too, even for a payee that exists
-    add_ok(&s, NEAR_KEY, Some("100"), "Accountant").await;
-    let result = call_transaction(
-        &s.contract,
-        "book_remove",
-        json!({ "key": NEAR_KEY }),
-        &stranger,
-        &signer,
-        &s.net,
-        Some(NearToken::from_yoctonear(1)),
-    )
-    .await
-    .unwrap();
-    assert_fails_with(result, NOT_OWNER_TEXT);
-    assert_eq!(book_keys(&s).await, [NEAR_KEY]);
+fn ok(r: &ExecutionFinalResult) {
+    let text = failure_text(r);
+    assert!(text.is_empty(), "failed: {text}");
 }
 
-#[tokio::test]
-async fn book_add_no_deposit_reverts() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    let result = call_transaction(
-        &s.contract,
-        "book_add",
-        add_args(NEAR_KEY, Some("100"), "No deposit"),
-        &s.owner,
-        &s.owner_signer,
-        &s.net,
-        Some(NearToken::from_yoctonear(0)),
-    )
-    .await
-    .unwrap();
-    assert_fails_with(result, ONE_YOCTO_TEXT);
-    assert!(book_keys(&s).await.is_empty());
+fn fails_with(r: &ExecutionFinalResult, text: &str) {
+    let got = failure_text(r);
+    assert!(got.contains(text), "wanted {text:?}, got {got:?}");
 }
 
-#[tokio::test]
-async fn book_add_two_yocto_reverts() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    let result = call_transaction(
-        &s.contract,
-        "book_add",
-        add_args(NEAR_KEY, Some("100"), "Two yocto"),
-        &s.owner,
-        &s.owner_signer,
-        &s.net,
-        Some(NearToken::from_yoctonear(2)),
-    )
-    .await
-    .unwrap();
-    assert_fails_with(result, ONE_YOCTO_TEXT);
-    let result = call_transaction(
-        &s.contract,
-        "book_remove",
-        json!({ "key": NEAR_KEY }),
-        &s.owner,
-        &s.owner_signer,
-        &s.net,
-        Some(NearToken::from_yoctonear(0)),
-    )
-    .await
-    .unwrap();
-    assert_fails_with(result, ONE_YOCTO_TEXT);
+/// A one-action task for `payee` and a request that pays 10 yocto of NEAR to it, Book recipient, Owner amount and pc, with `book` as
+/// the proof (or none).
+async fn pay(w: &World, payee: &str, book: Option<Value>) -> Value {
+    pay_as(w, payee, book, BOOK_MASK).await
 }
 
-/// A look-alike key never reaches the book: each of these is refused at the door with the first reason, NonAscii.
-macro_rules! non_ascii_key {
-    ($name:ident, $key:expr) => {
-        #[tokio::test]
-        async fn $name() {
-            let _slot = slot().await;
-            let s = with_assets().await;
-            let key: String = $key;
-            let result = add(&s, &key, Some("100"), "Look alike").await;
-            assert_fails_with(result, "bad payee key: NonAscii");
-            assert!(book_keys(&s).await.is_empty(), "the look-alike was stored");
-        }
-    };
-}
-
-non_ascii_key!(
-    zero_width_key_reverts,
-    format!("near:accou{}ntant.test.near", code_point(0x200D))
-);
-non_ascii_key!(
-    bidi_key_reverts,
-    format!("near:{}accountant.test.near", code_point(0x202E))
-);
-non_ascii_key!(
-    kelvin_sign_key_reverts,
-    format!("near:{}elvin.test.near", code_point(0x212A))
-);
-non_ascii_key!(
-    fullwidth_key_reverts,
-    format!(
-        "evm:{}:{EVM_ADDR}",
-        [0xFF18u32, 0xFF14, 0xFF15, 0xFF13, 0xFF12]
-            .into_iter()
-            .map(code_point)
-            .collect::<String>()
-    )
-);
-non_ascii_key!(
-    cyrillic_key_reverts,
-    format!("near:{}ccountant.test.near", code_point(0x430))
-);
-
-/// Every `payee_keys.reject` vector of the shared file is refused with exactly `bad payee key: <its error>`.
-#[tokio::test]
-async fn rejected_vector_keys_revert_with_their_error() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    let doc: Value = serde_json::from_str(VECTORS).unwrap();
-    let rejects = doc["payee_keys"]["reject"].as_array().unwrap();
-    assert!(rejects.len() >= 30);
-    for entry in rejects {
-        let key = entry["key"].as_str().unwrap();
-        let error = entry["error"].as_str().unwrap();
-        let result = add(&s, key, Some("1"), "Vector").await;
-        assert_fails_with(result, &format!("bad payee key: {error}"));
+async fn pay_as(w: &World, payee: &str, book: Option<Value>, recipient: u16) -> Value {
+    let task = w.signed_task(&[(payee, 10 * ONE_NEAR)], 1);
+    let mut r = w.request_json(
+        &task.0,
+        0,
+        "near",
+        payee,
+        10,
+        (recipient, OWNER_MASK, OWNER_MASK),
+        None,
+    );
+    if let Some(b) = book {
+        r["book"] = b;
     }
-    assert!(book_keys(&s).await.is_empty());
-}
-
-/// Every `payee_keys.accept` vector is added once the assets it is paid in exist.
-#[tokio::test]
-async fn accepted_vector_keys_are_added() {
-    let _slot = slot().await;
-    let s = start().await;
-    asset_set(&s, "near", near_asset()).await;
-    for (chain, symbol, path) in [
-        ("84532", "ETH.base", "base-sepolia-1"),
-        ("1", "ETH", "ethereum-1"),
-        ("8453", "ETH.b", "base-8453"),
-        ("18446744073709551615", "ETH.max", "max-chain"),
-    ] {
-        asset_set(&s, &format!("evm:{chain}:native"), evm_asset(symbol, path)).await;
-    }
-    // AIR-109: the erc20 payee keys of the vector file need their asset in the registry (`unknown asset for payee key` otherwise)
-    asset_set(
-        &s,
-        "evm:84532:erc20:0x036cbd53842c5426634e7929541ec2318f3dcf7e",
-        json!({
-            "symbol": "USDC.base",
-            "decimals": 6,
-            "hard_cap": "1000000",
-            "daily_cap": "5000000",
-            "max_fee_per_gas": "0",
-            "max_gas": "0",
-            "quick_task_cap": "5000000",
-            "path": "base-sepolia-usdc-1",
-            "eip712": {
-                "domain_separator": "71f17a3b2ff373b803d70a5a07c046c1a2bc8e89c09ef722fcb047abe94c9818",
-                "from": format!("0x{}", "11".repeat(20))
-            }
-        }),
-    )
-    .await;
-    let doc: Value = serde_json::from_str(VECTORS).unwrap();
-    let accepts = doc["payee_keys"]["accept"].as_array().unwrap();
-    for entry in accepts {
-        add_ok(&s, entry["key"].as_str().unwrap(), Some("1"), "Vector").await;
-    }
-    assert_eq!(book_keys(&s).await.len(), accepts.len());
+    let result = w.submit(vec![r], &task).await;
+    ok(&result);
+    let outs: Value = result.json().expect("outcomes");
+    outs[0].clone()
 }
 
 #[tokio::test]
-async fn unknown_asset_for_payee_key_reverts() {
+async fn the_book_root_starts_zero_and_the_old_listing_views_are_gone() {
     let _slot = slot().await;
-    let s = start().await;
-    // nothing is registered: both lanes are unknown
-    assert_fails_with(
-        add(&s, NEAR_KEY, Some("100"), "Accountant").await,
-        "unknown asset for payee key",
-    );
-    assert_fails_with(
-        add(&s, EVM_KEY, Some("100"), "Landlord").await,
-        "unknown asset for payee key",
-    );
-    // `near` is registered, the EVM chain of the key is not
-    asset_set(&s, "near", near_asset()).await;
-    add_ok(&s, NEAR_KEY, Some("100"), "Accountant").await;
-    assert_fails_with(
-        add(&s, EVM_KEY, Some("100"), "Landlord").await,
-        "unknown asset for payee key",
-    );
-    assert_fails_with(
-        add(
-            &s,
-            "evm:1:0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
-            Some("100"),
-            "Mainnet",
-        )
-        .await,
-        "unknown asset for payee key",
-    );
-    assert_eq!(book_keys(&s).await, [NEAR_KEY]);
-}
-
-#[tokio::test]
-async fn same_label_different_keys_coexist() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    add_ok(&s, NEAR_KEY, Some("100"), "Landlord").await;
-    add_ok(&s, "near:other.test.near", Some("100"), "Landlord").await;
-    add_ok(&s, EVM_KEY, None, "Landlord").await;
-    assert_eq!(book_keys(&s).await.len(), 3);
-    for key in [NEAR_KEY, "near:other.test.near", EVM_KEY] {
-        assert_eq!(
-            view(&s, "get_book_entry", json!({ "key": key })).await["label"],
-            "Landlord"
+    let w = world().await;
+    // world() books two payees through the test shim, which sets a root; a fresh contract starts at zero
+    assert_ne!(root_of(&w).await, json!("0".repeat(64)));
+    for gone in ["get_book", "get_book_entry", "book_add", "book_remove"] {
+        assert!(
+            !wasm_exports().iter().any(|e| e == gone),
+            "{gone} must not be exported"
         );
     }
-}
-
-#[tokio::test]
-async fn book_remove_unknown_reverts() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    assert_fails_with(
-        owner_call(&s, "book_remove", json!({ "key": NEAR_KEY })).await,
-        "payee not in book",
-    );
-    add_ok(&s, NEAR_KEY, Some("100"), "Accountant").await;
-    // a near-miss of an existing key is not that key: matching is exact
-    assert_fails_with(
-        owner_call(
-            &s,
-            "book_remove",
-            json!({ "key": "near:accountant.test.nea" }),
-        )
-        .await,
-        "payee not in book",
-    );
-    assert_fails_with(
-        owner_call(
-            &s,
-            "book_remove",
-            json!({ "key": "NEAR:accountant.test.near" }),
-        )
-        .await,
-        "payee not in book",
-    );
-    assert_eq!(book_keys(&s).await, [NEAR_KEY]);
-}
-
-#[tokio::test]
-async fn book_remove_removes_and_emits() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    add_ok(&s, NEAR_KEY, Some("100"), "Accountant").await;
-    add_ok(&s, EVM_KEY, Some("7"), "Landlord").await;
-    let result = owner_call(&s, "book_remove", json!({ "key": NEAR_KEY })).await;
-    let events = extract_event_logs(&result).unwrap();
-    result.assert_success();
-    let event = events
-        .iter()
-        .find(|e| e["event"] == "book_removed")
-        .expect("a book_removed event");
-    assert_eq!(event["data"][0]["key"], NEAR_KEY);
-    assert_eq!(
-        view(&s, "get_book_entry", json!({ "key": NEAR_KEY })).await,
-        Value::Null
-    );
-    assert_eq!(book_keys(&s).await, [EVM_KEY]);
-    // removed means gone: a second removal reverts
-    assert_fails_with(
-        owner_call(&s, "book_remove", json!({ "key": NEAR_KEY })).await,
-        "payee not in book",
-    );
-}
-
-#[tokio::test]
-async fn invalid_label_reverts() {
-    let _slot = slot().await;
-    let s = with_assets().await;
-    let too_long = "a".repeat(41);
-    let accented = format!("Caf{}", code_point(0xE9));
-    for bad in [too_long.as_str(), "Bob!", "A/B", "a\tb", accented.as_str()] {
-        assert_fails_with(add(&s, NEAR_KEY, Some("1"), bad).await, "invalid label");
+    for kept in ["book_set_root", "get_book_root", "get_book_epoch"] {
+        assert!(wasm_exports().iter().any(|e| e == kept), "{kept} missing");
     }
-    assert!(book_keys(&s).await.is_empty());
-    // 40 characters, every allowed punctuation and the empty label are fine
-    add_ok(&s, NEAR_KEY, Some("1"), &"a".repeat(40)).await;
-    add_ok(&s, NEAR_KEY, Some("1"), "A b.c_d-e 9").await;
-    add_ok(&s, NEAR_KEY, Some("1"), "").await;
 }
 
 #[tokio::test]
-async fn book_add_replaces_the_whole_entry() {
+async fn owner_sets_the_root_with_the_old_root_and_emits_two_hashes() {
     let _slot = slot().await;
-    let s = with_assets().await;
-    add_ok(&s, NEAR_KEY, Some("100"), "First").await;
-    let result = owner_call(
-        &s,
-        "book_add",
-        json!({
-            "key": NEAR_KEY,
-            "cap": null,
-            "daily_untrusted_budget": "1",
-            "daily_limit": "2",
-            "label": "Second"
-        }),
-    )
-    .await;
-    result.assert_success();
+    let w = world().await;
+    let old = root_of(&w).await;
+    let epoch0: Value = call_view(&w.policy, "get_book_epoch", json!({}), &w.net)
+        .await
+        .unwrap()
+        .data;
+    let (root, _) = build(&[entry(ALICE, 9, Some(100 * ONE_NEAR))], &[3; 32]);
+    let r = set_root(&w, &old, root).await;
+    ok(&r);
+    assert_eq!(root_of(&w).await, json!(hex::encode(root)));
+    let epoch1: Value = call_view(&w.policy, "get_book_epoch", json!({}), &w.net)
+        .await
+        .unwrap()
+        .data;
     assert_eq!(
-        view(&s, "get_book_entry", json!({ "key": NEAR_KEY })).await,
-        json!({ "cap": null, "daily_untrusted_budget": "1", "daily_limit": "2", "label": "Second" })
+        epoch1.as_str().unwrap().parse::<u64>().unwrap(),
+        epoch0.as_str().unwrap().parse::<u64>().unwrap() + 1
     );
-    assert_eq!(
-        book_keys(&s).await,
-        [NEAR_KEY],
-        "a replace does not add an entry"
-    );
+    let ev = events(&r, "book_root_set");
+    assert_eq!(ev.len(), 1, "{ev:?}");
+    assert_eq!(ev[0]["new"], hex::encode(root));
+    assert_eq!(ev[0]["old"], old);
+    let text = serde_json::to_string(&ev[0]).unwrap();
+    assert!(!text.contains("alice"), "{text}");
 }
 
-/// `limit` 500 returns at most 50 entries (52 payees, one call each), in insertion order, and the call never reverts.
 #[tokio::test]
-async fn get_book_limit_is_clamped_to_50() {
+async fn a_stale_expected_root_reverts_and_changes_nothing() {
     let _slot = slot().await;
-    let s = with_assets().await;
-    let keys: Vec<String> = (0..52)
-        .map(|i| format!("near:payee{i:02}.sandbox"))
-        .collect();
-    for key in &keys {
-        add_ok(&s, key, Some("1"), "Payee").await;
+    let w = world().await;
+    let (root, _) = build(&[entry(ALICE, 9, Some(1))], &[3; 32]);
+    let before = root_of(&w).await;
+    let r = set_root(&w, &json!("11".repeat(32)), root).await;
+    fails_with(&r, "stale book root");
+    assert_eq!(root_of(&w).await, before);
+}
+
+#[tokio::test]
+async fn only_the_owner_with_exactly_one_yocto_sets_the_root() {
+    let _slot = slot().await;
+    let w = world().await;
+    let old = root_of(&w).await;
+    let args = json!({ "expected_old": old, "new_root": "22".repeat(32) });
+    let send =
+        |who: &near_api::AccountId, signer: &std::sync::Arc<near_api::Signer>, yocto: u128| {
+            let (policy, net, args) = (w.policy.clone(), w.net.clone(), args.clone());
+            let (who, signer) = (who.clone(), signer.clone());
+            async move {
+                call_transaction(
+                    &policy,
+                    "book_set_root",
+                    args,
+                    &who,
+                    &signer,
+                    &net,
+                    Some(NearToken::from_yoctonear(yocto)),
+                )
+                .await
+                .expect("sent")
+            }
+        };
+    fails_with(&send(&w.agent, &w.agent_signer, 1).await, NOT_OWNER_TEXT);
+    fails_with(&send(&w.owner, &w.owner_signer, 0).await, ONE_YOCTO_TEXT);
+    fails_with(&send(&w.owner, &w.owner_signer, 2).await, ONE_YOCTO_TEXT);
+    assert_eq!(root_of(&w).await, old);
+}
+
+#[tokio::test]
+async fn a_proof_pays_its_own_payee_and_a_bad_proof_is_a_new_payee() {
+    let _slot = slot().await;
+    let w = world().await;
+    let old = root_of(&w).await;
+    let others = [
+        entry("near:other.sandbox", 4, None),
+        entry(ALICE, 5, Some(100 * ONE_NEAR)),
+    ];
+    let (root, proofs) = build(&others, &[3; 32]);
+    ok(&set_root(&w, &old, root).await);
+    let proof = serde_json::to_value(&proofs[1]).unwrap();
+    // the right path: the payee is in the book, the payment is allowed
+    let good = pay(&w, ALICE, Some(proof.clone())).await;
+    assert_eq!(good["outcome"], "allowed", "{good}");
+    // a tampered cap, a path of another slot, and a path of another payee are not a book payee: never a revert
+    let mut richer = proof.clone();
+    richer["cap"] = json!((1_000 * ONE_NEAR).to_string());
+    let w_task_payee = |p: &str| p.to_string();
+    for (name, bad) in [
+        ("tampered cap", richer),
+        ("other slot", serde_json::to_value(&proofs[0]).unwrap()),
+    ] {
+        let o = pay(&w, &w_task_payee(ALICE), Some(bad)).await;
+        // a Book labelled request whose proof does not verify names a payee that is not in the book: the verdict blocks it (rule 5)
+        assert_eq!(o["outcome"], "blocked", "{name}: {o}");
+        assert_eq!(o["reason"], "BookLabelNotInBook", "{name}: {o}");
     }
-    let page = view(&s, "get_book", json!({ "from_index": null, "limit": 500 })).await;
-    let page = page.as_array().unwrap();
-    assert_eq!(page.len(), 50, "limit 500 returns at most 50");
-    assert_eq!(page[0][0], json!(keys[0]));
-    assert_eq!(page[49][0], json!(keys[49]));
-    assert_eq!(page[0][1]["label"], "Payee");
-    let rest = view(&s, "get_book", json!({ "from_index": 50, "limit": 500 })).await;
-    assert_eq!(rest.as_array().unwrap().len(), 2);
-    assert_eq!(rest[0][0], json!(keys[50]));
+    // the same bad proof under an Owner recipient label is a new recipient: the owner is asked
+    let mut richer = proof;
+    richer["cap"] = json!((1_000 * ONE_NEAR).to_string());
+    let o = pay_as(&w, ALICE, Some(richer), OWNER_MASK).await;
+    assert_eq!(o["outcome"], "escalated", "{o}");
+    assert_eq!(o["reason"], "NewRecipient", "{o}");
+}
+
+#[tokio::test]
+async fn the_next_root_revokes_at_once() {
+    let _slot = slot().await;
+    let w = world().await;
+    let old = root_of(&w).await;
+    let (root, proofs) = build(&[entry(ALICE, 5, Some(100 * ONE_NEAR))], &[3; 32]);
+    ok(&set_root(&w, &old, root).await);
+    let proof = serde_json::to_value(&proofs[0]).unwrap();
     assert_eq!(
-        view(&s, "get_book", json!({ "from_index": 1000, "limit": null })).await,
-        json!([])
+        pay(&w, ALICE, Some(proof.clone())).await["outcome"],
+        "allowed"
     );
-    assert_eq!(
-        view(&s, "get_book", json!({}))
-            .await
-            .as_array()
-            .unwrap()
-            .len(),
-        50
-    );
-    assert_eq!(
-        view(&s, "get_book", json!({ "from_index": 3, "limit": 2 }))
-            .await
-            .as_array()
-            .unwrap()
-            .len(),
-        2
-    );
+    let (empty, _) = build(&[], &[4; 32]);
+    ok(&set_root(&w, &json!(hex::encode(root)), empty).await);
+    let o = pay(&w, ALICE, Some(proof)).await;
+    assert_eq!(o["outcome"], "blocked", "{o}");
+    assert_eq!(o["reason"], "BookLabelNotInBook", "{o}");
 }

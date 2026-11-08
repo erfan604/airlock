@@ -83,7 +83,7 @@ async fn call_as(
     tgas: u64,
 ) -> ExecutionFinalResult {
     let sent = Contract(w.policy.clone())
-        .call_function(method, args)
+        .call_function(method, common::shim_args(&w.policy, &w.net, method, args))
         .transaction()
         .gas(NearGas::from_tgas(tgas))
         .deposit(NearToken::from_yoctonear(deposit_yocto))
@@ -143,8 +143,13 @@ async fn ab01_duplicate_amount_key_reverts() {
         None,
     );
     // `labels.amount` is a number, so the first `"amount":"` is the top-level amount string
-    let body = serde_json::to_string(&json!({ "reqs": [req], "task": task.0, "task_sig": task.1 }))
-        .expect("the body serializes");
+    let body = serde_json::to_string(&common::shim_args(
+        &w.policy,
+        &w.net,
+        "submit_batch",
+        json!({ "reqs": [req], "task": task.0, "task_sig": task.1 }),
+    ))
+    .expect("the body serializes");
     assert_eq!(body.matches("\"amount\":\"").count(), 1, "{body}");
     let doubled = body.replacen("\"amount\":\"", "\"amount\":\"1\",\"amount\":\"", 1);
     assert_ne!(body, doubled);
@@ -284,23 +289,7 @@ async fn ab04_hidden_characters_rejected() {
     ];
     let task = w.signed_task(&[("near:alice.sandbox", 10 * ONE_NEAR)], 3);
     for (i, key) in keys.iter().enumerate() {
-        let added = call_as(
-            &w,
-            &w.owner,
-            &w.owner_signer,
-            "book_add",
-            json!({
-                "key": key,
-                "cap": ONE_NEAR.to_string(),
-                "daily_untrusted_budget": ONE_NEAR.to_string(),
-                "daily_limit": ONE_NEAR.to_string(),
-                "label": "Hidden"
-            }),
-            1,
-            100,
-        )
-        .await;
-        assert_fails(&added, "bad payee key: NonAscii");
+        // since AIR-326 the owner's commitment holds no key text: the key is checked when a request names it
         let req = w.request_json(
             &task.0,
             i as u8,

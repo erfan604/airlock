@@ -234,9 +234,7 @@ fn digest_of(event: &Value) -> String {
 async fn x402_asset_set_rules() {
     let _slot = slot().await;
     let w = world().await;
-    // a payee key of an asset that does not exist yet
-    let text = owner_fails(&w, "book_add", book_args(&w)).await;
-    assert!(text.contains("unknown asset for payee key"), "{text}");
+    // (since AIR-326 the contract no longer checks at book change time that a payee key names a registered asset)
     // the demo asset registers (the AIR-086 guard would compute 208 bytes and refuse it)
     owner_ok(
         &w,

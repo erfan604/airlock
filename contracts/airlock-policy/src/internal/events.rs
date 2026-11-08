@@ -78,16 +78,11 @@ pub enum Event<'a> {
     AssetRemoved {
         asset: &'a str,
     },
-    // AIR-043: `cap` is a decimal string or null
-    BookAdded {
-        key: &'a str,
-        label: &'a str,
-        cap: Option<U128>,
-        daily_untrusted_budget: U128,
-        daily_limit: U128,
-    },
-    BookRemoved {
-        key: &'a str,
+    // AIR-326: the whole book change is two roots; no payee, label or number is emitted.
+    BookRootSet {
+        old: &'a str,
+        new: &'a str,
+        epoch: U64,
     },
     // AIR-061, the events of `submit_batch`. No agent free text: every string here is a canonical key, a registry id, a reason name
     // or a number the contract derived. u128 values are decimal strings.

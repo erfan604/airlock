@@ -92,10 +92,10 @@ async fn world_standard_setup_allows_a_clean_payment() {
     assert_eq!(near["hard_cap"], (10_000 * ONE_NEAR).to_string(), "{near}");
     let evm = view("get_asset", json!({ "asset": WORLD_EVM_ASSET })).await;
     assert_eq!(evm["path"], WORLD_EVM_PATH, "{evm}");
-    let alice = view("get_book_entry", json!({ "key": payee })).await;
+    let alice = shim_entry_json(&w.policy, &w.net, &payee);
     assert_eq!(alice["cap"], (100 * ONE_NEAR).to_string(), "{alice}");
     let evm_key = format!("evm:84532:0x{}", w.payee_evm);
-    let bob = view("get_book_entry", json!({ "key": evm_key })).await;
+    let bob = shim_entry_json(&w.policy, &w.net, &evm_key);
     assert!(bob["cap"].is_null(), "{bob}");
     assert_eq!(bob["daily_limit"], (10 * ONE_ETH).to_string(), "{bob}");
     let nonce = view("get_nonce", json!({ "path": WORLD_EVM_PATH })).await;

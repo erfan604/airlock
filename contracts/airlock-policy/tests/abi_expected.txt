@@ -18,8 +18,7 @@ allow_agent
 revoke_agent
 asset_set
 asset_remove
-book_add
-book_remove
+book_set_root
 set_flags
 set_task_key
 revoke_task
@@ -49,8 +48,8 @@ get_request
 get_policy
 get_asset
 list_assets
-get_book_entry
-get_book
+get_book_root
+get_book_epoch
 get_task_state
 get_task_key
 get_allowed_agents

@@ -250,7 +250,7 @@ Gate cases: 88 (held 32, stopped before any request 36, A2 auto-executed inside 
 | RT-CON-10 | `rt_con_lying_runtime_owner_labels_capped_by_task_bound` | a lying runtime labels every value Owner | a payee outside the task escalates OutsideTask; a book payee above the bound escalates OverTaskBound | same | none |
 | RT-CON-11 | `rt_con_uppercase_payee_key_reverts` | an uppercase twin of a book key | revert, nothing stored | same | none |
 | RT-CON-12 | `rt_con_evm_params_on_near_lane_reverts` | EVM fee parameters on a NEAR request | revert: evm params not allowed | same | none |
-| RT-CON-13 | `rt_con_book_add_by_agent_reverts` | the agent adds a payee to the book | revert (owner only), book unchanged | same | none |
+| RT-CON-13 | `rt_con_book_set_root_by_agent_reverts` | the agent replaces the address book root | revert (owner only), book root unchanged | same | none |
 | RT-APPR-01 | `rt_appr_changed_amount_reverts` | approve with a different amount than the stored request | revert: approve rejected: WrongAmount | same | none |
 | RT-APPR-02 | `rt_appr_changed_payee_reverts` | approve naming another payee | revert: approve rejected: WrongRecipient | same | none |
 | RT-APPR-03 | `rt_appr_replayed_approve_reverts` | the same approve twice | revert: NotPending | same | none |

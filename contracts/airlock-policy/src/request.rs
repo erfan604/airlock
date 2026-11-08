@@ -105,6 +105,8 @@ pub struct SubmitRequest {
     pub labels: Labels,
     pub evm: Option<EvmParams>,
     pub hints: Hints,
+    /// AIR-326: the book entry and its path when the payee is in the owner's book. Absent or invalid: a new payee.
+    pub book: Option<crate::book::BookProof>,
 }
 
 /// Reverts `unknown label bit` when any of the three masks has bit 15 set (I9). A mask of 0 is allowed here: the verdict blocks
@@ -154,6 +156,10 @@ pub struct PendingInfo {
     pub no: u32,
     pub expires_ms: u64,
     pub book_in: bool,
+    /// AIR-326: the book entry's daily limit and the book epoch seen when the escalation was stored (approval uses the limit only at
+    /// the same epoch).
+    pub payee_limit: Option<u128>,
+    pub book_epoch: u64,
     pub task_bound: u128,
     pub display_symbol: String,
     pub display_amount: String,
@@ -474,6 +480,8 @@ mod tests {
             no: 7,
             expires_ms: 3_601_000,
             book_in: true,
+            payee_limit: Some(5_000),
+            book_epoch: 0,
             task_bound: 500,
             display_symbol: "NEAR".to_string(),
             display_amount: "10".to_string(),

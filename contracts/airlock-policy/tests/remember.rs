@@ -290,19 +290,27 @@ const DAILY: u128 = 10;
 impl Fx {
     /// The card of `esc` plus the owner's three remember arguments.
     async fn remember_args(&self, esc: &Esc, cap: u128, daily: u128, label: &str) -> Value {
+        let _ = label; // the label lives in the owner's vault since AIR-326
         let mut args = self.card(esc).await;
-        args["cap"] = json!(cap.to_string());
-        args["daily_limit"] = json!(daily.to_string());
-        args["label"] = json!(label);
+        let payee = args["to"].as_str().expect("a payee").to_string();
+        let (old, new_root, entry) =
+            shim_remember(&self.s.contract, &self.s.net, &payee, cap, daily);
+        args["expected_old"] = json!(old);
+        args["new_root"] = json!(new_root);
+        args["entry"] = entry;
         args
     }
 
     async fn remember(&self, args: Value) -> ExecutionFinalResult {
-        owner_call(&self.s, "approve_and_remember", args).await
+        let result = owner_call(&self.s, "approve_and_remember", args).await;
+        if failure_text(&result).is_empty() {
+            shim_remember_done(&self.s.contract, &self.s.net);
+        }
+        result
     }
 
     async fn book_entry(&self, key: &str) -> Value {
-        self.view("get_book_entry", json!({ "key": key })).await
+        shim_entry_json(&self.s.contract, &self.s.net, key)
     }
 
     /// A refused remember: the revert text, the request still pending, BOB not in the book.
@@ -332,8 +340,7 @@ async fn remember_approves_and_books() {
     assert_eq!(entry["cap"], near(CAP).to_string(), "{entry}");
     assert_eq!(entry["daily_limit"], near(DAILY).to_string(), "{entry}");
     assert_eq!(entry["daily_untrusted_budget"], "0", "{entry}");
-    assert_eq!(entry["label"], "Bob the plumber", "{entry}");
-    // approved first, book_added after it
+    // approved first, book_root_set after it
     let events = extract_event_logs(&result).expect("the events parse");
     let names: Vec<&str> = events.iter().filter_map(|e| e["event"].as_str()).collect();
     let approved = names
@@ -342,10 +349,14 @@ async fn remember_approves_and_books() {
         .expect("approved");
     let added = names
         .iter()
-        .position(|n| *n == "book_added")
-        .expect("book_added");
+        .position(|n| *n == "book_root_set")
+        .expect("book_root_set");
     assert!(approved < added, "{names:?}");
-    assert_eq!(named(&events, "book_added")[0]["data"][0]["key"], BOB);
+    assert!(
+        !named(&events, "book_root_set")[0]["data"][0]
+            .to_string()
+            .contains("bob")
+    );
 }
 
 #[tokio::test]
@@ -397,10 +408,6 @@ async fn remember_rejects_daily_below_cap() {
         .await;
     fx.refused(&esc, args, "remember rejected: DailyBelowCap")
         .await;
-    let args = fx
-        .remember_args(&esc, near(CAP), near(DAILY), "bad label!")
-        .await;
-    fx.refused(&esc, args, "invalid label").await;
 }
 
 #[tokio::test]

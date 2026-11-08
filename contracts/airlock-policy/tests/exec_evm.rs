@@ -524,7 +524,7 @@ async fn yield_timeout_refunds_and_is_retryable() {
     let ex = Contract(w.policy.clone())
         .call_function(
             "submit_batch",
-            json!({ "reqs": [clean(&w, &task, 0, AMOUNT)], "task": task.0, "task_sig": task.1 }),
+            common::shim_args(&w.policy, &w.net, "submit_batch", json!({ "reqs": [clean(&w, &task, 0, AMOUNT)], "task": task.0, "task_sig": task.1 })),
         )
         .transaction()
         .gas(NearGas::from_tgas(300))

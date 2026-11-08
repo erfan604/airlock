@@ -59,3 +59,17 @@ pub fn sign(task: &crate::task::OwnerTask) -> Vec<u8> {
         .to_bytes()
         .to_vec()
 }
+
+/// AIR-326: the book root and the proof for a book that holds one payee (salt `[1; 32]`, filler seed `[7; 32]`). The tests that used to
+/// `book.insert` set `c.book_root` to this root and attach the proof to the requests that pay the payee.
+pub fn one_book(payee: &str, e: &crate::policy::BookEntry) -> ([u8; 32], crate::book::BookProof) {
+    let entry = crate::book::Entry {
+        salt: [1; 32],
+        payee: payee.to_string(),
+        cap: e.cap,
+        daily_untrusted_budget: e.daily_untrusted_budget,
+        daily_limit: e.daily_limit,
+    };
+    let (root, mut proofs) = crate::book::build(&[entry], &[7; 32]);
+    (root, proofs.remove(0))
+}

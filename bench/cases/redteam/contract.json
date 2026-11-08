@@ -73,9 +73,9 @@
  },
  {
   "id": "RT-CON-13",
-  "test": "rt_con_book_add_by_agent_reverts",
-  "attack": "the agent adds a payee to the book",
-  "expect": "revert (owner only), book unchanged"
+  "test": "rt_con_book_set_root_by_agent_reverts",
+  "attack": "the agent replaces the address book root",
+  "expect": "revert (owner only), book root unchanged"
  },
  {
   "id": "RT-APPR-01",

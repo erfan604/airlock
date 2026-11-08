@@ -24,7 +24,7 @@ use std::sync::Arc;
 use tokio::sync::OnceCell;
 
 /// The closed list of docs/events.md, in the order of the ticket.
-const CLOSED_LIST: [&str; 27] = [
+const CLOSED_LIST: [&str; 26] = [
     "submitted",
     "allowed",
     "escalated",
@@ -46,8 +46,7 @@ const CLOSED_LIST: [&str; 27] = [
     "nonce_set",
     "asset_set",
     "asset_removed",
-    "book_added",
-    "book_removed",
+    "book_root_set",
     "flags_set",
     "paused",
     "agent_registered",
@@ -56,7 +55,7 @@ const CLOSED_LIST: [&str; 27] = [
 
 /// The events the contract emits today: the scenario must produce every one of them. Later tickets add the rest of the closed
 /// list, and the scenario may then produce those too (AIR-101: a NEAR Allow pays in the same transaction, so `paid` is produced).
-const EMITTED_TODAY: [&str; 17] = [
+const EMITTED_TODAY: [&str; 16] = [
     "submitted",
     "allowed",
     "paid",
@@ -68,8 +67,7 @@ const EMITTED_TODAY: [&str; 17] = [
     "task_revoked",
     "asset_set",
     "asset_removed",
-    "book_added",
-    "book_removed",
+    "book_root_set",
     "flags_set",
     "paused",
     "agent_registered",

@@ -114,7 +114,7 @@ async fn call_with(
     tgas: u64,
 ) -> ExecutionFinalResult {
     let sent = Contract(w.policy.clone())
-        .call_function(method, args)
+        .call_function(method, common::shim_args(&w.policy, &w.net, method, args))
         .transaction()
         .gas(NearGas::from_tgas(tgas))
         .deposit(NearToken::from_yoctonear(yocto))

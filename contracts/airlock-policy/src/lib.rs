@@ -27,6 +27,7 @@ pub use views::{AgentValidity, AgentView, ContractInfo};
 // Modules are `pub` and every helper without a caller yet is `pub`, so `cargo clippy -D warnings` does not flag a helper whose
 // caller lands in a later ticket (a private unused item is a `dead_code` error, a `pub` one in a `pub mod` is not).
 pub mod agents;
+pub mod book;
 pub mod callback;
 pub mod escalation;
 pub mod exec;
@@ -69,8 +70,10 @@ pub struct Contract {
     // they come right after `flags`, above `book` (AIR-043) and the task key.
     pub assets: IterableMap<String, policy::AssetEntry>,
     pub asset_symbols: LookupMap<String, String>,
-    // AIR-043: the payees by canonical key (after the asset registry in the layout table, above the task key).
-    pub book: IterableMap<String, policy::BookEntry>,
+    // AIR-326: the address book is one Merkle root (src/book.rs) and a change counter, not a map; the payees are not readable from state.
+    // Same place in the layout table as the AIR-043 map it replaces. 32 zero bytes until the owner sets a root.
+    pub book_root: [u8; 32],
+    pub book_epoch: u64,
     // AIR-045: the owner's one Ed25519 task key (32 raw bytes), the revoked task hashes, and the request ids created per task hash
     // (entries are never removed, they are bounded by the tasks the owner signs). In the layout table they come after `book`
     // (AIR-043) and before `allowed_agents` (AIR-046): the ticket that adds the fields in between inserts them above these three.
@@ -127,8 +130,6 @@ pub enum StorageKey {
     // AIR-042 (the table puts them right after the template's four)
     Assets,
     AssetSymbols,
-    // AIR-043
-    Book,
     // AIR-045 (the table puts them after `Book` and before `AllowedAgents`).
     RevokedTasks,
     TaskActions,
@@ -184,7 +185,8 @@ impl Contract {
             flags: Flags::default(),
             assets: IterableMap::new(StorageKey::Assets),
             asset_symbols: LookupMap::new(StorageKey::AssetSymbols),
-            book: IterableMap::new(StorageKey::Book),
+            book_root: [0u8; 32],
+            book_epoch: 0,
             task_key: None,
             revoked_tasks: LookupSet::new(StorageKey::RevokedTasks),
             task_actions: LookupMap::new(StorageKey::TaskActions),

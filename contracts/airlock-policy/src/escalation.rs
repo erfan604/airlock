@@ -18,13 +18,11 @@
 #![allow(clippy::too_many_arguments)]
 use crate::gate::EvalCtx;
 use crate::ledgers::{LedgerKey, approval_caps, verdict_inputs};
-use crate::policy::BookEntry;
 use crate::request::{Hex32, PendingInfo, RequestRecord, RequestState, RequestView, request_id};
 use crate::time::utc_day;
 use crate::*;
 use airlock_verdict::approve::{ApproveArgs, ApproveError, Live, StoredView, approve_check};
 use airlock_verdict::{Reason, decimal};
-use near_sdk::json_types::U128;
 
 /// The most items `get_pending` returns in one call.
 pub const MAX_PENDING_PAGE: u32 = 20;
@@ -132,6 +130,8 @@ pub fn pending_info(rec: &RequestRecord, ctx: &EvalCtx, no: u32, expires_ms: u64
         no,
         expires_ms,
         book_in,
+        payee_limit: ctx.payee.as_ref().map(|p| p.daily_limit),
+        book_epoch: ctx.book_epoch,
         task_bound: ctx.bound.unwrap_or(0),
         display_symbol: asset.symbol.clone(),
         display_amount: amount_text(rec.amount, asset.decimals),
@@ -199,6 +199,8 @@ pub fn expire_tombstone(rec: &RequestRecord) -> RequestRecord {
             no: pending.no,
             expires_ms: pending.expires_ms,
             book_in: false,
+            payee_limit: None,
+            book_epoch: 0,
             task_bound: 0,
             display_symbol: String::new(),
             display_amount: String::new(),
@@ -244,7 +246,7 @@ impl Contract {
         amount: &str,
         why: &str,
         book: &str,
-    ) -> (String, u128, String) {
+    ) -> (String, u128, String, bool) {
         let no = canonical_no(id).unwrap_or_else(|| env::panic_str("unknown id"));
         let (request_key, mut rec) = self
             .pending_record(no)
@@ -313,9 +315,15 @@ impl Contract {
         // the escalation leaves the agent's pending count and the consecutive reject streak ends (AIR-083); a revert after this point
         // reverts the counters with the call
         self.flood_after_approve_request(&rec.agent, &request_key);
-        // charge: the payee is read now (a payee that left the book has no limit, and its day ledger still records the payment)
-        let payee = self.payee(&rec.payee);
-        let caps = approval_caps(&asset_entry, payee.as_ref(), pending.task_bound);
+        // charge: the payee limit is the one stored with the escalation when the book is unchanged since (AIR-326); after a book change
+        // the payee has no limit (as a payee that left the book had), and its day ledger still records the payment
+        let in_book_now = pending.book_in && pending.book_epoch == self.book_epoch;
+        let payee_limit = if pending.book_epoch == self.book_epoch {
+            pending.payee_limit
+        } else {
+            None
+        };
+        let caps = approval_caps(&asset_entry, payee_limit, pending.task_bound);
         let charge = self.charge_approval(&key, &caps, rec.amount, now_ms);
         rec.applied_charge = Some(charge);
         rec.charge_day = utc_day(now_ms);
@@ -334,55 +342,54 @@ impl Contract {
         if let Some(promise) = self.start_execution(&request_key) {
             promise.detach();
         }
-        (rec_payee, rec_amount, rec_asset)
+        (rec_payee, rec_amount, rec_asset, in_book_now)
     }
 
-    /// The remember half of `approve_and_remember`: validates the owner's limits against the stored request and inserts the book entry.
+    /// The remember half of `approve_and_remember` (AIR-326): the owner sends the next book root with the new entry's path. The entry's
+    /// payee is the stored request's payee (never an argument), its numbers must pass the old rules, and the old root must be current.
     fn remember_payee(
         &mut self,
         payee: String,
         asset: &str,
         amount: u128,
-        cap: U128,
-        daily_limit: U128,
-        label: String,
+        expected_old: Hex32,
+        new_root: Hex32,
+        entry: &crate::book::BookProof,
     ) {
         let hard_cap = self
             .asset(asset)
             .unwrap_or_else(|| env::panic_str("remember rejected: UnknownAsset"))
             .hard_cap;
-        if cap.0 < amount {
+        let cap = entry
+            .cap
+            .unwrap_or_else(|| env::panic_str("remember rejected: CapBelowAmount"))
+            .0;
+        if cap < amount {
             env::panic_str("remember rejected: CapBelowAmount");
         }
-        if cap.0 > hard_cap {
+        if cap > hard_cap {
             env::panic_str("remember rejected: CapAboveAssetCap");
         }
-        if daily_limit.0 < cap.0 {
+        if entry.daily_limit.0 < cap {
             env::panic_str("remember rejected: DailyBelowCap");
         }
-        if !crate::policy::valid_label(&label) {
-            env::panic_str("invalid label");
+        if entry.daily_untrusted_budget.0 != 0 {
+            env::panic_str("remember rejected: BudgetNotZero");
         }
-        if self.book.contains_key(&payee) {
-            env::panic_str("remember rejected: AlreadyInBook");
+        if expected_old.0 != self.book_root {
+            env::panic_str("stale book root");
         }
-        Event::BookAdded {
-            key: &payee,
-            label: &label,
-            cap: Some(cap),
-            daily_untrusted_budget: U128(0),
-            daily_limit,
+        if crate::book::verify(&new_root.0, &payee, entry).is_none() {
+            env::panic_str("remember rejected: EntryNotInNewRoot");
+        }
+        Event::BookRootSet {
+            old: &expected_old.to_hex(),
+            new: &new_root.to_hex(),
+            epoch: U64(self.book_epoch + 1),
         }
         .emit();
-        self.book.insert(
-            payee,
-            BookEntry {
-                cap: Some(cap.0),
-                daily_untrusted_budget: 0,
-                daily_limit: daily_limit.0,
-                label,
-            },
-        );
+        self.book_root = new_root.0;
+        self.book_epoch += 1;
     }
 }
 
@@ -416,9 +423,9 @@ impl Contract {
     /// Owner: `approve` and, in the same call, remember the payee (AIR-299, D26). The checks and effects of `approve` run first through
     /// the same private function, so a refused approve reverts here with its own text. Then, from the stored request (never from an
     /// argument): `cap` must be at least the stored amount (`remember rejected: CapBelowAmount`) and at most the asset's hard cap
-    /// (`CapAboveAssetCap`), `daily_limit` at least `cap` (`DailyBelowCap`), the label follows the rules of `book_add` (`invalid label`),
-    /// and the payee must not be in the book (`AlreadyInBook`). The book entry is `cap: Some(cap)`, `daily_untrusted_budget: 0`,
-    /// `daily_limit` and `label`; `book_added` is emitted after `approved`. Any revert leaves no state change.
+    /// (`CapAboveAssetCap`), `daily_limit` at least `cap` (`DailyBelowCap`), the untrusted budget 0 (`BudgetNotZero`), `expected_old` the
+    /// current book root (`stale book root`), the payee not in the book (`AlreadyInBook`, known from the escalation when the book is unchanged) and `entry` a path that verifies for the stored payee against `new_root`
+    /// (`EntryNotInNewRoot`). `book_root_set` is emitted after `approved`. Any revert leaves no state change (AIR-326).
     #[payable]
     pub fn approve_and_remember(
         &mut self,
@@ -428,14 +435,26 @@ impl Contract {
         amount: String,
         why: String,
         book: String,
-        cap: U128,
-        daily_limit: U128,
-        label: String,
+        expected_old: Hex32,
+        new_root: Hex32,
+        entry: crate::book::BookProof,
     ) {
         self.owner_call();
-        let (payee, stored_amount, asset_id) =
+        let (payee, stored_amount, asset_id, in_book) =
             self.approve_stored(&id, &to, &asset, &amount, &why, &book);
-        self.remember_payee(payee, &asset_id, stored_amount, cap, daily_limit, label);
+        // the contract cannot list the book, but the escalation says whether the payee was in it when it was stored and the book has
+        // not changed since: a second entry for a payee already in the book is refused (AIR-326)
+        if in_book {
+            env::panic_str("remember rejected: AlreadyInBook");
+        }
+        self.remember_payee(
+            payee,
+            &asset_id,
+            stored_amount,
+            expected_old,
+            new_root,
+            &entry,
+        );
     }
 
     /// Owner: reject the escalation with short number `id` (AIR-081). `#[payable]`, exactly 1 yoctoNEAR from the owner (`owner_call`, the
@@ -639,11 +658,13 @@ mod tests {
             pending: None,
             exec: None,
         };
-        let book_in = c.payee(payee).is_some();
+        let book_in = false;
         rec.pending = Some(PendingInfo {
             no,
             expires_ms: NOW + TTL_MS,
             book_in,
+            payee_limit: None,
+            book_epoch: 0,
             task_bound,
             display_symbol: entry.symbol.clone(),
             display_amount: amount_text(amount, entry.decimals),
@@ -900,6 +921,7 @@ mod tests {
             asset: Some(asset_entry()),
             payee_key: BOB.to_string(),
             payee: None,
+            book_epoch: 0,
             bound: Some(near(50)),
             key: key.clone(),
             spent: c.spent_now(&key, NOW),

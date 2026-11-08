@@ -132,10 +132,10 @@ pub fn is_untrusted_amount(labels: &Labels) -> bool {
 /// still recorded in that payee's day ledger, so a later `book_add` sees it); no untrusted budget, because an approval never charges it;
 /// and the task bound stored in `PendingInfo.task_bound` (the contract stores no task bounds, and a bound of 0 would saturate the task
 /// ledger down to 0).
-pub fn approval_caps(asset: &AssetEntry, payee: Option<&BookEntry>, task_bound: u128) -> Caps {
+pub fn approval_caps(asset: &AssetEntry, payee_limit: Option<u128>, task_bound: u128) -> Caps {
     Caps {
         asset_daily: asset.daily_cap,
-        payee_limit: payee.map_or(u128::MAX, |p| p.daily_limit),
+        payee_limit: payee_limit.unwrap_or(u128::MAX),
         payee_budget: 0,
         task_bound,
     }
@@ -306,15 +306,19 @@ impl Contract {
     /// lowercase hex, otherwise `bad task hash`). Caps are the asset's `daily_cap` and the payee's `daily_limit` and
     /// `daily_untrusted_budget`; an unknown payee or asset has zero caps, not a panic. The contract stores no task bounds, so the caller
     /// that holds the signed task computes the task remainder.
-    pub fn get_ledgers(&self, payee: String, asset: String, task: Option<String>) -> LedgersView {
+    pub fn get_ledgers(
+        &self,
+        payee: String,
+        asset: String,
+        task: Option<String>,
+        book: Option<crate::book::BookProof>,
+    ) -> LedgersView {
         let hash = task.as_deref().map(parse_task_hash);
+        let entry = self.book_entry(&payee, book.as_ref());
         let caps = Caps {
             asset_daily: self.assets.get(&asset).map_or(0, |a| a.daily_cap),
-            payee_limit: self.book.get(&payee).map_or(0, |p| p.daily_limit),
-            payee_budget: self
-                .book
-                .get(&payee)
-                .map_or(0, |p| p.daily_untrusted_budget),
+            payee_limit: entry.as_ref().map_or(0, |p| p.daily_limit),
+            payee_budget: entry.as_ref().map_or(0, |p| p.daily_untrusted_budget),
             task_bound: 0,
         };
         let k = LedgerKey {
@@ -346,7 +350,7 @@ impl Contract {
 mod tests {
     use super::*;
     use crate::request::RequestState;
-    use crate::testutil::{ctx, fresh};
+    use crate::testutil::{ctx, fresh, one_book};
     use near_sdk::testing_env;
 
     const PAYEE: &str = "near:acct.test.near";
@@ -374,7 +378,6 @@ mod tests {
             cap: Some(100),
             daily_untrusted_budget: 1_000,
             daily_limit: 5_000,
-            label: "acct".to_string(),
         }
     }
 
@@ -382,7 +385,7 @@ mod tests {
     fn setup() -> Contract {
         let mut c = fresh();
         c.assets.insert("near".to_string(), asset_entry());
-        c.book.insert(PAYEE.to_string(), book_entry());
+        c.book_root = one_book(PAYEE, &book_entry()).0;
         c
     }
 
@@ -588,7 +591,7 @@ mod tests {
         let before = c.spent_now(&k, 0);
         let applied = c.charge_approval(
             &k,
-            &approval_caps(&asset_entry(), Some(&book_entry()), 5_000),
+            &approval_caps(&asset_entry(), Some(book_entry().daily_limit), 5_000),
             900,
             0,
         );
@@ -610,8 +613,7 @@ mod tests {
         let applied = c.charge_approval(&k, &caps, 900, 0);
         assert_eq!(applied, charge_rec(900, 900, 0, 900));
         assert_eq!(c.spent_now(&k, 0), spent(900, 900, 0, 900));
-        // a later book_add sees the payee's day ledger
-        c.book.insert(OTHER_PAYEE.to_string(), book_entry());
+        // a later book root that holds the payee sees the payee's day ledger (the ledger is keyed by the payee key)
         assert_eq!(c.spent_now(&k, 0).payee_day, 900);
     }
 
@@ -675,7 +677,12 @@ mod tests {
     fn ledgers_view_is_zero_for_an_unknown_payee_and_asset() {
         let c = setup();
         testing_env!(ctx("anyone.test.near", 1_000, 0).build());
-        let v = c.get_ledgers("near:nobody.test.near".to_string(), "eth".to_string(), None);
+        let v = c.get_ledgers(
+            "near:nobody.test.near".to_string(),
+            "eth".to_string(),
+            None,
+            None,
+        );
         let zero = Amount {
             spent: U128(0),
             cap: U128(0),
@@ -693,7 +700,12 @@ mod tests {
         let hash = hex::encode([1u8; 32]);
         let _ = c.charge_allow(&key(PAYEE, 1), &caps(5_000), 400, true, 1_000);
         testing_env!(ctx("anyone.test.near", 1_000, 0).build());
-        let v = c.get_ledgers(PAYEE.to_string(), "near".to_string(), Some(hash));
+        let v = c.get_ledgers(
+            PAYEE.to_string(),
+            "near".to_string(),
+            Some(hash),
+            Some(one_book(PAYEE, &book_entry()).1),
+        );
         assert_eq!(
             v.asset_day,
             Amount {
@@ -725,6 +737,7 @@ mod tests {
             PAYEE.to_string(),
             "near".to_string(),
             Some(hex::encode([1u8; 32])),
+            Some(one_book(PAYEE, &book_entry()).1),
         );
         assert_eq!(next.asset_day.spent, U128(0));
         assert_eq!(next.task_spent, Some(U128(400)));
@@ -743,7 +756,12 @@ mod tests {
             &"a".repeat(65),
         ] {
             let text = panics(|| {
-                c.get_ledgers(PAYEE.to_string(), "near".to_string(), Some(bad.to_string()))
+                c.get_ledgers(
+                    PAYEE.to_string(),
+                    "near".to_string(),
+                    Some(bad.to_string()),
+                    None,
+                )
             });
             assert!(text.contains("bad task hash"), "{bad:?}: {text}");
         }
@@ -771,7 +789,7 @@ mod tests {
     fn remaining_is_zero_not_a_panic_after_a_saturating_approval() {
         let mut c = setup();
         let k = key(PAYEE, 1);
-        let approval = approval_caps(&asset_entry(), Some(&book_entry()), 500);
+        let approval = approval_caps(&asset_entry(), Some(book_entry().daily_limit), 500);
         let _ = c.charge_approval(&k, &approval, 900, 0);
         let r = c.remaining(&k, &approval, Some(500), 0);
         assert_eq!(r.payee_day, 4_100);
@@ -805,6 +823,7 @@ mod tests {
             PAYEE.to_string(),
             "near".to_string(),
             Some(hex::encode([1u8; 32])),
+            Some(one_book(PAYEE, &book_entry()).1),
         );
         let json = serde_json::to_value(&v).unwrap();
         assert_eq!(json["asset_day"]["spent"], "400");
@@ -812,7 +831,12 @@ mod tests {
         assert_eq!(json["asset_day"]["remaining"], "99600");
         assert_eq!(json["payee_untrusted_day"]["remaining"], "1000");
         assert_eq!(json["task_spent"], "400");
-        let none = c.get_ledgers(PAYEE.to_string(), "near".to_string(), None);
+        let none = c.get_ledgers(
+            PAYEE.to_string(),
+            "near".to_string(),
+            None,
+            Some(one_book(PAYEE, &book_entry()).1),
+        );
         assert_eq!(
             serde_json::to_value(&none).unwrap()["task_spent"],
             serde_json::Value::Null
