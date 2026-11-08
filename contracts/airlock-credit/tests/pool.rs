@@ -476,6 +476,13 @@ async fn an_unpaid_line_defaults_after_its_due_date_collateral_is_seized_and_a_s
         "not due yet",
     );
     tokio::time::sleep(std::time::Duration::from_secs(12)).await;
+    // past the due date and before anyone calls default, the share price already counts the 10 outstanding as 0
+    let overdue = pool_view(&fx).await;
+    assert_eq!(
+        (n(&overdue["assets"]), n(&overdue["impaired"])),
+        (90 * ONE_NEAR, 10 * ONE_NEAR),
+        "{overdue}"
+    );
     // anyone may call default after the due date: 10 outstanding, fee 0.5, owed 10.5, collateral 3: all principal, loss 7
     let before = pool_view(&fx).await;
     ok(&send(

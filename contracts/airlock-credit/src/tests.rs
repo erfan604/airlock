@@ -536,6 +536,168 @@ fn a_failed_payout_parks_the_amount_for_claim() {
     assert!(panics(|| p.claim()).contains("nothing to claim"));
 }
 
+// ---- review findings (loss erasure, loss front-running, collateral lock) ----
+
+fn defaulted_with_loss() -> Pool {
+    let mut p = funded_pool();
+    open(&mut p, 50 * NEAR, 1_000);
+    call_as("anyone.test.near", 0, NOW + 31 * DAY);
+    p.default(acct(CARD));
+    assert!(p.losses > 0);
+    p
+}
+
+#[test]
+fn a_card_with_an_unrecovered_loss_is_terminal_until_recovered_or_written_off() {
+    let mut p = defaulted_with_loss();
+    let loss = p.losses;
+    call_as(BORROWER, 20 * NEAR, NOW + 32 * DAY);
+    assert!(panics(|| p.post_collateral(acct(CARD))).contains("unrecovered loss"));
+    call_as(OWNER, 0, NOW + 32 * DAY);
+    assert!(
+        panics(|| p.open_line(
+            acct(CARD),
+            U128(NEAR),
+            100,
+            near_sdk::json_types::U64(NOW + 40 * DAY)
+        ))
+        .contains("unrecovered loss")
+    );
+    // only the owner writes a loss off, and the pool keeps the loss
+    call_as(LP1, 0, NOW + 32 * DAY);
+    assert!(panics(|| p.write_off(acct(CARD))).contains("Caller is not the owner"));
+    call_as(OWNER, 0, NOW + 32 * DAY);
+    let assets_before = p.get_pool().assets.0;
+    p.write_off(acct(CARD));
+    assert_eq!(p.losses, loss, "a write off keeps the loss in the pool");
+    assert_eq!(
+        p.get_pool().assets.0,
+        assets_before,
+        "and does not touch the share price"
+    );
+    assert!(panics(|| p.write_off(acct(CARD))).contains("no loss to write off"));
+    // the card is free: a new line opens, and a sweep after the write off is not credited as a recovery
+    call_as(BORROWER, 3 * NEAR, NOW + 32 * DAY);
+    p.post_collateral(acct(CARD));
+    call_as(OWNER, 0, NOW + 32 * DAY);
+    let _ = p.open_line(
+        acct(CARD),
+        U128(10 * NEAR),
+        100,
+        near_sdk::json_types::U64(NOW + 40 * DAY),
+    );
+    assert_eq!(p.losses, loss, "a new line does not reset the loss");
+}
+
+#[test]
+fn a_recovered_loss_frees_the_card() {
+    let mut p = defaulted_with_loss();
+    let loss = p.losses;
+    call_as(CARD, loss, NOW + 32 * DAY);
+    p.on_card_return(acct(CARD));
+    assert_eq!(p.losses, 0);
+    call_as(BORROWER, 3 * NEAR, NOW + 32 * DAY);
+    p.post_collateral(acct(CARD));
+}
+
+#[test]
+fn an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default() {
+    let mut p = funded_pool();
+    open(&mut p, 60 * NEAR, 500);
+    // before the due date nothing is impaired: 100 shares are worth 100
+    call_as(LP1, 0, NOW + 29 * DAY);
+    assert_eq!(p.get_pool().assets.0, 100 * NEAR);
+    // after it, with no default call yet, the 60 outstanding count as 0
+    call_as(LP1, 0, NOW + 31 * DAY);
+    let view = p.get_pool();
+    assert_eq!(view.assets.0, 40 * NEAR, "{view:?}");
+    assert_eq!(view.share_price.0, NEAR * 4 / 10);
+    assert_eq!(p.get_lp(acct(LP1)).value.0, 40 * NEAR);
+    // an LP who withdraws now gets the impaired price, not the old one
+    let _ = p.withdraw(U128(10 * NEAR));
+    assert_eq!(
+        transfers(),
+        vec![(LP1.to_string(), 4 * NEAR)],
+        "10 shares at 0.4"
+    );
+    // a deposit now buys shares at the impaired price too
+    call_as(LP2, 4 * NEAR, NOW + 31 * DAY);
+    assert_eq!(p.deposit().0, 10 * NEAR);
+}
+
+#[test]
+fn a_repay_after_the_due_date_but_before_default_restores_the_price() {
+    let mut p = funded_pool();
+    open(&mut p, 60 * NEAR, 500);
+    call_as(BORROWER, 63 * NEAR, NOW + 31 * DAY);
+    p.repay(acct(CARD));
+    call_as(LP1, 0, NOW + 31 * DAY);
+    assert_eq!(p.get_pool().assets.0, 103 * NEAR);
+}
+
+#[test]
+fn collateral_can_be_withdrawn_by_the_borrower_while_no_line_is_open() {
+    let mut p = funded_pool();
+    call_as(BORROWER, 3 * NEAR, NOW);
+    p.post_collateral(acct(CARD));
+    call_as(LP1, 0, NOW);
+    assert!(
+        panics(|| p.withdraw_collateral(acct(CARD), U128(NEAR)))
+            .contains("not the card's borrower")
+    );
+    call_as(BORROWER, 0, NOW);
+    assert!(panics(|| p.withdraw_collateral(acct(CARD), U128(0))).contains("must be positive"));
+    assert!(
+        panics(|| p.withdraw_collateral(acct(CARD), U128(4 * NEAR)))
+            .contains("exceeds the posted collateral")
+    );
+    p.withdraw_collateral(acct(CARD), U128(NEAR));
+    assert_eq!(
+        p.collateral_held,
+        2 * NEAR,
+        "the state moves before the payout"
+    );
+    assert_eq!(transfers(), vec![(BORROWER.to_string(), NEAR)]);
+    assert_eq!(p.get_line(acct(CARD)).unwrap().collateral.0, 2 * NEAR);
+    // with a line open it is refused: the collateral secures the draw
+    call_as(BORROWER, 10 * NEAR, NOW);
+    p.post_collateral(acct(CARD));
+    call_as(OWNER, 0, NOW);
+    let _ = p.open_line(
+        acct(CARD),
+        U128(10 * NEAR),
+        100,
+        near_sdk::json_types::U64(NOW + DAY),
+    );
+    call_as(BORROWER, 0, NOW);
+    assert!(
+        panics(|| p.withdraw_collateral(acct(CARD), U128(NEAR))).contains("collateral secures it")
+    );
+    // nothing to withdraw on a card with no line
+    let mut q = funded_pool();
+    call_as(BORROWER, 0, NOW);
+    assert!(panics(|| q.withdraw_collateral(acct(CARD), U128(1))).contains("no collateral"));
+}
+
+#[test]
+fn a_failed_funding_transfer_refunds_the_collateral() {
+    let mut p = funded_pool();
+    open(&mut p, 50 * NEAR, 200);
+    fails_to_fund(&mut p, 50 * NEAR);
+    assert_eq!((p.idle, p.lent), (100 * NEAR, 0));
+    assert_eq!(
+        p.collateral_held, 0,
+        "the collateral of the failed line is released"
+    );
+    assert_eq!(
+        transfers(),
+        vec![(BORROWER.to_string(), 15 * NEAR)],
+        "and goes back to the borrower"
+    );
+    let line = p.get_line(acct(CARD)).unwrap();
+    assert_eq!((line.collateral.0, line.state), (0, LineState::Collecting));
+}
+
 // ---- the accounting, as a property over random sequences ----
 
 struct Rng(u64);
@@ -552,7 +714,11 @@ impl Rng {
 }
 
 fn check(p: &Pool, lps: &[&str]) {
-    assert_eq!(p.get_pool().assets.0, p.idle + p.lent + p.staked);
+    assert_eq!(
+        p.get_pool().assets.0,
+        p.idle + p.lent + p.staked - p.get_pool().impaired.0
+    );
+    assert!(p.get_pool().impaired.0 <= p.lent);
     let shares: u128 = lps.iter().map(|a| p.get_lp(acct(a)).shares.0).sum();
     assert_eq!(
         shares, p.total_shares,
@@ -560,9 +726,9 @@ fn check(p: &Pool, lps: &[&str]) {
     );
     let claims: u128 = lps.iter().map(|a| p.get_lp(acct(a)).value.0).sum();
     assert!(
-        claims <= p.assets(),
+        claims <= p.get_pool().assets.0,
         "claims {claims} above assets {}",
-        p.assets()
+        p.get_pool().assets.0
     );
     let (mut lent, mut collateral) = (0u128, 0u128);
     for l in p.list_lines(None, None) {
@@ -594,7 +760,9 @@ fn run_property(seed: u64) {
         let mut now = NOW;
         for _ in 0..120 {
             now += rng.below(3) * DAY / 2;
-            let price_before = math::share_price(p.assets(), p.total_shares).unwrap();
+            call_as(OWNER, 0, now);
+            let price_before = p.get_pool().share_price.0;
+            let impaired_before = p.get_pool().impaired.0;
             let losses_before = p.losses;
             match rng.below(7) {
                 0 | 1 => {
@@ -660,8 +828,13 @@ fn run_property(seed: u64) {
                 }
             }
             check(&p, &lps);
-            if p.total_shares > 0 && p.assets() > 0 && p.losses == losses_before {
-                let price = math::share_price(p.assets(), p.total_shares).unwrap();
+            call_as(OWNER, 0, now);
+            if p.total_shares > 0
+                && p.get_pool().assets.0 > 0
+                && p.losses == losses_before
+                && p.get_pool().impaired.0 <= impaired_before
+            {
+                let price = p.get_pool().share_price.0;
                 assert!(
                     price + 1 >= price_before,
                     "the share price fell without a loss: {price_before} to {price}"

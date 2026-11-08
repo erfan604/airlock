@@ -86,7 +86,7 @@ NEAR and hold shares; the pool's issuer opens credit lines that fund cards (AIRL
 | `cards: IterableMap<AccountId, Card>` | `{ borrower, line: Option<Line> }`; one line per card at a time |
 | `Line` | `{ limit, returned, fee_bps, due_ms, collateral, state: Collecting | Open | Repaid | Defaulted }` |
 
-`assets = idle + lent + staked` (principal at cost; fees and losses enter when they are realised, never as a mark to market). The share price is
+`assets = idle + lent + staked - impaired` (principal at cost, an overdue line impaired to 0; fees and losses enter when they are realised, never as a mark to market). The share price is
 `assets * 10^24 / total_shares` (yoctoNEAR per share scaled by 10^24, a decimal string in views).
 `staked` stays 0 in this ticket, no call moves it. Pool accounting uses these fields only, never the contract's balance, so a plain transfer to the contract cannot move the share price (no
 donation attack). The invariant `contract balance >= idle + collateral_held + refunds in flight` is a property test.
@@ -103,6 +103,8 @@ donation attack). The invariant `contract balance >= idle + collateral_held + re
 | `on_card_return(card)` payable (emits `swept`) | the card account itself | credits the open line: `credited = min(deposit, limit - returned)`; `idle += credited`, `lent -= credited`, `returned += credited`; the excess is sent back to the card. After a default it credits the loss recovery in the same way (losses fall, never below 0) |
 | `repay(card)` payable | anyone | `outstanding = limit - returned`, `fee = ceil(outstanding * fee_bps / 10000)`, `owed = outstanding + fee`; needs `deposit >= owed`; `idle += owed`, `lent -= outstanding`, `fees_earned += fee`, the excess is refunded, the collateral goes back to the borrower, the line closes. Nothing is owed after a full sweep, so the fee is paid on what the card kept |
 | `default(card)` | anyone, after `due_ms`, `owed > 0` | the collateral covers principal first, then fee: `seized = min(collateral, owed)`; the part of `outstanding` beyond `seized` is added to `losses`; what is left of the collateral goes back to the borrower; the line closes `Defaulted` |
+| `withdraw_collateral(card, amount)` | the card's borrower | while the card has no open line (collateral posted but the line never opened, or a failed funding left it): lowers `collateral` and `collateral_held` first, then pays the borrower. Refused with an open line (the collateral secures the draw) |
+| `write_off(card)` | owner | clears an unrecovered loss of a defaulted card: the loss stays in `losses` (the share price does not move) and the card is free for a new line; later sweeps are not credited as recoveries |
 | `set_collateral_bps(bps)` | owner | 0 to 10000; open lines keep the value they were opened with |
 
 Rounding always favours the pool: shares floor on deposit, amounts floor on withdraw, fees ceil. Every state change happens before the
@@ -112,11 +114,24 @@ transfer.
 After a default the pool cannot pause or sweep the card (the issuer owns it): the issuer pauses the card and sweeps what is left, and that
 sweep is credited back as a recovery. The card's own funds are the pool's only recourse beyond the collateral.
 
+Three rules came out of the security review of the contract (each has a failing test first and its mutants in the table below):
+- **A loss cannot be erased.** The unrecovered loss of a defaulted card lives on the card (`Card.loss`), not on its line. A card with a
+  loss is terminal: `post_collateral` and `open_line` refuse it (`the card has an unrecovered loss`). Recoveries (sweeps, D5) lower it;
+  the owner's `write_off` clears it and keeps it in the pool's `losses`.
+- **Overdue lines are impaired in the share price.** `assets` counts the outstanding principal (drawn minus returned) of an open line as 0
+  once `now > due_ms`, whether or not anyone has called `default` (`get_pool.impaired` shows the amount). So the price drops at the due
+  time for deposits and withdrawals alike and LPs cannot leave at the old price before a default. The seized collateral and any
+  recovery enter the assets when they are booked (at `default` and at the recovery sweep), so they accrue to the holders at that time,
+  not to those who left earlier; a repay after the due date but before the default restores the price at once. The share price walks the
+  lines, so a pool holds at most 100 cards.
+- **Collateral cannot be locked.** `withdraw_collateral` returns collateral while no line is open, and `on_line_funded` refunds the
+  collateral of a line whose funding transfer failed, together with the principal returning to `idle`.
+
 ### Views and events (the names the /credit page is built on)
 
 Amounts are yocto decimal strings everywhere.
 
-- `get_pool` returns `{ assets, shares, idle, staked, lent, fees_earned, losses, share_price, lines: [{ card, borrower, limit, drawn, returned, fee_bps, due_ms, state }] }`. `assets = idle + lent + staked`; `staked` is 0 until AIR-332 (idle liquidity sent to earn yield), so
+- `get_pool` returns `{ assets, shares, idle, staked, lent, impaired, fees_earned, losses, collateral_held, collateral_bps, share_price, lines: [{ card, borrower, limit, drawn, returned, fee_bps, due_ms, state }] }`. `assets = idle + lent + staked`; `staked` is 0 until AIR-332 (idle liquidity sent to earn yield), so
   the share price formula already has its slot. `drawn` is the principal funded when the line opened (equal to `limit`), `returned` what
   sweeps credited, `state` one of `Collecting`, `Open`, `Repaid`, `Defaulted`. `lines` is the same list as `list_lines(0, 50)`.
 - `get_lp(account)` returns `{ shares, value }`, `get_line(card)` one line or null, `list_lines(from_index, limit)` clamped to 50, `get_card(card)`.
@@ -124,7 +139,7 @@ Amounts are yocto decimal strings everywhere.
 - Events use the NEP-297 envelope with standard `airlock-credit`, version `1.0.0`: `deposit` `{ account, amount, shares }`, `withdraw`
   `{ account, amount, shares }`, `card_registered` `{ card, borrower }`, `collateral_posted` `{ card, amount }`, `line_opened`
   `{ card, borrower, limit, fee_bps, due_ms }`, `swept` `{ card, amount }` (the pool credited a return from the card, emitted by
-  `on_card_return`), `repaid` `{ card, amount, fee }`, `defaulted` `{ card, seized, loss }`, `params_set` `{ collateral_bps }`. The card
+  `on_card_return`), `repaid` `{ card, amount, fee }`, `defaulted` `{ card, seized, loss }`, `params_set` `{ collateral_bps }`, `collateral_withdrawn` `{ card, amount }`, `write_off` `{ card, loss }`, `line_funding_failed` `{ card, limit, refund }`. The card
   policy's own `swept` event (standard `airlock`, emitted when the card sends the funds) is a different standard and carries `sponsor` and
   `amount`; the two together show both ends of a sweep.
 
@@ -206,3 +221,13 @@ Each mutant was applied alone and the library tests run (the unit tests of `src/
 | `register_card` without the owner check | `register_card_is_owner_only_and_never_the_pool_or_the_issuer_as_borrower` |
 | `withdraw` does not lower idle | `withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond`, `a_failed_withdraw_transfer_gives_the_shares_back` |
 | the fee is not added to the fees earned | `repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral` |
+| a new line can reset a loss (post_collateral without the loss guard) | `a_card_with_an_unrecovered_loss_is_terminal_until_recovered_or_written_off` |
+| a new line can reset a loss (open_line without the loss guard) | same test |
+| overdue lines are not impaired | `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default` |
+| `withdraw_collateral` open to anyone | `collateral_can_be_withdrawn_by_the_borrower_while_no_line_is_open` |
+| `withdraw_collateral` with an open line | same test |
+| `withdraw_collateral` pays before lowering the state (collateral held not lowered) | same test |
+| a failed funding does not refund the collateral | `a_failed_funding_transfer_refunds_the_collateral` |
+| `write_off` does not clear the loss | `a_card_with_an_unrecovered_loss_is_terminal_until_recovered_or_written_off` |
+| `write_off` open to anyone | same test |
+| `default` does not record the loss on the card | `a_recovered_loss_frees_the_card`, the terminal-card test |

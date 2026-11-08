@@ -23,6 +23,8 @@ pub const MAX_TERM_MS: u64 = 90 * 24 * 3_600_000;
 pub const DEFAULT_COLLATERAL_BPS: u32 = 3_000;
 /// The most lines a view returns.
 pub const MAX_PAGE: u32 = 50;
+/// The most cards a pool registers: the share price walks the lines to impair overdue ones.
+pub const MAX_CARDS: u32 = 100;
 const GAS_ROLES: Gas = Gas::from_tgas(10);
 const GAS_CALLBACK: Gas = Gas::from_tgas(10);
 
@@ -52,8 +54,6 @@ pub struct Line {
     pub due_ms: u64,
     pub collateral: u128,
     pub state: LineState,
-    /// the principal still lost after a default (recoveries lower it)
-    pub loss: u128,
 }
 
 #[near(serializers = [borsh])]
@@ -61,6 +61,9 @@ pub struct Line {
 pub struct Card {
     pub borrower: AccountId,
     pub line: Option<Line>,
+    /// the principal still lost after a default (recoveries lower it, `write_off` clears it); it lives on the card, not on a line, so no
+    /// new line can erase it, and a card with a loss takes no new line
+    pub loss: u128,
 }
 
 #[near(serializers = [json])]
@@ -85,6 +88,8 @@ pub struct PoolView {
     pub idle: U128,
     pub staked: U128,
     pub lent: U128,
+    /// the outstanding principal of lines past their due date, counted as 0 in `assets` and the share price until recovered
+    pub impaired: U128,
     pub fees_earned: U128,
     pub losses: U128,
     pub collateral_held: U128,
@@ -140,8 +145,20 @@ fn ms() -> u64 {
 }
 
 impl Pool {
-    fn assets(&self) -> u128 {
-        self.idle + self.lent + self.staked
+    /// The outstanding principal of the open lines that are past their due date. Such a line counts as 0 in the assets, whether or not
+    /// anyone has called `default`, so LPs cannot leave at the old price between the due date and the default.
+    fn impaired_at(&self, now_ms: u64) -> u128 {
+        self.cards
+            .iter()
+            .filter_map(|(_, c)| c.line.as_ref())
+            .filter(|l| matches!(l.state, LineState::Open) && now_ms > l.due_ms)
+            .map(|l| l.limit - l.returned)
+            .sum()
+    }
+
+    /// What the LPs own at `now_ms`: idle plus staked plus the outstanding principal of the lines that are not overdue.
+    fn assets_at(&self, now_ms: u64) -> u128 {
+        self.idle + self.lent + self.staked - self.impaired_at(now_ms)
     }
 
     fn owner_only(&self) {
@@ -222,7 +239,7 @@ impl Pool {
             amount >= MIN_DEPOSIT,
             "deposit is below the minimum of 0.001 NEAR"
         );
-        let shares = math::shares_for_deposit(amount, self.total_shares, self.assets())
+        let shares = math::shares_for_deposit(amount, self.total_shares, self.assets_at(ms()))
             .unwrap_or_else(|| env::panic_str("the pool has no assets to price a share"));
         require!(
             shares > 0,
@@ -247,7 +264,7 @@ impl Pool {
         require!(shares > 0, "withdraw needs at least one share");
         let have = self.lps.get(&who).copied().unwrap_or(0);
         require!(shares <= have, "withdraw exceeds your shares");
-        let assets = self.assets();
+        let assets = self.assets_at(ms());
         let amount = math::amount_for_shares(shares, self.total_shares, assets)
             .unwrap_or_else(|| env::panic_str("overflow"));
         require!(amount > 0, "withdraw is worth less than one yocto");
@@ -334,6 +351,10 @@ impl Pool {
             self.cards.get(&card).is_none(),
             "the card is already registered"
         );
+        require!(
+            self.cards.len() < MAX_CARDS,
+            "the pool holds 100 cards at most"
+        );
         Promise::new(card.clone())
             .function_call(
                 "get_roles".to_string(),
@@ -376,6 +397,7 @@ impl Pool {
             Card {
                 borrower: borrower.clone(),
                 line: None,
+                loss: 0,
             },
         );
         emit(
@@ -392,6 +414,10 @@ impl Pool {
             env::predecessor_account_id() == c.borrower,
             "Caller is not the card's borrower"
         );
+        require!(
+            c.loss == 0,
+            "the card has an unrecovered loss: recover it by sweeps or write it off first"
+        );
         let amount = env::attached_deposit().as_yoctonear();
         require!(amount > 0, "collateral must be positive");
         let line = match c.line.take() {
@@ -403,7 +429,6 @@ impl Pool {
                 due_ms: 0,
                 collateral: 0,
                 state: LineState::Collecting,
-                loss: 0,
             },
         };
         let mut line = line;
@@ -429,6 +454,10 @@ impl Pool {
         let limit = limit.0;
         let due_ms = due_ms.0;
         let mut c = self.card_of(&card);
+        require!(
+            c.loss == 0,
+            "the card has an unrecovered loss: recover it by sweeps or write it off first"
+        );
         require!(limit > 0, "the limit must be positive");
         require!(fee_bps <= MAX_FEE_BPS, "the fee is above 50 percent");
         require!(
@@ -448,7 +477,6 @@ impl Pool {
                 due_ms: 0,
                 collateral: 0,
                 state: LineState::Collecting,
-                loss: 0,
             },
         };
         let need = math::collateral_needed(limit, self.collateral_bps)
@@ -489,24 +517,83 @@ impl Pool {
     pub fn on_line_funded(&mut self, card: AccountId, limit: U128) {
         if matches!(env::promise_result_checked(0, 0), Err(PromiseError::Failed)) {
             if let Some(mut c) = self.cards.get(&card).cloned() {
+                let borrower = c.borrower.clone();
                 if let Some(line) = c.line.as_mut() {
                     if matches!(line.state, LineState::Open)
                         && line.limit == limit.0
                         && line.returned == 0
                     {
+                        // the line never funded: the pool takes the principal back and the collateral goes back to the borrower
+                        let refund = line.collateral;
                         line.state = LineState::Collecting;
                         line.limit = 0;
+                        line.collateral = 0;
                         self.idle += limit.0;
                         self.lent -= limit.0;
+                        self.collateral_held -= refund;
                         self.cards.insert(card.clone(), c);
                         emit(
                             "line_funding_failed",
-                            json!({ "card": card, "limit": limit.0.to_string() }),
+                            json!({ "card": card, "limit": limit.0.to_string(), "refund": refund.to_string() }),
                         );
+                        self.payout(borrower, refund);
                     }
                 }
             }
         }
+    }
+
+    /// Borrower: take collateral back while the card has no open line (a line that was never opened, or a failed funding left it posted).
+    /// The state moves before the payout.
+    pub fn withdraw_collateral(&mut self, card: AccountId, amount: U128) {
+        let mut c = self.card_of(&card);
+        require!(
+            env::predecessor_account_id() == c.borrower,
+            "Caller is not the card's borrower"
+        );
+        let amount = amount.0;
+        require!(amount > 0, "the amount must be positive");
+        let open = c
+            .line
+            .as_ref()
+            .is_some_and(|l| matches!(l.state, LineState::Open));
+        require!(
+            !open,
+            "the card has an open line: the collateral secures it"
+        );
+        let line = c
+            .line
+            .as_mut()
+            .filter(|l| matches!(l.state, LineState::Collecting))
+            .unwrap_or_else(|| env::panic_str("the card has no collateral posted"));
+        require!(line.collateral > 0, "the card has no collateral posted");
+        require!(
+            amount <= line.collateral,
+            "the amount exceeds the posted collateral"
+        );
+        line.collateral -= amount;
+        self.collateral_held -= amount;
+        self.cards.insert(card.clone(), c);
+        emit(
+            "collateral_withdrawn",
+            json!({ "card": card, "amount": amount.to_string() }),
+        );
+        self.payout(env::predecessor_account_id(), amount);
+    }
+
+    /// Issuer: give up on an unrecovered loss. The loss stays in the pool's `losses` (the share price is untouched); the card is free for a new
+    /// line, and later sweeps are no longer credited as recoveries.
+    pub fn write_off(&mut self, card: AccountId) {
+        self.owner_only();
+        let mut c = self.card_of(&card);
+        require!(c.loss > 0, "the card has no loss to write off");
+        let loss = c.loss;
+        c.loss = 0;
+        self.cards.insert(card.clone(), c);
+        emit(
+            "write_off",
+            json!({ "card": card, "loss": loss.to_string() }),
+        );
     }
 
     /// The card returns funds (its policy's `sweep` calls this with the amount attached). Only the card itself can credit its line.
@@ -519,11 +606,13 @@ impl Pool {
         let amount = env::attached_deposit().as_yoctonear();
         require!(amount > 0, "nothing was returned");
         let mut c = self.card_of(&card);
+        let card_loss = c.loss;
         let line = c
             .line
             .as_mut()
             .unwrap_or_else(|| env::panic_str("the card has no line"));
         let credited;
+        let mut new_loss = card_loss;
         match line.state {
             LineState::Open => {
                 credited = amount.min(line.limit - line.returned);
@@ -531,14 +620,15 @@ impl Pool {
                 self.idle += credited;
                 self.lent -= credited;
             }
-            LineState::Defaulted if line.loss > 0 => {
-                credited = amount.min(line.loss);
-                line.loss -= credited;
+            LineState::Defaulted if card_loss > 0 => {
+                credited = amount.min(card_loss);
+                new_loss = card_loss - credited;
                 self.losses -= credited;
                 self.idle += credited;
             }
             _ => env::panic_str("the card has no open line"),
         }
+        c.loss = new_loss;
         self.cards.insert(card.clone(), c);
         emit(
             "swept",
@@ -610,8 +700,8 @@ impl Pool {
         let loss = outstanding - principal_covered;
         line.state = LineState::Defaulted;
         line.collateral = 0;
-        line.loss = loss;
         let borrower = c.borrower.clone();
+        c.loss = loss;
         self.cards.insert(card.clone(), c);
         self.idle += principal_covered + fee_covered;
         self.lent -= outstanding;
@@ -636,13 +726,14 @@ impl Pool {
     // ---- views ----
 
     pub fn get_pool(&self) -> PoolView {
-        let assets = self.assets();
+        let assets = self.assets_at(ms());
         PoolView {
             assets: U128(assets),
             shares: U128(self.total_shares),
             idle: U128(self.idle),
             staked: U128(self.staked),
             lent: U128(self.lent),
+            impaired: U128(self.impaired_at(ms())),
             fees_earned: U128(self.fees_earned),
             losses: U128(self.losses),
             collateral_held: U128(self.collateral_held),
@@ -657,7 +748,8 @@ impl Pool {
         LpView {
             shares: U128(shares),
             value: U128(
-                math::amount_for_shares(shares, self.total_shares, self.assets()).unwrap_or(0),
+                math::amount_for_shares(shares, self.total_shares, self.assets_at(ms()))
+                    .unwrap_or(0),
             ),
         }
     }
