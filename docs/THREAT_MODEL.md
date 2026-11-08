@@ -4,7 +4,7 @@ This file says what AIRLOCK protects, who attacks it, what each part is trusted 
 
 ## Assets
 - Funds held by the policy contract: its NEAR balance, and the funds at the MPC-derived addresses on other chains, one derivation path per agent.
-- The owner policy stored in the contract: the address book, per-payee caps, daily limits and untrusted budgets, the asset registry with its hard and daily caps, and the flags.
+- The owner policy stored in the contract: the address book (a Merkle root since AIR-326; the entries live in the owner's vault file), per-payee caps, daily limits and untrusted budgets, the asset registry with its hard and daily caps, and the flags.
 - The owner's signed task mandates, which name the payees a task may pay and how much.
 - The owner's wallet keys and the local task key that signs mandates.
 - The approval queue. A pending request cannot be modified, only approved, rejected or expired, and every decision leaves an on-chain event.
@@ -109,3 +109,13 @@ The adaptive and benign cases that sit beside these are in `bench/cases/should/`
   - G01, G02, G03: no swap, quote or bridge action exists. The ABI snapshot and the closed tool table cover them.
   - H01, H02: approval surface attacks are a card and route property, not an agent path. The card tests (AIR-181) and the approvals route test (AIR-182) cover them.
   - U03, U05, U09, U10, U11, U04, BEN04: utility cases that need an action this version lacks (scheduled or recurring payment, swap, bridge, DAO vote) or an owner-only policy change (a book change, a payee change typed by the owner).
+
+## Private address book (AIR-326)
+The policy contract stores one Merkle root of the owner's book, not the book. The vault file (`book.vault.json`, mode 0600) holds each payee with its own 32 byte salt, its caps and its label; a request that pays a booked payee carries that entry and its path, and the contract rebuilds the leaf from the request's own payee.
+- What is hidden until a payment names a payee: the payee names, labels, caps, budgets, limits and salts of every entry no payment has used, and how many entries there are (padded to 256 slots). A dictionary attack on account names fails because the salt is not derivable from the name.
+- What is public: a paid or attempted payee (it is in the request arguments, the record, the ledger keys and the events of that payment), its salt and its numbers; the payees a signed task names in its call arguments, paid or not; the timing and number of root changes and of requests.
+- What a compromised agent can do: hold a booked payment as new by withholding the proof (the owner sees `new`, and the owner's CLI flags it). It cannot pay anyone without the owner's tap and cannot fake in-book status: a proof must verify for the request's own payee against the current root, and a proof of an earlier root or another payee's proof does not. An owner-approved payment to a payee held as new is bounded by the asset caps and the task bound, not that payee's daily limit.
+- What the vault adds to the trusted set: a stolen vault file shows the owner's book (before AIR-326 it was public), and does not widen what a taken-over runtime can pay, because it can only build proofs for leaves the owner committed. The model of an MCP client never receives a salt, a proof or a number; it reads only the aliases the owner marked listed, and resolves only those.
+- The residual: a model that types a raw account id it guessed learns from the verdict whether that account is in the book; each successful probe is a real capped payment visible in the owner's ledger.
+- Duplicate leaves: the contract cannot list its book, so `approve_and_remember` catches a duplicate only when the escalated request carried a valid proof; the owner's vault refuses a second leaf for one payee.
+- Not claimed: Merkle soundness is the collision resistance of SHA-256 and is covered by tests, not by Kani or Lean. Proving that a payee is absent would need a sorted tree with adjacent-leaf proofs; that is a possible later design, not part of this version.
