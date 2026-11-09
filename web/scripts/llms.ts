@@ -38,7 +38,7 @@ export function readmeIntro(readme: string): string {
   return lines.slice(1, end).join('\n').trim();
 }
 
-const README_SECTIONS = ['What is different', 'The result', 'The problem', 'Proven', 'Verify in 5 commands', 'Limits', 'Deployed ids and hashes'];
+const README_SECTIONS = ['What is different', 'The result', 'The problem', 'Proven', 'Verify in 5 commands', 'AIRLOCK Credit', 'Limits', 'Deployed ids and hashes'];
 
 function tableText(t: Table, rows?: (cells: string[]) => boolean): string {
   const body = t.rows.filter((r) => rows === undefined || rows(r.cells)).map((r) => `| ${r.cells.join(' | ')} |`);

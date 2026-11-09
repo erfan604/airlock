@@ -14,6 +14,14 @@ A signing gate for AI agent wallets on NEAR. Every value in a payment request, t
 
 An email tells your agent that your usual supplier's bill went up. The payee is the right one and is in your address book, only the amount is doctored, and it is under your per-payment cap. A caps guard pays it because the amount is under the cap, an allowlist or blocklist guard pays it because the payee is listed, and a model that screens the text stops it when it happens to notice. AIRLOCK asks where the amount came from instead, so an amount read from the email that is over the cap for amounts read from text waits for your tap [C5]. In our bench, 68 of the 69 attacker payments to an unprotected agent were this kind (a doctored amount or a faked condition toward a payee already in the book), the caps and blocklist guards we rebuilt paid in 67 and 68 runs, and strict mode paid in 0 of 250 [C6]. Default mode still paid in 10 runs, all one case where the injected amount fitted the cap for amounts read from text, and strict mode holds that case too [C6]. The five scam emails of the Try page, with what a payee-list guard would do for each, are in its table "All five emails at a glance".
 
+## AIRLOCK Credit
+
+LPs deposit NEAR in a pool contract, and an agent borrows through a card: an AIRLOCK policy that the issuer owns, with the borrower as its approver and the pool as its sponsor [C21]. The card is a normal AIRLOCK policy, so its Base lane is the one shown in [C10] and [C2b] and its Solana lane the one in the Solana lane section of `docs/EVIDENCE.md`, and this page shows no credit card spending on either chain.
+
+A borrower who asks his agent to pay his own account cannot approve it, because the approver may approve only a payee that is in the issuer's book [C21]. On testnet that approve reverted with the contract's own text [C19]. LPs earn the fee: an LP deposited 3 NEAR and withdrew 3.03 NEAR after the borrower repaid with a fee [C19]. A line that is not repaid defaults after its due date, the collateral is seized and the rest is booked as a loss, and on testnet a sweep of the paused card recovered that loss [C19]. While a line is past due or a loss is unrecovered the pool refuses deposits, and shares are held for a minimum time after a deposit, so a newcomer cannot buy cheap before a repay or a recovery [C20]. The pool's rules are pinned by 42 unit tests and a sandbox suite [C20].
+
+What this does not show: everything ran on NEAR testnet between our own accounts; the issuer picks the borrowers, limits and collateral and is trusted; losses beyond the collateral fall on the LPs; staking, share tokens, Passport and Intents funding are not shipped; and the crate is not yet in `scripts/check.sh`, so a green `scripts/check.sh full` does not cover its tests (`docs/KNOWN_LIMITATIONS.md`).
+
 ## Run it, use it, verify it
 
 Provenance-gated signing for AI agent wallets on NEAR: a policy contract builds each transaction and asks the MPC signer for a signature when the owner's limits allow it or the owner approves the exact stored request.
@@ -176,6 +184,9 @@ Each line links to the row of `docs/CLAIMS.md` that has the command and the expe
 - [C15] The model report of the planner passes its checks offline against a stored fixture of one live fetch; it covers the instance that answered that request and no single completion [C15].
 - [C17] With the private book, no view, raw state key or event of the policy contract names a payee that no payment has named, nor its salt, label or numbers (a paid payee is public, a task names its payees in the call arguments, and a model that types a guessed account id learns its book status through a real capped payment) [C17].
 - [C18] A request counts as an address-book payee only with a proof that verifies for its own payee against the current book root; a withheld, outdated or foreign proof leaves the payee new and the owner is asked [C18].
+- [C19] AIRLOCK Credit ran on NEAR testnet between our own accounts: an LP earned a fee, the borrower's approve of a payment to his own account reverted, deposits were refused while a line was past due and before a loss was recovered, and a default seized the collateral and a sweep recovered the loss; the card's Base and Solana lanes are shown separately [C19].
+- [C20] The credit pool's rules are pinned by unit tests and a sandbox suite; the crate is not yet in `scripts/check.sh` [C20].
+- [C21] A borrower who is the card's approver cannot approve a payment to a payee outside the issuer's book [C21].
 
 ## Results
 
