@@ -390,7 +390,7 @@ function Cards({ pool, selected, onSelect, positions, labels }: { pool: PoolView
       // a card faces the viewer, so its face reads from any side of the orbit
       obj.lookAt(camera.position);
       const used = ratio(line.drawn, line.limit);
-      const dim = line.state === 'repaid' || line.state === 'closed' ? 0.25 : 1;
+      const dim = line.state === 'repaid' ? 0.25 : 1;
       const col = line.state === 'defaulted' ? hex(COLOR.refused) : hex(CHAIN_COLOR[placed.chain]);
       tp.setXYZ(i * 2, 0, 0, 0);
       tp.setXYZ(i * 2 + 1, p[0], p[1], p[2]);

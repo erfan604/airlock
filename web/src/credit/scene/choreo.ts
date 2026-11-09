@@ -283,5 +283,18 @@ export function stepFlight(f: Flight, now: number, prev: number): Step {
 /** Settles held flights: a paid or refused event naming a held request frees that flight, so it passes or it breaks. */
 export function settle(flights: Flight[], e: CreditEvent, now: number): void {
   if (e.requestId === null || (e.kind !== 'card_paid' && e.kind !== 'card_refused')) return;
-  for (const f of flights) if (f.kind === 'held' && f.requestId === e.requestId && f.settledAt === null) f.settledAt = now;
+  for (const f of flights) {
+    if (f.kind !== 'held' || f.requestId !== e.requestId || f.settledAt !== null) continue;
+    if (e.kind === 'card_paid') f.settledAt = now;
+    else {
+      // turned down: the held particle breaks on the ring it hangs on
+      const ring = f.path[1] ?? f.path[0] ?? [0, 0, 0];
+      f.kind = 'refuse';
+      f.t0 = now;
+      f.dur = 0.5;
+      f.path = [ring, ring];
+      f.ringAt = 1;
+      f.color = COLOR.refused;
+    }
+  }
 }

@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Page } from 'playwright';
 import chain from '../fixtures/chain-policy-v3.json' with { type: 'json' };
+import { CREDIT_CARD } from '../src/credit/net.ts';
 import { NEAR_RPC } from '../csp.ts';
 import { clipAudit } from './audit.ts';
 import type { E2E } from './types.ts';
@@ -102,7 +103,7 @@ const run: E2E = async ({ page, baseUrl }) => {
 
     // a pending card read from the chain, before any wallet: the values and the labels of the recorded request, no signing button
     await open(OWNER);
-    assert.equal(await id(page, 'approvals-policy').innerText(), 'Held requests on the demo policy');
+    assert.equal(await id(page, 'approvals-policy').innerText(), 'Held requests on the credit line policy');
     assert.equal(await id(page, 'card-title').innerText(), 'Pay 9.4 NEAR to near:accountant.erfan-airlock.testnet?');
     assert.equal(await id(page, 'arg-to').textContent(), 'near:accountant.erfan-airlock.testnet');
     assert.equal(await id(page, 'arg-amount').textContent(), '9.4');
@@ -125,7 +126,7 @@ const run: E2E = async ({ page, baseUrl }) => {
     const sent = await calls();
     assert.equal(sent.length, 1, 'one wallet call');
     const call = sent[0] as Call;
-    assert.equal(call.receiverId, chain.contract);
+    assert.equal(call.receiverId, CREDIT_CARD, 'the wallet signs a call to the policy of the page');
     assert.equal(call.signerId, undefined);
     assert.equal(call.actions.length, 1);
     const action = call.actions[0] as Call['actions'][number];

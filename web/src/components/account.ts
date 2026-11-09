@@ -39,3 +39,8 @@ export const labelOwner = (text: string): string => text.replace(OWNER_TOKEN, (m
 
 /** `labelOwner` on the hosted site; the live console shows its own server's text exactly as it is. */
 export const hostedText = (text: string): string => (STATIC ? labelOwner(text) : text);
+
+/** An account as visible text: the owner's own names are a plain label, any other account is shown without its `.testnet` suffix (the word stays out of the design; the link carries the full id). */
+export function accountText(id: string, what = 'demo account'): string {
+  return /erfan/i.test(id) ? what : id.replace(/\.testnet$/, '');
+}

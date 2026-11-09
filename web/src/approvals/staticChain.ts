@@ -1,14 +1,15 @@
 // AIR-318: what the hosted site reads from the chain with no runtime: the policy account of the page, the owner, the pending requests as card data,
 // and who may act. Everything goes through the console's one RPC client (chain/rpc.ts) and the existing loader of the approvals route.
 import type { RequestView } from '@airlock/runtime/chain-types';
+import { CREDIT_CARD } from '../credit/net.ts';
 import { rpcView } from '../chain/rpc.ts';
-import { rpcGetPending } from '../wallet/status.ts';
+import { rpcGetPending, rpcGetRequest } from '../wallet/status.ts';
 import type { StatusConfig } from '../wallet/status.ts';
 import { loadApprovals } from './ApprovalsRoute.tsx';
 import type { ApprovalsData } from './ApprovalsRoute.tsx';
 
 /** The policy account of the README's live demo. */
-export const DEFAULT_POLICY = 'policy-v3.erfan-airlock.testnet';
+export const DEFAULT_POLICY = CREDIT_CARD;
 
 /** A NEAR testnet account: lowercase parts joined by `.`, `-` or `_`, at most 64 characters, ending in `.testnet`. Anything else is refused, so the page never reads or signs for a mainnet account. */
 const TESTNET_ACCOUNT = /^(?:[a-z0-9]+[-_])*[a-z0-9]+(?:\.(?:[a-z0-9]+[-_])*[a-z0-9]+)*\.testnet$/;
@@ -33,6 +34,23 @@ export async function readStaticChain(cfg: StatusConfig): Promise<StaticRead> {
   if (typeof ownerId !== 'string' || ownerId === '') throw new Error('get_policy has no owner_id');
   const data = await loadApprovals({ pending: rpcGetPending(cfg), view, evidence: async () => null });
   return { ownerId, data };
+}
+
+/** How many pending numbers the history reads at most (`get_request` by number, from 1 until the first gap). */
+export const HISTORY_MAX = 20;
+
+/**
+ * The requests that are no longer pending, oldest first: the held payments that were rejected, expired or approved. They come from `get_request` by
+ * pending number, one view per number, so no event feed is needed. A failed read fails the whole read, the page then shows no history.
+ */
+export async function readHistory(cfg: StatusConfig, read: (id: string) => Promise<RequestView | null> = rpcGetRequest(cfg)): Promise<RequestView[]> {
+  const out: RequestView[] = [];
+  for (let i = 1; i <= HISTORY_MAX; i += 1) {
+    const v = await read(String(i));
+    if (v === null) break;
+    if (v.state !== 'Pending' && v.tombstone !== true) out.push(v);
+  }
+  return out;
 }
 
 export type Access = { kind: 'signed-out' } | { kind: 'owner'; account: string } | { kind: 'viewer'; account: string };

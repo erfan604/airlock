@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Page } from 'playwright';
 import { FIXTURE_POOL } from '../src/credit/fixture.ts';
+import { CREDIT_POOL } from '../src/credit/net.ts';
 import { clipAudit } from './audit.ts';
 import type { E2E } from './types.ts';
 
@@ -57,7 +58,7 @@ const run: E2E = async ({ page, baseUrl }) => {
     await page.setViewportSize(viewport);
 
     // 1. the fixture: badged, the scene runs, the ticker fills, a card can be picked
-    await page.goto(`${baseUrl}/credit/`);
+    await page.goto(`${baseUrl}/credit/?pool=fixture`);
     await id('credit-badge', page).waitFor();
     assert.equal(await id('credit-badge', page).getAttribute('data-source'), 'fixture');
     assert.ok((await id('credit-badge', page).innerText()).startsWith('Fixture data'), 'the badge says fixture first');
@@ -89,6 +90,15 @@ const run: E2E = async ({ page, baseUrl }) => {
     // 2. a live pool (mocked RPC): live badge, the numbers, the wallet states
     await page.unrouteAll();
     await routeChain(page, 'live');
+    // no pool in the address: the page reads the live pool of net.ts
+    const asked: string[] = [];
+    await page.route('https://test.rpc.fastnear.com/**', (r) => {
+      asked.push((JSON.parse(r.request().postData() ?? '{}') as { params?: { account_id?: string } }).params?.account_id ?? '');
+      return r.fulfill({ status: 200, contentType: 'application/json', headers: CORS, body: poolBody() });
+    });
+    await page.goto(`${baseUrl}/credit/`);
+    await page.waitForFunction(() => document.querySelector('[data-testid="credit-badge"]')?.getAttribute('data-source') === 'live');
+    assert.ok(asked.includes(CREDIT_POOL), `the default page reads ${CREDIT_POOL}, asked ${asked.join(' ')}`);
     await page.goto(`${baseUrl}/credit/?pool=pool.test.testnet`);
     await page.waitForFunction(() => document.querySelector('[data-testid="credit-badge"]')?.getAttribute('data-source') === 'live');
     assert.ok((await id('credit-badge', page).innerText()).startsWith('Live, reading the pool contract'));
@@ -159,7 +169,7 @@ const run: E2E = async ({ page, baseUrl }) => {
   // 4. reduced motion: the poster, no canvas, a button to play
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto(`${baseUrl}/credit/`);
+  await page.goto(`${baseUrl}/credit/?pool=fixture`);
   await id('credit-poster', page).waitFor();
   await page.waitForFunction(() => document.querySelector('[data-testid="credit-stage"]')?.getAttribute('data-mode') === 'poster');
   assert.equal(await id('credit-canvas', page).count(), 0, 'no canvas under reduced motion');
@@ -177,7 +187,7 @@ const run: E2E = async ({ page, baseUrl }) => {
       return (orig as (k: string, ...r: unknown[]) => unknown).call(this, kind, ...rest) as never;
     } as typeof orig;
   });
-  await page.goto(`${baseUrl}/credit/`);
+  await page.goto(`${baseUrl}/credit/?pool=fixture`);
   await id('credit-poster', page).waitFor();
   await page.waitForFunction(() => document.querySelector('[data-testid="credit-stage"]')?.getAttribute('data-mode') === 'diagram');
   assert.equal(await id('play-scene', page).count(), 0);

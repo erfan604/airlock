@@ -16,11 +16,11 @@ export const FIXTURE_NOW = 1_794_000_000_000;
 export function fixturePool(nowMs: number): PoolView {
   const due = (days: number): string => String(nowMs + days * DAY);
   const lines: Line[] = [
-    { card: 'card-ledger.fixture', borrower: 'ledger-agent.fixture', limit: NEAR(600), drawn: NEAR(400), returned: NEAR(150), feeBps: 100, dueMs: due(21), state: 'active' },
-    { card: 'card-scout.fixture', borrower: 'scout-agent.fixture', limit: NEAR(400), drawn: NEAR(280), returned: NEAR(60), feeBps: 110, dueMs: due(14), state: 'active' },
+    { card: 'card-ledger.fixture', borrower: 'ledger-agent.fixture', limit: NEAR(600), drawn: NEAR(400), returned: NEAR(150), feeBps: 100, dueMs: due(21), state: 'open' },
+    { card: 'card-scout.fixture', borrower: 'scout-agent.fixture', limit: NEAR(400), drawn: NEAR(280), returned: NEAR(60), feeBps: 110, dueMs: due(14), state: 'open' },
     { card: 'card-courier.fixture', borrower: 'courier-agent.fixture', limit: NEAR(500), drawn: NEAR(320), returned: NEAR(320), feeBps: 100, dueMs: due(3), state: 'repaid' },
-    { card: 'card-atlas.fixture', borrower: 'atlas-agent.fixture', limit: NEAR(300), drawn: NEAR(300), returned: NEAR(40), feeBps: 120, dueMs: due(9), state: 'active' },
-    { card: 'card-relay.fixture', borrower: 'relay-agent.fixture', limit: NEAR(1000), drawn: NEAR(800), returned: NEAR(30), feeBps: 90, dueMs: due(30), state: 'active' },
+    { card: 'card-atlas.fixture', borrower: 'atlas-agent.fixture', limit: NEAR(300), drawn: NEAR(300), returned: NEAR(40), feeBps: 120, dueMs: due(9), state: 'open' },
+    { card: 'card-relay.fixture', borrower: 'relay-agent.fixture', limit: NEAR(1000), drawn: NEAR(800), returned: NEAR(30), feeBps: 90, dueMs: due(30), state: 'open' },
   ];
   return {
     assets: NEAR(5_000),

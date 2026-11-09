@@ -3,6 +3,7 @@
 // visitor (and every expired request) sees the card with no buttons. The owner is whoever `get_policy` names; a connected account that is anyone
 // else is view only. The wallet signs one transaction to the policy contract (wallet/approve.ts) and the card shows its hash with an explorer link.
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { RequestView } from '@airlock/runtime/chain-types';
 import { NEAR_RPC } from '../../csp.ts';
 import { PRERENDER, url } from '../static.ts';
 import { revealInstruction } from '../wallet/capabilities.ts';
@@ -14,8 +15,9 @@ import { ApprovalCard, bookDeps, merge } from './ApprovalsRoute.tsx';
 import { rpcView } from '../chain/rpc.ts';
 import type { Actions, ApprovalsData } from './ApprovalsRoute.tsx';
 import type { ApproveResult } from './Card.tsx';
-import { explorerAccount, shownAccount } from '../components/account.ts';
-import { DEFAULT_POLICY, accessOf, explorerTx, isExpired, policyFromSearch, readStaticChain } from './staticChain.ts';
+import { accountText, explorerAccount } from '../components/account.ts';
+import { REASON } from '../replay/outcome.ts';
+import { DEFAULT_POLICY, accessOf, explorerTx, isExpired, policyFromSearch, readHistory, readStaticChain } from './staticChain.ts';
 import type { Access } from './staticChain.ts';
 import { VaultDrop } from './VaultDrop.tsx';
 
@@ -34,17 +36,67 @@ export type StaticViewProps = {
   connectError: string | null;
   /** by pending number */
   txs: Readonly<Record<string, TxRecord>>;
+  /** the requests that are no longer pending (rejected, expired, approved), oldest first; absent while they are being read */
+  history?: readonly RequestView[];
   /** reload the cards after the owner loads a book file (AIR-326) */
   onReload?(): void;
 };
 
-/** The policy as the heading prints it: a name that contains the owner's is a neutral label linked to the explorer, any other name is shown as it is. */
-function PolicyName({ policy }: { policy: string }) {
-  const link = explorerAccount(policy);
-  if (shownAccount(policy, 'the demo policy') === policy || link === null) return <>{policy}</>;
+const STATE_WORD: Record<string, string> = {
+  Rejected: 'Rejected',
+  Expired: 'Expired unanswered',
+  Blocked: 'Blocked',
+  Executing: 'Approved, paying',
+  Executed: 'Approved and paid',
+  Retryable: 'Approved, payment retrying',
+  Failed: 'Approved, payment failed',
+};
+
+/** The payee of an earlier request: a plain name linked to the explorer (the owner's own names get a label), the full id in the link target only. */
+function Payee({ payee }: { payee: string }) {
+  const id = payee.replace(/^near:/, '');
+  const link = explorerAccount(id);
+  const text = accountText(id);
+  if (link === null) return <>{text}</>;
   return (
     <a href={link} target="_blank" rel="noopener noreferrer">
-      the demo policy
+      {text}
+    </a>
+  );
+}
+
+/** What the policy has already settled: each held payment with its payee, its amount, why it was held and how it ended. Read from the chain, never written here. */
+function History({ history }: { history: readonly RequestView[] }) {
+  if (history.length === 0) return null;
+  return (
+    <section className="approval-item" aria-labelledby="approvals-history-h" data-testid="approvals-history">
+      <h2 id="approvals-history-h" className="approvals-subtitle">
+        Earlier requests
+      </h2>
+      <ol className="approvals-history">
+        {history.map((v) => (
+          <li key={v.request_id} data-testid="history-row" data-state={v.state}>
+            <span className="approvals-history-state">{STATE_WORD[v.state] ?? v.state}</span>{' '}
+            {v.display === null ? 'a payment' : `${v.display.amount_decimal} ${v.display.asset_symbol}`} to <Payee payee={v.payee} />
+            {v.reason === null ? '' : `. ${REASON[v.reason] ?? v.reason}`}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/**
+ * The policy as the heading prints it: the live credit line's policy and the owner's own demo policy get a plain label, any other policy its name
+ * without the `.testnet` suffix; each is linked to the explorer with the full id in the link target.
+ */
+function PolicyName({ policy }: { policy: string }) {
+  const link = explorerAccount(policy);
+  const text = policy === DEFAULT_POLICY ? 'the credit line policy' : /erfan/i.test(policy) ? 'the demo policy' : accountText(policy);
+  if (link === null) return <>{text}</>;
+  return (
+    <a href={link} target="_blank" rel="noopener noreferrer">
+      {text}
     </a>
   );
 }
@@ -52,10 +104,10 @@ function PolicyName({ policy }: { policy: string }) {
 function AccessLine({ access, ownerId, onConnect, connecting, connectError }: Pick<StaticViewProps, 'access' | 'ownerId' | 'onConnect' | 'connecting' | 'connectError'>) {
   const text =
     access.kind === 'owner'
-      ? `Signed in as ${shownAccount(access.account)}, the owner of this policy.`
+      ? `Signed in as ${accountText(access.account)}, the owner of this policy.`
       : access.kind === 'viewer'
-        ? `View only. You are connected as ${shownAccount(access.account)}; the owner of this policy is ${shownAccount(ownerId)}.`
-        : `View only. Connect the owner wallet (${shownAccount(ownerId)}) to approve or reject.`;
+        ? `View only. You are connected as ${accountText(access.account)}; the owner of this policy is ${accountText(ownerId)}.`
+        : `View only. Connect the owner wallet (${accountText(ownerId)}) to approve or reject.`;
   return (
     <div className="approval-item">
       <p className="approvals-reveal" data-testid="access" data-access={access.kind}>
@@ -75,7 +127,7 @@ function AccessLine({ access, ownerId, onConnect, connecting, connectError }: Pi
   );
 }
 
-export function StaticApprovalsView({ policy, ownerId, data, access, actions, nowMs, onConnect, onDone, connecting, connectError, txs, onReload }: StaticViewProps) {
+export function StaticApprovalsView({ policy, ownerId, data, access, actions, nowMs, onConnect, onDone, connecting, connectError, txs, onReload, history }: StaticViewProps) {
   const reveal = revealInstruction(PRIMARY_WALLET_ID);
   const now = BigInt(nowMs ?? Date.now());
   return (
@@ -127,6 +179,7 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
           </div>
         );
       })}
+      {history === undefined ? null : <History history={history} />}
       {data.more > 0 ? <p className="approvals-more" data-testid="approvals-more">{`${data.more} more held`}</p> : null}
     </main>
   );
@@ -164,6 +217,7 @@ export function StaticApprovals() {
   const [connectError, setConnectError] = useState<string | null>(null);
   const [txs, setTxs] = useState<Record<string, TxRecord>>({});
   const [acted] = useState(() => new Set<string>());
+  const [history, setHistory] = useState<readonly RequestView[] | undefined>(undefined);
 
   const load = useCallback(() => {
     if (!choice.ok) return;
@@ -178,6 +232,20 @@ export function StaticApprovals() {
   useEffect(() => {
     load();
   }, [load]);
+  // the settled requests are read once after the cards, with a flag for a page that unmounts; a failed read shows no history
+  useEffect(() => {
+    if (!choice.ok) return undefined;
+    let live = true;
+    readHistory(cfg).then(
+      (rows) => {
+        if (live) setHistory(rows);
+      },
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [choice.ok, cfg]);
 
   const actions = useMemo<Actions>(() => {
     const inner = makeApprove({ wallet: currentWallet, contractId: policy, read: rpcGetRequest(cfg), ...bookDeps(rpcView(cfg)) });
@@ -220,7 +288,7 @@ export function StaticApprovals() {
     return (
       <main className="page approvals" data-testid="approvals-badpolicy">
         <h1 className="approvals-title">Held requests</h1>
-        <p className="approvals-empty">{`The policy in the address must be a NEAR test-network account name. Without it this page reads the demo policy.`}</p>
+        <p className="approvals-empty">{`The policy in the address must be a NEAR test-network account name. Without it this page reads the credit line policy.`}</p>
       </main>
     );
   }
@@ -232,7 +300,7 @@ export function StaticApprovals() {
           The list could not be refreshed. What you see may be out of date.
         </p>
       ) : null}
-      <StaticApprovalsView policy={policy} ownerId={read.ownerId} data={read.data} access={accessOf(account, read.ownerId)} actions={actions} onConnect={onConnect} onDone={onDone} connecting={connecting} connectError={connectError} txs={txs} onReload={load} />
+      <StaticApprovalsView policy={policy} ownerId={read.ownerId} data={read.data} access={accessOf(account, read.ownerId)} actions={actions} onConnect={onConnect} history={history} onDone={onDone} connecting={connecting} connectError={connectError} txs={txs} onReload={load} />
     </>
   );
 }

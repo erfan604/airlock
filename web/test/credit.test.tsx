@@ -3,7 +3,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { eventsOfTx } from '../src/credit/chain.ts';
+import { eventsOfTx, readLp, readPool } from '../src/credit/chain.ts';
+import { CREDIT_CARD, CREDIT_NET, CREDIT_POOL } from '../src/credit/net.ts';
+import { DEFAULT_POLICY, readHistory } from '../src/approvals/staticChain.ts';
 import { MoneyPanel, Stats, Ticker, agoText } from '../src/credit/CreditPage.tsx';
 import { FIXTURE_NOW, FIXTURE_POOL, fixtureEvent, fixtureHistory } from '../src/credit/fixture.ts';
 import { LinesTable, Passports } from '../src/credit/CreditPage.tsx';
@@ -11,13 +13,13 @@ import { explorerAccount, shownAccount } from '../src/credit/model.ts';
 import { parseLp, assetsFor, bps, derive, formatNear, parseEventLog, parseNear, parsePool, passportOf, percent, refusedSum, returnBps, sharesFor } from '../src/credit/model.ts';
 import type { CreditEvent } from '../src/credit/model.ts';
 import { HELD_TIMEOUT, flightsOf, ringPos, rosterOf, settle, shatter, stepFlight, worldPos } from '../src/credit/scene/choreo.ts';
-import { mergeEvents, nextDelay, poolFromSearch } from '../src/credit/useCredit.ts';
+import { DEFAULT_POOL, mergeEvents, nextDelay, poolFromSearch } from '../src/credit/useCredit.ts';
 import { depositCall, sendPoolCall, withdrawCall } from '../src/credit/wallet.ts';
 
 const NEAR = (n: number): string => (BigInt(n) * 10n ** 24n).toString();
 const viewJson = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
   assets: NEAR(100), shares: NEAR(100), idle: NEAR(60), staked: NEAR(10), lent: NEAR(30), fees_earned: NEAR(2), losses: '0', share_price: '1020000000000000000000000',
-  lines: [{ card: 'card-a.testnet', borrower: 'bob.testnet', limit: NEAR(50), drawn: NEAR(30), returned: '0', fee_bps: 120, due_ms: '1794000000000', state: 'active' }],
+  lines: [{ card: 'card-a.testnet', borrower: 'bob.testnet', limit: NEAR(50), drawn: NEAR(30), returned: '0', fee_bps: 120, due_ms: '1794000000000', state: 'Open' }],
   ...over,
 });
 
@@ -206,9 +208,9 @@ test('polling: back off after failures, cap, merge events by id, accept only a t
   assert.equal(mergeEvents([a], [a]).length, 1);
   assert.deepEqual(mergeEvents([b], [a]).map((e) => e.id), [a.id, b.id]);
   assert.equal(poolFromSearch('?pool=pool.test.testnet'), 'pool.test.testnet');
-  assert.equal(poolFromSearch('?pool=evil.near'), null);
-  assert.equal(poolFromSearch('?pool=a b.testnet'), null);
-  assert.equal(poolFromSearch(''), null);
+  assert.equal(poolFromSearch('?pool=evil.near'), CREDIT_POOL, 'a name that is not a testnet account falls back to the live pool');
+  assert.equal(poolFromSearch('?pool=a b.testnet'), CREDIT_POOL);
+  assert.equal(poolFromSearch(''), CREDIT_POOL);
 });
 
 test('agoText words', () => {
@@ -232,7 +234,7 @@ test('the ticker draws an explorer link only for a bare base58 transaction hash 
   const good = '8'.repeat(44);
   const html = (tx: string | null): string => renderToStaticMarkup(<Ticker events={[ev(tx)]} nowMs={5} live="live" />);
   assert.ok(html(good).includes(`href="https://testnet.nearblocks.io/txns/${good}"`));
-  for (const bad of [null, 'short', '0'.repeat(44), `${good}"><script>`, 'a'.repeat(100), `${good}/../x`]) assert.ok(!html(bad).includes('<a '), String(bad));
+  for (const bad of [null, 'short', '0'.repeat(44), `${good}"><script>`, 'a'.repeat(100), `${good}/../x`]) assert.ok(!html(bad).includes('/txns/'), String(bad));
 });
 
 test('parseLp reads the LP shares from get_lp and refuses anything else', () => {
@@ -273,4 +275,91 @@ test('explorerAccount rejects injection, wrong suffixes and over-long names', ()
     'a.near', 'a.mainnet', 'testnet', '.testnet', 'a.TESTNET', 'a.testnet ',
     `${'a'.repeat(60)}.testnet`, `${'f'.repeat(63)}`, `${'F'.repeat(64)}`, '',
   ]) assert.equal(explorerAccount(bad), null, JSON.stringify(bad));
+});
+
+// the real get_pool answer of the live pool (read from NEAR testnet on 2026-11-08), with the contract's own capitalised line state
+const LIVE_POOL = {
+  assets: '2020000000000000000000000', shares: '2000000000000000000000000', idle: '2020000000000000000000000', staked: '0', lent: '0', impaired: '0',
+  fees_earned: '50000000000000000000000', losses: '0', collateral_held: '0', collateral_bps: 3000, share_price: '1010000000000000000000000',
+  lines: [{ card: 'card.airlock-credit-c1108.testnet', borrower: 'borrower.airlock-credit-c1108.testnet', limit: '1000000000000000000000000', drawn: '1000000000000000000000000', returned: '0', fee_bps: 1000, due_ms: '1794192114936', collateral: '0', state: 'Defaulted' }],
+};
+
+test('AIR-330: the live accounts come from one constant, the page reads that pool by default and ?pool=fixture still gives the fixture', () => {
+  assert.equal(CREDIT_POOL, `pool.${CREDIT_NET}.testnet`);
+  assert.equal(CREDIT_CARD, `card.${CREDIT_NET}.testnet`);
+  assert.equal(DEFAULT_POOL, CREDIT_POOL);
+  assert.equal(DEFAULT_POLICY, CREDIT_CARD);
+  assert.equal(poolFromSearch(''), CREDIT_POOL);
+  assert.equal(poolFromSearch('?pool=fixture'), null);
+  assert.equal(poolFromSearch('?pool=other.testnet'), 'other.testnet');
+});
+
+test('AIR-330: the real get_pool answer parses: yocto strings kept, the Defaulted line, the extra fields ignored', () => {
+  const p = parsePool(LIVE_POOL);
+  assert.equal(p.assets, '2020000000000000000000000');
+  assert.equal(p.sharePrice, '1010000000000000000000000');
+  assert.equal(p.losses, '0');
+  assert.equal(p.lines[0]?.state, 'defaulted');
+  assert.equal(returnBps(p.sharePrice), 100n);
+  assert.equal(formatNear(p.assets), '2.02');
+  assert.equal(formatNear(p.feesEarned), '0.05');
+  assert.equal(parsePool({ ...LIVE_POOL, lines: [{ ...LIVE_POOL.lines[0], state: 'Collecting' }, { ...LIVE_POOL.lines[0], card: 'b.testnet', state: 'Open' }, { ...LIVE_POOL.lines[0], card: 'c.testnet', state: 'Repaid' }] }).lines.map((l) => l.state).join(), 'collecting,open,repaid');
+});
+
+test('AIR-330: readPool and readLp call get_pool and get_lp with the contract argument names', async () => {
+  const calls: { account: string; method: string; args: unknown }[] = [];
+  const fetchFn = (async (_url: string, init: { body: string }) => {
+    const q = (JSON.parse(init.body) as { params: { account_id: string; method_name: string; args_base64: string } }).params;
+    calls.push({ account: q.account_id, method: q.method_name, args: JSON.parse(atob(q.args_base64)) });
+    const answer = q.method_name === 'get_pool' ? LIVE_POOL : { shares: '5', value: '6' };
+    return new Response(JSON.stringify({ jsonrpc: '2.0', id: 'x', result: { result: Array.from(new TextEncoder().encode(JSON.stringify(answer))) } }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const cfg = { pool: CREDIT_POOL, rpcUrls: ['https://rpc.example'], fetch: fetchFn };
+  assert.equal((await readPool(cfg)).lines.length, 1);
+  assert.equal(await readLp(cfg, 'lp1.airlock-credit-c1108.testnet'), '5');
+  assert.deepEqual(calls, [
+    { account: CREDIT_POOL, method: 'get_pool', args: {} },
+    { account: CREDIT_POOL, method: 'get_lp', args: { account: 'lp1.airlock-credit-c1108.testnet' } },
+  ]);
+});
+
+test('AIR-330: the pool events and the card policy events map to the page events', () => {
+  const log = (standard: string, event: string, data: object): string => `EVENT_JSON:${JSON.stringify({ standard, version: '1.0.0', event, data: [data] })}`;
+  const pool = 'pool.airlock-credit-c1108.testnet';
+  const card = 'card.airlock-credit-c1108.testnet';
+  assert.deepEqual(parseEventLog(log('airlock-credit', 'line_opened', { card, borrower: 'b.testnet', limit: '7', fee_bps: 1000, due_ms: '1' }), 1, 'T', 0, pool)?.amount, '7');
+  assert.equal(parseEventLog(log('airlock-credit', 'defaulted', { card, seized: '3', loss: '4' }), 1, 'T', 0, pool)?.amount, '4');
+  assert.equal(parseEventLog(log('airlock-credit', 'swept', { card, amount: '9' }), 1, 'T', 0, pool)?.kind, 'swept');
+  assert.equal(parseEventLog(log('airlock-credit', 'card_registered', { card, borrower: 'b.testnet' }), 1, 'T', 0, pool), null, 'an event the page does not show is skipped');
+  const paid = parseEventLog(log('airlock', 'allowed', { request_id: 'r:0', asset: 'near', payee: 'near:m.testnet', amount: '5' }), 1, 'T', 0, card);
+  assert.deepEqual([paid?.kind, paid?.who, paid?.amount, paid?.chain, paid?.requestId], ['card_paid', card, '5', 'near', 'r:0']);
+  const held = parseEventLog(log('airlock', 'escalated', { request_id: 'r:1', id: '1', reason: 'UntrustedRecipient' }), 1, 'T', 1, card);
+  assert.deepEqual([held?.kind, held?.amount, held?.requestId], ['card_held', '0', 'r:1']);
+  assert.equal(parseEventLog(log('airlock', 'rejected', { request_id: 'r:1', id: '1' }), 1, 'T', 2, card)?.kind, 'card_refused');
+  assert.equal(parseEventLog(log('airlock', 'blocked', { request_id: 'r:2', reason: 'X' }), 1, 'T', 3, card)?.kind, 'card_refused');
+  assert.equal(parseEventLog(log('airlock', 'allowed', { request_id: 'r:0', asset: 'near', payee: 'p', amount: '5' }), 1, 'T', 0), null, 'a policy event needs the account that logged it');
+  assert.equal(parseEventLog(log('other', 'allowed', { amount: '5' }), 1, 'T', 0, card), null);
+});
+
+test('AIR-330: a held payment that is rejected breaks on its ring, one that is paid goes on', () => {
+  const [held] = flightsOf(evt('card_held', { requestId: 'r7', chain: 'near' }), 0, where('near'));
+  assert.ok(held);
+  settle([held], evt('card_refused', { id: 'x', requestId: 'r7' }), 6);
+  assert.equal(held.kind, 'refuse');
+  let broke = 0;
+  let prev = 6;
+  for (let t = 6; t <= 7.5; t += 0.02) {
+    if (stepFlight(held, t, prev).broke) broke += 1;
+    prev = t;
+  }
+  assert.equal(broke, 1);
+});
+
+test('AIR-330: the approvals history lists the settled requests by number and stops at the first gap', async () => {
+  const views: Record<string, unknown> = {
+    '1': { request_id: 'a:0', id: '1', state: 'Rejected', payee: 'near:attacker.x.testnet', amount: '5', reason: 'UntrustedRecipient', display: { asset_symbol: 'NEAR', amount_decimal: '0.5' }, created_ms: '1', agent: 'a', task_id: 't', asset: 'near', labels: { recipient: 1, amount: 1, pc: 1 } },
+    '2': { request_id: 'b:0', id: '2', state: 'Pending', payee: 'near:m.x.testnet', amount: '5', reason: 'NewRecipient', display: { asset_symbol: 'NEAR', amount_decimal: '0.5' }, created_ms: '1', agent: 'a', task_id: 't', asset: 'near', labels: { recipient: 1, amount: 1, pc: 1 } },
+  };
+  const rows = await readHistory({ contractId: CREDIT_CARD, rpcUrls: ['https://rpc.example'] }, async (id) => (views[id] === undefined ? null : ({ ...(views[id] as object) } as never)));
+  assert.deepEqual(rows.map((r) => r.state), ['Rejected'], 'a pending request is a card, not history');
 });

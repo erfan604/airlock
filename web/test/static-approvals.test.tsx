@@ -10,6 +10,7 @@ import correction from '../fixtures/card-correction.json' with { type: 'json' };
 import { loadApprovals } from '../src/approvals/ApprovalsRoute.tsx';
 import { approveArgs } from '../src/approvals/cardModel.ts';
 import { StaticApprovalsView } from '../src/approvals/StaticApprovals.tsx';
+import { CREDIT_CARD } from '../src/credit/net.ts';
 import { DEFAULT_POLICY, accessOf, explorerTx, isExpired, policyFromSearch, readStaticChain } from '../src/approvals/staticChain.ts';
 import { ROUTES } from '../src/routes.ts';
 
@@ -31,7 +32,7 @@ function recordedFetch(log: { method: string; args: unknown }[] = []): typeof fe
 }
 
 test('policyFromSearch: the default is the README policy, a testnet account in ?policy= is taken, anything else is refused', () => {
-  assert.equal(DEFAULT_POLICY, 'policy-v3.erfan-airlock.testnet');
+  assert.equal(DEFAULT_POLICY, CREDIT_CARD, 'the page reads the card policy of the live credit line');
   assert.deepEqual(policyFromSearch(''), { ok: true, policy: DEFAULT_POLICY });
   assert.deepEqual(policyFromSearch('?policy=mine.erfan-airlock.testnet'), { ok: true, policy: 'mine.erfan-airlock.testnet' });
   for (const bad of ['?policy=evil.near', '?policy=', '?policy=a b.testnet', '?policy=..testnet', '?policy=x.testnet%2Fy', '?policy=UPPER.testnet', `?policy=${'a'.repeat(70)}.testnet`]) {
@@ -129,7 +130,7 @@ test('view: a non-owner account sees the card and the words view only, with no b
   assert.ok(html.includes('data-testid="card"'));
   assert.ok(html.includes('data-testid="access" data-access="viewer"'));
   assert.ok(html.includes('View only'));
-  assert.ok(html.includes('someone.testnet'));
+  assert.ok(html.includes('someone'), 'the connected account is named without its .testnet suffix');
   assert.ok(!html.includes('data-testid="reject"') && !html.includes('data-testid="open-approve"') && !html.includes('data-testid="card-bar"'));
 });
 

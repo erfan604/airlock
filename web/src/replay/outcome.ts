@@ -6,7 +6,7 @@ import type { TraceRow, TraceState } from '../task/traceStore.ts';
 /** `money` is the short line in display type (`9.4 NEAR held`), `to` the payee key on its own line, or null. */
 export type Outcome = { stamp: VerdictState; reason: string | null; sentence: string; money: string; to: string | null };
 
-const REASON: Record<string, string> = {
+export const REASON: Record<string, string> = {
   OutsideTask: 'This payee is not in the task you signed.',
   OverTaskBound: 'The amount is more than is left of the task you signed, so it waits for you.',
   UntrustedTrigger: 'Whether to pay was decided by outside text, so it waits for you.',

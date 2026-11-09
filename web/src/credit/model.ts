@@ -5,7 +5,8 @@
 export const CHAINS = ['near', 'base', 'solana'] as const;
 export type Chain = (typeof CHAINS)[number];
 
-export const LINE_STATES = ['active', 'repaid', 'defaulted', 'closed', 'unknown'] as const;
+// the contract's states are Collecting, Open, Repaid and Defaulted (docs/design/credit.md); a name the page does not know shows as unknown
+export const LINE_STATES = ['collecting', 'open', 'repaid', 'defaulted', 'unknown'] as const;
 export type LineState = (typeof LINE_STATES)[number];
 
 export type Line = {
@@ -78,7 +79,7 @@ function parseLine(raw: unknown, i: number): Line {
   if (typeof borrower !== 'string' || !ACCOUNT.test(borrower)) throw new ShapeError(`line ${String(i)} borrower`);
   if (limit === null || drawn === null || returned === null || due === null) throw new ShapeError(`line ${String(i)} amounts`);
   if (typeof fee !== 'number' || !Number.isInteger(fee) || fee < 0 || fee > 10_000) throw new ShapeError(`line ${String(i)} fee_bps`);
-  const state = LINE_STATES.find((s) => s === raw['state']) ?? 'unknown';
+  const state = LINE_STATES.find((s) => s === String(raw['state']).toLowerCase()) ?? 'unknown';
   return { card, borrower, limit, drawn, returned, feeBps: fee, dueMs: due, state };
 }
 
@@ -115,11 +116,30 @@ export function parseLp(raw: unknown): string {
   return v;
 }
 
+/** The standard of a card policy's own events (docs/events.md); the pool's are `airlock-credit`. */
+const POLICY_STANDARD = 'airlock';
+const POOL_STANDARD = 'airlock-credit';
+
+/** The chain of a policy asset id: `near`, or an EVM or Solana asset named by its chain. null when the id says none of them. */
+function chainOfAsset(asset: unknown): Chain | null {
+  if (typeof asset !== 'string') return null;
+  const a = asset.toLowerCase();
+  if (a === 'near' || a.startsWith('near')) return 'near';
+  if (a.startsWith('base') || a.startsWith('evm') || a.startsWith('eth')) return 'base';
+  if (a.startsWith('sol')) return 'solana';
+  return null;
+}
+
 /** The log line prefix of NEP-297 events. */
 const EVENT_PREFIX = 'EVENT_JSON:';
 
-/** One contract log line as an event, or null when it is not a credit event. A line naming an unknown event is skipped, never guessed. */
-export function parseEventLog(line: string, atMs: number, tx: string | null, index: number): CreditEvent | null {
+/**
+ * One contract log line as an event, or null when it is not one the page shows. `executor` is the account that logged it. The pool's events (standard
+ * `airlock-credit`) map by name. The card policy's own events (standard `airlock`, docs/design/credit.md) map as: `allowed` is a payment, `escalated` a
+ * held payment, `blocked` and `rejected` (the borrower turned a held payment down) a refused one, with the card as `who`; the held and blocked events carry no amount, so theirs is 0. A line naming an unknown
+ * event is skipped, never guessed.
+ */
+export function parseEventLog(line: string, atMs: number, tx: string | null, index: number, executor: string | null = null): CreditEvent | null {
   if (!line.startsWith(EVENT_PREFIX)) return null;
   let body: unknown;
   try {
@@ -127,16 +147,28 @@ export function parseEventLog(line: string, atMs: number, tx: string | null, ind
   } catch {
     return null;
   }
-  if (!isObj(body) || body['standard'] !== 'airlock-credit') return null;
-  const kind = EVENT_KINDS.find((k) => k === body['event']);
+  if (!isObj(body)) return null;
   const data = Array.isArray(body['data']) ? body['data'][0] : undefined;
-  if (kind === undefined || !isObj(data)) return null;
+  if (!isObj(data)) return null;
+  const id = `${tx ?? 'nx'}:${String(index)}`;
+  const requestId = typeof data['request_id'] === 'string' && data['request_id'].length <= 100 ? data['request_id'] : null;
+  if (body['standard'] === POLICY_STANDARD) {
+    const kind = ({ allowed: 'card_paid', escalated: 'card_held', blocked: 'card_refused', rejected: 'card_refused' } as Record<string, EventKind | undefined>)[String(body['event'])];
+    if (kind === undefined || executor === null || !ACCOUNT.test(executor)) return null;
+    const amount = data['amount'] === undefined ? '0' : uint(data['amount']);
+    if (amount === null) return null;
+    return { id, kind, atMs, who: executor, amount, chain: chainOfAsset(data['asset']) ?? 'near', requestId, tx, fixture: false };
+  }
+  if (body['standard'] !== POOL_STANDARD) return null;
+  const kind = EVENT_KINDS.find((k) => k === body['event']);
+  if (kind === undefined) return null;
   const who = data['account'] ?? data['card'];
-  const amount = data['amount'] === undefined || data['amount'] === null ? '0' : uint(data['amount']);
+  // the amount a row shows: a line opening shows its limit, a default the loss (else the seized collateral)
+  const raw = data['amount'] ?? (kind === 'line_opened' ? data['limit'] : kind === 'defaulted' ? (data['loss'] ?? data['seized']) : undefined);
+  const amount = raw === undefined || raw === null ? '0' : uint(raw);
   if (typeof who !== 'string' || !ACCOUNT.test(who) || amount === null) return null;
   const chain = CHAINS.find((c) => c === data['chain']) ?? null;
-  const requestId = typeof data['request_id'] === 'string' && data['request_id'].length <= 100 ? data['request_id'] : null;
-  return { id: `${tx ?? 'nx'}:${String(index)}`, kind, atMs, who, amount, chain, requestId, tx, fixture: false };
+  return { id, kind, atMs, who, amount, chain, requestId, tx, fixture: false };
 }
 
 // Money below: BigInt only
@@ -230,12 +262,12 @@ export function refusedSum(events: readonly CreditEvent[]): bigint {
 export type Passport = { allowed: number; held: number; refused: number; repaid: number; defaulted: boolean; score: number };
 
 /** A card's record read from its events. The score is 0 to 100: on-time repayment and allowed spend raise it, refusals and a default cut it. Integer math. */
-export function passportOf(card: string, events: readonly CreditEvent[]): Passport {
+export function passportOf(card: string, events: readonly CreditEvent[], lineDefaulted = false): Passport {
   let allowed = 0;
   let held = 0;
   let refused = 0;
   let repaid = 0;
-  let defaulted = false;
+  let defaulted = lineDefaulted;
   for (const e of events) {
     if (e.who !== card) continue;
     if (e.kind === 'card_paid') allowed += 1;

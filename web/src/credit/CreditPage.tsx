@@ -11,6 +11,7 @@ import { readLp } from './chain.ts';
 import { connectWallet } from '../wallet/connector.ts';
 import { DEFAULT_POOL, poolFromSearch, useCredit } from './useCredit.ts';
 import type { CreditState } from './useCredit.ts';
+import { accountText } from '../components/account.ts';
 import { assetsFor, derive, explorerAccount, shownAccount, formatNear, parseNear, passportOf, percent, refusedSum, shortId, sharesFor } from './model.ts';
 import type { CreditEvent, EventKind, Line, PoolView } from './model.ts';
 import { depositCall, sendPoolCall, withdrawCall } from './wallet.ts';
@@ -43,14 +44,17 @@ const TONE: Record<EventKind, 'ok' | 'held' | 'bad' | 'plain' | 'fee'> = {
   repaid: 'fee',
   defaulted: 'bad',
 };
-/** An account name, never one that contains the owner's name: that one is shown as a neutral label and linked to the explorer. */
+/**
+ * An account as visible text and, when it is a real account, a link to the explorer: the text is a plain label for the owner's own names and the
+ * name without its `.testnet` suffix for any other (the full id is in the link target only).
+ */
 function Account({ id, max, what = 'demo account' }: { id: string; max: number; what?: string }) {
-  if (!/erfan/i.test(id)) return <>{shortId(id, max)}</>;
+  const text = /erfan/i.test(id) ? what : shortId(accountText(id), max);
   const link = explorerAccount(id);
-  if (link === null) return <>{what}</>;
+  if (link === null) return <>{text}</>;
   return (
-    <a href={link} target="_blank" rel="noopener noreferrer" aria-label={`View the ${what} on the explorer`}>
-      {what}
+    <a href={link} target="_blank" rel="noopener noreferrer" aria-label={`View ${text} on the explorer`}>
+      {text}
     </a>
   );
 }
@@ -128,6 +132,13 @@ function Stat({ label, value, note, testId }: { label: string; value: string; no
   );
 }
 
+const refusedCount = (events: readonly CreditEvent[]): number => events.filter((e) => e.kind === 'card_refused').length;
+/** The refused events of a card policy carry no amount (docs/design/credit.md), so the value is shown only when some event does. */
+const refusedNote = (events: readonly CreditEvent[]): string => {
+  const sum = refusedSum(events);
+  return sum > 0n ? `payments the airlock refused, ${formatNear(sum)} NEAR of them with a recorded amount` : 'payments the airlock refused, in the events below';
+};
+
 export function Stats({ pool, events, feed, nowMs }: { pool: PoolView; events: readonly CreditEvent[]; feed: boolean; nowMs: bigint }) {
   const d = derive(pool, nowMs);
   const fees = formatNear(pool.feesEarned);
@@ -146,7 +157,7 @@ export function Stats({ pool, events, feed, nowMs }: { pool: PoolView; events: r
             : `${percent(d.feeSplitBps)} from spend fees (${fees} NEAR), ${percent(10_000n - d.feeSplitBps)} from staking${staking === null ? ' (not reported yet)' : ` (${staking} NEAR)`}`
         }
       />
-      <Stat testId="stat-refused" label="Refused at the airlock" value={feed ? `${formatNear(refusedSum(events))} NEAR` : 'not read here'} note={feed ? 'sum of refused payments in the events below' : 'the event feed is read on the hosted site'} />
+      <Stat testId="stat-refused" label="Refused at the airlock" value={feed ? `${String(refusedCount(events))} refused` : 'not read here'} note={feed ? refusedNote(events) : 'the event feed is read on the hosted site'} />
       <Stat testId="stat-stolen" label="Stolen from LPs" value={`${formatNear(pool.losses)} NEAR`} note="losses the pool records: stolen payments and unrepaid defaults" />
     </dl>
   );
@@ -317,7 +328,7 @@ export function Ticker({ events, nowMs, live }: { events: readonly CreditEvent[]
               <span className="cr-ev-word">{WORD[e.kind]}</span>
               <span className="cr-ev-amt">{e.amount === '0' ? '' : `${formatNear(e.amount)} NEAR`}</span>
               <span className="cr-ev-who">
-                <Account id={e.who} max={26} />
+                <Account id={e.who} max={34} />
                 {e.chain === null ? '' : ` on ${CHAIN_NAME[e.chain]}`}
               </span>
               <span className="cr-ev-when">
@@ -341,7 +352,7 @@ export function Ticker({ events, nowMs, live }: { events: readonly CreditEvent[]
   );
 }
 
-const LINE_WORD: Record<Line['state'], string> = { active: 'Active', repaid: 'Repaid', defaulted: 'Defaulted', closed: 'Closed', unknown: 'Unknown' };
+const LINE_WORD: Record<Line['state'], string> = { collecting: 'Collecting collateral', open: 'Open', repaid: 'Repaid', defaulted: 'Defaulted', unknown: 'Unknown' };
 
 export function LinesTable({ lines, selected, onSelect, nowMs }: { lines: readonly Line[]; selected: string | null; onSelect(card: string): void; nowMs: bigint }) {
   return (
@@ -370,12 +381,12 @@ export function LinesTable({ lines, selected, onSelect, nowMs }: { lines: readon
               return (
                 <tr key={l.card} data-testid="line-row" data-state={l.state} aria-selected={selected === l.card}>
                   <th scope="row">
-                    <button type="button" className="cr-link" onClick={() => onSelect(l.card)} aria-label={`Show credit line ${shownAccount(l.card, 'demo line')} in the scene`} data-testid="line-select">
-                      {shortId(shownAccount(l.card, 'demo line'), 24)}
+                    <button type="button" className="cr-link" onClick={() => onSelect(l.card)} aria-label={`Show credit line ${accountText(l.card, 'demo line')} in the scene`} data-testid="line-select">
+                      {shortId(accountText(l.card, 'demo line'), 34)}
                     </button>
                   </th>
                   <td>
-                    <Account id={l.borrower} max={24} />
+                    <Account id={l.borrower} max={34} />
                   </td>
                   <td className="cr-num">{formatNear(l.limit, 0)}</td>
                   <td className="cr-num">{formatNear(l.drawn, 0)}</td>
@@ -406,7 +417,7 @@ export function Passports({ lines, events, fixture }: { lines: readonly Line[]; 
       </p>
       <ul className="cr-passes">
         {lines.map((l) => {
-          const p = passportOf(l.card, events);
+          const p = passportOf(l.card, events, l.state === 'defaulted');
           const r = 34;
           const c = 2 * Math.PI * r;
           return (
@@ -419,7 +430,7 @@ export function Passports({ lines, events, fixture }: { lines: readonly Line[]; 
                 </text>
               </svg>
               <div className="cr-pass-body">
-                <p className="cr-pass-name">{shortId(shownAccount(l.card, 'demo line'), 24)}</p>
+                <p className="cr-pass-name">{shortId(accountText(l.card, 'demo line'), 34)}</p>
                 <p className="cr-pass-line">{`${String(p.allowed)} allowed, ${String(p.held)} held, ${String(p.refused)} refused`}</p>
                 <p className="cr-pass-line">{p.defaulted ? 'Defaulted' : `${String(p.repaid)} repaid on time`}</p>
               </div>
@@ -566,7 +577,7 @@ export function CreditPage(): ReactElement {
                     </span>
                   ))}
                   <span className="cr-label cr-label-card" ref={(el) => { if (el === null) labels.current.delete('card'); else labels.current.set('card', el); }}>
-                    {sel === undefined ? '' : shortId(shownAccount(sel.card, 'demo line'), 24)}
+                    {sel === undefined ? '' : shortId(accountText(sel.card, 'demo line'), 34)}
                   </span>
                 </div>
               ) : null}
@@ -588,7 +599,7 @@ export function CreditPage(): ReactElement {
                 </>
               ) : sel !== undefined ? (
                 <>
-                  <p className="cr-note" data-testid="scene-selected">{`Credit line ${shortId(shownAccount(sel.card, 'demo line'), 26)}, ${percent(BigInt(sel.feeBps))} fee`}</p>
+                  <p className="cr-note" data-testid="scene-selected">{`Credit line ${shortId(accountText(sel.card, 'demo line'), 34)}, ${percent(BigInt(sel.feeBps))} fee`}</p>
                   <button type="button" className="cr-btn cr-btn-ghost" onClick={() => setSelected(null)} data-testid="scene-back">
                     Back to the network
                   </button>

@@ -19,11 +19,22 @@ export function SiteNav({ path }: { path: string }) {
   // a phone shows the strip scrolled: bring the current tab fully into the strip (the strip's own scroll, never the page's)
   const strip = useRef<HTMLUListElement>(null);
   useEffect(() => {
-    const ul = strip.current;
-    const tab = ul?.querySelector<HTMLElement>('[aria-current="page"]');
-    if (ul === null || ul === undefined || tab === null || tab === undefined) return;
-    const left = tab.offsetLeft - ul.offsetLeft;
-    if (left + tab.offsetWidth > ul.scrollLeft + ul.clientWidth - 28 || left < ul.scrollLeft) ul.scrollLeft = Math.max(0, left - (ul.clientWidth - tab.offsetWidth) / 2);
+    const adjust = (): void => {
+      const ul = strip.current;
+      const tab = ul?.querySelector<HTMLElement>('[aria-current="page"]');
+      if (ul === null || ul === undefined || tab === null || tab === undefined) return;
+      const left = tab.offsetLeft - ul.offsetLeft;
+      if (left + tab.offsetWidth > ul.scrollLeft + ul.clientWidth - 28 || left < ul.scrollLeft) ul.scrollLeft = Math.max(0, left - (ul.clientWidth - tab.offsetWidth) / 2);
+    };
+    adjust();
+    // the tabs change width when the web fonts arrive: place the current tab again then
+    let live = true;
+    void document.fonts?.ready.then(() => {
+      if (live) adjust();
+    });
+    return () => {
+      live = false;
+    };
   }, [path]);
   return (
     <nav className="site-nav" data-testid="site-nav" aria-label="Pages">

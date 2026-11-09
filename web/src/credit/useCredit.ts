@@ -5,11 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 import { NEAR_RPC } from '../../csp.ts';
 import { STATIC } from '../static.ts';
 import { readEvents, readPool } from './chain.ts';
+import { CREDIT_POOL } from './net.ts';
 import { fixtureEvent, fixtureHistory, fixturePool } from './fixture.ts';
 import type { CreditEvent, PoolView } from './model.ts';
 
-/** The pool account the page reads. null until AIR-328 is deployed: the page then runs on the fixture. A `?pool=<name>.testnet` overrides it. */
-export const DEFAULT_POOL: string | null = null;
+/** The pool account the page reads (AIRLOCK Credit on NEAR testnet, AIR-330). `?pool=<name>.testnet` reads another pool, `?pool=fixture` the badged fixture. */
+export const DEFAULT_POOL: string | null = CREDIT_POOL;
 
 export type CreditState =
   | { kind: 'loading' }
@@ -21,6 +22,7 @@ const POOL_NAME = /^[a-z0-9][a-z0-9._-]{1,60}\.testnet$/;
 
 export function poolFromSearch(search: string): string | null {
   const v = new URLSearchParams(search).get('pool');
+  if (v === 'fixture') return null;
   return v !== null && POOL_NAME.test(v) ? v : DEFAULT_POOL;
 }
 
@@ -92,7 +94,7 @@ export function useCredit(poolId: string | null): CreditState {
         let events: CreditEvent[] | null = null;
         if (STATIC) {
           try {
-            events = await readEvents({ pool: poolId });
+            events = await readEvents({ pool: poolId, cards: view.lines.map((l) => l.card) });
           } catch {
             events = null;
           }
