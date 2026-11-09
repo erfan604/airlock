@@ -153,6 +153,9 @@ step_if contracts/mock-mpc mock-mpc mock-mpc-clippy in_dir contracts/mock-mpc ca
 step_if contracts/airlock-policy policy policy-fmt in_dir contracts/airlock-policy cargo fmt --check
 step_if contracts/airlock-policy policy policy-clippy in_dir contracts/airlock-policy cargo clippy -q --all-targets -- -D warnings
 step_if contracts/airlock-policy policy policy-test in_dir contracts/airlock-policy cargo test -q --lib
+step_if contracts/airlock-credit credit credit-fmt in_dir contracts/airlock-credit cargo fmt --check                     # AIR-328
+step_if contracts/airlock-credit credit credit-clippy in_dir contracts/airlock-credit cargo clippy -q --all-targets -- -D warnings
+step_if contracts/airlock-credit credit credit-test in_dir contracts/airlock-credit cargo test -q --lib
 
 step_if package.json workspace workspace-typecheck pnpm -r typecheck
 step_if package.json workspace workspace-test pnpm -r test
@@ -194,6 +197,8 @@ if [ "$MODE" != quick ]; then
   step_if contracts/mock-mpc mock-mpc mock-mpc-test in_dir contracts/mock-mpc cargo test -q
   step_if contracts/airlock-policy policy policy-build in_dir contracts/airlock-policy quiet cargo near build non-reproducible-wasm --no-abi
   step_if contracts/airlock-policy policy policy-sandbox in_dir contracts/airlock-policy cargo test -q
+  step_if contracts/airlock-credit credit credit-build in_dir contracts/airlock-credit quiet cargo near build non-reproducible-wasm --no-abi
+  step_if contracts/airlock-credit credit credit-sandbox in_dir contracts/airlock-credit cargo test -q --test pool   # AIR-328, needs the policy and mock-mpc wasm
   step_if runtime/test/chain chain chain-sandbox pnpm -C runtime test:chain                       # AIR-160, needs the policy wasm
   # second contract pass on the protocol 88 sandbox (neard 2.14.0, stable since 2026-10-26; testnet runs protocol 88): env.sh
   # points NEAR_SANDBOX_BIN_PATH at 2.11.0 (protocol 83), and balances differ (notes/sandbox_p88_2026-10-24.md: no gas rebate,

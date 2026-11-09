@@ -8,8 +8,12 @@ import { CREDIT_CARD, CREDIT_NET, CREDIT_POOL } from '../src/credit/net.ts';
 import { DEFAULT_POLICY, readHistory } from '../src/approvals/staticChain.ts';
 import { MoneyPanel, Stats, Ticker, agoText } from '../src/credit/CreditPage.tsx';
 import { FIXTURE_NOW, FIXTURE_POOL, fixtureEvent, fixtureHistory } from '../src/credit/fixture.ts';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { LinesTable, Passports } from '../src/credit/CreditPage.tsx';
 import { explorerAccount, shownAccount } from '../src/credit/model.ts';
+import { CreditHeroMedia } from '../src/credit/HeroMedia.tsx';
+import { CREDIT_LOOP, CREDIT_MEDIA, CREDIT_POSTER } from '../src/credit/media.ts';
 import { parseLp, assetsFor, bps, derive, formatNear, parseEventLog, parseNear, parsePool, passportOf, percent, refusedSum, returnBps, sharesFor } from '../src/credit/model.ts';
 import type { CreditEvent } from '../src/credit/model.ts';
 import { HELD_TIMEOUT, flightsOf, ringPos, rosterOf, settle, shatter, stepFlight, worldPos } from '../src/credit/scene/choreo.ts';
@@ -242,6 +246,14 @@ test('parseLp reads the LP shares from get_lp and refuses anything else', () => 
   assert.equal(parseLp('7'), '7');
   assert.throws(() => parseLp({ shares: 4 }), /get_lp/);
   assert.throws(() => parseLp(null), /get_lp/);
+});
+
+test('hero media: off without the files, the slot renders nothing; the flag matches the files on disk', () => {
+  const have = (f: string): boolean => existsSync(fileURLToPath(new URL(`../public/${f}`, import.meta.url)));
+  assert.equal(CREDIT_MEDIA, have(CREDIT_LOOP) && have(CREDIT_POSTER), 'set CREDIT_MEDIA in src/credit/media.ts to true exactly when both media files are in web/public/media');
+  assert.equal(renderToStaticMarkup(<CreditHeroMedia enabled={false} />), '');
+  const on = renderToStaticMarkup(<CreditHeroMedia enabled />);
+  assert.ok(on.includes('credit-card-poster.jpg') && on.includes('<video') && on.includes('muted') && on.includes('credit-media-pause'));
 });
 
 test('owner rule: an account name that contains erfan is never printed, it is a neutral label linked through the explorer', () => {

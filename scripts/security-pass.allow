@@ -25,3 +25,5 @@
 ^web/src/approvals/StaticApprovals\.tsx:[0-9]+:.*<a href=\{link\} target="_blank"
 # AIR-329: the credit page links a transaction through explorerTx (approvals/staticChain.ts), which returns the testnet explorer URL only for a bare base58 hash of 43 or 44 characters and null otherwise.
 ^web/src/credit/CreditPage\.tsx:[0-9]+:.*<a href=\{link\} target="_blank"
+# AIR-329: the credit hero media: same-origin files named by the string constants CREDIT_POSTER and CREDIT_LOOP of credit/media.ts (set after mount).
+^web/src/credit/HeroMedia\.tsx:[0-9]+:.*src=\{(url\(CREDIT_POSTER\)|mounted \? url\(CREDIT_LOOP\) : undefined)\}
