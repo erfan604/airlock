@@ -511,7 +511,8 @@ function Cards({ pool, selected, onSelect, positions, labels }: { pool: PoolView
     // the caps' UVs are the shape's own coordinates: map them onto the 0..1 texture
     face.repeat.set(1 / w, 1 / h);
     face.offset.set(0.5, 0.5);
-    const faceMat = new THREE.MeshStandardMaterial({ map: face, metalness: 0.75, roughness: 0.32, color: hex(0xffffff, 0.9) });
+    // the face is already a lit render: it mostly shows itself (emissive), with a little live light on top, so it never washes out white
+    const faceMat = new THREE.MeshStandardMaterial({ map: face, emissiveMap: face, emissive: hex(0xffffff), emissiveIntensity: 0.62, color: hex(0xffffff, 0.35), metalness: 0.3, roughness: 0.62, envMapIntensity: 0.25 });
     const edgeMat = new THREE.MeshStandardMaterial({ color: hex(0xc9ccd2), metalness: 1, roughness: 0.18 });
     return { g, shape: sh, mats: [faceMat, edgeMat] };
   }, [face]);
