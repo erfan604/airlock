@@ -15,7 +15,6 @@ import { assetsFor, derive, explorerAccount, shownAccount, formatNear, parseNear
 import type { CreditEvent, EventKind, Line, PoolView } from './model.ts';
 import { depositCall, sendPoolCall, withdrawCall } from './wallet.ts';
 import type { SendResult } from './wallet.ts';
-import { CreditHeroMedia } from './HeroMedia.tsx';
 import { Poster } from './Poster.tsx';
 import type { Quality } from './scene/CreditScene.tsx';
 
@@ -519,7 +518,6 @@ export function CreditPage(): ReactElement {
   return (
     <main className="credit" data-testid="credit-page">
       <section className="cr-hero" aria-labelledby="cr-title">
-        <CreditHeroMedia />
         <div className="cr-head">
           <p className="cr-kicker">AIRLOCK Credit</p>
           <h1 id="cr-title" className="cr-title">
