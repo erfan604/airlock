@@ -34,6 +34,7 @@ pub enum StorageKey {
     Lps,
     Cards,
     Unclaimed,
+    Locks,
 }
 
 #[near(serializers = [borsh, json])]
@@ -95,6 +96,8 @@ pub struct PoolView {
     pub collateral_held: U128,
     pub collateral_bps: u32,
     pub share_price: U128,
+    /// shares cannot be withdrawn for this long after a deposit
+    pub min_hold_ms: near_sdk::json_types::U64,
     pub lines: Vec<LineView>,
 }
 
@@ -103,6 +106,8 @@ pub struct PoolView {
 pub struct LpView {
     pub shares: U128,
     pub value: U128,
+    /// the time before which the LP cannot withdraw (0 when it never deposited)
+    pub locked_until_ms: near_sdk::json_types::U64,
 }
 
 /// What the card's `get_roles` answers (AIR-327).
@@ -131,6 +136,10 @@ pub struct Pool {
     pub cards: IterableMap<AccountId, Card>,
     /// payouts whose transfer failed, claimable by their account
     pub unclaimed: LookupMap<AccountId, u128>,
+    /// per LP, the time before which its shares cannot be withdrawn (set at every deposit)
+    pub locks: LookupMap<AccountId, u64>,
+    /// how long shares are held after a deposit, fixed at init
+    pub min_hold_ms: u64,
 }
 
 fn emit(event: &str, data: near_sdk::serde_json::Value) {
@@ -139,6 +148,9 @@ fn emit(event: &str, data: near_sdk::serde_json::Value) {
         json!({ "standard": "airlock-credit", "version": "1.0.0", "event": event, "data": [data] })
     ));
 }
+
+/// How long shares are held after a deposit when `new` is not given `min_hold_ms`: 24 hours.
+pub const DEFAULT_MIN_HOLD_MS: u64 = 86_400_000;
 
 fn ms() -> u64 {
     env::block_timestamp_ms()
@@ -154,6 +166,11 @@ impl Pool {
             .filter(|l| matches!(l.state, LineState::Open) && now_ms > l.due_ms)
             .map(|l| l.limit - l.returned)
             .sum()
+    }
+
+    /// True while any card carries a loss that is neither recovered nor written off.
+    fn has_unrecovered_loss(&self) -> bool {
+        self.cards.iter().any(|(_, c)| c.loss > 0)
     }
 
     /// What the LPs own at `now_ms`: idle plus staked plus the outstanding principal of the lines that are not overdue.
@@ -212,7 +229,7 @@ impl Pool {
 #[near]
 impl Pool {
     #[init]
-    pub fn new(owner_id: AccountId) -> Self {
+    pub fn new(owner_id: AccountId, min_hold_ms: Option<near_sdk::json_types::U64>) -> Self {
         Self {
             owner_id,
             collateral_bps: DEFAULT_COLLATERAL_BPS,
@@ -226,6 +243,8 @@ impl Pool {
             lps: LookupMap::new(StorageKey::Lps),
             cards: IterableMap::new(StorageKey::Cards),
             unclaimed: LookupMap::new(StorageKey::Unclaimed),
+            locks: LookupMap::new(StorageKey::Locks),
+            min_hold_ms: min_hold_ms.map_or(DEFAULT_MIN_HOLD_MS, |v| v.0),
         }
     }
 
@@ -245,6 +264,10 @@ impl Pool {
             self.impaired_at(ms()) == 0,
             "deposits are paused while a line is past due; anyone can call default to book it"
         );
+        require!(
+            !self.has_unrecovered_loss(),
+            "deposits are paused while a defaulted line is being recovered; the issuer recovers it by sweeps or writes it off"
+        );
         let shares = math::shares_for_deposit(amount, self.total_shares, self.assets_at(ms()))
             .unwrap_or_else(|| env::panic_str("the pool has no assets to price a share"));
         require!(
@@ -254,6 +277,7 @@ impl Pool {
         let who = env::predecessor_account_id();
         let have = self.lps.get(&who).copied().unwrap_or(0);
         self.lps.insert(who.clone(), have + shares);
+        self.locks.insert(who.clone(), ms() + self.min_hold_ms);
         self.total_shares += shares;
         self.idle += amount;
         emit(
@@ -270,6 +294,14 @@ impl Pool {
         require!(shares > 0, "withdraw needs at least one share");
         let have = self.lps.get(&who).copied().unwrap_or(0);
         require!(shares <= have, "withdraw exceeds your shares");
+        let locked = self.locks.get(&who).copied().unwrap_or(0);
+        require!(
+            ms() >= locked,
+            &format!(
+                "withdraw is locked until {locked}: shares are held for {} ms after a deposit",
+                self.min_hold_ms
+            )
+        );
         let assets = self.assets_at(ms());
         let amount = math::amount_for_shares(shares, self.total_shares, assets)
             .unwrap_or_else(|| env::panic_str("overflow"));
@@ -745,6 +777,7 @@ impl Pool {
             collateral_held: U128(self.collateral_held),
             collateral_bps: self.collateral_bps,
             share_price: U128(math::share_price(assets, self.total_shares).unwrap_or(0)),
+            min_hold_ms: near_sdk::json_types::U64(self.min_hold_ms),
             lines: self.list_lines(None, None),
         }
     }
@@ -756,6 +789,9 @@ impl Pool {
             value: U128(
                 math::amount_for_shares(shares, self.total_shares, self.assets_at(ms()))
                     .unwrap_or(0),
+            ),
+            locked_until_ms: near_sdk::json_types::U64(
+                self.locks.get(&account).copied().unwrap_or(0),
             ),
         }
     }

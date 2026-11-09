@@ -29,7 +29,7 @@ fn call_as(who: &str, deposit: u128, now_ms: u64) {
 
 fn pool() -> Pool {
     call_as(OWNER, 0, NOW);
-    Pool::new(OWNER.parse().unwrap())
+    Pool::new(OWNER.parse().unwrap(), Some(near_sdk::json_types::U64(0)))
 }
 
 fn acct(s: &str) -> AccountId {
@@ -421,6 +421,14 @@ fn deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default() {
     // 63 owed, 18 of collateral seized, 42 lost: 58 assets over 100 shares
     assert_eq!(p.get_lp(acct(LP1)).value.0, 58 * NEAR);
     assert!(value_before < 100 * NEAR);
+    // the loss is unrecovered, so deposits stay closed (a later recovery would lift the price for a newcomer): the issuer's write off reopens
+    call_as(LP2, 29 * NEAR, late);
+    assert!(
+        panics(|| p.deposit())
+            .contains("deposits are paused while a defaulted line is being recovered")
+    );
+    call_as(OWNER, 0, late);
+    p.write_off(acct(CARD));
     call_as(LP2, 29 * NEAR, late);
     assert_eq!(
         p.deposit().0,
@@ -633,6 +641,97 @@ fn a_card_with_an_unrecovered_loss_is_terminal_until_recovered_or_written_off() 
 }
 
 #[test]
+fn deposits_stay_closed_between_a_default_and_its_recovery() {
+    // F1 again (third review): after `default` books a loss, a later recovery sweep raises the price. A deposit in between would buy
+    // cheap and capture part of the recovery from the incumbents, so deposits wait for the recovery (or the issuer's write off).
+    let mut p = defaulted_with_loss();
+    assert_eq!(p.get_lp(acct(LP1)).value.0, 65 * NEAR);
+    let t = NOW + 32 * DAY;
+    call_as(LP2, 65 * NEAR, t);
+    assert!(
+        panics(|| p.deposit())
+            .contains("deposits are paused while a defaulted line is being recovered")
+    );
+    // a partial recovery keeps them closed, the full one opens them at the recovered price
+    call_as(CARD, 10 * NEAR, t);
+    p.on_card_return(acct(CARD));
+    call_as(LP2, 65 * NEAR, t);
+    assert!(panics(|| p.deposit()).contains("being recovered"));
+    call_as(CARD, 25 * NEAR, t);
+    p.on_card_return(acct(CARD));
+    assert_eq!(
+        p.get_lp(acct(LP1)).value.0,
+        100 * NEAR,
+        "the incumbents got the whole recovery"
+    );
+    call_as(LP2, 100 * NEAR, t);
+    assert_eq!(
+        p.deposit().0,
+        100 * NEAR,
+        "bought at the recovered price 1.0"
+    );
+    assert_eq!(p.get_lp(acct(LP1)).value.0, 100 * NEAR);
+}
+
+#[test]
+fn a_write_off_reopens_deposits() {
+    let mut p = defaulted_with_loss();
+    let t = NOW + 32 * DAY;
+    call_as(LP2, 65 * NEAR, t);
+    assert!(panics(|| p.deposit()).contains("being recovered"));
+    call_as(OWNER, 0, t);
+    p.write_off(acct(CARD));
+    call_as(LP2, 65 * NEAR, t);
+    assert_eq!(p.deposit().0, 100 * NEAR, "post-loss price 0.65");
+    assert_eq!(p.get_lp(acct(LP1)).value.0, 65 * NEAR);
+}
+
+const HOLD: u64 = 3_600_000;
+
+fn held_pool() -> Pool {
+    call_as(OWNER, 0, NOW);
+    let mut p = Pool::new(acct(OWNER), Some(near_sdk::json_types::U64(HOLD)));
+    call_as(LP1, 100 * NEAR, NOW);
+    p.deposit();
+    register(&mut p);
+    p
+}
+
+#[test]
+fn shares_are_held_for_min_hold_ms_after_a_deposit() {
+    let mut p = held_pool();
+    assert_eq!(p.get_pool().min_hold_ms.0, HOLD);
+    assert_eq!(p.get_lp(acct(LP1)).locked_until_ms.0, NOW + HOLD);
+    call_as(LP1, 0, NOW + HOLD - 1);
+    let e = panics(|| p.withdraw(U128(NEAR)));
+    assert!(
+        e.contains(&format!("withdraw is locked until {}", NOW + HOLD)),
+        "{e}"
+    );
+    call_as(LP1, 0, NOW + HOLD);
+    let _ = p.withdraw(U128(NEAR));
+    // a second deposit restarts the clock for that LP's whole position
+    call_as(LP1, NEAR, NOW + HOLD + 5);
+    p.deposit();
+    call_as(LP1, 0, NOW + HOLD + 6);
+    assert!(panics(|| p.withdraw(U128(NEAR))).contains("withdraw is locked until"));
+}
+
+#[test]
+fn a_deposit_just_before_a_repay_cannot_capture_the_fee() {
+    // the sandwich: deposit, the borrower repays (the fee lands), withdraw. The hold makes the exit impossible inside the window.
+    let mut p = held_pool();
+    open(&mut p, 50 * NEAR, 1_000);
+    call_as(LP2, 100 * NEAR, NOW + 1000);
+    p.deposit();
+    call_as(BORROWER, 55 * NEAR, NOW + 2000);
+    p.repay(acct(CARD));
+    call_as(LP2, 0, NOW + 3000);
+    assert!(panics(|| p.withdraw(U128(100 * NEAR))).contains("withdraw is locked until"));
+    assert_eq!(p.get_lp(acct(LP2)).locked_until_ms.0, NOW + 1000 + HOLD);
+}
+
+#[test]
 fn a_recovered_loss_frees_the_card() {
     let mut p = defaulted_with_loss();
     let loss = p.losses;
@@ -824,6 +923,10 @@ fn run_property(seed: u64) {
                             "a deposit was accepted while a line was past due"
                         );
                         assert!(
+                            p.cards.iter().all(|(_, c)| c.loss == 0),
+                            "a deposit was accepted with an unrecovered loss"
+                        );
+                        assert!(
                             value(&p, other).abs_diff(other_before) <= 2,
                             "a deposit moved another LP's value"
                         );
@@ -921,14 +1024,19 @@ fn hex(bytes: &[u8]) -> String {
 
 #[test]
 fn layout_the_storage_keys_follow_declaration_order() {
-    let keys = [StorageKey::Lps, StorageKey::Cards, StorageKey::Unclaimed];
+    let keys = [
+        StorageKey::Lps,
+        StorageKey::Cards,
+        StorageKey::Unclaimed,
+        StorageKey::Locks,
+    ];
     let bytes: Vec<Vec<u8>> = keys
         .iter()
         .map(|k| near_sdk::borsh::to_vec(k).unwrap())
         .collect();
     assert_eq!(
         bytes,
-        vec![vec![0u8], vec![1u8], vec![2u8]],
+        vec![vec![0u8], vec![1u8], vec![2u8], vec![3u8]],
         "a StorageKey is appended, never inserted"
     );
 }
@@ -987,10 +1095,11 @@ fn layout_the_pool_state_keeps_its_field_order_and_prefixes() {
     p.losses = 6;
     p.collateral_held = 7;
     p.collateral_bps = 8;
+    p.min_hold_ms = 9;
     let pool_hex = hex(&near_sdk::borsh::to_vec(&p).unwrap());
     assert_eq!(
         pool_hex,
-        "0f0000006f776e65722e746573742e6e656172080000000100000000000000000000000000000002000000000000000000000000000000030000000000000000000000000000000400000000000000000000000000000005000000000000000000000000000000060000000000000000000000000000000700000000000000000000000000000001000000000000000002000000017602000000016d0100000002",
-        "Pool: owner, collateral_bps u32, total_shares, idle, lent, staked, fees_earned, losses, collateral_held (u128), then the prefixes of lps, cards, unclaimed"
+        "0f0000006f776e65722e746573742e6e656172080000000100000000000000000000000000000002000000000000000000000000000000030000000000000000000000000000000400000000000000000000000000000005000000000000000000000000000000060000000000000000000000000000000700000000000000000000000000000001000000000000000002000000017602000000016d010000000201000000030900000000000000",
+        "Pool: owner, collateral_bps u32, total_shares, idle, lent, staked, fees_earned, losses, collateral_held (u128), then the prefixes of lps, cards, unclaimed, locks, then min_hold_ms u64"
     );
 }

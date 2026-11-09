@@ -72,6 +72,13 @@ function must(what: string, account: string, thunk: () => { ok: boolean; tx: str
   row(what, account, c.tx);
   return c.tx;
 }
+/** A deposit that the pool must refuse: the failed transaction is the evidence, with the contract's own text. */
+function refusedDeposit(what: string, text: string): void {
+  if (have(what)) return;
+  const c = call(A.pool, 'deposit', {}, A.lp2, '0.1 NEAR');
+  if (c.ok || !c.out.includes(text)) throw new Error(`${what}: the deposit was not refused with "${text}": ${c.out.slice(-400)}`);
+  row(what, A.pool, c.tx);
+}
 async function view(contract: string, method: string, args: object = {}): Promise<unknown> {
   const r = await fetch('https://test.rpc.fastnear.com', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'query', params: { request_type: 'call_function', finality: 'final', account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString('base64') } }) });
   const j = (await r.json()) as { result?: { result: number[] }; error?: unknown };
@@ -133,7 +140,7 @@ async function main(): Promise<void> {
   }
 
   // 2. deploy the pool (owner: the issuer) and the card (owner: the issuer, approver: the borrower, sponsor: the pool)
-  must('deploy the pool', A.pool, () => deployWith(A.pool, creditWasm, { owner_id: issuer }, A.pool));
+  must('deploy the pool', A.pool, () => deployWith(A.pool, creditWasm, { owner_id: issuer, min_hold_ms: '60000' }, A.pool));
   must('deploy the card policy', A.card, () => deployWith(A.card, policyWasm, { owner_id: issuer, mpc_contract_id: 'v1.signer-prod.testnet', requires_tee: false, attestation_expiration_time_ms: '1209600000', approver: A.borrower, sponsor: A.pool }, A.card));
   const roles = (await view(A.card, 'get_roles')) as { owner_id: string; approver: string; sponsor: string };
   console.log(`roles ${JSON.stringify(roles)}`);
@@ -227,6 +234,12 @@ async function main(): Promise<void> {
 
   // 7. LP1 withdraws everything: more than the 3 NEAR deposited
   if (!rows.some((r) => r.what.startsWith('LP1 withdraws'))) {
+  for (let i = 0; i < 40; i++) {
+    const l = await view(A.pool, 'get_lp', { account: A.lp1 }) as { locked_until_ms: string };
+    if (BigInt(l.locked_until_ms) < BigInt(await blockMs())) break;
+    console.log(`LP1 shares are held until ${l.locked_until_ms}, waiting`);
+    await sleep(10_000);
+  }
   const lp1 = await view(A.pool, 'get_lp', { account: A.lp1 }) as { shares: string; value: string };
   must(`LP1 withdraws all its shares, worth ${near(BigInt(lp1.value))} for 3 NEAR deposited`, A.lp1, () => call(A.pool, 'withdraw', { shares: lp1.shares }, A.lp1, '0 NEAR', '100 Tgas'));
   if (BigInt(lp1.value) <= 3n * ONE) throw new Error('the LP did not earn');
@@ -240,13 +253,16 @@ async function main(): Promise<void> {
   await sleep(52_000);
   const overdue = await view(A.pool, 'get_pool') as { assets: string; impaired: string };
   console.log(`overdue, before default: assets ${overdue.assets} impaired ${overdue.impaired}`);
+  refusedDeposit('LP2 tries to deposit after the due date and before the default: refused on chain (deposits are paused while a line is past due)', 'deposits are paused while a line is past due');
   must('anyone calls default after the due date: collateral seized, the rest booked as a loss', A.pool, () => call(A.pool, 'default', { card: A.card }, A.lp2));
   await sleep(4000);
   const lost = await view(A.pool, 'get_pool') as { losses: string };
   console.log(`losses after default ${lost.losses}`);
+  refusedDeposit('LP2 tries to deposit after the default, before the loss is recovered: refused on chain (deposits are paused while a defaulted line is being recovered)', 'deposits are paused while a defaulted line is being recovered');
   must('the issuer pauses the card', A.card, () => call(A.card, 'pause', { paused: true }, issuer, '1 yoctoNEAR', '30 Tgas'));
   must('the issuer sweeps the card: credited as a recovery of the loss', A.card, () => call(A.card, 'sweep', { amount: ONE.toString() }, issuer, '1 yoctoNEAR', '100 Tgas'));
   await sleep(6000);
+  must('LP2 deposits 0.1 NEAR once the loss is recovered: accepted at the recovered price', A.lp2, () => call(A.pool, 'deposit', {}, A.lp2, '0.1 NEAR'));
   const fin = await view(A.pool, 'get_pool') as { assets: string; losses: string; idle: string; share_price: string };
   console.log(`final pool ${JSON.stringify(fin)}`);
   console.log('CREDIT LIVE OK');

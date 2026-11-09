@@ -96,7 +96,7 @@ donation attack). The invariant `contract balance >= idle + collateral_held + re
 
 | Call | Who | Rule |
 | --- | --- | --- |
-| `deposit()` payable | anyone | `shares = amount` when `total_shares` is 0, else `floor(amount * total_shares / assets)`; refused while any open line is past its due date (`deposits are paused while a line is past due`, F1 below); at least `MIN_DEPOSIT` (0.001 NEAR); refuses when shares are 0 or `assets` is 0 with shares outstanding |
+| `deposit()` payable | anyone | `shares = amount` when `total_shares` is 0, else `floor(amount * total_shares / assets)`; refused while any open line is past its due date (`deposits are paused while a line is past due`) or any card carries an unrecovered loss (`deposits are paused while a defaulted line is being recovered`), F1 below; sets the LP's lock to `now + min_hold_ms`; at least `MIN_DEPOSIT` (0.001 NEAR); refuses when shares are 0 or `assets` is 0 with shares outstanding |
 | `withdraw(shares)` | an LP | `amount = floor(shares * assets / total_shares)`; refuses above `idle` with the most shares that can leave now; burns, lowers `idle`, then transfers; `on_withdraw` restores the state if the transfer failed |
 | `register_card(card, borrower)` | owner | asks the card `get_roles` and, in `on_card_roles`, requires `owner_id == pool owner`, `approver == borrower`, `sponsor == this pool`, and `borrower != owner`; then stores the card. The role check is on chain, so the trust assumption of AIR-327 is checked, not stated |
 | `post_collateral(card)` payable | the card's borrower | adds to the card's collecting line |
@@ -126,7 +126,17 @@ Three rules came out of the security review of the contract (each has a failing 
   newcomer buy cheap before the borrower (a colluder) repays; priced un-impaired it lets an incumbent who expects a default wait for new
   deposits to lift the price, withdraw, and leave the loss with the newcomers. With deposits closed while `impaired > 0`, a deposit always
   prices at `assets` with nothing impaired, so no value moves between LPs across the overdue window. Liveness: `default` is permissionless
-  after the due date, books the loss and clears the impairment, which reopens deposits at the post-loss price; a repay reopens them too. The seized collateral and any
+  after the due date, books the loss and clears the impairment; a repay reopens deposits too. **After a default deposits stay closed
+  until the loss is recovered or written off** (third review): a recovery sweep raises the price, so a deposit between the default and
+  the recovery would buy cheap and take part of the recovery from the incumbents. A partial recovery keeps them closed; the full
+  recovery reopens them at the recovered price, and the issuer's `write_off` reopens them at the post-loss price. Liveness therefore
+  depends on the issuer (to sweep or write off), which is part of the issuer-trust limitation in docs/KNOWN_LIMITATIONS.md.
+- **Minimum hold.** The fee is booked in one step at `repay`, so an LP could deposit just before a repay and withdraw just after with a
+  share of it (the borrower could do this to recapture his own fee). Each deposit sets that LP's `locked_until_ms = now + min_hold_ms`
+  (the whole position restarts its clock), and `withdraw` refuses before it: `withdraw is locked until <ms>: shares are held for
+  <min_hold_ms> ms after a deposit`. `min_hold_ms` is an optional argument of `new` (default 86 400 000, 24 hours), shown in `get_pool`;
+  `get_lp` shows `locked_until_ms`. What remains: an LP who deposits a full hold period before a repay it knows about still captures a pro
+  rata share of that fee; time-accrued fees are the follow-up. The seized collateral and any
   recovery enter the assets when they are booked (at `default` and at the recovery sweep), so they accrue to the holders at that time,
   not to those who left earlier; a repay after the due date but before the default restores the price at once. The share price walks the
   lines, so a pool holds at most 100 cards.
@@ -137,10 +147,10 @@ Three rules came out of the security review of the contract (each has a failing 
 
 Amounts are yocto decimal strings everywhere.
 
-- `get_pool` returns `{ assets, shares, idle, staked, lent, impaired, fees_earned, losses, collateral_held, collateral_bps, share_price, lines: [{ card, borrower, limit, drawn, returned, fee_bps, due_ms, state }] }`. `assets = idle + lent + staked`; `staked` is 0 until AIR-332 (idle liquidity sent to earn yield), so
+- `get_pool` returns `{ assets, shares, idle, staked, lent, impaired, fees_earned, losses, collateral_held, collateral_bps, share_price, min_hold_ms, lines: [{ card, borrower, limit, drawn, returned, fee_bps, due_ms, state }] }`. `assets = idle + lent + staked`; `staked` is 0 until AIR-332 (idle liquidity sent to earn yield), so
   the share price formula already has its slot. `drawn` is the principal funded when the line opened (equal to `limit`), `returned` what
   sweeps credited, `state` one of `Collecting`, `Open`, `Repaid`, `Defaulted`. `lines` is the same list as `list_lines(0, 50)`.
-- `get_lp(account)` returns `{ shares, value }`, `get_line(card)` one line or null, `list_lines(from_index, limit)` clamped to 50, `get_card(card)`.
+- `get_lp(account)` returns `{ shares, value, locked_until_ms }`, `get_line(card)` one line or null, `list_lines(from_index, limit)` clamped to 50, `get_card(card)`.
 - `deposit()` is payable, `withdraw({ shares })`.
 - Events use the NEP-297 envelope with standard `airlock-credit`, version `1.0.0`: `deposit` `{ account, amount, shares }`, `withdraw`
   `{ account, amount, shares }`, `card_registered` `{ card, borrower }`, `collateral_posted` `{ card, amount }`, `line_opened`
@@ -231,6 +241,9 @@ Each mutant was applied alone and the library tests run (the unit tests of `src/
 | a new line can reset a loss (open_line without the loss guard) | same test |
 | overdue lines are not impaired | `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default` |
 | the deposit guard removed (F1: a deposit while a line is past due) | `deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default`, `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default`, `property_random_operations_keep_the_accounting` |
+| the loss guard removed (a deposit between a default and its recovery) | `deposits_stay_closed_between_a_default_and_its_recovery`, `a_write_off_reopens_deposits`, `deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default`, `property_random_operations_keep_the_accounting` |
+| the hold check removed or off by one (`ms() >= locked`) | `shares_are_held_for_min_hold_ms_after_a_deposit`, `a_deposit_just_before_a_repay_cannot_capture_the_fee` |
+| the lock not set at deposit | same tests |
 | a deposit priced at idle + lent + staked instead of `assets` | equivalent mutant: with the guard in force nothing is impaired, so both values are equal |
 | a withdraw is priced at idle + lent + staked (LPs leave at the old price) | `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default` |
 | `withdraw_collateral` open to anyone | `collateral_can_be_withdrawn_by_the_borrower_while_no_line_is_open` |

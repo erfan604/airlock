@@ -48,7 +48,7 @@ async fn fixture() -> Fx {
         &w.owner_signer,
         &path,
         Some("new"),
-        Some(json!({ "owner_id": w.owner })),
+        Some(json!({ "owner_id": w.owner, "min_hold_ms": "0" })),
         Some(format!("pool.{}", w.root).parse().unwrap()),
     )
     .await
