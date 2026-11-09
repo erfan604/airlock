@@ -27,7 +27,9 @@ const sub = (n: string): string => `${n}.${issuer}`;
 const A = { issuer, pool: sub('pool'), card: sub('card'), borrower: sub('borrower'), merchant: sub('merchant'), agent: sub('agent'), lp1: sub('lp1'), lp2: sub('lp2') };
 const dir = join(REPO, 'target', 'credit-run');
 mkdirSync(dir, { recursive: true });
-const rows: Array<{ what: string; account: string; tx: string }> = [];
+const rowsFile = join(dir, 'rows.json');
+const rows: Array<{ what: string; account: string; tx: string }> = existsSync(rowsFile) ? (JSON.parse(readFileSync(rowsFile, 'utf8')) as Array<{ what: string; account: string; tx: string }>) : [];
+const have = (what: string): boolean => rows.some((r) => r.what === what);
 
 const clean = (s: string): string => s.replace(/\x1b\[[0-9;]*m/g, '');
 function run(args: string[], input?: string): { code: number; out: string } {
@@ -36,6 +38,7 @@ function run(args: string[], input?: string): { code: number; out: string } {
 }
 const txOf = (out: string): string | undefined => /Transaction ID: *([A-Za-z0-9]+)/.exec(out)?.[1];
 function row(what: string, account: string, tx: string): void {
+  if (have(what)) return;
   rows.push({ what, account, tx });
   console.log(`ROW ${what} | ${account} | https://testnet.nearblocks.io/txns/${tx}`);
   writeFileSync(join(dir, 'rows.json'), JSON.stringify(rows, null, 2));
@@ -62,21 +65,18 @@ function call(contract: string, method: string, args: object, signer: string, de
   const failed = r.code !== 0 || tx === '' || /ExecutionError|Failure|panicked/.test(r.out);
   return { ok: !failed, tx, out: r.out };
 }
-function must(what: string, account: string, c: { ok: boolean; tx: string; out: string }): string {
+function must(what: string, account: string, thunk: () => { ok: boolean; tx: string; out: string }): string {
+  if (have(what)) return '';
+  const c = thunk();
   if (!c.ok) throw new Error(`${what} failed: ${c.out.slice(-600)}`);
   row(what, account, c.tx);
   return c.tx;
 }
-function view(contract: string, method: string, args: object = {}): unknown {
-  const r = run(['contract', 'call-function', 'as-read-only', contract, method, 'json-args', JSON.stringify(args), 'network-config', 'testnet', 'now']);
-  if (r.code !== 0) throw new Error(`view ${method} failed: ${r.out.slice(-300)}`);
-  const text = r.out.split('\n').filter((l) => !/^\s*$/.test(l) && !l.includes('Here is your console command') && !/near.*contract call-function/.test(l)).join('\n');
-  try {
-    return JSON.parse(text);
-  } catch {
-    const m = /(\{[\s\S]*\}|\[[\s\S]*\]|"[^"]*"|null|true|false|\d+)\s*$/.exec(text);
-    return m === null ? text : JSON.parse(m[1] as string);
-  }
+async function view(contract: string, method: string, args: object = {}): Promise<unknown> {
+  const r = await fetch('https://test.rpc.fastnear.com', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'query', params: { request_type: 'call_function', finality: 'final', account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString('base64') } }) });
+  const j = (await r.json()) as { result?: { result: number[] }; error?: unknown };
+  if (j.result === undefined) throw new Error(`view ${method} failed: ${JSON.stringify(j.error)}`);
+  return JSON.parse(Buffer.from(j.result.result).toString('utf8'));
 }
 async function balance(id: string): Promise<bigint> {
   const r = await fetch('https://test.rpc.fastnear.com', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'query', params: { request_type: 'view_account', finality: 'final', account_id: id } }) });
@@ -133,15 +133,16 @@ async function main(): Promise<void> {
   }
 
   // 2. deploy the pool (owner: the issuer) and the card (owner: the issuer, approver: the borrower, sponsor: the pool)
-  must('deploy the pool', A.pool, deployWith(A.pool, creditWasm, { owner_id: issuer }, A.pool));
-  must('deploy the card policy', A.card, deployWith(A.card, policyWasm, { owner_id: issuer, mpc_contract_id: 'v1.signer-prod.testnet', requires_tee: false, attestation_expiration_time_ms: '1209600000', approver: A.borrower, sponsor: A.pool }, A.card));
-  const roles = view(A.card, 'get_roles') as { owner_id: string; approver: string; sponsor: string };
+  must('deploy the pool', A.pool, () => deployWith(A.pool, creditWasm, { owner_id: issuer }, A.pool));
+  must('deploy the card policy', A.card, () => deployWith(A.card, policyWasm, { owner_id: issuer, mpc_contract_id: 'v1.signer-prod.testnet', requires_tee: false, attestation_expiration_time_ms: '1209600000', approver: A.borrower, sponsor: A.pool }, A.card));
+  const roles = (await view(A.card, 'get_roles')) as { owner_id: string; approver: string; sponsor: string };
   console.log(`roles ${JSON.stringify(roles)}`);
 
   // 3. configure the card with the quickstart policy (the merchant is a listed alias) through the bootstrap script
+  const vaultFile = join(dir, 'book.vault.json');
+  if (!rows.some((r) => r.what.startsWith('card bootstrap: set_task_key'))) {
   const accountsFile = join(dir, 'accounts.json');
   writeFileSync(accountsFile, JSON.stringify({ owner: issuer, policy: A.card, agent: A.agent, acme: A.merchant }, null, 2));
-  const vaultFile = join(dir, 'book.vault.json');
   const boot = spawnSync('bash', [join(REPO, 'scripts', 'bootstrap-policy.sh')], {
     cwd: REPO,
     encoding: 'utf8',
@@ -156,17 +157,20 @@ async function main(): Promise<void> {
   if (bk) row('card bootstrap: book_set_root (the merchant, private)', A.card, bk.tx);
   if (tk) row('card bootstrap: set_task_key (the last of the owner calls; POLICY MATCHES after)', A.card, tk.tx);
 
+  }
+
   // 4. the pool: LPs deposit, the card is registered (the pool reads its roles on chain), collateral, the line
-  must('LP1 deposits 3 NEAR', A.lp1, call(A.pool, 'deposit', {}, A.lp1, '3 NEAR'));
-  must('LP2 deposits 2 NEAR', A.lp2, call(A.pool, 'deposit', {}, A.lp2, '2 NEAR'));
-  must('register the card (roles verified on chain)', A.pool, call(A.pool, 'register_card', { card: A.card, borrower: A.borrower }, issuer, '0 NEAR', '120 Tgas'));
+  must('LP1 deposits 3 NEAR', A.lp1, () => call(A.pool, 'deposit', {}, A.lp1, '3 NEAR'));
+  must('LP2 deposits 2 NEAR', A.lp2, () => call(A.pool, 'deposit', {}, A.lp2, '2 NEAR'));
+  must('register the card (roles verified on chain)', A.pool, () => call(A.pool, 'register_card', { card: A.card, borrower: A.borrower }, issuer, '0 NEAR', '120 Tgas'));
   await sleep(6000);
-  if (view(A.pool, 'get_card', { card: A.card }) !== A.borrower) throw new Error('the card was not registered');
-  must('borrower posts 0.3 NEAR of collateral', A.pool, call(A.pool, 'post_collateral', { card: A.card }, A.borrower, '0.3 NEAR'));
+  if (await view(A.pool, 'get_card', { card: A.card }) !== A.borrower) throw new Error('the card was not registered');
+  must('borrower posts 0.3 NEAR of collateral', A.pool, () => call(A.pool, 'post_collateral', { card: A.card }, A.borrower, '0.3 NEAR'));
   const now = await blockMs();
-  must('open a line of 1 NEAR, fee 10 percent, 30 days', A.pool, call(A.pool, 'open_line', { card: A.card, limit: ONE.toString(), fee_bps: 1000, due_ms: String(now + 30 * 86_400_000) }, issuer));
+  must('open a line of 1 NEAR, fee 10 percent, 30 days', A.pool, () => call(A.pool, 'open_line', { card: A.card, limit: ONE.toString(), fee_bps: 1000, due_ms: String(now + 30 * 86_400_000) }, issuer));
   await sleep(4000);
 
+  if (!have('the borrower repays 0.55 NEAR (0.5 kept plus the 10 percent fee), 0.1 NEAR over is refunded, collateral returns')) {
   // 5. the agent: a merchant payment allowed, an injected payee held, the borrower paying himself held
   const creds = join(dir, 'agent.json');
   const legacy = JSON.parse(readFileSync(join(homedir(), '.near-credentials', 'testnet', `${A.agent}.json`), 'utf8')) as { public_key: string; private_key: string };
@@ -201,44 +205,49 @@ async function main(): Promise<void> {
   if (sv === null || sv.display === null) throw new Error('no card for the self payment');
   const refused = call(A.card, 'approve', { id: self0.pending_id, to: sv.payee, asset: sv.display.asset_symbol, amount: sv.display.amount_decimal, why: sv.reason, book: sv.book_status }, A.borrower, '1 yoctoNEAR', '65 Tgas');
   if (refused.ok || !refused.out.includes('not in the book')) throw new Error(`the approver was not refused: ${refused.out.slice(-400)}`);
+  writeFileSync(join(dir, 'refused.txt'), refused.out);
   console.log('the borrower approve was refused: not in the book');
   rows.push({ what: 'the borrower taps approve on the self payment: refused (approve refused for the approver, the payee is not in the book); nothing moves', account: A.card, tx: refused.tx });
   console.log(`ROW borrower self approve refused | ${A.card} | https://testnet.nearblocks.io/txns/${refused.tx}`);
   writeFileSync(join(dir, 'rows.json'), JSON.stringify(rows, null, 2));
-  must('the borrower rejects the self payment', A.card, call(A.card, 'reject', { id: self0.pending_id }, A.borrower, '1 yoctoNEAR', '30 Tgas'));
-  if (inj0.pending_id !== null) must('the borrower rejects the injected payee', A.card, call(A.card, 'reject', { id: inj0.pending_id }, A.borrower, '1 yoctoNEAR', '30 Tgas'));
+  must('the borrower rejects the self payment', A.card, () => call(A.card, 'reject', { id: self0.pending_id }, A.borrower, '1 yoctoNEAR', '30 Tgas'));
+  if (inj0.pending_id !== null) must('the borrower rejects the injected payee', A.card, () => call(A.card, 'reject', { id: inj0.pending_id }, A.borrower, '1 yoctoNEAR', '30 Tgas'));
 
   // 6. sweep the unspent 0.5 NEAR back to the pool, then repay what the card kept with the fee
-  must('the issuer sweeps 0.5 NEAR from the card to the pool (credited to the line)', A.card, call(A.card, 'sweep', { amount: (ONE / 2n).toString() }, issuer, '1 yoctoNEAR', '100 Tgas'));
+  must('the issuer sweeps 0.5 NEAR from the card to the pool (credited to the line)', A.card, () => call(A.card, 'sweep', { amount: (ONE / 2n).toString() }, issuer, '1 yoctoNEAR', '100 Tgas'));
   await sleep(6000);
-  const line = view(A.pool, 'get_line', { card: A.card }) as { returned: string; limit: string };
+  const line = await view(A.pool, 'get_line', { card: A.card }) as { returned: string; limit: string };
   console.log(`line ${JSON.stringify(line)}`);
-  must('the borrower repays 0.55 NEAR (0.5 kept plus the 10 percent fee), 0.1 NEAR over is refunded, collateral returns', A.pool, call(A.pool, 'repay', { card: A.card }, A.borrower, '0.65 NEAR', '100 Tgas'));
+  must('the borrower repays 0.55 NEAR (0.5 kept plus the 10 percent fee), 0.1 NEAR over is refunded, collateral returns', A.pool, () => call(A.pool, 'repay', { card: A.card }, A.borrower, '0.65 NEAR', '100 Tgas'));
   await sleep(4000);
-  const afterRepay = view(A.pool, 'get_pool') as { assets: string; fees_earned: string; share_price: string };
+  const afterRepay = await view(A.pool, 'get_pool') as { assets: string; fees_earned: string; share_price: string };
   console.log(`pool after repay ${JSON.stringify({ assets: afterRepay.assets, fees: afterRepay.fees_earned, price: afterRepay.share_price })}`);
 
+  }
+
   // 7. LP1 withdraws everything: more than the 3 NEAR deposited
-  const lp1 = view(A.pool, 'get_lp', { account: A.lp1 }) as { shares: string; value: string };
-  const wd = call(A.pool, 'withdraw', { shares: lp1.shares }, A.lp1, '0 NEAR', '100 Tgas');
-  must(`LP1 withdraws all its shares, worth ${near(BigInt(lp1.value))} for 3 NEAR deposited`, A.lp1, wd);
+  if (!rows.some((r) => r.what.startsWith('LP1 withdraws'))) {
+  const lp1 = await view(A.pool, 'get_lp', { account: A.lp1 }) as { shares: string; value: string };
+  must(`LP1 withdraws all its shares, worth ${near(BigInt(lp1.value))} for 3 NEAR deposited`, A.lp1, () => call(A.pool, 'withdraw', { shares: lp1.shares }, A.lp1, '0 NEAR', '100 Tgas'));
   if (BigInt(lp1.value) <= 3n * ONE) throw new Error('the LP did not earn');
 
+  }
+
   // 8. the default case: a second line on the same card, not repaid
-  must('borrower posts 0.3 NEAR of collateral again', A.pool, call(A.pool, 'post_collateral', { card: A.card }, A.borrower, '0.3 NEAR'));
+  must('borrower posts 0.3 NEAR of collateral again', A.pool, () => call(A.pool, 'post_collateral', { card: A.card }, A.borrower, '0.3 NEAR'));
   const due = (await blockMs()) + 40_000;
-  must('open a second line of 1 NEAR due in 40 seconds', A.pool, call(A.pool, 'open_line', { card: A.card, limit: ONE.toString(), fee_bps: 1000, due_ms: String(due) }, issuer));
+  must('open a second line of 1 NEAR due in 40 seconds', A.pool, () => call(A.pool, 'open_line', { card: A.card, limit: ONE.toString(), fee_bps: 1000, due_ms: String(due) }, issuer));
   await sleep(52_000);
-  const overdue = view(A.pool, 'get_pool') as { assets: string; impaired: string };
+  const overdue = await view(A.pool, 'get_pool') as { assets: string; impaired: string };
   console.log(`overdue, before default: assets ${overdue.assets} impaired ${overdue.impaired}`);
-  must('anyone calls default after the due date: collateral seized, the rest booked as a loss', A.pool, call(A.pool, 'default', { card: A.card }, A.lp2));
+  must('anyone calls default after the due date: collateral seized, the rest booked as a loss', A.pool, () => call(A.pool, 'default', { card: A.card }, A.lp2));
   await sleep(4000);
-  const lost = view(A.pool, 'get_pool') as { losses: string };
+  const lost = await view(A.pool, 'get_pool') as { losses: string };
   console.log(`losses after default ${lost.losses}`);
-  must('the issuer pauses the card', A.card, call(A.card, 'pause', { paused: true }, issuer, '1 yoctoNEAR', '30 Tgas'));
-  must('the issuer sweeps the card: credited as a recovery of the loss', A.card, call(A.card, 'sweep', { amount: ONE.toString() }, issuer, '1 yoctoNEAR', '100 Tgas'));
+  must('the issuer pauses the card', A.card, () => call(A.card, 'pause', { paused: true }, issuer, '1 yoctoNEAR', '30 Tgas'));
+  must('the issuer sweeps the card: credited as a recovery of the loss', A.card, () => call(A.card, 'sweep', { amount: ONE.toString() }, issuer, '1 yoctoNEAR', '100 Tgas'));
   await sleep(6000);
-  const fin = view(A.pool, 'get_pool') as { assets: string; losses: string; idle: string; share_price: string };
+  const fin = await view(A.pool, 'get_pool') as { assets: string; losses: string; idle: string; share_price: string };
   console.log(`final pool ${JSON.stringify(fin)}`);
   console.log('CREDIT LIVE OK');
 }
