@@ -534,7 +534,7 @@ export function CreditPage(): ReactElement {
           <h1 id="cr-title" className="cr-title">
             Credit for agents that cannot be talked out of the money
           </h1>
-          <p className="cr-lede">LPs stake into a pool. Each agent spends from a credit line the pool funds, on NEAR, Base and Solana, and every payment goes through the airlock first.</p>
+          <p className="cr-lede">LPs stake into a pool. Each agent spends from a credit line the pool funds, and every payment goes through the airlock first.</p>
           <p className="cr-note" data-testid="credit-not-plastic">An AIRLOCK credit line is an on-chain line of credit on NEAR, not a plastic card.</p>
           <Badge state={state} />
         </div>

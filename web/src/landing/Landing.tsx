@@ -174,7 +174,7 @@ function CreditTeaser() {
           AIRLOCK Credit
         </h2>
         <p className="land-p">
-          LPs stake into a pool, and each agent spends from a credit line the pool funds, on NEAR, Base and Solana. Every payment goes through the guard first, so an agent that is talked into a bad payment is held or refused before the pool&apos;s money moves.
+          LPs stake into a pool, and each agent spends from a credit line the pool funds. Every payment goes through the guard first, so an agent that is talked into a bad payment is held or refused before the pool&apos;s money moves.
         </p>
       </div>
       <p className="case-more">
