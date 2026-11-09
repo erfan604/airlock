@@ -2,6 +2,7 @@
 // plain words, the owner's words and the testnet transaction. It is what the static /replay page holds before its script runs, and what a reader
 // without JavaScript gets; the console replaces it with the interactive replay once the recordings are read.
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
+import { hostedText } from '../components/account.ts';
 import type { ActSummary } from './summary.ts';
 
 const EXPLORERS = ['https://testnet.nearblocks.io/txns/', 'https://sepolia.basescan.org/tx/'];
@@ -23,7 +24,7 @@ export function ReplaySummary({ acts }: { acts: ActSummary[] }) {
               <VerdictStamp state={a.outcome.stamp} ruleId={a.outcome.reason ?? undefined} testId={`summary-stamp-${a.id}`} />
               <div className="outcome-text">
                 <p className="outcome-money">{a.outcome.money}</p>
-                {a.outcome.to === null ? null : <p className="outcome-to">{`to ${a.outcome.to}`}</p>}
+                {a.outcome.to === null ? null : <p className="outcome-to">{`to ${hostedText(a.outcome.to)}`}</p>}
                 <p className="outcome-reason">{a.outcome.sentence}</p>
                 {a.failure === null ? null : <p className="replay-failure">{a.failure}</p>}
                 <ul className="replay-links">

@@ -1,7 +1,8 @@
 // AIR-335: the owner rule for visible web text, enforced on every prerendered page of the hosted site (and its 404): the main text, the nav, the shell bar
 // and the document title never contain the word "testnet" or a name containing "erfan", and every page ends in the one footer fact line. States that
 // change the text are visited too: the Try presets (both worlds), the three replay acts with the approval, the challenge page with a published key.
-// What is not text and is not checked: code blocks (<code>, <pre>, <kbd>, <samp>: commands and their last lines must stay exact), link targets and
+// What is not text and is not checked: code blocks (<code>, <pre>, <kbd>, <samp>: commands and their last lines must stay exact), the approval card
+// (it shows the exact values the wallet signs), link targets and
 // attributes. Account names that end in `.testnet` and do not contain the owner's name are identifiers, not prose: they are stripped before the word
 // check (the owner's name is checked on everything). Run: pnpm build:static && pnpm -C web e2e static-sweep
 import assert from 'node:assert/strict';
@@ -18,7 +19,7 @@ async function textOf(page: Page, selector: string): Promise<string> {
   return page.evaluate((s) => {
     const el = document.querySelector(s) as HTMLElement | null;
     if (el === null) return '';
-    const hidden = Array.from(el.querySelectorAll<HTMLElement>('code, pre, kbd, samp'));
+    const hidden = Array.from(el.querySelectorAll<HTMLElement>('code, pre, kbd, samp, [data-testid="card"]'));
     const old = hidden.map((n) => n.style.display);
     hidden.forEach((n) => (n.style.display = 'none'));
     const text = el.innerText;
@@ -30,9 +31,14 @@ async function textOf(page: Page, selector: string): Promise<string> {
 const ACCOUNT_IDENTIFIER = /[a-z0-9_.:-]*[a-z0-9]\.testnet\b/gi;
 
 /** The problems in one piece of text: the owner's name anywhere, the word testnet outside an account identifier. */
+const ACCOUNT_TOKEN = /(?:near:)?(?:[a-z0-9_-]+\.)+(?:testnet|near)(?![A-Za-z0-9_-])/g;
+/** The demo accounts the Try fixtures name: ids a reader may see in text. Any other account-like string in text is an id the page made up. */
+const KNOWN = new Set([...JSON.stringify([WORLD, HIRED]).matchAll(ACCOUNT_TOKEN)].map((m) => m[0].replace(/^near:/, '')));
+
 export function problemsIn(text: string): string[] {
   const out: string[] = [];
   for (const m of text.matchAll(/[^\s]{0,40}erfan[^\s]{0,40}/gi)) out.push(`owner name: ${m[0]}`);
+  for (const m of text.matchAll(ACCOUNT_TOKEN)) if (!KNOWN.has(m[0].replace(/^near:/, ''))) out.push(`account id that is not a known demo account: ${m[0]}`);
   const rest = text.replace(ACCOUNT_IDENTIFIER, '');
   for (const m of rest.matchAll(/.{0,40}testnet.{0,40}/gi)) out.push(`testnet: ${m[0]}`);
   return out;
@@ -54,6 +60,8 @@ const run: E2E = async ({ page: harnessPage, baseUrl }) => {
   assert.ok(problemsIn('Watch the recorded testnet run').length > 0);
   assert.ok(problemsIn('Runs on NEAR testnet.').length > 0);
   assert.deepEqual(problemsIn('Pay kanocotton.testnet now'), []);
+  assert.ok(problemsIn('Pay accountant.demo.testnet now').length > 0, 'an invented account id fails');
+  assert.deepEqual(problemsIn('Pay Accountant (demo) now'), []);
   assert.ok(problemsIn('Pay accountant.erfan-airlock.testnet now').length > 0);
   assert.ok(problemsIn('Erfan').length > 0);
   const found: string[] = [];

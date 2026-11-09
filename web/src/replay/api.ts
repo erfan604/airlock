@@ -2,7 +2,6 @@
 // /session and /api to the replay server). Nothing here signs, opens a wallet or reads the chain.
 import type { AssetEntryViewJson, LedgersView, RequestView } from '@airlock/runtime/chain-types';
 import type { BookEntryJson } from '@airlock/runtime/dsl';
-import { scrubOwner } from '../components/account.ts';
 import { STATIC, url } from '../static.ts';
 
 export type ActId = 'u01' | 'b01' | 'tamper';
@@ -45,8 +44,7 @@ export type ReplayApi = {
 async function getJson(path: string): Promise<unknown> {
   const res = await fetch(path, { credentials: 'same-origin' });
   if (!res.ok) throw new Error(`replay read failed: ${res.status}`);
-  // the hosted copy rewrites the owner's name in what it reads (components/account.ts); a live console shows the server's answer as it is
-  return (STATIC ? JSON.parse(scrubOwner(await res.text())) : await res.json()) as unknown;
+  return (await res.json()) as unknown;
 }
 
 /** The mode of the server behind this page: only a replay server sets `x-airlock-mode: replay` on `GET /session`. */
@@ -82,7 +80,7 @@ export function makeReplayApi(u: Urls): ReplayApi {
     },
     async evidence(no) {
       const res = await fetch(u.evidence(no), { credentials: 'same-origin' });
-      return res.ok ? ((STATIC ? JSON.parse(scrubOwner(await res.text())) : await res.json()) as unknown) : null;
+      return res.ok ? ((await res.json()) as unknown) : null;
     },
     async approve(no) {
       const res = await fetch(u.approve(no), { method: u.approveMethod, credentials: 'same-origin' });

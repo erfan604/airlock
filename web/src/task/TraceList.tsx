@@ -2,6 +2,7 @@
 // store already built (`rowOf`), so this file never sees a raw string from outside: an outside value is an `Untrusted` cell and goes to
 // `Specimen` only. The list view is the accessible twin of the provenance graph that was cut.
 import { useState, useSyncExternalStore } from 'react';
+import { hostedText } from '../components/account.ts';
 import { Seal } from '../components/Seal.tsx';
 import { UntrustedValue } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
@@ -30,14 +31,14 @@ function Cell({ row, cell }: { row: TraceRow; cell: TraceCell }) {
     return (
       <div className="trace-cell trace-cell-block" data-cell={cell.name}>
         <span className="trace-cell-name">{cell.name}</span>
-        <UntrustedValue text={cell.untrusted} channel={cell.channel} maxLines={row.kind === 'extract' ? 2 : undefined} />
+        <UntrustedValue text={cell.untrusted} channel={cell.channel} maxLines={row.kind === 'extract' ? 2 : undefined} owner />
       </div>
     );
   }
   return (
     <span className="trace-cell" data-cell={cell.name}>
       <span className="trace-cell-name">{cell.name}</span>
-      <span className="trace-cell-text">{cell.text}</span>
+      <span className="trace-cell-text">{hostedText(cell.text)}</span>
     </span>
   );
 }

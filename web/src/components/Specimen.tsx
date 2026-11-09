@@ -3,6 +3,7 @@
 // gutter, React text nodes only: no markup, no links, no images. Invisible characters become <U+XXXX> tokens. Six lines and 240
 // characters are shown, a button expands in place to 2,000 characters, and a line says how many more were not shown.
 import { useState } from 'react';
+import { hostedText } from './account.ts';
 import type { ChannelName } from '@airlock/runtime/dsl';
 import { ChannelSeal } from './Seal.tsx';
 import { codePointToken, countCodePoints, sanitizeUntrusted, takeCodePoints } from './sanitize.ts';
@@ -131,13 +132,17 @@ export const CHIP_MAX = 48;
  * A short outside value (an extracted amount, a payee key) as a chip: the channel seal, then the value in Courier Prime on a sunk well with a
  * striped edge, so the stripe marks the one value that came from outside, not the whole row. Longer or multi-line text is a Specimen.
  */
-export function UntrustedValue({ text, channel, maxLines, testId }: { text: Untrusted; channel: ChannelName; maxLines?: number; testId?: string }) {
+/**
+ * `owner` is set by the replay trace only: on the hosted site a recorded account that carries the owner's name is drawn as its plain label (components/account.ts).
+ * Text a visitor typed is never passed through it.
+ */
+export function UntrustedValue({ text, channel, maxLines, testId, owner }: { text: Untrusted; channel: ChannelName; maxLines?: number; testId?: string; owner?: boolean }) {
   const raw = revealUntrusted(text);
   if (raw.includes('\n') || countCodePoints(raw) > CHIP_MAX) return <Specimen text={text} channel={channel} maxLines={maxLines} testId={testId} />;
   return (
     <span className="untrusted-chip" data-testid={testId ?? 'untrusted-chip'}>
       <ChannelSeal channel={channel} />
-      <span className="untrusted-chip-value">{sanitizeUntrusted(raw).shown}</span>
+      <span className="untrusted-chip-value">{sanitizeUntrusted(owner === true ? hostedText(raw) : raw).shown}</span>
     </span>
   );
 }

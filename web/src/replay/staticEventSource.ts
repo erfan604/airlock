@@ -1,7 +1,6 @@
 // AIR-310: the trace store's EventSource for the static build. The replay server streams a recorded trace as server-sent events; the export step
 // saved that exact response body next to the page, and this class reads it and hands each `trace` and `end` message to the store's own handlers,
 // so the rows come from the same parse functions as live. It implements only what `createTraceStore` calls.
-import { scrubOwner } from '../components/account.ts';
 import { url } from '../static.ts';
 
 export type SseMessage = { event: string; id: string; data: string };
@@ -66,7 +65,7 @@ export class StaticEventSource {
       if (file === null) throw new Error('bad stream path');
       const res = await fetch(file, { credentials: 'same-origin' });
       if (!res.ok) throw new Error(`stream read failed: ${String(res.status)}`);
-      const messages = parseSse(scrubOwner(await res.text()));
+      const messages = parseSse(await res.text());
       if (this.closed) return;
       this.onopen?.(new Event('open'));
       for (const m of messages) {

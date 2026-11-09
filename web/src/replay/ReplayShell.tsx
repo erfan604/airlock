@@ -2,6 +2,7 @@
 // recorded owner words, the recorded trace (through the same trace store and rows as the live Task page), the recorded transaction links and,
 // for the held request, the real approval card fed by the recorded views. Nothing here signs, connects a wallet or leaves the page's origin.
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { hostedText } from '../components/account.ts';
 import type { ReactNode } from 'react';
 import { registryFromRows } from '@airlock/runtime/analyze';
 import type { AssetRegistry } from '@airlock/runtime/analyze';
@@ -75,7 +76,7 @@ function OutcomeHead({ stamp, reason, sentence, money, to, links }: { stamp: Par
       <VerdictStamp state={stamp} ruleId={reason ?? undefined} testId="outcome-stamp" />
       <div className="outcome-text">
         <p className="outcome-money" data-testid="outcome-money">{money}</p>
-        {to === null || to === undefined ? null : <p className="outcome-to">{`to ${to}`}</p>}
+        {to === null || to === undefined ? null : <p className="outcome-to">{`to ${hostedText(to)}`}</p>}
         <p className="outcome-reason" data-testid="outcome-reason">{sentence}</p>
         {links}
       </div>
