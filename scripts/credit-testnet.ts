@@ -103,18 +103,29 @@ function createSub(id: string, amount: string): string {
 async function main(): Promise<void> {
   // 0. funds: the issuer and five funders from the faucet (10 NEAR each); the funders send all but 1 NEAR to the issuer
   console.log(`accounts: ${JSON.stringify(A)}`);
-  const funders = [1, 2, 3, 4, 5].map((i) => `airlock-credit-${tag}-f${i}.testnet`);
-  for (const id of [issuer, ...funders]) {
-    if (!(await exists(id))) {
-      faucet(id);
-      await waitFor(id);
+  // FUND_FROM=<account> (optional, a testnet account whose key is in the keychain): the issuer is created and funded by it
+  // (`FUND_AMOUNT`, default 29 NEAR) instead of by the faucet, for when the faucet answers 429.
+  const fundFrom = process.env.FUND_FROM;
+  if (fundFrom !== undefined) {
+    if (!(await exists(issuer))) {
+      const r = run(['account', 'create-account', 'fund-myself', issuer, process.env.FUND_AMOUNT ?? '29 NEAR', 'autogenerate-new-keypair', 'save-to-legacy-keychain', 'sign-as', fundFrom, 'network-config', 'testnet', 'sign-with-keychain', 'send']);
+      if (r.code !== 0 || txOf(r.out) === undefined) throw new Error(`could not create ${issuer} from ${fundFrom}: ${r.out.slice(-300)}`);
+      await waitFor(issuer);
     }
-  }
-  for (const f of funders) {
-    const bal = await balance(f);
-    if (bal > 2n * ONE) {
-      const r = run(['tokens', f, 'send-near', issuer, near(bal - 1n * ONE), 'network-config', 'testnet', 'sign-with-keychain', 'send']);
-      if (r.code !== 0) throw new Error(`funding from ${f} failed: ${r.out.slice(-200)}`);
+  } else {
+    const funders = [1, 2, 3, 4, 5].map((i) => `airlock-credit-${tag}-f${i}.testnet`);
+    for (const id of [issuer, ...funders]) {
+      if (!(await exists(id))) {
+        faucet(id);
+        await waitFor(id);
+      }
+    }
+    for (const f of funders) {
+      const bal = await balance(f);
+      if (bal > 2n * ONE) {
+        const r = run(['tokens', f, 'send-near', issuer, near(bal - 1n * ONE), 'network-config', 'testnet', 'sign-with-keychain', 'send']);
+        if (r.code !== 0) throw new Error(`funding from ${f} failed: ${r.out.slice(-200)}`);
+      }
     }
   }
   console.log(`issuer balance ${near(await balance(issuer))}`);
@@ -125,13 +136,13 @@ async function main(): Promise<void> {
   for (const p of [policyWasm, creditWasm]) if (!existsSync(p)) throw new Error(`${p} is missing: build and copy the release wasm first`);
   const need = (p: string, margin: bigint): string => near(BigInt(readFileSync(p).length) * 10n ** 19n + margin);
   const plan: Array<[string, string]> = [
-    [A.pool, need(creditWasm, 2n * ONE)],
-    [A.card, need(policyWasm, 3n * ONE)],
-    [A.borrower, '4 NEAR'],
+    [A.pool, need(creditWasm, 1n * ONE)],
+    [A.card, need(policyWasm, 3n * ONE / 2n)],
+    [A.borrower, '3 NEAR'],
     [A.merchant, '0.1 NEAR'],
     [A.agent, '1 NEAR'],
-    [A.lp1, '5 NEAR'],
-    [A.lp2, '5 NEAR'],
+    [A.lp1, '3.6 NEAR'],
+    [A.lp2, '2.7 NEAR'],
   ];
   for (const [id, amount] of plan) {
     if (await exists(id)) continue;
