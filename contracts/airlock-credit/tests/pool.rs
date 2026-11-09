@@ -249,7 +249,8 @@ async fn a_line_funds_a_card_that_pays_a_merchant_and_is_swept_and_repaid_with_a
         attacker_before,
         "the attacker got nothing"
     );
-    // the issuer cannot sweep while the escalation is pending; the borrower rejects it, then the sweep works
+    // the issuer cannot sweep while the escalation is pending; the issuer rejects it himself (F2: reject moves no money, so the issuer never
+    // depends on the borrower to clear it), then the sweep works
     let (approver, approver_signer) = w.approver.clone().unwrap();
     fails_with(
         &send(
@@ -271,8 +272,8 @@ async fn a_line_funds_a_card_that_pays_a_merchant_and_is_swept_and_repaid_with_a
     ok(&send(
         w,
         &w.policy,
-        &approver,
-        &approver_signer,
+        &w.owner,
+        &w.owner_signer,
         "reject",
         json!({ "id": v["id"] }),
         1,

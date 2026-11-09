@@ -120,6 +120,12 @@
   "expect": "revert: approve refused for the approver; the owner may approve"
  },
  {
+  "id": "RT-CON-21",
+  "test": "rt_con_owner_rejects_a_pending_escalation_so_the_sweep_is_not_blocked",
+  "attack": "a stranger rejects a held payment; the borrower leaves an escalation pending so that sweep stays blocked",
+  "expect": "the stranger's reject reverts; the issuer (owner) may reject it, which empties the pending list so sweep can run"
+ },
+ {
   "id": "RT-APPR-01",
   "test": "rt_appr_changed_amount_reverts",
   "attack": "approve with a different amount than the stored request",

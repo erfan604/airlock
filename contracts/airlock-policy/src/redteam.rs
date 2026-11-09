@@ -586,9 +586,27 @@ fn rt_con_approver_approves_a_booked_merchant_and_the_owner_does_not() {
             .contains("Caller is not the approver or the owner")
     );
     testing_env!(ctx(OWNER, NOW, 1).build());
-    assert!(panics(|| c.reject(no.to_string())).contains("Caller is not the approver"));
+    testing_env!(ctx("stranger.test.near", NOW, 1).build());
+    assert!(
+        panics(|| c.reject(no.to_string())).contains("Caller is not the approver or the owner")
+    );
     approve_as(&mut c, APPROVER_ACCOUNT, NOW, &k);
     assert!(approved_logged());
+}
+
+#[test]
+fn rt_con_owner_rejects_a_pending_escalation_so_the_sweep_is_not_blocked() {
+    let mut c = setup_card();
+    let no = escalate_booked(&mut c, "task-owner-reject");
+    // a stranger cannot reject
+    testing_env!(ctx("stranger.test.near", NOW, 1).build());
+    assert!(
+        panics(|| c.reject(no.to_string())).contains("Caller is not the approver or the owner")
+    );
+    // reject moves no money, so the issuer may clear it (the borrower may withhold his own rejection, and sweep needs no pending escalation)
+    testing_env!(ctx(OWNER, NOW, 1).build());
+    c.reject(no.to_string());
+    assert!(c.pending_nos.is_empty());
 }
 
 #[test]

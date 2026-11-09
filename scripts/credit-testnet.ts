@@ -211,7 +211,7 @@ async function main(): Promise<void> {
   console.log(`ROW borrower self approve refused | ${A.card} | https://testnet.nearblocks.io/txns/${refused.tx}`);
   writeFileSync(join(dir, 'rows.json'), JSON.stringify(rows, null, 2));
   must('the borrower rejects the self payment', A.card, () => call(A.card, 'reject', { id: self0.pending_id }, A.borrower, '1 yoctoNEAR', '30 Tgas'));
-  if (inj0.pending_id !== null) must('the borrower rejects the injected payee', A.card, () => call(A.card, 'reject', { id: inj0.pending_id }, A.borrower, '1 yoctoNEAR', '30 Tgas'));
+  if (inj0.pending_id !== null) must('the issuer rejects the pending injected payee himself (reject moves no money), so the borrower cannot block the sweep', A.card, () => call(A.card, 'reject', { id: inj0.pending_id }, issuer, '1 yoctoNEAR', '30 Tgas'));
 
   // 6. sweep the unspent 0.5 NEAR back to the pool, then repay what the card kept with the fee
   must('the issuer sweeps 0.5 NEAR from the card to the pool (credited to the line)', A.card, () => call(A.card, 'sweep', { amount: (ONE / 2n).toString() }, issuer, '1 yoctoNEAR', '100 Tgas'));

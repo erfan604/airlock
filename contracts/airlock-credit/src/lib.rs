@@ -161,6 +161,13 @@ impl Pool {
         self.idle + self.lent + self.staked - self.impaired_at(now_ms)
     }
 
+    /// What the LPs own with every open line counted at its outstanding principal, overdue or not. A deposit is priced here (F1): the
+    /// impairment lowers what an LP can withdraw (`assets_at`), but it must not let a new depositor buy shares cheap before the
+    /// borrower repays, which would move value from the incumbents to the newcomer.
+    fn assets_unimpaired(&self) -> u128 {
+        self.idle + self.lent + self.staked
+    }
+
     fn owner_only(&self) {
         require!(
             env::predecessor_account_id() == self.owner_id,
@@ -231,7 +238,7 @@ impl Pool {
 
     // ---- LPs ----
 
-    /// Stake the attached NEAR: shares at the current price (the first deposit 1:1), rounded down. At least `MIN_DEPOSIT`.
+    /// Stake the attached NEAR: shares at the un-impaired price (the first deposit 1:1), rounded down; withdrawals pay the impaired price. At least `MIN_DEPOSIT`.
     #[payable]
     pub fn deposit(&mut self) -> U128 {
         let amount = env::attached_deposit().as_yoctonear();
@@ -239,7 +246,7 @@ impl Pool {
             amount >= MIN_DEPOSIT,
             "deposit is below the minimum of 0.001 NEAR"
         );
-        let shares = math::shares_for_deposit(amount, self.total_shares, self.assets_at(ms()))
+        let shares = math::shares_for_deposit(amount, self.total_shares, self.assets_unimpaired())
             .unwrap_or_else(|| env::panic_str("the pool has no assets to price a share"));
         require!(
             shares > 0,

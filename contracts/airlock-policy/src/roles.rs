@@ -1,5 +1,5 @@
 // AIR-327: the approver role, the sponsor and `sweep` (docs/design/credit.md). A card policy of AIRLOCK Credit has three parties:
-// the owner is the issuer (book, caps, pause, agents, sweep), the approver is the borrower (approve and reject held payments only) and
+// the owner is the issuer (book, caps, pause, agents, sweep), the approver is the borrower (approve and reject held payments only; the owner may reject too) and
 // the sponsor is the pool (the only account `sweep` can pay). With no approver and no sponsor nothing changes: the owner approves and
 // there is no sweep. Both fields are fixed at init, so no call can move the approval to the account that wants the money.
 use crate::*;
@@ -18,7 +18,7 @@ pub struct RolesView {
 }
 
 impl Contract {
-    /// The guard of `approve` and `approve_and_remember` (AIR-327): exactly one yoctoNEAR, then the predecessor is the approver or the
+    /// The guard of `approve`, `approve_and_remember` and `reject` (AIR-327): exactly one yoctoNEAR, then the predecessor is the approver or the
     /// owner when an approver is set (which of them may settle which escalation is `require_settle_role`), the owner alone when none is.
     pub(crate) fn settle_call(&mut self) {
         match &self.approver {
@@ -50,21 +50,6 @@ impl Contract {
                 require!(
                     !in_book_now,
                     "approve refused for the owner: the payee is in the book, the approver settles it"
-                );
-            }
-        }
-    }
-
-    /// The guard of `reject`: exactly one yoctoNEAR, then the predecessor is the approver (the owner
-    /// when no approver is set, with the text every deployment had before AIR-327). The owner is refused when an approver is set.
-    pub(crate) fn approver_call(&mut self) {
-        match &self.approver {
-            None => self.owner_call(),
-            Some(approver) => {
-                assert_one_yocto();
-                require!(
-                    &env::predecessor_account_id() == approver,
-                    "Caller is not the approver"
                 );
             }
         }
@@ -241,16 +226,18 @@ mod tests {
             as_caller(who, 1);
             assert!(panics(|| approve(&mut c)).contains("unknown id"), "{who}");
         }
-        // reject is the approver's alone
-        as_caller(APPROVER, 1);
-        assert!(panics(|| c.reject("1".into())).contains("unknown id"));
-        for who in [OWNER, STRANGER] {
+        // reject moves no money: the approver and the owner may reject, a stranger may not
+        for who in [APPROVER, OWNER] {
             as_caller(who, 1);
             assert!(
-                panics(|| c.reject("1".into())).contains("Caller is not the approver"),
+                panics(|| c.reject("1".into())).contains("unknown id"),
                 "{who}"
             );
         }
+        as_caller(STRANGER, 1);
+        assert!(
+            panics(|| c.reject("1".into())).contains("Caller is not the approver or the owner")
+        );
         // a stranger cannot approve
         as_caller(STRANGER, 1);
         assert!(panics(|| approve(&mut c)).contains("Caller is not the approver or the owner"));

@@ -8,7 +8,7 @@ A credit line funds an AIRLOCK policy, the card. Three accounts stand around it:
 
 | Role | Account | What it can do |
 | --- | --- | --- |
-| issuer | `owner_id` (the pool's issuer) | everything the owner could do before: book (`book_set_root`), assets, flags, pause, task key, agents, `reset_escalations`, and `sweep`; `approve` as an override for a payment to a payee that is not in the book (never for a booked one) |
+| issuer | `owner_id` (the pool's issuer) | everything the owner could do before: book (`book_set_root`), assets, flags, pause, task key, agents, `reset_escalations`, `reject` (so a pending escalation never blocks `sweep`), and `sweep`; `approve` as an override for a payment to a payee that is not in the book (never for a booked one) |
 | borrower | `approver` (set at init) | `reject` any held payment; `approve` a held payment only to a payee in the book at the current epoch; nothing else |
 | pool | `sponsor` (set at init) | the only account `sweep` can pay |
 
@@ -16,8 +16,8 @@ A credit line funds an AIRLOCK policy, the card. Three accounts stand around it:
 changes them. With neither set, nothing changes: the owner approves and rejects with the same guard text (`Caller is not the owner`), there
 is no sweep, and an init call without the two keys is the init call of before (a missing option key is None).
 
-- `reject` runs `approver_call`: exactly one yoctoNEAR, then the predecessor must be the approver (the owner when none is set).
-- `approve` and `approve_and_remember` run `settle_call`: the approver or the owner may pass the gate, a stranger is refused
+- `reject`, `approve` and `approve_and_remember` run `settle_call` (reject moves no money, so the issuer may reject too: otherwise a borrower
+  who leaves an escalation pending would block `sweep`, which needs none pending): the approver or the owner may pass the gate, a stranger is refused
   (`Caller is not the approver or the owner`); with no approver only the owner, with the text of before. Which of the two may settle
   which escalation is the rule below.
 - The borrower rule (found in review, tests RT-CON-14 and RT-CON-17 to RT-CON-20): the borrower controls the agent and holds the approver
@@ -56,6 +56,7 @@ three red-team cases RT-CON-14 to RT-CON-16); the sandbox suite `tests/roles.rs`
 | --- | --- |
 | the approver gate lets the owner pass (guard ignores the approver) | `roles_approver_approves_and_rejects_and_the_owner_cannot`, `roles_approve_and_remember_is_refused_when_an_approver_is_set`, `rt_con_owner_cannot_approve_when_approver_set`, `rt_con_approver_cannot_add_a_payee` |
 | the approver gate accepts the owner as well as the approver | `roles_approver_approves_and_rejects_and_the_owner_cannot`, `roles_approve_and_remember_is_refused_when_an_approver_is_set`, `rt_con_owner_cannot_approve_when_approver_set` |
+| `reject` refuses the owner when an approver is set (F2, the issuer could not clear a pending escalation, so `sweep` stayed blocked) | `roles_gates_with_an_approver_set`, `rt_con_owner_rejects_a_pending_escalation_so_the_sweep_is_not_blocked` |
 | `approve_and_remember` allowed with an approver | `roles_approve_and_remember_is_refused_when_an_approver_is_set`, `rt_con_approver_cannot_add_a_payee` |
 | `sweep` pays the owner instead of the sponsor | `roles_sweep_sends_only_a_function_call_to_the_sponsor_with_the_card_id`, `rt_con_sweep_pays_only_the_sponsor` |
 | `sweep` without the owner guard | `roles_sweep_is_owner_only_with_one_yocto`, `roles_approver_cannot_change_policy`, `rt_con_sweep_pays_only_the_sponsor` |
@@ -95,7 +96,7 @@ donation attack). The invariant `contract balance >= idle + collateral_held + re
 
 | Call | Who | Rule |
 | --- | --- | --- |
-| `deposit()` payable | anyone | `shares = amount` when `total_shares` is 0, else `floor(amount * total_shares / assets)`; at least `MIN_DEPOSIT` (0.001 NEAR); refuses when shares are 0 or `assets` is 0 with shares outstanding |
+| `deposit()` payable | anyone | `shares = amount` when `total_shares` is 0, else `floor(amount * total_shares / assets_unimpaired)` where `assets_unimpaired = idle + lent + staked` (F1, below); at least `MIN_DEPOSIT` (0.001 NEAR); refuses when shares are 0 or `assets` is 0 with shares outstanding |
 | `withdraw(shares)` | an LP | `amount = floor(shares * assets / total_shares)`; refuses above `idle` with the most shares that can leave now; burns, lowers `idle`, then transfers; `on_withdraw` restores the state if the transfer failed |
 | `register_card(card, borrower)` | owner | asks the card `get_roles` and, in `on_card_roles`, requires `owner_id == pool owner`, `approver == borrower`, `sponsor == this pool`, and `borrower != owner`; then stores the card. The role check is on chain, so the trust assumption of AIR-327 is checked, not stated |
 | `post_collateral(card)` payable | the card's borrower | adds to the card's collecting line |
@@ -120,7 +121,11 @@ Three rules came out of the security review of the contract (each has a failing 
   the owner's `write_off` clears it and keeps it in the pool's `losses`.
 - **Overdue lines are impaired in the share price.** `assets` counts the outstanding principal (drawn minus returned) of an open line as 0
   once `now > due_ms`, whether or not anyone has called `default` (`get_pool.impaired` shows the amount). So the price drops at the due
-  time for deposits and withdrawals alike and LPs cannot leave at the old price before a default. The seized collateral and any
+  time for withdrawals and LPs cannot leave at the old price before a default. **A deposit is priced at the un-impaired assets
+  (`idle + lent + staked`), not at `assets` (F1, found in review):** at the impaired price a newcomer would buy shares cheap during the
+  overdue but still open line, the borrower (a colluder) would repay, the price would jump back and the newcomer would take value from
+  the incumbents. Priced un-impaired, a deposit never lowers the un-impaired price an incumbent holds; `get_pool.share_price` and
+  `get_lp.value` stay the withdraw price. The seized collateral and any
   recovery enter the assets when they are booked (at `default` and at the recovery sweep), so they accrue to the holders at that time,
   not to those who left earlier; a repay after the due date but before the default restores the price at once. The share price walks the
   lines, so a pool holds at most 100 cards.
@@ -224,6 +229,8 @@ Each mutant was applied alone and the library tests run (the unit tests of `src/
 | a new line can reset a loss (post_collateral without the loss guard) | `a_card_with_an_unrecovered_loss_is_terminal_until_recovered_or_written_off` |
 | a new line can reset a loss (open_line without the loss guard) | same test |
 | overdue lines are not impaired | `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default` |
+| a deposit is priced at the impaired assets (F1, dilution through impairment) | `a_late_deposit_into_an_overdue_line_does_not_dilute_the_incumbents`, `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default`, `property_random_operations_keep_the_accounting` |
+| a withdraw is priced at the un-impaired assets (LPs leave at the old price) | `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default` |
 | `withdraw_collateral` open to anyone | `collateral_can_be_withdrawn_by_the_borrower_while_no_line_is_open` |
 | `withdraw_collateral` with an open line | same test |
 | `withdraw_collateral` pays before lowering the state (collateral held not lowered) | same test |

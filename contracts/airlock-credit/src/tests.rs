@@ -404,6 +404,33 @@ fn only_the_card_returns_funds_and_the_excess_goes_back() {
 }
 
 #[test]
+fn a_late_deposit_into_an_overdue_line_does_not_dilute_the_incumbents() {
+    // F1 (AIR-331 review): the impairment lowers what an LP can WITHDRAW, but a deposit is priced at the un-impaired assets. Otherwise a
+    // depositor buys cheap during the overdue but still open line, the borrower repays and the price jumps (a collusion).
+    let mut p = funded_pool();
+    open(&mut p, 60 * NEAR, 500);
+    let late = NOW + 31 * DAY;
+    call_as(LP2, 40 * NEAR, late);
+    let minted = p.deposit().0;
+    assert_eq!(
+        minted,
+        40 * NEAR,
+        "the deposit buys at the un-impaired price"
+    );
+    // what LP1 sees while the line is overdue is the impaired value (the withdraw price), lower than the deposit price
+    assert!(p.get_lp(acct(LP1)).value.0 < 100 * NEAR);
+    call_as(BORROWER, 63 * NEAR, late);
+    p.repay(acct(CARD));
+    // 140 shares own 143 NEAR: LP1 keeps 100/140 of it, LP2 gains only pro rata
+    let want1 = math::mul_div_floor(100 * NEAR, 143 * NEAR, 140 * NEAR).unwrap();
+    assert_eq!(p.get_lp(acct(LP1)).value.0, want1);
+    assert_eq!(
+        p.get_lp(acct(LP2)).value.0,
+        math::mul_div_floor(40 * NEAR, 143 * NEAR, 140 * NEAR).unwrap()
+    );
+}
+
+#[test]
 fn repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral() {
     let mut p = funded_pool();
     open(&mut p, 50 * NEAR, 200);
@@ -620,9 +647,9 @@ fn an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default() 
         vec![(LP1.to_string(), 4 * NEAR)],
         "10 shares at 0.4"
     );
-    // a deposit now buys shares at the impaired price too
+    // a deposit does NOT buy at the impaired price (F1): it is priced at the un-impaired assets, 36 idle + 60 lent over 90 shares
     call_as(LP2, 4 * NEAR, NOW + 31 * DAY);
-    assert_eq!(p.deposit().0, 10 * NEAR);
+    assert_eq!(p.deposit().0, 4 * NEAR * 90 / 96);
 }
 
 #[test]
@@ -768,7 +795,17 @@ fn run_property(seed: u64) {
                 0 | 1 => {
                     let who = lps[rng.below(2) as usize];
                     call_as(who, MIN_DEPOSIT + u128::from(rng.below(40)) * NEAR / 4, now);
+                    let unimpaired = |p: &Pool| {
+                        math::share_price(p.idle + p.lent + p.staked, p.total_shares).unwrap_or(0)
+                    };
+                    let before = unimpaired(&p);
                     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| p.deposit()));
+                    // F1: a deposit never lowers the un-impaired price an incumbent holds (rounding down favours the pool)
+                    assert!(
+                        unimpaired(&p) + 1 >= before,
+                        "a deposit diluted the incumbents: {before} to {}",
+                        unimpaired(&p)
+                    );
                 }
                 2 => {
                     let who = lps[rng.below(2) as usize];

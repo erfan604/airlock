@@ -466,14 +466,15 @@ impl Contract {
         );
     }
 
-    /// Owner: reject the escalation with short number `id` (AIR-081). `#[payable]`, exactly 1 yoctoNEAR from the owner (`owner_call`, the
-    /// first statement). `id` resolves like `approve`'s (`unknown id`). The record must be `Pending`, otherwise `NotPending`. There is no
+    /// Owner (or the approver when one is set, AIR-327): reject the escalation with short number `id` (AIR-081). `#[payable]`, exactly 1
+    /// yoctoNEAR (`settle_call`, the first statement: the owner alone without an approver, the approver or the owner with one). Reject moves
+    /// no money, so the issuer can always clear a pending escalation, which `sweep` needs. `id` resolves like `approve`'s (`unknown id`). The record must be `Pending`, otherwise `NotPending`. There is no
     /// expiry check: the owner may reject a request whose TTL has passed and that nobody expired yet, and it counts as a reject. The
     /// record becomes `Rejected` and keeps every other field (its id stays used); the number leaves `pending_nos`. Then `rejected` is
     /// emitted, and the flood counters of the record's agent take the reject (`escalations_locked` follows when it newly locks).
     #[payable]
     pub fn reject(&mut self, id: String) {
-        self.approver_call();
+        self.settle_call();
         let (no, key, mut rec) = self.resolve_escalation(&id);
         require!(rec.state == RequestState::Pending, "NotPending");
         let agent = rec.agent.clone();
