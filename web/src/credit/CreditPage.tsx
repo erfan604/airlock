@@ -355,6 +355,19 @@ export function Ticker({ events, nowMs, live }: { events: readonly CreditEvent[]
 
 const LINE_WORD: Record<Line['state'], string> = { collecting: 'Collecting collateral', open: 'Open', repaid: 'Repaid', defaulted: 'Defaulted', unknown: 'Unknown' };
 
+/** A card account on the stage: its first name part in full, the rest small and dim (no network suffix in big type). */
+function CardName({ id }: { id: string }) {
+  const at = id.indexOf('.');
+  const head = at < 0 ? id : id.slice(0, at);
+  const rest = at < 0 ? '' : shortId(id.slice(at), 26);
+  return (
+    <>
+      <span className="cr-label-head">{head}</span>
+      {rest === '' ? null : <span className="cr-label-rest">{rest}</span>}
+    </>
+  );
+}
+
 export function LinesTable({ lines, selected, onSelect, nowMs }: { lines: readonly Line[]; selected: string | null; onSelect(card: string): void; nowMs: bigint }) {
   return (
     <section className="cr-wide" aria-labelledby="cr-lines-h" data-testid="credit-lines">
@@ -578,8 +591,11 @@ export function CreditPage(): ReactElement {
                       {CHAIN_NAME[c]}
                     </span>
                   ))}
+                  <span className="cr-label cr-label-pool" ref={(el) => { if (el === null) labels.current.delete('world-pool'); else labels.current.set('world-pool', el); }}>
+                    Pool
+                  </span>
                   <span className="cr-label cr-label-card" ref={(el) => { if (el === null) labels.current.delete('card'); else labels.current.set('card', el); }}>
-                    {sel === undefined ? '' : shortId(accountText(sel.card, 'demo line'), 34)}
+                    {sel === undefined ? '' : <CardName id={accountText(sel.card, 'demo line')} />}
                   </span>
                 </div>
               ) : null}

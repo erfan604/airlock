@@ -164,23 +164,34 @@
   position: absolute;
   left: 0;
   top: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--paper) 62%, transparent);
   font-family: var(--font-data);
-  font-size: 12px;
-  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--ink);
   white-space: nowrap;
   will-change: transform;
 }
 .cr-label-card {
-  padding: 3px 8px;
-  border-radius: var(--radius-s);
-  background: color-mix(in srgb, var(--sunk) 82%, transparent);
-  color: var(--ink);
+  padding: 4px 9px;
+  background: color-mix(in srgb, var(--sunk) 86%, transparent);
   text-transform: none;
   letter-spacing: 0.02em;
   opacity: 0;
   transition: opacity 200ms var(--ease-out);
+}
+.cr-label-head {
+  font-size: 12px;
+  color: var(--ink);
+}
+.cr-label-rest {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-2);
 }
 
 /* the bar under the stage: legend and the scene's controls */
