@@ -404,30 +404,46 @@ fn only_the_card_returns_funds_and_the_excess_goes_back() {
 }
 
 #[test]
-fn a_late_deposit_into_an_overdue_line_does_not_dilute_the_incumbents() {
-    // F1 (AIR-331 review): the impairment lowers what an LP can WITHDRAW, but a deposit is priced at the un-impaired assets. Otherwise a
-    // depositor buys cheap during the overdue but still open line, the borrower repays and the price jumps (a collusion).
+fn deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default() {
+    // F1 (security review): one valuation for both sides. A deposit priced at the impaired value lets a newcomer buy cheap before a
+    // repay; priced un-impaired it lets an incumbent leave on newcomers' money before a default. So deposits are refused while any line
+    // is overdue; `default` is permissionless and clears the impairment, which reopens them at the post-loss price.
     let mut p = funded_pool();
     open(&mut p, 60 * NEAR, 500);
     let late = NOW + 31 * DAY;
     call_as(LP2, 40 * NEAR, late);
-    let minted = p.deposit().0;
+    assert!(panics(|| p.deposit()).contains("deposits are paused while a line is past due"));
+    // nothing moved: the incumbent holds the same shares and value, the pool the same totals
+    assert_eq!(p.total_shares, 100 * NEAR);
+    let value_before = p.get_lp(acct(LP1)).value.0;
+    call_as("anyone.test.near", 0, late);
+    p.default(acct(CARD));
+    // 63 owed, 18 of collateral seized, 42 lost: 58 assets over 100 shares
+    assert_eq!(p.get_lp(acct(LP1)).value.0, 58 * NEAR);
+    assert!(value_before < 100 * NEAR);
+    call_as(LP2, 29 * NEAR, late);
     assert_eq!(
-        minted,
-        40 * NEAR,
-        "the deposit buys at the un-impaired price"
+        p.deposit().0,
+        50 * NEAR,
+        "bought at the post-loss price 0.58"
     );
-    // what LP1 sees while the line is overdue is the impaired value (the withdraw price), lower than the deposit price
-    assert!(p.get_lp(acct(LP1)).value.0 < 100 * NEAR);
+    assert_eq!(
+        p.get_lp(acct(LP1)).value.0,
+        58 * NEAR,
+        "the incumbent is not moved"
+    );
+}
+
+#[test]
+fn a_repay_after_the_due_date_reopens_deposits_at_the_restored_price() {
+    let mut p = funded_pool();
+    open(&mut p, 60 * NEAR, 500);
+    let late = NOW + 31 * DAY;
     call_as(BORROWER, 63 * NEAR, late);
     p.repay(acct(CARD));
-    // 140 shares own 143 NEAR: LP1 keeps 100/140 of it, LP2 gains only pro rata
-    let want1 = math::mul_div_floor(100 * NEAR, 143 * NEAR, 140 * NEAR).unwrap();
-    assert_eq!(p.get_lp(acct(LP1)).value.0, want1);
-    assert_eq!(
-        p.get_lp(acct(LP2)).value.0,
-        math::mul_div_floor(40 * NEAR, 143 * NEAR, 140 * NEAR).unwrap()
-    );
+    call_as(LP2, 103 * NEAR, late);
+    assert_eq!(p.deposit().0, 100 * NEAR, "price 1.03 after the fee");
+    assert_eq!(p.get_lp(acct(LP1)).value.0, 103 * NEAR);
 }
 
 #[test]
@@ -647,9 +663,9 @@ fn an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default() 
         vec![(LP1.to_string(), 4 * NEAR)],
         "10 shares at 0.4"
     );
-    // a deposit does NOT buy at the impaired price (F1): it is priced at the un-impaired assets, 36 idle + 60 lent over 90 shares
+    // and a deposit is refused while the line is past due (F1)
     call_as(LP2, 4 * NEAR, NOW + 31 * DAY);
-    assert_eq!(p.deposit().0, 4 * NEAR * 90 / 96);
+    assert!(panics(|| p.deposit()).contains("deposits are paused while a line is past due"));
 }
 
 #[test]
@@ -795,17 +811,24 @@ fn run_property(seed: u64) {
                 0 | 1 => {
                     let who = lps[rng.below(2) as usize];
                     call_as(who, MIN_DEPOSIT + u128::from(rng.below(40)) * NEAR / 4, now);
-                    let unimpaired = |p: &Pool| {
-                        math::share_price(p.idle + p.lent + p.staked, p.total_shares).unwrap_or(0)
-                    };
-                    let before = unimpaired(&p);
-                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| p.deposit()));
-                    // F1: a deposit never lowers the un-impaired price an incumbent holds (rounding down favours the pool)
-                    assert!(
-                        unimpaired(&p) + 1 >= before,
-                        "a deposit diluted the incumbents: {before} to {}",
-                        unimpaired(&p)
-                    );
+                    let value = |p: &Pool, who: &str| p.get_lp(acct(who)).value.0;
+                    let other = if who == LP1 { LP2 } else { LP1 };
+                    let (price_before, other_before) =
+                        (p.get_pool().share_price.0, value(&p, other));
+                    let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| p.deposit()));
+                    if r.is_ok() {
+                        // F1: a deposit never moves what the other LP holds, and never lowers the price (rounding favours the pool)
+                        call_as(OWNER, 0, now);
+                        assert!(
+                            p.get_pool().impaired.0 == 0,
+                            "a deposit was accepted while a line was past due"
+                        );
+                        assert!(
+                            value(&p, other).abs_diff(other_before) <= 2,
+                            "a deposit moved another LP's value"
+                        );
+                        assert!(p.get_pool().share_price.0 + 1 >= price_before);
+                    }
                 }
                 2 => {
                     let who = lps[rng.below(2) as usize];

@@ -96,7 +96,7 @@ donation attack). The invariant `contract balance >= idle + collateral_held + re
 
 | Call | Who | Rule |
 | --- | --- | --- |
-| `deposit()` payable | anyone | `shares = amount` when `total_shares` is 0, else `floor(amount * total_shares / assets_unimpaired)` where `assets_unimpaired = idle + lent + staked` (F1, below); at least `MIN_DEPOSIT` (0.001 NEAR); refuses when shares are 0 or `assets` is 0 with shares outstanding |
+| `deposit()` payable | anyone | `shares = amount` when `total_shares` is 0, else `floor(amount * total_shares / assets)`; refused while any open line is past its due date (`deposits are paused while a line is past due`, F1 below); at least `MIN_DEPOSIT` (0.001 NEAR); refuses when shares are 0 or `assets` is 0 with shares outstanding |
 | `withdraw(shares)` | an LP | `amount = floor(shares * assets / total_shares)`; refuses above `idle` with the most shares that can leave now; burns, lowers `idle`, then transfers; `on_withdraw` restores the state if the transfer failed |
 | `register_card(card, borrower)` | owner | asks the card `get_roles` and, in `on_card_roles`, requires `owner_id == pool owner`, `approver == borrower`, `sponsor == this pool`, and `borrower != owner`; then stores the card. The role check is on chain, so the trust assumption of AIR-327 is checked, not stated |
 | `post_collateral(card)` payable | the card's borrower | adds to the card's collecting line |
@@ -121,11 +121,12 @@ Three rules came out of the security review of the contract (each has a failing 
   the owner's `write_off` clears it and keeps it in the pool's `losses`.
 - **Overdue lines are impaired in the share price.** `assets` counts the outstanding principal (drawn minus returned) of an open line as 0
   once `now > due_ms`, whether or not anyone has called `default` (`get_pool.impaired` shows the amount). So the price drops at the due
-  time for withdrawals and LPs cannot leave at the old price before a default. **A deposit is priced at the un-impaired assets
-  (`idle + lent + staked`), not at `assets` (F1, found in review):** at the impaired price a newcomer would buy shares cheap during the
-  overdue but still open line, the borrower (a colluder) would repay, the price would jump back and the newcomer would take value from
-  the incumbents. Priced un-impaired, a deposit never lowers the un-impaired price an incumbent holds; `get_pool.share_price` and
-  `get_lp.value` stay the withdraw price. The seized collateral and any
+  time for withdrawals and LPs cannot leave at the old price before a default. **Deposits are refused while any line is past due (F1,
+  found in review, redesigned after a second review):** one valuation serves both sides. A deposit priced at the impaired value lets a
+  newcomer buy cheap before the borrower (a colluder) repays; priced un-impaired it lets an incumbent who expects a default wait for new
+  deposits to lift the price, withdraw, and leave the loss with the newcomers. With deposits closed while `impaired > 0`, a deposit always
+  prices at `assets` with nothing impaired, so no value moves between LPs across the overdue window. Liveness: `default` is permissionless
+  after the due date, books the loss and clears the impairment, which reopens deposits at the post-loss price; a repay reopens them too. The seized collateral and any
   recovery enter the assets when they are booked (at `default` and at the recovery sweep), so they accrue to the holders at that time,
   not to those who left earlier; a repay after the due date but before the default restores the price at once. The share price walks the
   lines, so a pool holds at most 100 cards.
@@ -229,8 +230,9 @@ Each mutant was applied alone and the library tests run (the unit tests of `src/
 | a new line can reset a loss (post_collateral without the loss guard) | `a_card_with_an_unrecovered_loss_is_terminal_until_recovered_or_written_off` |
 | a new line can reset a loss (open_line without the loss guard) | same test |
 | overdue lines are not impaired | `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default` |
-| a deposit is priced at the impaired assets (F1, dilution through impairment) | `a_late_deposit_into_an_overdue_line_does_not_dilute_the_incumbents`, `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default`, `property_random_operations_keep_the_accounting` |
-| a withdraw is priced at the un-impaired assets (LPs leave at the old price) | `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default` |
+| the deposit guard removed (F1: a deposit while a line is past due) | `deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default`, `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default`, `property_random_operations_keep_the_accounting` |
+| a deposit priced at idle + lent + staked instead of `assets` | equivalent mutant: with the guard in force nothing is impaired, so both values are equal |
+| a withdraw is priced at idle + lent + staked (LPs leave at the old price) | `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default` |
 | `withdraw_collateral` open to anyone | `collateral_can_be_withdrawn_by_the_borrower_while_no_line_is_open` |
 | `withdraw_collateral` with an open line | same test |
 | `withdraw_collateral` pays before lowering the state (collateral held not lowered) | same test |
