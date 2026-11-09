@@ -383,3 +383,21 @@ and 0.56 NEAR after.
 - The record is keyed by borrower account: a borrower on a NEW account starts fresh at 500 (the full base). The Passport stops a reset on
   the same account, not a new identity; only the issuer registers borrowers, so onboarding is where identity is checked.
 - The cap is per line, not per pool: many fresh borrowers can each take up to the base.
+
+### AIR-333 as built
+
+- `src/legacy.rs` (`PoolV1`), `src/lib.rs` (record, cap, cap base, `migrate`, the two views), `src/math.rs` (`passport_score`, `limit_cap`,
+  `near_decimal`), `vectors/passport.json` (11 records with score, reasons and cap; read by `passport_vectors_match`).
+- `res/airlock_credit.wasm` stays the c1108d bytes (sha256 `1f915ce2...`, the hash docs/EVIDENCE.md and
+  `scripts/credit-evidence-check.sh` read); `res/airlock_credit_c1108d.wasm` is the same bytes pinned by `the_c1108d_wasm_is_pinned` for
+  the rehearsal; `res/airlock_credit_v2.wasm` is the upgrade the live run deploys (sha256
+  `842a093147f81f5532e2159d2e333013bc52a3e06afc17df3dd610bf7b2f774b`, code hash `9tuzb2npsiJ3pBZsc4rh49xKSeF1D7TNsNjJEyaaC9Ue`). Its
+  preflight refuses to run unless the v2 file equals the wasm the sandbox rehearsal ran.
+- Tests: 59 unit tests (14 new ones failed against stubs of the rules before the rules were written: score, cap, near string,
+  record writes, backfill, cap base) and 5 sandbox tests. The rehearsal passed on its first run; it is the gate, and every rule it walks
+  through is pinned by a unit test that failed first.
+- `scripts/credit-passport-run.ts`: preflight only by default (reads the chain, sends nothing); `--live` runs the upgrade and the Passport
+  steps. The preflight of 2026-11-09 passed every check but one: the card is paused (the c1108d run paused it before the recovery sweep),
+  and a paused card refuses the agent's payment. `UNPAUSE_CARD=1` lets the issuer unpause it as the first live step, logged as a row.
+  Storage needs no top-up: the pool holds 5.45 NEAR against 4.92 NEAR needed.
+- Not live yet: the upgrade waits for the coordinator's LIVE_OK handshake. Nothing in README, CLAIMS or EVIDENCE claims the Passport.

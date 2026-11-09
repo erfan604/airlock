@@ -32,3 +32,16 @@ two cells in a Markdown viewer; the script reads them as written.
 | src/decimal.rs:112:14: replace < with <= in format_digits | Equivalent: the loop only changes `lo` from `d` to `d + 1` when the units digit is `0`, and both values fail the `lo < d` test that decides whether a fraction is printed. |
 | src/approve.rs:245:30: replace > with >= in amount_text_len | Equivalent: the branch clamps the places to MAX_DECIMALS (38), and at exactly 38 the clamp returns the same value. |
 | src/keys.rs:91:63: replace - with + in near_account_error | Equivalent: the changed pair (j, j + 1) differs from (j - 1, j) only at the pair (0, 1), which needs a leading separator, and that is refused one line earlier. |
+
+## Credit pool (contracts/airlock-credit): Passport mutants (AIR-333)
+
+The credit crate is not under cargo-mutants (`scripts/mutation.sh` runs the verdict crate only); the money path mutants of AIR-328 are
+listed in docs/design/credit.md. For AIR-333 each mutant below was applied alone to `src/lib.rs` and the library tests (`cargo test --lib`,
+59 tests) were run on 2026-11-09; every one was killed. The rows are a list, not a table, because `scripts/mutation.sh` reads every table
+row of this file as a verdict survivor.
+
+- the cap not enforced (`open_line` without the Passport check): killed by `open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay`, `the_record_follows_the_borrower_not_the_card`
+- a dust repay counted (the 10 percent draw floor removed): killed by `dust_and_zero_fee_repays_do_not_count`
+- migrate drops a field (`staked` set to 0): killed by `migrate_moves_every_field_and_backfills_only_what_the_state_proves`
+- the record keyed by card instead of borrower: killed by `the_record_follows_the_borrower_not_the_card`, `migrate_moves_every_field_and_backfills_only_what_the_state_proves`, `migrate_of_the_live_shape_gives_one_default_and_score_200`
+- a raise of the cap base applied at once: killed by `a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms`, `open_line_needs_collateral_liquidity_and_sane_terms`

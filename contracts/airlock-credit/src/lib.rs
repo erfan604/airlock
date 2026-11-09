@@ -3,7 +3,8 @@
 // share price. One asset, integer math, rounding in the pool's favour. Pool accounting uses its own fields (`idle`, `lent`, `staked`), never
 // the contract balance, so a plain transfer to the contract cannot move the share price. Every state change happens before the promise that
 // moves NEAR; a transfer that can fail has a callback that restores the state or parks the amount for `claim`.
-use near_sdk::json_types::U128;
+// AIR-333 adds the Credit Passport: a record per borrower written by the pool's own events, a 0 to 1000 score, and a cap on the next line.
+use near_sdk::json_types::{U64, U128};
 use near_sdk::serde_json::json;
 use near_sdk::store::{IterableMap, LookupMap};
 use near_sdk::{
@@ -11,7 +12,13 @@ use near_sdk::{
     require,
 };
 
+pub mod legacy;
 pub mod math;
+
+/// The state version `migrate` writes (1 is the c1108d layout in `legacy::PoolV1`).
+pub const STATE_VERSION: u32 = 2;
+/// The Passport cap base of a pool made by `new` without one: 100 NEAR (a fresh borrower at score 500 may take a line of this size).
+pub const DEFAULT_PASSPORT_BASE: u128 = 100 * 1_000_000_000_000_000_000_000_000;
 
 /// The smallest deposit: 0.001 NEAR (it blunts rounding games on a tiny pool).
 pub const MIN_DEPOSIT: u128 = 1_000_000_000_000_000_000_000;
@@ -35,6 +42,94 @@ pub enum StorageKey {
     Cards,
     Unclaimed,
     Locks,
+    /// AIR-333: the Passport records, keyed by borrower account (appended: prefix byte 4)
+    Records,
+}
+
+/// What the pool's own events prove about a borrower (AIR-333). Keyed by `Card.borrower`, so every card of one borrower shares it.
+#[near(serializers = [borsh])]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CreditRecord {
+    pub lines_opened: u32,
+    pub repaid_on_time: u32,
+    pub repaid_late: u32,
+    pub defaults: u32,
+    pub recovered: u32,
+    pub written_off: u32,
+    pub volume_repaid: u128,
+    pub fees_paid: u128,
+    pub last_event_ms: u64,
+    /// true when `migrate` built it from the stored state (which proves less than the events would have)
+    pub backfilled: bool,
+}
+
+/// `CreditRecord` as JSON: amounts and times as decimal strings.
+#[near(serializers = [json])]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CreditRecordView {
+    pub lines_opened: u32,
+    pub repaid_on_time: u32,
+    pub repaid_late: u32,
+    pub defaults: u32,
+    pub recovered: u32,
+    pub written_off: u32,
+    pub volume_repaid: U128,
+    pub fees_paid: U128,
+    pub last_event_ms: U64,
+    pub backfilled: bool,
+}
+
+impl From<&CreditRecord> for CreditRecordView {
+    fn from(r: &CreditRecord) -> Self {
+        Self {
+            lines_opened: r.lines_opened,
+            repaid_on_time: r.repaid_on_time,
+            repaid_late: r.repaid_late,
+            defaults: r.defaults,
+            recovered: r.recovered,
+            written_off: r.written_off,
+            volume_repaid: U128(r.volume_repaid),
+            fees_paid: U128(r.fees_paid),
+            last_event_ms: U64(r.last_event_ms),
+            backfilled: r.backfilled,
+        }
+    }
+}
+
+impl From<&CreditRecordView> for CreditRecord {
+    fn from(v: &CreditRecordView) -> Self {
+        Self {
+            lines_opened: v.lines_opened,
+            repaid_on_time: v.repaid_on_time,
+            repaid_late: v.repaid_late,
+            defaults: v.defaults,
+            recovered: v.recovered,
+            written_off: v.written_off,
+            volume_repaid: v.volume_repaid.0,
+            fees_paid: v.fees_paid.0,
+            last_event_ms: v.last_event_ms.0,
+            backfilled: v.backfilled,
+        }
+    }
+}
+
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PassportView {
+    pub borrower: AccountId,
+    pub score: u32,
+    pub reasons: Vec<String>,
+    pub record: CreditRecordView,
+    pub limit_cap: U128,
+}
+
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PoolPassportView {
+    pub base: U128,
+    pub pending_base: Option<U128>,
+    pub effective_ms: Option<U64>,
+    pub version: u32,
 }
 
 #[near(serializers = [borsh, json])]
@@ -140,6 +235,14 @@ pub struct Pool {
     pub locks: LookupMap<AccountId, u64>,
     /// how long shares are held after a deposit, fixed at init
     pub min_hold_ms: u64,
+    /// AIR-333: the Passport record of each borrower
+    pub records: LookupMap<AccountId, CreditRecord>,
+    /// the cap of a line at score 500 (`limit_cap = passport_base * score / 500`)
+    pub passport_base: u128,
+    /// an announced raise of the base and the time from which `apply_passport_base` applies it
+    pub pending_base: Option<(u128, u64)>,
+    /// the state version (`STATE_VERSION`)
+    pub version: u32,
 }
 
 fn emit(event: &str, data: near_sdk::serde_json::Value) {
@@ -207,6 +310,58 @@ impl Pool {
             .detach();
     }
 
+    /// `migrate`'s backfill: the stored state keeps one line per card and no history, so it counts only what that state proves. A card
+    /// whose line is `Open`, `Repaid` or `Defaulted` opened one line; a `Defaulted` line is one default. A `Repaid` line is neither on time
+    /// nor late (its timing is not stored), and a loss cleared to 0 is neither recovered nor written off (the two cannot be told apart).
+    /// Returns how many records it wrote.
+    /// `last_event_ms` stays 0: the state does not store when the line closed.
+    fn backfill(&mut self) -> u32 {
+        let mut found: Vec<(AccountId, LineState)> = Vec::new();
+        for (_, c) in self.cards.iter() {
+            if let Some(l) = c.line.as_ref() {
+                found.push((c.borrower.clone(), l.state));
+            }
+        }
+        let mut written = 0u32;
+        for (borrower, state) in found {
+            if matches!(state, LineState::Collecting) {
+                continue;
+            }
+            let mut r = self.record_of(&borrower);
+            if !r.backfilled {
+                written += 1;
+            }
+            r.backfilled = true;
+            r.lines_opened += 1;
+            if matches!(state, LineState::Defaulted) {
+                r.defaults += 1;
+            }
+            self.records.insert(borrower, r);
+        }
+        written
+    }
+
+    /// The record of `borrower` (all zero when it has none).
+    fn record_of(&self, borrower: &AccountId) -> CreditRecord {
+        self.records.get(borrower).cloned().unwrap_or_default()
+    }
+
+    /// Applies `f` to the record of `borrower` and stamps the time.
+    fn write_record(&mut self, borrower: &AccountId, f: impl FnOnce(&mut CreditRecord)) {
+        let mut r = self.record_of(borrower);
+        f(&mut r);
+        r.last_event_ms = ms();
+        self.records.insert(borrower.clone(), r);
+    }
+
+    /// The score of `borrower`, its reasons and the most the next line may be.
+    fn passport_of(&self, borrower: &AccountId) -> (u32, Vec<String>, u128, CreditRecord) {
+        let r = self.record_of(borrower);
+        let (score, reasons) = math::passport_score(&r);
+        let cap = math::limit_cap(self.passport_base, score);
+        (score, reasons, cap, r)
+    }
+
     fn line_view(card: &AccountId, c: &Card, l: &Line) -> LineView {
         LineView {
             card: card.clone(),
@@ -229,7 +384,11 @@ impl Pool {
 #[near]
 impl Pool {
     #[init]
-    pub fn new(owner_id: AccountId, min_hold_ms: Option<near_sdk::json_types::U64>) -> Self {
+    pub fn new(
+        owner_id: AccountId,
+        min_hold_ms: Option<near_sdk::json_types::U64>,
+        passport_base: Option<U128>,
+    ) -> Self {
         Self {
             owner_id,
             collateral_bps: DEFAULT_COLLATERAL_BPS,
@@ -245,7 +404,47 @@ impl Pool {
             unclaimed: LookupMap::new(StorageKey::Unclaimed),
             locks: LookupMap::new(StorageKey::Locks),
             min_hold_ms: min_hold_ms.map_or(DEFAULT_MIN_HOLD_MS, |v| v.0),
+            records: LookupMap::new(StorageKey::Records),
+            passport_base: passport_base.map_or(DEFAULT_PASSPORT_BASE, |v| v.0),
+            pending_base: None,
+            version: STATE_VERSION,
         }
+    }
+
+    /// AIR-333: the in-place upgrade from the c1108d state (`legacy::PoolV1`). Deploy the new wasm and call this in the same transaction.
+    /// Every stored field keeps its value; the records are backfilled from what the stored state proves (see `backfill`). Refused on a
+    /// state that is not a `PoolV1` (a second migrate cannot read the new layout as the old one).
+    #[private]
+    #[init(ignore_state)]
+    pub fn migrate(passport_base: U128) -> Self {
+        let old: legacy::PoolV1 =
+            env::state_read().unwrap_or_else(|| env::panic_str("there is no state to migrate"));
+        let mut pool = Self {
+            owner_id: old.owner_id,
+            collateral_bps: old.collateral_bps,
+            total_shares: old.total_shares,
+            idle: old.idle,
+            lent: old.lent,
+            staked: old.staked,
+            fees_earned: old.fees_earned,
+            losses: old.losses,
+            collateral_held: old.collateral_held,
+            lps: old.lps,
+            cards: old.cards,
+            unclaimed: old.unclaimed,
+            locks: old.locks,
+            min_hold_ms: old.min_hold_ms,
+            records: LookupMap::new(StorageKey::Records),
+            passport_base: passport_base.0,
+            pending_base: None,
+            version: STATE_VERSION,
+        };
+        let backfilled = pool.backfill();
+        emit(
+            "migrated",
+            json!({ "version": STATE_VERSION, "passport_base": passport_base.0.to_string(), "records": backfilled }),
+        );
+        pool
     }
 
     // ---- LPs ----
@@ -497,6 +696,14 @@ impl Pool {
             "the card has an unrecovered loss: recover it by sweeps or write it off first"
         );
         require!(limit > 0, "the limit must be positive");
+        // AIR-333: the borrower's Passport caps the line, before the collateral and liquidity checks
+        let (score, _, cap, _) = self.passport_of(&c.borrower);
+        if limit > cap {
+            env::panic_str(&format!(
+                "the limit is above this card's Passport cap of {} NEAR (score {score})",
+                math::near_decimal(cap)
+            ));
+        }
         require!(fee_bps <= MAX_FEE_BPS, "the fee is above 50 percent");
         require!(
             due_ms > ms() && due_ms <= ms() + MAX_TERM_MS,
@@ -553,29 +760,34 @@ impl Pool {
     /// Callback of `open_line`: a failed transfer closes the line back to collecting.
     #[private]
     pub fn on_line_funded(&mut self, card: AccountId, limit: U128) {
-        if matches!(env::promise_result_checked(0, 0), Err(PromiseError::Failed)) {
-            if let Some(mut c) = self.cards.get(&card).cloned() {
-                let borrower = c.borrower.clone();
-                if let Some(line) = c.line.as_mut() {
-                    if matches!(line.state, LineState::Open)
-                        && line.limit == limit.0
-                        && line.returned == 0
-                    {
-                        // the line never funded: the pool takes the principal back and the collateral goes back to the borrower
-                        let refund = line.collateral;
-                        line.state = LineState::Collecting;
-                        line.limit = 0;
-                        line.collateral = 0;
-                        self.idle += limit.0;
-                        self.lent -= limit.0;
-                        self.collateral_held -= refund;
-                        self.cards.insert(card.clone(), c);
-                        emit(
-                            "line_funding_failed",
-                            json!({ "card": card, "limit": limit.0.to_string(), "refund": refund.to_string() }),
-                        );
-                        self.payout(borrower, refund);
-                    }
+        if env::promise_result_checked(0, 0).is_ok() {
+            // AIR-333: the line funded the card: the borrower's record counts it
+            if let Some(borrower) = self.cards.get(&card).map(|c| c.borrower.clone()) {
+                self.write_record(&borrower, |r| r.lines_opened += 1);
+            }
+            return;
+        }
+        if let Some(mut c) = self.cards.get(&card).cloned() {
+            let borrower = c.borrower.clone();
+            if let Some(line) = c.line.as_mut() {
+                if matches!(line.state, LineState::Open)
+                    && line.limit == limit.0
+                    && line.returned == 0
+                {
+                    // the line never funded: the pool takes the principal back and the collateral goes back to the borrower
+                    let refund = line.collateral;
+                    line.state = LineState::Collecting;
+                    line.limit = 0;
+                    line.collateral = 0;
+                    self.idle += limit.0;
+                    self.lent -= limit.0;
+                    self.collateral_held -= refund;
+                    self.cards.insert(card.clone(), c);
+                    emit(
+                        "line_funding_failed",
+                        json!({ "card": card, "limit": limit.0.to_string(), "refund": refund.to_string() }),
+                    );
+                    self.payout(borrower, refund);
                 }
             }
         }
@@ -627,7 +839,9 @@ impl Pool {
         require!(c.loss > 0, "the card has no loss to write off");
         let loss = c.loss;
         c.loss = 0;
+        let borrower = c.borrower.clone();
         self.cards.insert(card.clone(), c);
+        self.write_record(&borrower, |r| r.written_off += 1);
         emit(
             "write_off",
             json!({ "card": card, "loss": loss.to_string() }),
@@ -667,7 +881,12 @@ impl Pool {
             _ => env::panic_str("the card has no open line"),
         }
         c.loss = new_loss;
+        let borrower = c.borrower.clone();
         self.cards.insert(card.clone(), c);
+        if card_loss > 0 && new_loss == 0 {
+            // AIR-333: this return cleared the loss of a default (a card with no loss refuses later returns, so it counts once)
+            self.write_record(&borrower, |r| r.recovered += 1);
+        }
         emit(
             "swept",
             json!({ "card": card, "amount": credited.to_string() }),
@@ -697,11 +916,23 @@ impl Pool {
             &format!("repay needs at least {owed} yocto")
         );
         let collateral = line.collateral;
+        // AIR-333: only a repay of a line the card really drew (at least 10 percent of the limit kept) with a fee counts, on time or late
+        let qualifies = outstanding.saturating_mul(10) >= line.limit && fee > 0;
+        let on_time = ms() <= line.due_ms;
         line.returned += outstanding;
         line.collateral = 0;
         line.state = LineState::Repaid;
         let borrower = c.borrower.clone();
         self.cards.insert(card.clone(), c);
+        self.write_record(&borrower, |r| {
+            r.volume_repaid += outstanding;
+            r.fees_paid += fee;
+            if qualifies && on_time {
+                r.repaid_on_time += 1;
+            } else if qualifies {
+                r.repaid_late += 1;
+            }
+        });
         self.idle += owed;
         self.lent -= outstanding;
         self.fees_earned += fee;
@@ -741,6 +972,7 @@ impl Pool {
         let borrower = c.borrower.clone();
         c.loss = loss;
         self.cards.insert(card.clone(), c);
+        self.write_record(&borrower, |r| r.defaults += 1);
         self.idle += principal_covered + fee_covered;
         self.lent -= outstanding;
         self.fees_earned += fee_covered;
@@ -761,7 +993,67 @@ impl Pool {
         emit("params_set", json!({ "collateral_bps": bps }));
     }
 
+    // ---- the Passport cap base (AIR-333) ----
+
+    /// Owner, exactly 1 yocto: a base at or below the one in force applies at once and clears any pending raise; a higher base is announced
+    /// and binds only from `now + min_hold_ms` (`apply_passport_base`), so every LP can leave before a raise takes effect.
+    #[payable]
+    pub fn set_passport_base(&mut self, base: U128) {
+        near_sdk::assert_one_yocto();
+        self.owner_only();
+        let base = base.0;
+        if base <= self.passport_base {
+            self.passport_base = base;
+            self.pending_base = None;
+            emit("passport_base_set", json!({ "base": base.to_string() }));
+        } else {
+            let effective_ms = ms() + self.min_hold_ms;
+            self.pending_base = Some((base, effective_ms));
+            emit(
+                "passport_base_raise_announced",
+                json!({ "base": base.to_string(), "effective_ms": effective_ms.to_string() }),
+            );
+        }
+    }
+
+    /// Anyone, from the announced time: applies the pending raise of the base.
+    pub fn apply_passport_base(&mut self) {
+        let (base, effective_ms) = self
+            .pending_base
+            .unwrap_or_else(|| env::panic_str("no raise of the Passport base is pending"));
+        require!(
+            ms() >= effective_ms,
+            &format!("the raise of the Passport base applies from {effective_ms}")
+        );
+        self.passport_base = base;
+        self.pending_base = None;
+        emit("passport_base_set", json!({ "base": base.to_string() }));
+    }
+
     // ---- views ----
+
+    /// The Passport of a card's borrower: the score, its reasons, the record and the most the next line may be. Null for an unknown card.
+    pub fn get_passport(&self, card: AccountId) -> Option<PassportView> {
+        let borrower = self.cards.get(&card)?.borrower.clone();
+        let (score, reasons, cap, record) = self.passport_of(&borrower);
+        Some(PassportView {
+            borrower,
+            score,
+            reasons,
+            record: CreditRecordView::from(&record),
+            limit_cap: U128(cap),
+        })
+    }
+
+    /// The cap base in force, an announced raise and its time, and the state version.
+    pub fn get_pool_passport(&self) -> PoolPassportView {
+        PoolPassportView {
+            base: U128(self.passport_base),
+            pending_base: self.pending_base.map(|(b, _)| U128(b)),
+            effective_ms: self.pending_base.map(|(_, t)| U64(t)),
+            version: self.version,
+        }
+    }
 
     pub fn get_pool(&self) -> PoolView {
         let assets = self.assets_at(ms());

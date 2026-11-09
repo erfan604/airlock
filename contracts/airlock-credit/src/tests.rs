@@ -29,7 +29,11 @@ fn call_as(who: &str, deposit: u128, now_ms: u64) {
 
 fn pool() -> Pool {
     call_as(OWNER, 0, NOW);
-    Pool::new(OWNER.parse().unwrap(), Some(near_sdk::json_types::U64(0)))
+    Pool::new(
+        OWNER.parse().unwrap(),
+        Some(near_sdk::json_types::U64(0)),
+        None,
+    )
 }
 
 fn acct(s: &str) -> AccountId {
@@ -283,6 +287,10 @@ fn register_card_is_owner_only_and_never_the_pool_or_the_issuer_as_borrower() {
 #[test]
 fn open_line_needs_collateral_liquidity_and_sane_terms() {
     let mut p = funded_pool();
+    // the Passport cap (AIR-333) is not the subject here: the base is raised far above these limits (min_hold_ms is 0 in this pool)
+    call_as(OWNER, 1, NOW);
+    p.set_passport_base(U128(1_000_000 * NEAR));
+    p.apply_passport_base();
     call_as(OWNER, 0, NOW);
     let due = near_sdk::json_types::U64(NOW + 30 * DAY);
     assert!(
@@ -690,7 +698,7 @@ const HOLD: u64 = 3_600_000;
 
 fn held_pool() -> Pool {
     call_as(OWNER, 0, NOW);
-    let mut p = Pool::new(acct(OWNER), Some(near_sdk::json_types::U64(HOLD)));
+    let mut p = Pool::new(acct(OWNER), Some(near_sdk::json_types::U64(HOLD)), None);
     call_as(LP1, 100 * NEAR, NOW);
     p.deposit();
     register(&mut p);
@@ -889,6 +897,12 @@ fn check(p: &Pool, lps: &[&str]) {
         collateral, p.collateral_held,
         "collateral held is the collateral of live lines"
     );
+    // AIR-333: the Passport stays in bounds and its cap is the formula's
+    if let Some(pp) = p.get_passport(acct(CARD)) {
+        assert!(pp.score <= 1000);
+        assert!(pp.record.recovered <= pp.record.defaults);
+        assert_eq!(pp.limit_cap.0, math::limit_cap(p.passport_base, pp.score));
+    }
 }
 
 /// One run of random operations; every seed runs in its own thread, because the mocked blockchain is thread local and each run needs an
@@ -961,7 +975,8 @@ fn run_property(seed: u64) {
                         }));
                         call_as(OWNER, 0, now);
                         let fee = (rng.below(20) * 100) as u32;
-                        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        let cap = p.get_passport(acct(CARD)).unwrap().limit_cap.0;
+                        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                             p.open_line(
                                 acct(CARD),
                                 U128(limit),
@@ -969,6 +984,12 @@ fn run_property(seed: u64) {
                                 near_sdk::json_types::U64(now + 10 * DAY),
                             )
                         }));
+                        if r.is_ok() {
+                            assert!(
+                                limit <= cap,
+                                "a line of {limit} opened above the Passport cap {cap}"
+                            );
+                        }
                     }
                 }
                 4 => {
@@ -1029,6 +1050,7 @@ fn layout_the_storage_keys_follow_declaration_order() {
         StorageKey::Cards,
         StorageKey::Unclaimed,
         StorageKey::Locks,
+        StorageKey::Records,
     ];
     let bytes: Vec<Vec<u8>> = keys
         .iter()
@@ -1036,7 +1058,7 @@ fn layout_the_storage_keys_follow_declaration_order() {
         .collect();
     assert_eq!(
         bytes,
-        vec![vec![0u8], vec![1u8], vec![2u8], vec![3u8]],
+        vec![vec![0u8], vec![1u8], vec![2u8], vec![3u8], vec![4u8]],
         "a StorageKey is appended, never inserted"
     );
 }
@@ -1096,10 +1118,607 @@ fn layout_the_pool_state_keeps_its_field_order_and_prefixes() {
     p.collateral_held = 7;
     p.collateral_bps = 8;
     p.min_hold_ms = 9;
+    p.passport_base = 10;
+    p.pending_base = Some((11, 12));
     let pool_hex = hex(&near_sdk::borsh::to_vec(&p).unwrap());
     assert_eq!(
         pool_hex,
-        "0f0000006f776e65722e746573742e6e656172080000000100000000000000000000000000000002000000000000000000000000000000030000000000000000000000000000000400000000000000000000000000000005000000000000000000000000000000060000000000000000000000000000000700000000000000000000000000000001000000000000000002000000017602000000016d010000000201000000030900000000000000",
-        "Pool: owner, collateral_bps u32, total_shares, idle, lent, staked, fees_earned, losses, collateral_held (u128), then the prefixes of lps, cards, unclaimed, locks, then min_hold_ms u64"
+        format!(
+            "{V1_HEX}{}{}{}{}",
+            "0100000004",
+            "0a000000000000000000000000000000",
+            "010b0000000000000000000000000000000c00000000000000",
+            "02000000"
+        ),
+        "Pool v2: the v1 bytes, then the records prefix (4), passport_base u128, pending_base Option<(u128, u64)>, version u32"
+    );
+}
+
+/// The c1108d state bytes (version 1), as the layout test pinned them before AIR-333.
+const V1_HEX: &str = "0f0000006f776e65722e746573742e6e656172080000000100000000000000000000000000000002000000000000000000000000000000030000000000000000000000000000000400000000000000000000000000000005000000000000000000000000000000060000000000000000000000000000000700000000000000000000000000000001000000000000000002000000017602000000016d010000000201000000030900000000000000";
+
+#[test]
+fn layout_pool_v1_is_the_deployed_layout() {
+    call_as(OWNER, 0, NOW);
+    let v1 = legacy::PoolV1 {
+        owner_id: acct(OWNER),
+        collateral_bps: 8,
+        total_shares: 1,
+        idle: 2,
+        lent: 3,
+        staked: 4,
+        fees_earned: 5,
+        losses: 6,
+        collateral_held: 7,
+        lps: LookupMap::new(StorageKey::Lps),
+        cards: IterableMap::new(StorageKey::Cards),
+        unclaimed: LookupMap::new(StorageKey::Unclaimed),
+        locks: LookupMap::new(StorageKey::Locks),
+        min_hold_ms: 9,
+    };
+    assert_eq!(
+        hex(&near_sdk::borsh::to_vec(&v1).unwrap()),
+        V1_HEX,
+        "PoolV1 is a verbatim copy of the c1108d Pool"
+    );
+}
+
+// ---- the Credit Passport (AIR-333) ----
+
+const CARD2: &str = "card2.test.near";
+const OTHER: &str = "other.test.near";
+const CARD3: &str = "card3.test.near";
+
+/// Registers `card` for `borrower` the way the callback does.
+fn register_as(p: &mut Pool, card: &str, borrower: &str) {
+    let roles = format!(r#"{{"owner_id":"{OWNER}","approver":"{borrower}","sponsor":"{POOL}"}}"#);
+    testing_env!(
+        ctx(POOL, 0, NOW).build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![PromiseResult::Successful(roles.into_bytes())]
+    );
+    p.on_card_roles(acct(card), acct(borrower));
+}
+
+/// The funding transfer of the line of `card` succeeded.
+fn funded(p: &mut Pool, card: &str, limit: u128, now_ms: u64) {
+    testing_env!(
+        ctx(POOL, 0, now_ms).build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![PromiseResult::Successful(vec![])]
+    );
+    p.on_line_funded(acct(card), U128(limit));
+}
+
+/// Posts the collateral and opens a line of `limit` on `card` for `borrower`, due in 30 days from `now_ms`.
+fn open_on(p: &mut Pool, card: &str, borrower: &str, limit: u128, fee_bps: u32, now_ms: u64) {
+    call_as(borrower, limit * 3 / 10 + 1, now_ms);
+    p.post_collateral(acct(card));
+    call_as(OWNER, 0, now_ms);
+    let _ = p.open_line(
+        acct(card),
+        U128(limit),
+        fee_bps,
+        near_sdk::json_types::U64(now_ms + 30 * DAY),
+    );
+}
+
+/// The card returns `amount` (a sweep).
+fn sweep_back(p: &mut Pool, card: &str, amount: u128, now_ms: u64) {
+    call_as(card, amount, now_ms);
+    p.on_card_return(acct(card));
+}
+
+/// The borrower repays what is owed on `card` at `now_ms`.
+fn repay_at(p: &mut Pool, card: &str, borrower: &str, now_ms: u64) {
+    let l = p.get_line(acct(card)).unwrap();
+    let outstanding = l.limit.0 - l.returned.0;
+    let owed = outstanding + math::fee_of(outstanding, l.fee_bps).unwrap();
+    call_as(borrower, owed, now_ms);
+    p.repay(acct(card));
+}
+
+fn passport(p: &Pool, card: &str) -> PassportView {
+    p.get_passport(acct(card)).expect("a registered card")
+}
+
+fn set_base(p: &mut Pool, base: u128, now_ms: u64) {
+    call_as(OWNER, 1, now_ms);
+    p.set_passport_base(U128(base));
+}
+
+#[test]
+fn a_fresh_borrower_starts_at_500_with_the_base_as_cap() {
+    let p = funded_pool();
+    let pp = passport(&p, CARD);
+    assert_eq!(pp.borrower, acct(BORROWER));
+    assert_eq!((pp.score, pp.limit_cap.0), (500, DEFAULT_PASSPORT_BASE));
+    assert_eq!(pp.reasons, vec!["base +500".to_string()]);
+    assert_eq!(pp.record, CreditRecordView::default());
+    assert!(p.get_passport(acct("nobody.test.near")).is_none());
+    let pv = p.get_pool_passport();
+    assert_eq!(
+        (pv.base.0, pv.pending_base, pv.effective_ms, pv.version),
+        (DEFAULT_PASSPORT_BASE, None, None, STATE_VERSION)
+    );
+}
+
+#[test]
+fn the_record_counts_each_pool_event() {
+    let mut p = funded_pool();
+    // a failed funding counts nothing; a funded line counts once
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW);
+    fails_to_fund(&mut p, 10 * NEAR);
+    assert_eq!(passport(&p, CARD).record.lines_opened, 0);
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW);
+    funded(&mut p, CARD, 10 * NEAR, NOW + 5);
+    let r = passport(&p, CARD).record;
+    assert_eq!((r.lines_opened, r.last_event_ms.0), (1, NOW + 5));
+    // a qualifying repay on time: 2 of 10 kept, fee 5 percent
+    sweep_back(&mut p, CARD, 8 * NEAR, NOW + DAY);
+    repay_at(&mut p, CARD, BORROWER, NOW + 2 * DAY);
+    let r = passport(&p, CARD).record;
+    assert_eq!(
+        (
+            r.repaid_on_time,
+            r.repaid_late,
+            r.volume_repaid.0,
+            r.fees_paid.0
+        ),
+        (1, 0, 2 * NEAR, NEAR / 10)
+    );
+    assert_eq!(r.last_event_ms.0, NOW + 2 * DAY);
+    // a qualifying repay after the due date (before anyone defaulted it) is late
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW + 3 * DAY);
+    repay_at(&mut p, CARD, BORROWER, NOW + 34 * DAY);
+    let r = passport(&p, CARD).record;
+    assert_eq!((r.repaid_on_time, r.repaid_late), (1, 1));
+    // a default, a partial recovery (not counted) and the full one (counted once)
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW + 35 * DAY);
+    call_as("anyone.test.near", 0, NOW + 66 * DAY);
+    p.default(acct(CARD));
+    assert_eq!(passport(&p, CARD).record.defaults, 1);
+    let loss = p.cards.get(&acct(CARD)).unwrap().loss;
+    sweep_back(&mut p, CARD, loss / 2, NOW + 67 * DAY);
+    assert_eq!(passport(&p, CARD).record.recovered, 0);
+    sweep_back(&mut p, CARD, loss, NOW + 68 * DAY);
+    assert_eq!(passport(&p, CARD).record.recovered, 1);
+    // a second default written off
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW + 69 * DAY);
+    call_as("anyone.test.near", 0, NOW + 100 * DAY);
+    p.default(acct(CARD));
+    call_as(OWNER, 0, NOW + 101 * DAY);
+    p.write_off(acct(CARD));
+    let r = passport(&p, CARD).record;
+    assert_eq!((r.defaults, r.recovered, r.written_off), (2, 1, 1));
+    assert_eq!(r.last_event_ms.0, NOW + 101 * DAY);
+    // 500 + 80 - 40 - 600 + 150 = 90
+    assert_eq!(passport(&p, CARD).score, 90);
+}
+
+#[test]
+fn dust_and_zero_fee_repays_do_not_count() {
+    let mut p = funded_pool();
+    // 5 percent kept: below the 10 percent floor
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW);
+    sweep_back(&mut p, CARD, 9_500 * NEAR / 1_000, NOW);
+    repay_at(&mut p, CARD, BORROWER, NOW + DAY);
+    // nothing kept at all
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW + DAY);
+    sweep_back(&mut p, CARD, 10 * NEAR, NOW + DAY);
+    repay_at(&mut p, CARD, BORROWER, NOW + DAY);
+    // half kept but no fee
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 0, NOW + DAY);
+    sweep_back(&mut p, CARD, 5 * NEAR, NOW + DAY);
+    repay_at(&mut p, CARD, BORROWER, NOW + 2 * DAY);
+    let pp = passport(&p, CARD);
+    assert_eq!(
+        (pp.record.repaid_on_time, pp.record.repaid_late, pp.score),
+        (0, 0, 500),
+        "no dust or zero fee repay moves the score"
+    );
+    assert_eq!(pp.record.volume_repaid.0, NEAR / 2 + 5 * NEAR);
+    // exactly 10 percent kept with a fee counts
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW + 2 * DAY);
+    sweep_back(&mut p, CARD, 9 * NEAR, NOW + 2 * DAY);
+    repay_at(&mut p, CARD, BORROWER, NOW + 3 * DAY);
+    let pp = passport(&p, CARD);
+    assert_eq!((pp.record.repaid_on_time, pp.score), (1, 580));
+    // a dust repay after the due date is not late either
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW + 3 * DAY);
+    sweep_back(&mut p, CARD, 9_950 * NEAR / 1_000, NOW + 3 * DAY);
+    repay_at(&mut p, CARD, BORROWER, NOW + 40 * DAY);
+    assert_eq!(passport(&p, CARD).record.repaid_late, 0);
+}
+
+#[test]
+fn the_record_follows_the_borrower_not_the_card() {
+    let mut p = funded_pool();
+    open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW);
+    call_as("anyone.test.near", 0, NOW + 31 * DAY);
+    p.default(acct(CARD));
+    assert_eq!(passport(&p, CARD).score, 200);
+    // the issuer registers a new card for the same borrower: it starts at the borrower's 200, not at 500
+    register_as(&mut p, CARD2, BORROWER);
+    let pp = passport(&p, CARD2);
+    assert_eq!((pp.score, pp.record.defaults), (200, 1));
+    assert_eq!(pp.limit_cap.0, DEFAULT_PASSPORT_BASE * 2 / 5);
+    // a line on the new card above that cap is refused
+    call_as(BORROWER, 30 * NEAR, NOW + 32 * DAY);
+    p.post_collateral(acct(CARD2));
+    call_as(OWNER, 0, NOW + 32 * DAY);
+    let msg = panics(|| {
+        p.open_line(
+            acct(CARD2),
+            U128(41 * NEAR),
+            500,
+            near_sdk::json_types::U64(NOW + 40 * DAY),
+        )
+    });
+    assert!(msg.contains("Passport cap of 40 NEAR (score 200)"), "{msg}");
+    // another borrower's card is not touched
+    register_as(&mut p, CARD3, OTHER);
+    assert_eq!(passport(&p, CARD3).score, 500);
+}
+
+#[test]
+fn open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay() {
+    let mut p = funded_pool();
+    set_base(&mut p, 10 * NEAR, NOW);
+    call_as(BORROWER, 4 * NEAR, NOW);
+    p.post_collateral(acct(CARD));
+    call_as(OWNER, 0, NOW);
+    let over = 11 * NEAR;
+    let due = near_sdk::json_types::U64(NOW + 30 * DAY);
+    let msg = panics(|| p.open_line(acct(CARD), U128(over), 500, due));
+    assert!(
+        msg.contains("the limit is above this card's Passport cap of 10 NEAR (score 500)"),
+        "{msg}"
+    );
+    assert_eq!(
+        (p.lent, p.get_line(acct(CARD)).unwrap().state),
+        (0, LineState::Collecting),
+        "a refused line moves nothing"
+    );
+    // at the cap it opens; a qualifying on-time repay raises the score to 580 and the cap to 11.6 NEAR
+    call_as(OWNER, 0, NOW);
+    let _ = p.open_line(acct(CARD), U128(10 * NEAR), 500, due);
+    sweep_back(&mut p, CARD, 8 * NEAR, NOW + DAY);
+    repay_at(&mut p, CARD, BORROWER, NOW + DAY);
+    let pp = passport(&p, CARD);
+    assert_eq!((pp.score, pp.limit_cap.0), (580, 116 * NEAR / 10));
+    assert_eq!(
+        pp.reasons,
+        vec!["base +500".to_string(), "repaid_on_time x1 +80".to_string()]
+    );
+    call_as(BORROWER, 4 * NEAR, NOW + DAY);
+    p.post_collateral(acct(CARD));
+    call_as(OWNER, 0, NOW + DAY);
+    // a decimal cap is printed as NEAR with its fraction
+    let msg = panics(|| p.open_line(acct(CARD), U128(12 * NEAR), 500, due));
+    assert!(
+        msg.contains("the limit is above this card's Passport cap of 11.6 NEAR (score 580)"),
+        "{msg}"
+    );
+    call_as(OWNER, 0, NOW + DAY);
+    let _ = p.open_line(acct(CARD), U128(over), 500, due);
+    assert_eq!(p.get_line(acct(CARD)).unwrap().state, LineState::Open);
+}
+
+#[test]
+fn a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms() {
+    let mut p = held_pool();
+    // lower: at once
+    set_base(&mut p, 50 * NEAR, NOW);
+    assert_eq!(p.get_pool_passport().base.0, 50 * NEAR);
+    assert_eq!(passport(&p, CARD).limit_cap.0, 50 * NEAR);
+    // LP2 deposits just before the announcement
+    call_as(LP2, 10 * NEAR, NOW + 9);
+    p.deposit();
+    // raise: announced, not in force
+    set_base(&mut p, 200 * NEAR, NOW + 10);
+    let pv = p.get_pool_passport();
+    assert_eq!(
+        (
+            pv.base.0,
+            pv.pending_base.map(|b| b.0),
+            pv.effective_ms.map(|t| t.0)
+        ),
+        (50 * NEAR, Some(200 * NEAR), Some(NOW + 10 + HOLD))
+    );
+    assert!(
+        get_logs()
+            .iter()
+            .any(|l| l.contains("passport_base_raise_announced"))
+    );
+    assert_eq!(passport(&p, CARD).limit_cap.0, 50 * NEAR);
+    // one ms before it binds: refused, and LP2 (who deposited before the announcement) can already leave
+    call_as("anyone.test.near", 0, NOW + 10 + HOLD - 1);
+    let msg = panics(|| p.apply_passport_base());
+    assert!(msg.contains("applies from"), "{msg}");
+    call_as(LP2, 0, NOW + 10 + HOLD - 1);
+    let shares = p.get_lp(acct(LP2)).shares.0;
+    let _ = p.withdraw(U128(shares));
+    assert_eq!(p.get_lp(acct(LP2)).shares.0, 0);
+    // at the effective time anyone applies it
+    call_as("anyone.test.near", 0, NOW + 10 + HOLD);
+    p.apply_passport_base();
+    assert_eq!(p.get_pool_passport().base.0, 200 * NEAR);
+    assert_eq!(p.get_pool_passport().pending_base, None);
+    let msg = panics(|| p.apply_passport_base());
+    assert!(msg.contains("no raise"), "{msg}");
+    // a lower value clears a pending raise
+    set_base(&mut p, 300 * NEAR, NOW + 20 + HOLD);
+    set_base(&mut p, 100 * NEAR, NOW + 21 + HOLD);
+    let pv = p.get_pool_passport();
+    assert_eq!((pv.base.0, pv.pending_base), (100 * NEAR, None));
+    call_as("anyone.test.near", 0, NOW + 30 + 2 * HOLD);
+    let msg = panics(|| p.apply_passport_base());
+    assert!(msg.contains("no raise"), "{msg}");
+}
+
+#[test]
+fn set_passport_base_is_owner_only_with_one_yocto() {
+    let mut p = funded_pool();
+    call_as(LP1, 1, NOW);
+    let msg = panics(|| p.set_passport_base(U128(NEAR)));
+    assert!(msg.contains("Caller is not the owner"), "{msg}");
+    call_as(OWNER, 0, NOW);
+    let msg = panics(|| p.set_passport_base(U128(NEAR)));
+    assert!(msg.contains("1 yoctoNEAR"), "{msg}");
+    assert_eq!(p.get_pool_passport().base.0, DEFAULT_PASSPORT_BASE);
+}
+
+/// A c1108d (version 1) state: four cards (a recovered default, a repaid line, an unrecovered default, a collecting line), two of them
+/// for one borrower, plus an LP, a lock and an unclaimed payout.
+fn write_v1_state() {
+    call_as(POOL, 0, NOW);
+    let line = |state, loss_left: bool| Line {
+        limit: NEAR,
+        returned: if loss_left { 0 } else { NEAR },
+        fee_bps: 1_000,
+        due_ms: NOW - DAY,
+        collateral: 0,
+        state,
+    };
+    let mut lps = LookupMap::new(StorageKey::Lps);
+    lps.insert(acct(LP1), 7 * NEAR);
+    let mut cards = IterableMap::new(StorageKey::Cards);
+    cards.insert(
+        acct(CARD),
+        Card {
+            borrower: acct(BORROWER),
+            line: Some(line(LineState::Defaulted, true)),
+            loss: 0,
+        },
+    );
+    cards.insert(
+        acct(CARD2),
+        Card {
+            borrower: acct(OTHER),
+            line: Some(line(LineState::Repaid, false)),
+            loss: 0,
+        },
+    );
+    cards.insert(
+        acct(CARD3),
+        Card {
+            borrower: acct(BORROWER),
+            line: Some(line(LineState::Defaulted, true)),
+            loss: NEAR / 3,
+        },
+    );
+    cards.insert(
+        acct("card4.test.near"),
+        Card {
+            borrower: acct("fresh.test.near"),
+            line: Some(Line {
+                limit: 0,
+                returned: 0,
+                fee_bps: 0,
+                due_ms: 0,
+                collateral: NEAR / 10,
+                state: LineState::Collecting,
+            }),
+            loss: 0,
+        },
+    );
+    let mut unclaimed = LookupMap::new(StorageKey::Unclaimed);
+    unclaimed.insert(acct(LP2), 3);
+    let mut locks = LookupMap::new(StorageKey::Locks);
+    locks.insert(acct(LP1), NOW + 9);
+    let v1 = legacy::PoolV1 {
+        owner_id: acct(OWNER),
+        collateral_bps: 2_500,
+        total_shares: 11 * NEAR,
+        idle: 12 * NEAR,
+        lent: 0,
+        staked: 14,
+        fees_earned: 15,
+        losses: NEAR / 3,
+        collateral_held: NEAR / 10,
+        lps,
+        cards,
+        unclaimed,
+        locks,
+        min_hold_ms: 60_000,
+    };
+    env::state_write(&v1);
+}
+
+#[test]
+fn migrate_moves_every_field_and_backfills_only_what_the_state_proves() {
+    write_v1_state();
+    let p = Pool::migrate(U128(NEAR));
+    assert_eq!(
+        (
+            p.owner_id.clone(),
+            p.collateral_bps,
+            p.total_shares,
+            p.idle,
+            p.lent,
+            p.staked,
+            p.fees_earned,
+            p.losses,
+            p.collateral_held,
+            p.min_hold_ms
+        ),
+        (
+            acct(OWNER),
+            2_500,
+            11 * NEAR,
+            12 * NEAR,
+            0,
+            14,
+            15,
+            NEAR / 3,
+            NEAR / 10,
+            60_000
+        )
+    );
+    assert_eq!(p.get_lp(acct(LP1)).shares.0, 7 * NEAR);
+    assert_eq!(p.get_lp(acct(LP1)).locked_until_ms.0, NOW + 9);
+    assert_eq!(p.get_unclaimed(acct(LP2)).0, 3);
+    assert_eq!(p.list_lines(None, None).len(), 4);
+    assert_eq!(p.cards.get(&acct(CARD3)).unwrap().loss, NEAR / 3);
+    let pv = p.get_pool_passport();
+    assert_eq!(
+        (pv.base.0, pv.pending_base, pv.version),
+        (NEAR, None, STATE_VERSION)
+    );
+    // BORROWER: two cards, each one line, each a default; the cleared loss is not a recovery, the open loss is not a write-off
+    let pp = passport(&p, CARD);
+    assert_eq!(
+        (
+            pp.record.lines_opened,
+            pp.record.defaults,
+            pp.record.recovered,
+            pp.record.written_off,
+            pp.record.repaid_on_time,
+            pp.record.backfilled,
+            pp.record.last_event_ms.0
+        ),
+        (2, 2, 0, 0, 0, true, 0)
+    );
+    assert_eq!(pp.score, 0);
+    assert_eq!(pp, passport(&p, CARD3), "both cards read one record");
+    assert!(
+        pp.reasons.iter().any(|r| r.starts_with("backfilled")),
+        "{:?}",
+        pp.reasons
+    );
+    // OTHER: a repaid line whose timing is not stored counts neither on time nor late
+    let pp = passport(&p, CARD2);
+    assert_eq!(
+        (
+            pp.record.lines_opened,
+            pp.record.repaid_on_time,
+            pp.record.repaid_late,
+            pp.record.volume_repaid.0,
+            pp.score
+        ),
+        (1, 0, 0, 0, 500)
+    );
+    // a collecting line proves nothing: no record
+    let pp = passport(&p, "card4.test.near");
+    assert_eq!((pp.record, pp.score), (CreditRecordView::default(), 500));
+}
+
+#[test]
+fn migrate_of_the_live_shape_gives_one_default_and_score_200() {
+    // the c1108d pool holds one card whose second line defaulted and was recovered by a sweep
+    call_as(POOL, 0, NOW);
+    let mut cards = IterableMap::new(StorageKey::Cards);
+    cards.insert(
+        acct(CARD),
+        Card {
+            borrower: acct(BORROWER),
+            line: Some(Line {
+                limit: NEAR,
+                returned: 0,
+                fee_bps: 1_000,
+                due_ms: NOW - DAY,
+                collateral: 0,
+                state: LineState::Defaulted,
+            }),
+            loss: 0,
+        },
+    );
+    let v1 = legacy::PoolV1 {
+        owner_id: acct(OWNER),
+        collateral_bps: 3_000,
+        total_shares: 2 * NEAR,
+        idle: 2 * NEAR,
+        lent: 0,
+        staked: 0,
+        fees_earned: NEAR / 20,
+        losses: 0,
+        collateral_held: 0,
+        lps: LookupMap::new(StorageKey::Lps),
+        cards,
+        unclaimed: LookupMap::new(StorageKey::Unclaimed),
+        locks: LookupMap::new(StorageKey::Locks),
+        min_hold_ms: 60_000,
+    };
+    env::state_write(&v1);
+    drop(v1);
+    let p = Pool::migrate(U128(NEAR));
+    let pp = passport(&p, CARD);
+    assert_eq!(
+        (pp.score, pp.limit_cap.0, pp.record.defaults),
+        (200, 4 * NEAR / 10, 1)
+    );
+}
+
+#[test]
+fn migrate_twice_is_refused() {
+    write_v1_state();
+    let p = Pool::migrate(U128(NEAR));
+    env::state_write(&p);
+    drop(p);
+    let msg = panics(|| Pool::migrate(U128(NEAR)));
+    assert!(msg.contains("Cannot deserialize"), "{msg}");
+}
+
+#[test]
+fn passport_vectors_match() {
+    #[derive(near_sdk::serde::Deserialize)]
+    #[serde(crate = "near_sdk::serde")]
+    struct Vector {
+        name: String,
+        base: U128,
+        record: CreditRecordView,
+        score: u32,
+        reasons: Vec<String>,
+        limit_cap: U128,
+    }
+    let vectors: Vec<Vector> =
+        near_sdk::serde_json::from_str(include_str!("../vectors/passport.json")).unwrap();
+    assert!(vectors.len() >= 8);
+    for v in vectors {
+        let (score, reasons) = math::passport_score(&CreditRecord::from(&v.record));
+        assert_eq!(score, v.score, "{}", v.name);
+        assert_eq!(reasons, v.reasons, "{}", v.name);
+        assert_eq!(
+            math::limit_cap(v.base.0, score),
+            v.limit_cap.0,
+            "{}",
+            v.name
+        );
+    }
+}
+
+#[test]
+fn the_c1108d_wasm_is_pinned() {
+    call_as(OWNER, 0, NOW);
+    let sha = env::sha256(include_bytes!("../res/airlock_credit_c1108d.wasm"));
+    assert_eq!(
+        hex(&sha),
+        "1f915ce22956f33c4b65d092838c0429e2255dd6d224b6c58db8f9b941343419",
+        "res/airlock_credit_c1108d.wasm is the code deployed on pool.airlock-credit-c1108d.testnet"
     );
 }

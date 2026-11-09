@@ -87,6 +87,84 @@ pub fn share_price(assets: u128, total_shares: u128) -> Option<u128> {
     mul_div_floor(assets, 1_000_000_000_000_000_000_000_000, total_shares)
 }
 
+// ---- the Credit Passport (AIR-333, docs/design/credit.md) ----
+
+/// The score of a borrower with no record.
+pub const PASSPORT_START: u32 = 500;
+/// The most the score can be.
+pub const PASSPORT_MAX: u32 = 1_000;
+const ON_TIME_POINTS: i64 = 80;
+const ON_TIME_COUNTED: u32 = 5;
+const LATE_POINTS: i64 = 40;
+const LATE_COUNTED: u32 = 5;
+const DEFAULT_POINTS: i64 = 300;
+const DEFAULTS_COUNTED: u32 = 2;
+const RECOVERED_POINTS: i64 = 150;
+
+/// One reason line: `repaid_on_time x2 +160`, with `(5 count)` when the count is above what the score counts.
+fn reason(code: &str, count: u32, counted: u32, points: i64) -> String {
+    let sign = if points < 0 { "-" } else { "+" };
+    let tail = if counted < count {
+        format!(" ({counted} count)")
+    } else {
+        String::new()
+    };
+    format!("{code} x{count} {sign}{}{tail}", points.unsigned_abs())
+}
+
+/// The Passport score of a record and its reasons: integers only, in 0..=1000. Base 500, plus 80 per on-time repay (at most 5 counted),
+/// minus 40 per late repay (at most 5), minus 300 per default (at most 2), plus 150 per recovered default (never more than the defaults
+/// counted). Held and refused payments are not inputs: the pool never sees them.
+pub fn passport_score(r: &crate::CreditRecord) -> (u32, Vec<String>) {
+    let on_time = r.repaid_on_time.min(ON_TIME_COUNTED);
+    let late = r.repaid_late.min(LATE_COUNTED);
+    let defaults = r.defaults.min(DEFAULTS_COUNTED);
+    let recovered = r.recovered.min(defaults);
+    let mut score = i64::from(PASSPORT_START);
+    let mut reasons = vec![format!("base +{PASSPORT_START}")];
+    let parts = [
+        ("repaid_on_time", r.repaid_on_time, on_time, ON_TIME_POINTS),
+        ("repaid_late", r.repaid_late, late, -LATE_POINTS),
+        ("defaulted", r.defaults, defaults, -DEFAULT_POINTS),
+        ("recovered", r.recovered, recovered, RECOVERED_POINTS),
+    ];
+    for (code, count, counted, per) in parts {
+        if count > 0 {
+            let points = per * i64::from(counted);
+            score += points;
+            reasons.push(reason(code, count, counted, points));
+        }
+    }
+    if score < 0 {
+        reasons.push("clamped to 0".to_string());
+        score = 0;
+    }
+    if score > i64::from(PASSPORT_MAX) {
+        reasons.push(format!("clamped to {PASSPORT_MAX}"));
+        score = i64::from(PASSPORT_MAX);
+    }
+    if r.backfilled {
+        reasons.push("backfilled: counts only what the pool state proves".to_string());
+    }
+    (u32::try_from(score).unwrap_or(0), reasons)
+}
+
+/// The most the next line may be: `floor(base * score / 500)`, so a borrower at 500 gets exactly the base (saturates instead of wrapping).
+pub fn limit_cap(base: u128, score: u32) -> u128 {
+    mul_div_floor(base, u128::from(score), u128::from(PASSPORT_START)).unwrap_or(u128::MAX)
+}
+
+/// A yoctoNEAR amount as a decimal NEAR string with no trailing zeros: `400000000000000000000000` is `0.4`, 0 is `0`.
+pub fn near_decimal(yocto: u128) -> String {
+    const ONE: u128 = 1_000_000_000_000_000_000_000_000;
+    let (whole, frac) = (yocto / ONE, yocto % ONE);
+    if frac == 0 {
+        return whole.to_string();
+    }
+    let digits = format!("{frac:024}");
+    format!("{whole}.{}", digits.trim_end_matches('0'))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,5 +279,106 @@ mod tests {
         assert_eq!(share_price(0, 0), Some(NEAR));
         assert_eq!(share_price(150 * NEAR, 100 * NEAR), Some(NEAR * 3 / 2));
         assert_eq!(share_price(99 * NEAR, 100 * NEAR), Some(NEAR * 99 / 100));
+    }
+    fn rec(on: u32, late: u32, defaults: u32, recovered: u32) -> crate::CreditRecord {
+        crate::CreditRecord {
+            repaid_on_time: on,
+            repaid_late: late,
+            defaults,
+            recovered,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn passport_score_properties() {
+        let mut x: u64 = 0x2545_f491_4f6c_dd1d;
+        let mut next = |n: u64| {
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            (x % n) as u32
+        };
+        for _ in 0..5_000 {
+            let r = rec(next(9), next(9), next(5), next(5));
+            let (s, _) = passport_score(&r);
+            assert!(s <= PASSPORT_MAX, "{r:?}");
+            // one more on-time repay never lowers it
+            let (up, _) = passport_score(&rec(
+                r.repaid_on_time + 1,
+                r.repaid_late,
+                r.defaults,
+                r.recovered,
+            ));
+            assert!(up >= s, "{r:?}");
+            // a default never raises it, and lowers it while fewer than 2 are counted and the score is above 0
+            let (down, _) = passport_score(&rec(
+                r.repaid_on_time,
+                r.repaid_late,
+                r.defaults + 1,
+                r.recovered,
+            ));
+            assert!(down <= s, "{r:?}");
+            if r.defaults < 2 && s > 0 {
+                assert!(down < s, "{r:?}");
+            }
+            // a late repay never raises it
+            let (late, _) = passport_score(&rec(
+                r.repaid_on_time,
+                r.repaid_late + 1,
+                r.defaults,
+                r.recovered,
+            ));
+            assert!(late <= s, "{r:?}");
+            // recovered never counts above the defaults
+            let (capped, _) = passport_score(&rec(
+                r.repaid_on_time,
+                r.repaid_late,
+                r.defaults,
+                r.recovered.min(r.defaults),
+            ));
+            assert_eq!(s, capped, "{r:?}");
+        }
+    }
+
+    #[test]
+    fn passport_score_examples_and_reasons() {
+        assert_eq!(
+            passport_score(&rec(0, 0, 0, 0)),
+            (500, vec!["base +500".to_string()])
+        );
+        let (s, why) = passport_score(&rec(7, 0, 1, 3));
+        assert_eq!(s, 500 + 400 - 300 + 150);
+        assert_eq!(
+            why,
+            vec![
+                "base +500".to_string(),
+                "repaid_on_time x7 +400 (5 count)".to_string(),
+                "defaulted x1 -300".to_string(),
+                "recovered x3 +150 (1 count)".to_string()
+            ]
+        );
+        let (s, why) = passport_score(&rec(0, 6, 3, 0));
+        assert_eq!(s, 0);
+        assert_eq!(why.last().unwrap(), "clamped to 0");
+    }
+
+    #[test]
+    fn limit_cap_is_the_base_at_500_and_scales() {
+        assert_eq!(limit_cap(NEAR, 500), NEAR);
+        assert_eq!(limit_cap(NEAR, 200), 4 * NEAR / 10);
+        assert_eq!(limit_cap(NEAR, 280), 56 * NEAR / 100);
+        assert_eq!(limit_cap(NEAR, 0), 0);
+        assert_eq!(limit_cap(7, 499), 6, "rounds down");
+        assert_eq!(limit_cap(u128::MAX, 1000), u128::MAX, "saturates");
+    }
+
+    #[test]
+    fn near_decimal_trims_the_fraction() {
+        assert_eq!(near_decimal(0), "0");
+        assert_eq!(near_decimal(NEAR), "1");
+        assert_eq!(near_decimal(4 * NEAR / 10), "0.4");
+        assert_eq!(near_decimal(116 * NEAR / 10), "11.6");
+        assert_eq!(near_decimal(1), "0.000000000000000000000001");
     }
 }

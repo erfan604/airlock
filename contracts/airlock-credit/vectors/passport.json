@@ -1,0 +1,250 @@
+[
+  {
+    "name": "a fresh borrower: the base",
+    "base": "1000000000000000000000000",
+    "record": {
+      "lines_opened": 0,
+      "repaid_on_time": 0,
+      "repaid_late": 0,
+      "defaults": 0,
+      "recovered": 0,
+      "written_off": 0,
+      "volume_repaid": "0",
+      "fees_paid": "0",
+      "last_event_ms": "0",
+      "backfilled": false
+    },
+    "score": 500,
+    "reasons": [
+      "base +500"
+    ],
+    "limit_cap": "1000000000000000000000000"
+  },
+  {
+    "name": "the live c1108d borrower after the backfill: one default",
+    "base": "1000000000000000000000000",
+    "record": {
+      "lines_opened": 1,
+      "repaid_on_time": 0,
+      "repaid_late": 0,
+      "defaults": 1,
+      "recovered": 0,
+      "written_off": 0,
+      "volume_repaid": "0",
+      "fees_paid": "0",
+      "last_event_ms": "0",
+      "backfilled": true
+    },
+    "score": 200,
+    "reasons": [
+      "base +500",
+      "defaulted x1 -300",
+      "backfilled: counts only what the pool state proves"
+    ],
+    "limit_cap": "400000000000000000000000"
+  },
+  {
+    "name": "the live borrower after one on-time repay",
+    "base": "1000000000000000000000000",
+    "record": {
+      "lines_opened": 2,
+      "repaid_on_time": 1,
+      "repaid_late": 0,
+      "defaults": 1,
+      "recovered": 0,
+      "written_off": 0,
+      "volume_repaid": "50000000000000000000000",
+      "fees_paid": "5000000000000000000000",
+      "last_event_ms": "1794300000000",
+      "backfilled": true
+    },
+    "score": 280,
+    "reasons": [
+      "base +500",
+      "repaid_on_time x1 +80",
+      "defaulted x1 -300",
+      "backfilled: counts only what the pool state proves"
+    ],
+    "limit_cap": "560000000000000000000000"
+  },
+  {
+    "name": "two on-time repays",
+    "base": "10000000000000000000000000",
+    "record": {
+      "lines_opened": 2,
+      "repaid_on_time": 2,
+      "repaid_late": 0,
+      "defaults": 0,
+      "recovered": 0,
+      "written_off": 0,
+      "volume_repaid": "4000000000000000000000000",
+      "fees_paid": "200000000000000000000000",
+      "last_event_ms": "1794300000000",
+      "backfilled": false
+    },
+    "score": 660,
+    "reasons": [
+      "base +500",
+      "repaid_on_time x2 +160"
+    ],
+    "limit_cap": "13200000000000000000000000"
+  },
+  {
+    "name": "on-time repays above the count of 5",
+    "base": "10000000000000000000000000",
+    "record": {
+      "lines_opened": 7,
+      "repaid_on_time": 7,
+      "repaid_late": 0,
+      "defaults": 0,
+      "recovered": 0,
+      "written_off": 0,
+      "volume_repaid": "14000000000000000000000000",
+      "fees_paid": "700000000000000000000000",
+      "last_event_ms": "1794300000000",
+      "backfilled": false
+    },
+    "score": 900,
+    "reasons": [
+      "base +500",
+      "repaid_on_time x7 +400 (5 count)"
+    ],
+    "limit_cap": "18000000000000000000000000"
+  },
+  {
+    "name": "one late repay",
+    "base": "10000000000000000000000000",
+    "record": {
+      "lines_opened": 1,
+      "repaid_on_time": 0,
+      "repaid_late": 1,
+      "defaults": 0,
+      "recovered": 0,
+      "written_off": 0,
+      "volume_repaid": "1000000000000000000000000",
+      "fees_paid": "100000000000000000000000",
+      "last_event_ms": "1794300000000",
+      "backfilled": false
+    },
+    "score": 460,
+    "reasons": [
+      "base +500",
+      "repaid_late x1 -40"
+    ],
+    "limit_cap": "9200000000000000000000000"
+  },
+  {
+    "name": "a default recovered by a sweep",
+    "base": "10000000000000000000000000",
+    "record": {
+      "lines_opened": 1,
+      "repaid_on_time": 0,
+      "repaid_late": 0,
+      "defaults": 1,
+      "recovered": 1,
+      "written_off": 0,
+      "volume_repaid": "0",
+      "fees_paid": "0",
+      "last_event_ms": "1794300000000",
+      "backfilled": false
+    },
+    "score": 350,
+    "reasons": [
+      "base +500",
+      "defaulted x1 -300",
+      "recovered x1 +150"
+    ],
+    "limit_cap": "7000000000000000000000000"
+  },
+  {
+    "name": "a default written off",
+    "base": "10000000000000000000000000",
+    "record": {
+      "lines_opened": 1,
+      "repaid_on_time": 0,
+      "repaid_late": 0,
+      "defaults": 1,
+      "recovered": 0,
+      "written_off": 1,
+      "volume_repaid": "0",
+      "fees_paid": "0",
+      "last_event_ms": "1794300000000",
+      "backfilled": false
+    },
+    "score": 200,
+    "reasons": [
+      "base +500",
+      "defaulted x1 -300"
+    ],
+    "limit_cap": "4000000000000000000000000"
+  },
+  {
+    "name": "recovered above the defaults counts no more than the defaults",
+    "base": "10000000000000000000000000",
+    "record": {
+      "lines_opened": 1,
+      "repaid_on_time": 0,
+      "repaid_late": 0,
+      "defaults": 1,
+      "recovered": 3,
+      "written_off": 0,
+      "volume_repaid": "0",
+      "fees_paid": "0",
+      "last_event_ms": "1794300000000",
+      "backfilled": false
+    },
+    "score": 350,
+    "reasons": [
+      "base +500",
+      "defaulted x1 -300",
+      "recovered x3 +150 (1 count)"
+    ],
+    "limit_cap": "7000000000000000000000000"
+  },
+  {
+    "name": "three defaults and six late repays: clamped to 0, cap 0",
+    "base": "10000000000000000000000000",
+    "record": {
+      "lines_opened": 9,
+      "repaid_on_time": 0,
+      "repaid_late": 6,
+      "defaults": 3,
+      "recovered": 0,
+      "written_off": 0,
+      "volume_repaid": "0",
+      "fees_paid": "0",
+      "last_event_ms": "1794300000000",
+      "backfilled": false
+    },
+    "score": 0,
+    "reasons": [
+      "base +500",
+      "repaid_late x6 -200 (5 count)",
+      "defaulted x3 -600 (2 count)",
+      "clamped to 0"
+    ],
+    "limit_cap": "0"
+  },
+  {
+    "name": "a cap that rounds down",
+    "base": "7",
+    "record": {
+      "lines_opened": 1,
+      "repaid_on_time": 0,
+      "repaid_late": 1,
+      "defaults": 0,
+      "recovered": 0,
+      "written_off": 0,
+      "volume_repaid": "0",
+      "fees_paid": "0",
+      "last_event_ms": "1794300000000",
+      "backfilled": false
+    },
+    "score": 460,
+    "reasons": [
+      "base +500",
+      "repaid_late x1 -40"
+    ],
+    "limit_cap": "6"
+  }
+]
