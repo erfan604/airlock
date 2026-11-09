@@ -513,9 +513,13 @@ function Cards({ pool, selected, onSelect, positions, labels }: { pool: PoolView
     face.offset.set(0.5, 0.5);
     const faceMat = new THREE.MeshStandardMaterial({ map: face, metalness: 0.75, roughness: 0.32, color: hex(0xffffff, 0.9) });
     const edgeMat = new THREE.MeshStandardMaterial({ color: hex(0xc9ccd2), metalness: 1, roughness: 0.18 });
-    return { g, mats: [faceMat, edgeMat] };
+    return { g, shape: sh, mats: [faceMat, edgeMat] };
   }, [face]);
-  const halo = useMemo(() => new THREE.PlaneGeometry(1.0, 0.66), []);
+  const halo = useMemo(() => {
+    const g = new THREE.ShapeGeometry(card.shape, 10);
+    g.scale(1.07, 1.11, 1);
+    return g;
+  }, [card]);
   const cards = pool.lines.slice(0, 64);
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
@@ -537,7 +541,10 @@ function Cards({ pool, selected, onSelect, positions, labels }: { pool: PoolView
       const dim = line.state === 'repaid' ? 0.25 : 1;
       const col = line.state === 'defaulted' ? hex(COLOR.refused) : hex(CHAIN_COLOR[placed.chain]);
       tp.setXYZ(i * 2, 0, 0, 0);
-      tp.setXYZ(i * 2 + 1, p[0], p[1], p[2]);
+      // the tether stops short of the card, so it never draws across the card's face
+      const len = Math.hypot(p[0], p[1], p[2]) || 1;
+      const cut = Math.max(0, 1 - 0.75 / len);
+      tp.setXYZ(i * 2 + 1, p[0] * cut, p[1] * cut, p[2] * cut);
       const k = (0.1 + used * 0.5) * dim;
       tc.setXYZ(i * 2, col.r * k * 0.2, col.g * k * 0.2, col.b * k * 0.2);
       tc.setXYZ(i * 2 + 1, col.r * k, col.g * k, col.b * k);
@@ -558,6 +565,7 @@ function Cards({ pool, selected, onSelect, positions, labels }: { pool: PoolView
     }
     const poolLab = labels.current.get('world-pool');
     if (poolLab !== undefined) {
+      poolLab.style.opacity = selected === null ? '1' : '0';
       v.set(0, -CORE_RADIUS * 1.62, 0).project(camera);
       poolLab.style.transform = `translate(${((v.x * 0.5 + 0.5) * size.width).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * size.height).toFixed(1)}px) translate(-50%, 0)`;
     }
@@ -565,6 +573,8 @@ function Cards({ pool, selected, onSelect, positions, labels }: { pool: PoolView
       const w = worldPos(chain);
       const lab = labels.current.get(`world-${chain}`);
       if (lab === undefined) continue;
+      // the chain names step aside while the camera follows a card
+      lab.style.opacity = selected === null ? '1' : '0';
       v.set(w[0], w[1] - 1.3, w[2]).project(camera);
       lab.style.transform = `translate(${((v.x * 0.5 + 0.5) * size.width).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * size.height).toFixed(1)}px) translate(-50%, 0)`;
     }
@@ -596,7 +606,7 @@ function Cards({ pool, selected, onSelect, positions, labels }: { pool: PoolView
               <mesh geometry={card.g} material={card.mats} />
               {line.state === 'defaulted' || on ? (
                 <mesh geometry={halo} position={[0, 0, -0.02]}>
-                  <meshBasicMaterial color={hex(line.state === 'defaulted' ? COLOR.refused : COLOR.clear, on ? 1.2 : 0.7)} transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+                  <meshBasicMaterial color={hex(line.state === 'defaulted' ? COLOR.refused : COLOR.clear, on ? 1.2 : 0.7)} transparent opacity={0.22} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
                 </mesh>
               ) : null}
               <mesh position={[(ratio(line.drawn, line.limit) - 1) * 0.42, -0.36, 0]} scale={[Math.max(0.01, ratio(line.drawn, line.limit)), 1, 1]}>
@@ -626,7 +636,7 @@ function Frame({ onFps }: { onFps(fps: number): void }) {
   return null;
 }
 
-function Post({ quality, rig }: { quality: Quality; rig: MutableRefObject<Rig> }) {
+function Post({ quality, rig, following }: { quality: Quality; rig: MutableRefObject<Rig>; following: boolean }) {
   const dof = useRef<{ target: THREE.Vector3 | null } | null>(null);
   // the effect gets its own vector, refreshed every frame: handing it the rig's target lets the effect's math move the camera's aim
   const focus = useMemo(() => new THREE.Vector3(), []);
@@ -636,7 +646,8 @@ function Post({ quality, rig }: { quality: Quality; rig: MutableRefObject<Rig> }
   });
   const wide = useThree((st) => st.size.width >= 900);
   // depth of field only where the camera stands at the tuned distance: a tall phone stage stands much further back and would blur the vault away
-  const high = quality === 'high' && wide;
+  // and not while following a card: the card is the subject and must stay sharp
+  const high = quality === 'high' && wide && !following;
   return (
     <EffectComposer multisampling={0}>
       <Bloom mipmapBlur intensity={quality === 'high' ? 0.7 : 0.5} luminanceThreshold={0.62} luminanceSmoothing={0.3} radius={0.8} />
@@ -680,7 +691,7 @@ export default function CreditScene({ pool, events, selected, onSelect, quality,
       <Cards pool={pool} selected={selected} onSelect={onSelect} positions={positions} labels={labels} />
       <Flights events={events} pool={pool} ringGlow={ringGlow} positions={positions} />
       <Frame onFps={onFps} />
-      <Post quality={quality} rig={rig} />
+      <Post quality={quality} rig={rig} following={selected !== null} />
     </Canvas>
   );
 }
