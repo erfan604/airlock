@@ -111,13 +111,6 @@ button {
   background: var(--clear);
   transform: rotate(45deg);
 }
-.shell-net {
-  margin-left: auto;
-  font-family: var(--font-data);
-  font-size: 13px;
-  line-height: 18px;
-  color: var(--ink-3);
-}
 .skip-link {
   position: absolute;
   left: var(--space-3);
@@ -194,11 +187,6 @@ button {
     bottom: 0;
     height: 2px;
     background: var(--ink);
-  }
-}
-@media (max-width: 519px) {
-  .shell-net {
-    display: none;
   }
 }
 .site-tab::after {
@@ -383,4 +371,23 @@ button {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+/* the footer fact line every page carries (owner rule): where the site runs, in small plain text */
+.site-foot {
+  max-width: 80rem;
+  margin: var(--space-7) auto 0;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+  border-top: 1px solid var(--hair);
+}
+.site-foot p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+@media (min-width: 720px) {
+  .site-foot {
+    padding-inline: var(--space-5);
+  }
 }

@@ -32,11 +32,11 @@ function NeedsServer({ need, testId }: { need: Need; testId: string }) {
 
 const LIVE: Need = {
   title: 'Live demo',
-  why: 'A live run needs a runtime server, a model key and funded NEAR testnet accounts. None of that is in this hosted copy, which only replays recorded runs. Run it from the repository.',
+  why: 'A live run needs a runtime server, a model key and funded NEAR accounts. None of that is in this hosted copy, which only replays recorded runs. Run it from the repository.',
   commands: [
     { cmd: 'pnpm i && pnpm demo', does: 'the same replay on your machine, with the real console server. Node and pnpm only, no keys.' },
     { cmd: 'pnpm demo:live --dry-run', does: 'the live demo path from recordings, no keys. Ends with DEMO LIVE DRY RUN OK.' },
-    { cmd: 'pnpm demo:live', does: 'the live run. Needs funded testnet accounts and a model key.' },
+    { cmd: 'pnpm demo:live', does: 'the live run. Needs funded accounts and a model key.' },
   ],
 };
 

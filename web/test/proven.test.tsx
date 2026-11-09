@@ -1,6 +1,7 @@
 // AIR-302: docs/proven.json is the one source of the proven list. docs/PROVEN.md, the /proven console page and the `pnpm proven` lines must all
 // come from it, every name in it must resolve, and every Kani harness of the verdict crate must be listed once (so the page cannot quietly omit one).
 import assert from 'node:assert/strict';
+import { plain } from '../src/components/plain.ts';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -36,11 +37,11 @@ test('proven: the console page lists every entry, in order, with its sentence an
   assert.deepEqual([...html.matchAll(/data-testid="proven-entry-([^"]+)"/g)].map((m) => m[1]), src.entries.map((e) => e.id));
   const body = text(html);
   for (const e of src.entries) {
-    assert.ok(body.includes(e.says), e.id + ' sentence');
-    assert.ok(body.includes(e.notCovered), e.id + ' not covered');
+    assert.ok(body.includes(plain(e.says)), e.id + ' sentence');
+    assert.ok(body.includes(plain(e.notCovered)), e.id + ' not covered');
     for (const p of e.proofs) assert.ok(body.includes(p.name), e.id + ' ' + p.name);
   }
-  for (const n of src.notCovered) assert.ok(body.includes(n));
+  for (const n of src.notCovered) assert.ok(body.includes(plain(n)));
   assert.ok(body.includes('PROVEN OK ' + src.entries.length + ' of ' + src.entries.length));
 });
 

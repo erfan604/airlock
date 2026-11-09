@@ -11,6 +11,7 @@ import type { Page } from 'playwright';
 import type { RequestView } from '@airlock/runtime/chain-types';
 import { buildStaticCsp, normalizeNonce } from '../csp.ts';
 import { approveArgs } from '../src/approvals/cardModel.ts';
+import { scrubOwner } from '../src/components/account.ts';
 import { PAGES } from '../src/pages.ts';
 import { clipAudit } from './audit.ts';
 import { checkHired, checkLanding, checkTry, showPreset } from './site.ts';
@@ -20,7 +21,8 @@ const web = fileURLToPath(new URL('../', import.meta.url));
 const repo = join(web, '..');
 const auditDir = join(web, 'audit');
 const golden = (name: string): { txs: { hash: string; url: string }[] } => JSON.parse(readFileSync(join(repo, 'bench', 'golden', `${name}.json`), 'utf8')) as { txs: { hash: string; url: string }[] };
-const dist = (path: string): unknown => JSON.parse(readFileSync(join(web, 'dist-static', path), 'utf8')) as unknown;
+// the hosted replay rewrites the owner's name where it reads its files (components/account.ts), so the expected values are read the same way
+const dist = (path: string): unknown => JSON.parse(scrubOwner(readFileSync(join(web, 'dist-static', path), 'utf8'))) as unknown;
 const u01 = golden('u01');
 const approveGolden = golden('b01-approve');
 const tamperGolden = golden('tamper');

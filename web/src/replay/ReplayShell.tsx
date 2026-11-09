@@ -1,4 +1,4 @@
-// The replay console (AIR-246): the three recorded acts of the demo, on every screen labelled as a replay of recorded testnet runs. It shows the
+// The replay console (AIR-246): the three recorded acts of the demo, on every screen labelled as a replay of recorded runs. It shows the
 // recorded owner words, the recorded trace (through the same trace store and rows as the live Task page), the recorded transaction links and,
 // for the held request, the real approval card fed by the recorded views. Nothing here signs, connects a wallet or leaves the page's origin.
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -46,7 +46,7 @@ function Links({ links }: { links: ActLink[] }) {
     <ul className="replay-links" data-testid="tx-links">
       {links.map((l) => (
         <li key={`${l.label}:${l.hash}`} className="replay-link">
-          <span className="replay-link-label">{l.label === 'submit' ? `The request on NEAR testnet${l.status === 'failure' ? ', refused' : ''}` : `${l.label} on NEAR testnet (${l.status})`}</span>
+          <span className="replay-link-label">{l.label === 'submit' ? `The request on NEAR${l.status === 'failure' ? ', refused' : ''}` : `${l.label} on NEAR (${l.status})`}</span>
           <a data-testid="tx-link" data-hash={l.hash} href={txHref(l.url)} target="_blank" rel="noopener noreferrer">
             {l.hash}
           </a>
@@ -153,7 +153,7 @@ function TamperBlock({ api }: { api: ReplayApi }) {
         links={
           <ul className="replay-links">
             <li className="replay-link">
-              <span className="replay-link-label">Refused approval on testnet</span>
+              <span className="replay-link-label">Refused approval</span>
               <a data-testid="tamper-link" data-hash={result.tx} href={txHref(result.url)} target="_blank" rel="noopener noreferrer">
                 {result.tx}
               </a>
@@ -238,7 +238,7 @@ export function ReplayShell({ api = liveReplayApi }: { api?: ReplayApi }) {
           <span className="replay-date" data-testid="replay-date">{` recorded ${act.recordedAt.slice(0, 10)}`}</span>
         )}
       </p>
-      <p className="replay-lede">This is a replay of recorded testnet runs. Nothing runs live, no wallet is used and no key is needed.</p>
+      <p className="replay-lede">This is a replay of recorded runs. Nothing runs live, no wallet is used and no key is needed.</p>
       {loaded === null ? <p className="replay-line">Reading the recordings.</p> : null}
       {loaded === 'error' ? <p className="replay-line">The recordings could not be read.</p> : null}
       {loaded !== null && loaded !== 'error' ? (

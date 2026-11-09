@@ -610,9 +610,6 @@ export function CreditPage(): ReactElement {
           <Passports lines={pool.lines} events={events} fixture={state.kind === 'fixture'} />
         </>
       )}
-      <footer className="cr-foot" data-testid="credit-foot">
-        <p className="cr-note">The pool runs on NEAR&apos;s test network. Nothing here moves real money.</p>
-      </footer>
     </main>
   );
 }

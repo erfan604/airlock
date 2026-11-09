@@ -7,6 +7,7 @@ import proven from '../../../docs/proven.json';
 import { loadBench } from '../bench/types.ts';
 import { Specimen } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
+import { plain } from '../components/plain.ts';
 import { url } from '../static.ts';
 import { RequestSlip } from '../try/RequestSlip.tsx';
 import { WORLD, defaultKnobs, emailOf, formatDollars, parseDollars, payeeListGuard, standIn, verdictSentence } from '../try/model.ts';
@@ -231,7 +232,7 @@ function Proven() {
           <h3 className="land-h3">{`Checked by Kani and Lean, from the ${String(PROVEN.entries.length)} statements on the Proven page`}</h3>
           <ul className="limits-list">
             {shown.map((e) => (
-              <li key={e.id}>{e.says}</li>
+              <li key={e.id}>{plain(e.says)}</li>
             ))}
           </ul>
         </div>
@@ -239,7 +240,7 @@ function Proven() {
           <h3 className="land-h3">Not covered</h3>
           <ul className="limits-list limits-not">
             {PROVEN.notCovered.slice(0, 4).map((t) => (
-              <li key={t}>{t}</li>
+              <li key={t}>{plain(t)}</li>
             ))}
           </ul>
         </div>
@@ -295,7 +296,7 @@ export function Landing() {
         <Proven />
         <footer className="land-foot">
           <p>
-            NEAR testnet only. Nothing on this site moves real money. <a href={url('live')}>Run it yourself</a> from the repository.
+            <a href={url('live')}>Run it yourself</a> from the repository.
           </p>
         </footer>
       </div>

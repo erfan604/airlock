@@ -19,12 +19,12 @@ export const PAGES: PageMeta[] = [
     path: '/use',
     title: 'Use it with your own agent | AIRLOCK',
     description:
-      'Put AIRLOCK between any MCP agent (Claude Desktop, Claude Code, Cursor) and your NEAR testnet funds: deploy your own policy with one command, add the MCP server, and watch an invoice paid, a doctored invoice held, and your approval. Every step with its command and expected last line.',
+      'Put AIRLOCK between any MCP agent (Claude Desktop, Claude Code, Cursor) and your NEAR test funds: deploy your own policy with one command, add the MCP server, and watch an invoice paid, a doctored invoice held, and your approval. Every step with its command and expected last line.',
   },
   {
     path: '/replay',
-    title: 'The recorded testnet run | AIRLOCK',
-    description: 'A replay of recorded NEAR testnet runs: an invoice paid, a correction from an email held for the owner, and a tampered approval refused by the contract, each with its transaction.',
+    title: 'The recorded run | AIRLOCK',
+    description: 'A replay of recorded NEAR runs: an invoice paid, a correction from an email held for the owner, and a tampered approval refused by the contract, each with its transaction.',
   },
   {
     path: '/bench',
@@ -39,18 +39,18 @@ export const PAGES: PageMeta[] = [
   {
     path: '/challenge',
     title: 'Steal this agent | AIRLOCK',
-    description: 'Try to steal from a real AIRLOCK-guarded agent on NEAR testnet with its published key; the board is read from the chain in your browser.',
+    description: 'Try to steal from a real AIRLOCK-guarded agent on NEAR with its published key; the board is read from the chain in your browser.',
   },
   {
     path: '/live',
     title: 'Live demo | AIRLOCK',
-    description: 'A live run needs a runtime server, a model key and funded NEAR testnet accounts. This page lists the commands that run it from the repository.',
+    description: 'A live run needs a runtime server, a model key and funded NEAR accounts. This page lists the commands that run it from the repository.',
   },
   {
     path: '/approvals',
     title: 'Live approvals | AIRLOCK',
     description:
-      'Requests held for the owner on the testnet policy contract, read from the chain with no server. Each shows the payee, the amount, where each value came from, why it was held and the exact values the wallet signs. Only the policy owner can approve or reject.',
+      'Requests held for the owner on the policy contract, read from the chain with no server. Each shows the payee, the amount, where each value came from, why it was held and the exact values the wallet signs. Only the policy owner can approve or reject.',
   },
   {
     path: '/credit',
@@ -58,7 +58,7 @@ export const PAGES: PageMeta[] = [
     description:
       'A credit network for AI agents on NEAR\'s test network: LPs stake into a pool, each agent spends from a credit line the pool funds on NEAR, Base and Solana, and every payment goes through the AIRLOCK guard. A live scene of the pool, its credit lines and their payments, read from the chain; it runs on a badged fixture until the pool contract is deployed.',
   },
-  { path: '/task', title: 'Task, recorded | AIRLOCK', description: 'The recorded testnet run under the name a live operator reads.', alias: '/replay' },
+  { path: '/task', title: 'Task, recorded | AIRLOCK', description: 'The recorded run under the name a live operator reads.', alias: '/replay' },
 ];
 
 export const pageOf = (path: string): PageMeta | undefined => PAGES.find((p) => p.path === path);

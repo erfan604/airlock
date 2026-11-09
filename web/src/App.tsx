@@ -6,6 +6,9 @@ import { ROUTES } from './routes.ts';
 import { routePath, url } from './static.ts';
 import { SiteNav } from './shell/SiteNav.tsx';
 
+/** The one fact every page states in its footer (owner rule): where the site runs, in plain words. */
+export const FOOT_LINE = "Runs on NEAR's test network. Nothing here moves real money.";
+
 function Placeholder({ line }: { line: string }) {
   return (
     <main className="page" data-testid="placeholder">
@@ -36,11 +39,13 @@ export function App({ pathname: rawPathname, page }: { pathname: string; page?: 
           AIRLOCK
         </a>
         <SiteNav path={path} />
-        <span className="shell-net">testnet</span>
       </header>
       <div id="main" className="shell-main" tabIndex={-1}>
         {page ?? (fixture ? fixture.render() : m ? <Placeholder line="No such fixture." /> : route ? route() : <Placeholder line="There is no page at this address." />)}
       </div>
+      <footer className="site-foot" data-testid="site-foot">
+        <p>{FOOT_LINE}</p>
+      </footer>
     </>
   );
 }

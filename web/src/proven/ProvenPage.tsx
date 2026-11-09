@@ -1,6 +1,7 @@
 // AIR-302: the /proven route. It renders docs/proven.json, the same file that docs/PROVEN.md and `pnpm proven` come from, so the three cannot drift
 // (web/test/proven.test.tsx asserts it). Static text only: no network, no wallet, no untrusted input.
 import source from '../../../docs/proven.json';
+import { plain } from '../components/plain.ts';
 
 type Proof = { kind: 'lean' | 'kani' | 'diff'; name: string; file?: string };
 type Entry = { id: string; says: string; notCovered: string; bound: string; files: string[]; claims: string[]; proofs: Proof[] };
@@ -31,7 +32,7 @@ export function ProvenPage({ data = SRC }: { data?: Source }) {
   return (
     <main className="page proven" data-testid="proven">
       <h1 className="proven-title">{data.title}</h1>
-      <p className="proven-lede">{data.lead}</p>
+      <p className="proven-lede">{plain(data.lead)}</p>
       <p className="proven-recheck" data-testid="proven-recheck">
         Recheck: <code>{data.command}</code> (about {data.estimateMinutes} minutes). It prints one line per entry below and ends with <code>{`PROVEN OK ${n} of ${n}`}</code>.
       </p>
@@ -39,7 +40,7 @@ export function ProvenPage({ data = SRC }: { data?: Source }) {
         <h2 id="proven-not-title" className="proven-h2">What this does not cover</h2>
         <ul className="proven-list" data-testid="proven-not-covered">
           {data.notCovered.map((t) => (
-            <li key={t}>{t}</li>
+            <li key={t}>{plain(t)}</li>
           ))}
         </ul>
       </section>
@@ -48,10 +49,10 @@ export function ProvenPage({ data = SRC }: { data?: Source }) {
         <ol className="proven-entries" data-testid="proven-entries">
           {data.entries.map((e) => (
             <li key={e.id} className="proven-entry" data-testid={`proven-entry-${e.id}`}>
-              <h3 className="proven-says">{e.says}</h3>
+              <h3 className="proven-says">{plain(e.says)}</h3>
               <Checked proofs={e.proofs} />
-              <p className="proven-meta"><span className="proven-key">Bound</span> {e.bound}</p>
-              <p className="proven-meta"><span className="proven-key">Not covered</span> {e.notCovered}</p>
+              <p className="proven-meta"><span className="proven-key">Bound</span> {plain(e.bound)}</p>
+              <p className="proven-meta"><span className="proven-key">Not covered</span> {plain(e.notCovered)}</p>
               <p className="proven-meta"><span className="proven-key">Files</span> {e.files.join(', ')}</p>
               <p className="proven-meta"><span className="proven-key">Claims</span> {e.claims.join(', ')}</p>
             </li>

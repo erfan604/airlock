@@ -107,7 +107,7 @@ const run: E2E = async ({ page, baseUrl }) => {
     await id('money-withdraw', page).click();
     assert.equal(await id('money-withdraw', page).getAttribute('aria-pressed'), 'true');
     assert.ok(!/testnet|erfan/i.test(await page.locator('main').innerText()), 'live: no testnet or owner name in the text');
-    assert.ok((await id('credit-foot', page).innerText()).includes("NEAR's test network"), 'one plain factual line says it is the test network');
+    assert.ok((await id('site-foot', page).innerText()).includes("NEAR's test network"), 'one plain factual line says it is the test network');
     await page.waitForTimeout(1500);
     await shot(page, 'live', viewport.width);
     await audit(page, 'live');

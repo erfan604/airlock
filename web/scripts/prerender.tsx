@@ -13,6 +13,7 @@ import type { ReactElement } from 'react';
 import { prerenderToNodeStream } from 'react-dom/static';
 import { registryFromRows } from '@airlock/runtime/analyze';
 import { writeLlmsFiles } from './llms.ts';
+import { scrubOwner } from '../src/components/account.ts';
 
 const web = resolve(import.meta.dirname, '..');
 const outArg = process.argv.indexOf('--out');
@@ -32,13 +33,14 @@ const { summarize } = await import('../src/replay/summary.ts');
 type Preload = import('../src/preload.ts').Preload;
 type Act = import('../src/replay/api.ts').Act;
 
-const readJson = (p: string): unknown => JSON.parse(readFileSync(join(out, p), 'utf8')) as unknown;
+// the prerendered replay reads the same files the page reads, with the owner's name rewritten the same way (components/account.ts)
+const readJson = (p: string): unknown => JSON.parse(scrubOwner(readFileSync(join(out, p), 'utf8'))) as unknown;
 const bench = parseBench(readJson('bench.json'));
 if (bench === null) throw new Error('bench.json does not parse');
 const facts = factsOf(bench);
 const acts = (readJson('data/replay/acts.json') as { acts: Act[] }).acts;
 const streams: Record<string, string> = {};
-for (const a of acts) if (a.runId !== null) streams[a.runId] = readFileSync(join(out, 'data', 'runs', `${a.runId}.txt`), 'utf8');
+for (const a of acts) if (a.runId !== null) streams[a.runId] = scrubOwner(readFileSync(join(out, 'data', 'runs', `${a.runId}.txt`), 'utf8'));
 const held = acts.find((a) => a.id === 'b01')?.pendingNo;
 const request = held === null || held === undefined ? null : (readJson(`data/replay/request/${encodeURIComponent(held)}.json`) as { view: { asset: string }; asset: unknown });
 const registry = request === null ? null : registryFromRows([[request.view.asset, request.asset]] as Parameters<typeof registryFromRows>[0]);

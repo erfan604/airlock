@@ -4,6 +4,7 @@
 // contract's verdict. In recorded mode (the board shows the replayed bench attacks) the text door is shut and the page says so.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { explorerAccount } from '../components/account.ts';
 import { Door } from '../components/Door.tsx';
 import { UntrustedInline } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
@@ -28,6 +29,18 @@ const TERMS: Record<Attempt['verdict'], string> = { Allow: 'allow', Escalate: 'e
 const DOOR_NAMES: Record<Attempt['door'], string> = { text: 'pasted text', key: 'published key', seed: 'bench case' };
 
 const isStolen = (a: Attempt): boolean => a.stolenYocto !== '0';
+
+/** An account as the page prints it: the owner's own names are a neutral label linked to the explorer (components/account.ts), other names as they are. */
+function AccountName({ id, what }: { id: string; what: string }) {
+  if (!/erfan/i.test(id)) return <>{id}</>;
+  const url = explorerAccount(id.replace(/^near:/, ''));
+  if (url === null) return <>{what}</>;
+  return (
+    <a className="ch-tx" href={url} target="_blank" rel="noopener noreferrer">
+      {what}
+    </a>
+  );
+}
 
 function TxLink({ tx, label }: { tx: string | null; label: string }) {
   const url = explorerUrl(tx);
@@ -79,9 +92,9 @@ function KeyFacts({ state, unreadable }: { state: ChallengeState | null; unreada
       ) : (
         <dl className="ch-facts" data-testid="key-facts">
           <dt>Account</dt>
-          <dd>{k.account}</dd>
+          <dd><AccountName id={k.account} what="demo agent" /></dd>
           <dt>Receiver</dt>
-          <dd>{k.receiver}</dd>
+          <dd><AccountName id={k.receiver} what="demo policy" /></dd>
           <dt>Methods</dt>
           <dd>{k.methods.join(', ')}</dd>
           {k.allowance === null ? null : (
@@ -123,7 +136,7 @@ function TaskFacts({ task }: { task: PublishedTask }) {
     <div data-testid="task-facts">
       <h3 className="ch-door-title">The owner's signed task</h3>
       <p className="ch-help" data-testid="task-explain">
-        A call to <code className="ch-code">submit_batch</code> also needs a task signed by the owner. A compromised agent would hold one, so here is one. It lets the agent pay {p.payee} up to {p.maxTotal} {p.asset} in total, in at most {String(p.maxActions)} requests, until {task.expiresAt} (a fresh task is published before it expires). Anything else is outside what the owner signed: another payee, a larger amount, a replay or a call after expiry. Try it; the board shows what the contract answers.
+        A call to <code className="ch-code">submit_batch</code> also needs a task signed by the owner. A compromised agent would hold one, so here is one. It lets the agent pay <AccountName id={p.payee} what="the demo payee" /> up to {p.maxTotal} {p.asset} in total, in at most {String(p.maxActions)} requests, until {task.expiresAt} (a fresh task is published before it expires). Anything else is outside what the owner signed: another payee, a larger amount, a replay or a call after expiry. Try it; the board shows what the contract answers.
       </p>
       <dl className="ch-facts">
         <dt>Task id</dt>
@@ -169,7 +182,7 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, hosted, n
       <header className="ch-head">
         <h1 className="ch-title">Steal this agent</h1>
         <p className="ch-lede">
-          An AI agent reads email and pays invoices from a wallet on NEAR testnet. The wallet is guarded by a contract, not by a server. Make it pay someone the owner never listed. Every attempt below is the contract's answer.
+          An AI agent reads email and pays invoices from a wallet on NEAR. The wallet is guarded by a contract, not by a server. Make it pay someone the owner never listed. Every attempt below is the contract's answer.
         </p>
       </header>
 
@@ -211,7 +224,7 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, hosted, n
         </p>
         {state?.hosted === true ? (
           <p className="ch-fine" data-testid="ch-hosted">
-            This hosted copy has no server. Your browser reads NEAR testnet every 30 seconds and counts the calls to the policy contract that the published key signed, each with the verdict from the contract's own receipt. An attempt that never reaches the chain is not counted. Every call spends gas from the key's small allowance. Because every challenger is the same agent, sending many requests can use up its hourly budget of held requests or fill the queue waiting for the owner; later calls are then answered EscalationBudget or PendingFull until the hour turns or the owner clears the queue. That can slow the challenge down. It cannot pay anyone outside the owner's book.
+            This hosted copy has no server. Your browser reads NEAR every 30 seconds and counts the calls to the policy contract that the published key signed, each with the verdict from the contract's own receipt. An attempt that never reaches the chain is not counted. Every call spends gas from the key's small allowance. Because every challenger is the same agent, sending many requests can use up its hourly budget of held requests or fill the queue waiting for the owner; later calls are then answered EscalationBudget or PendingFull until the hour turns or the owner clears the queue. That can slow the challenge down. It cannot pay anyone outside the owner's book.
             {state.truncated === true ? ' The listing was long, so the board shows the newest part of it.' : ''}
           </p>
         ) : null}

@@ -10,9 +10,9 @@ const txHref = (u: string): string | undefined => (EXPLORERS.some((p) => u.start
 export function ReplaySummary({ acts }: { acts: ActSummary[] }) {
   return (
     <main className="page replay" data-testid="replay-summary">
-      <p className="replay-banner">Replay of recorded testnet runs</p>
+      <p className="replay-banner">Replay of recorded runs</p>
       <h1 className="replay-summary-title">The recorded run, act by act</h1>
-      <p className="replay-lede">This is a replay of recorded testnet runs. Nothing runs live, no wallet is used and no key is needed.</p>
+      <p className="replay-lede">This is a replay of recorded runs. Nothing runs live, no wallet is used and no key is needed.</p>
       {acts.map((a) => (
         <section key={a.id} className="replay-act" aria-labelledby={`sum-${a.id}`}>
           <h2 id={`sum-${a.id}`} className="replay-title">
@@ -29,7 +29,7 @@ export function ReplaySummary({ acts }: { acts: ActSummary[] }) {
                 <ul className="replay-links">
                   {a.links.map((l) => (
                     <li key={l.hash} className="replay-link">
-                      <span className="replay-link-label">{l.label === 'submit' ? `The request on NEAR testnet${l.status === 'failure' ? ', refused' : ''}` : l.label === 'tamper' ? 'Refused approval on testnet' : `${l.label} on NEAR testnet (${l.status})`}</span>
+                      <span className="replay-link-label">{l.label === 'submit' ? `The request on NEAR${l.status === 'failure' ? ', refused' : ''}` : l.label === 'tamper' ? 'Refused approval' : `${l.label} on NEAR (${l.status})`}</span>
                       <a href={txHref(l.url)} target="_blank" rel="noopener noreferrer">
                         {l.hash}
                       </a>

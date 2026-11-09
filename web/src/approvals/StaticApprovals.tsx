@@ -14,6 +14,7 @@ import { ApprovalCard, bookDeps, merge } from './ApprovalsRoute.tsx';
 import { rpcView } from '../chain/rpc.ts';
 import type { Actions, ApprovalsData } from './ApprovalsRoute.tsx';
 import type { ApproveResult } from './Card.tsx';
+import { explorerAccount, shownAccount } from '../components/account.ts';
 import { DEFAULT_POLICY, accessOf, explorerTx, isExpired, policyFromSearch, readStaticChain } from './staticChain.ts';
 import type { Access } from './staticChain.ts';
 import { VaultDrop } from './VaultDrop.tsx';
@@ -37,13 +38,24 @@ export type StaticViewProps = {
   onReload?(): void;
 };
 
+/** The policy as the heading prints it: a name that contains the owner's is a neutral label linked to the explorer, any other name is shown as it is. */
+function PolicyName({ policy }: { policy: string }) {
+  const link = explorerAccount(policy);
+  if (shownAccount(policy, 'the demo policy') === policy || link === null) return <>{policy}</>;
+  return (
+    <a href={link} target="_blank" rel="noopener noreferrer">
+      the demo policy
+    </a>
+  );
+}
+
 function AccessLine({ access, ownerId, onConnect, connecting, connectError }: Pick<StaticViewProps, 'access' | 'ownerId' | 'onConnect' | 'connecting' | 'connectError'>) {
   const text =
     access.kind === 'owner'
-      ? `Signed in as ${access.account}, the owner of this policy.`
+      ? `Signed in as ${shownAccount(access.account)}, the owner of this policy.`
       : access.kind === 'viewer'
-        ? `View only. You are connected as ${access.account}; the owner of this policy is ${ownerId}.`
-        : `View only. Connect the owner wallet (${ownerId}) to approve or reject.`;
+        ? `View only. You are connected as ${shownAccount(access.account)}; the owner of this policy is ${shownAccount(ownerId)}.`
+        : `View only. Connect the owner wallet (${shownAccount(ownerId)}) to approve or reject.`;
   return (
     <div className="approval-item">
       <p className="approvals-reveal" data-testid="access" data-access={access.kind}>
@@ -68,8 +80,10 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
   const now = BigInt(nowMs ?? Date.now());
   return (
     <main className="page approvals" data-testid="approvals">
-      <h1 className="approvals-title" data-testid="approvals-policy">{`Held requests on ${policy}`}</h1>
-      <p className="approvals-more">Read from the policy contract on NEAR testnet through a public RPC node, with no server in between. Only the policy owner can approve or reject.</p>
+      <h1 className="approvals-title" data-testid="approvals-policy">
+        Held requests on <PolicyName policy={policy} />
+      </h1>
+      <p className="approvals-more">Read from the policy contract on NEAR through a public RPC node, with no server in between. Only the policy owner can approve or reject.</p>
       <AccessLine access={access} ownerId={ownerId} onConnect={onConnect} connecting={connecting} connectError={connectError} />
       {data.privateBook ? <VaultDrop onLoaded={onReload} /> : null}
       {access.kind === 'owner' && reveal !== '' && data.cards.length > 0 ? (
@@ -83,7 +97,7 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
             Nothing is held on this policy right now.
           </p>
           <p className="approvals-more">
-            A request is held when its payee or amount came from outside text. To make one on testnet from the repository, run <code>pnpm demo:live</code> (act 2 holds a correction) or <code>pnpm tsx scripts/e2e-testnet.ts B01</code>, then reload this page. See <a href={url('use')}>the quickstart</a>.
+            A request is held when its payee or amount came from outside text. To make one from the repository, run <code>pnpm demo:live</code> (act 2 holds a correction) or <code>pnpm tsx scripts/e2e-testnet.ts B01</code>, then reload this page. See <a href={url('use')}>the quickstart</a>.
           </p>
         </div>
       ) : null}
@@ -106,7 +120,7 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
                 {link === null ? (
                   `Transaction ${tx.hash}`
                 ) : (
-                  <a href={link} target="_blank" rel="noopener noreferrer" data-testid="tx-link">{`View transaction ${tx.hash} on the testnet explorer`}</a>
+                  <a href={link} target="_blank" rel="noopener noreferrer" data-testid="tx-link">{`View transaction ${tx.hash} on the explorer`}</a>
                 )}
               </p>
             ) : null}
@@ -122,13 +136,15 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
 export function ApprovalsLoading({ policy, error }: { policy: string; error: boolean }) {
   return (
     <main className="page approvals" data-testid="approvals-loading" aria-busy={!error}>
-      <h1 className="approvals-title">{`Held requests on ${policy}`}</h1>
+      <h1 className="approvals-title">
+        Held requests on <PolicyName policy={policy} />
+      </h1>
       <p className="approvals-empty">
-        {error ? 'The chain could not be read. Reload to try again.' : 'Reading the policy contract on NEAR testnet. Held requests wait here for the owner to approve or reject them in a wallet.'}
+        {error ? 'The chain could not be read. Reload to try again.' : 'Reading the policy contract on NEAR. Held requests wait here for the owner to approve or reject them in a wallet.'}
       </p>
       <noscript>
         <p className="approvals-more">
-          This page needs JavaScript. It calls the contract view get_pending through a public NEAR testnet RPC node and shows each held request on the same card the console uses: the payee, the amount, where each value came from, why the request was held and the exact values the wallet will sign. The owner of the policy connects a wallet and approves or rejects; every other visitor sees the card with no buttons. The recorded run is on <a href={url('replay')}>the replay page</a>.
+          This page needs JavaScript. It calls the contract view get_pending through a public NEAR RPC node and shows each held request on the same card the console uses: the payee, the amount, where each value came from, why the request was held and the exact values the wallet will sign. The owner of the policy connects a wallet and approves or rejects; every other visitor sees the card with no buttons. The recorded run is on <a href={url('replay')}>the replay page</a>.
         </p>
       </noscript>
     </main>
@@ -204,7 +220,7 @@ export function StaticApprovals() {
     return (
       <main className="page approvals" data-testid="approvals-badpolicy">
         <h1 className="approvals-title">Held requests</h1>
-        <p className="approvals-empty">{`The policy in the address must be a NEAR testnet account ending in .testnet. Without it this page reads ${DEFAULT_POLICY}.`}</p>
+        <p className="approvals-empty">{`The policy in the address must be a NEAR test-network account name. Without it this page reads the demo policy.`}</p>
       </main>
     );
   }

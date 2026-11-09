@@ -10,7 +10,7 @@ export const ONE_LINE = {
   last: 'AIRLOCK MCP OK',
 };
 
-export const NEEDS = 'Node 24, pnpm, the near CLI (near-cli-rs 0.30 or later), jq, python3 and curl. No Rust, no model key and no money: testnet only.';
+export const NEEDS = 'Node 24, pnpm, the near CLI (near-cli-rs 0.30 or later), jq, python3 and curl. No Rust, no model key and no money: test network only.';
 
 export const STEPS: Step[] = [
   {
@@ -23,7 +23,7 @@ export const STEPS: Step[] = [
   {
     id: 'owner',
     title: 'Make an owner account',
-    text: 'Your owner account sets the policy and approves held payments. The faucet funds it with 10 testnet NEAR. To reuse an account you already have, skip this; it needs about 6 testnet NEAR.',
+    text: 'Your owner account sets the policy and approves held payments. The faucet funds it with 10 test NEAR. To reuse an account you already have, skip this; it needs about 6 test NEAR.',
     cmd: 'near account create-account sponsor-by-faucet-service <you>.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create',
     last: 'New account <<you>.testnet> created successfully.',
   },

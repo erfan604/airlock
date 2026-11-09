@@ -59,7 +59,7 @@ export function UsePage(): ReactElement {
     <main className="page use" data-testid="use">
       <h1 className="use-title">Use it with your own agent</h1>
       <p className="use-lede">
-        Put AIRLOCK between any MCP agent and your NEAR testnet funds in about five minutes. The agent reads your inbox and asks to pay; your policy
+        Put AIRLOCK between any MCP agent and your NEAR test funds in about five minutes. The agent reads your inbox and asks to pay; your policy
         contract decides. The agent never sets a label: values it read keep the label of where they came from, and a value it types counts as yours
         only when your own request holds it.
       </p>

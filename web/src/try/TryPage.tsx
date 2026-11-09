@@ -368,7 +368,7 @@ export function TryPage() {
             {STAND_IN}
           </p>
           <p className="try-more">
-            <a href={url('replay')}>Watch the recorded testnet run</a>, where a real model reads the email and the contract on NEAR testnet holds the payment.
+            <a href={url('replay')}>Watch the recorded run</a>, where a real model reads the email and the contract on NEAR holds the payment.
           </p>
         </div>
       </div>
