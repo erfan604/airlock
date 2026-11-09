@@ -263,3 +263,123 @@ A borrower who asks his agent to pay his own account cannot approve it, because 
 What this does not show: everything ran on NEAR testnet between our own accounts; the issuer picks the borrowers, limits and collateral and is trusted; losses beyond the collateral fall on the LPs; staking, share tokens, Passport and Intents funding are not shipped; and the crate is not yet in `scripts/check.sh`, so a green `scripts/check.sh full` does not cover its tests (`docs/KNOWN_LIMITATIONS.md`).
 
 A lender's worst case, with what collateral covers and what it does not: `docs/UNDERWRITING.md`.
+
+## AIR-333: the Credit Passport on chain
+
+Today `open_line` takes any limit the issuer types, and the score on /credit is computed in the page. This section moves a per-borrower
+record and a score into the pool contract and makes the score cap the next line. Two rules make the cap mean something: the record is
+keyed by the borrower account (`Card.borrower`), so a borrower cannot reset a default by getting a new card; and the issuer can lower the
+cap base at once but a raise binds only after `min_hold_ms`, so every LP can leave before a raise takes effect. No token: the NEP-171
+soulbound token is cut (no `nft_*` method, no SVG, no media).
+
+The record is written by pool events only (line funded, repay, default, card return, write-off). The pool never sees a card payment, so
+held and refused payments are not inputs: they are the guard working, not the borrower failing.
+
+### State and the in-place upgrade
+
+- `src/legacy.rs` holds `PoolV1`, a verbatim copy of the deployed `Pool` (the c1108d layout, pinned by the layout tests).
+- `Pool` gains, after `min_hold_ms`: `records: LookupMap<AccountId, CreditRecord>` under a new `StorageKey::Records` appended after
+  `Locks` (prefix byte 4), then `passport_base: u128`, `pending_base: Option<(u128, u64)>` (value, effective time in ms) and
+  `version: u32` (2). `Card`, `Line`, `LineState` and the four existing prefixes keep their bytes, so no stored card or LP entry is
+  rewritten.
+- `migrate(passport_base: U128)` is `#[private] #[init(ignore_state)]`: it reads `PoolV1`, moves every field unchanged, sets the base and
+  backfills the records. Run on an already migrated state it fails (the stored bytes are no longer a `PoolV1`). The live upgrade is ONE
+  transaction with two actions, `DeployContract` then `FunctionCall migrate`, so the pool never runs new code on old state.
+- The deployed bytes are kept as `res/airlock_credit_c1108d.wasm`, sha256
+  `1f915ce22956f33c4b65d092838c0429e2255dd6d224b6c58db8f9b941343419`, pinned by a test.
+- `new` takes an optional `passport_base` (default 100 NEAR) so a fresh pool needs no migrate.
+
+**Backfill rule: count only what the stored state proves.** The old state keeps one line per card and no history. Per card with a line in
+`Open`, `Repaid` or `Defaulted`: `lines_opened += 1`. A `Defaulted` line is one default. A `Repaid` line is not counted as on time or
+late, because its timing is not stored. A loss cleared to 0 cannot be told apart from a write-off in the stored state, so it counts as
+neither recovered nor written off; an unrecovered loss stays a plain default. Every backfilled record has `backfilled: true` and the
+reasons say so. The live c1108d card holds one `Defaulted` line whose loss was recovered: 1 default, score 200.
+
+### The record
+
+`CreditRecord { lines_opened: u32, repaid_on_time: u32, repaid_late: u32, defaults: u32, recovered: u32, written_off: u32,
+volume_repaid: u128, fees_paid: u128, last_event_ms: u64, backfilled: bool }`, keyed by `Card.borrower`. A second card registered for
+the same borrower reads and writes the same record.
+
+| Event | Update |
+| --- | --- |
+| `on_line_funded`, transfer succeeded | `lines_opened += 1` (a failed funding counts nothing) |
+| `repay` | `volume_repaid += outstanding`, `fees_paid += fee`; the repay QUALIFIES when `outstanding * 10 >= limit` (the card kept at least 10 percent of the limit) and `fee > 0`; a qualifying repay at or before `due_ms` is `repaid_on_time += 1`, after it `repaid_late += 1`; a dust or zero fee repay counts as neither, so empty lines cannot farm the score |
+| `default` | `defaults += 1` |
+| `on_card_return` after a default | `recovered += 1` when this return clears the card's loss to 0 (once: a card with no loss refuses later returns) |
+| `write_off` | `written_off += 1` |
+
+Every update sets `last_event_ms`.
+
+### The score and the cap
+
+`math::passport_score(&CreditRecord) -> (u32, Vec<String>)`, integers only, bounded 0..=1000:
+
+    score = 500 + 80 * min(repaid_on_time, 5) - 40 * min(repaid_late, 5) - 300 * min(defaults, 2)
+                + 150 * min(recovered, min(defaults, 2))      then clamped to 0..=1000
+
+The reasons read like `base +500`, `repaid_on_time x2 +160`, `defaulted x1 -300` (a count above its cap shows `(5 count)`), plus
+`clamped to 0` when the floor applies and `backfilled: counts only what the pool state proves` on a backfilled record.
+`limit_cap = floor(passport_base * score / 500)` through `mul_div_floor`, so a fresh borrower at 500 gets exactly the base, 200 gets 0.4
+of it and 0 gets nothing. These are rules of thumb on the pool's own events, not a credit model.
+
+`open_line` refuses `limit > limit_cap`, checked right after `limit > 0` and before the collateral and liquidity checks, with
+`the limit is above this card's Passport cap of X NEAR (score S)` (X a decimal NEAR string, trailing zeros trimmed). The other rules are
+unchanged.
+
+### The cap base
+
+| Call | Who | Rule |
+| --- | --- | --- |
+| `set_passport_base(base)` payable, exactly 1 yocto | owner | `base <= passport_base`: applies at once, clears any pending raise, emits `passport_base_set { base }`. `base > passport_base`: stored as `pending_base = (base, now + min_hold_ms)`, emits `passport_base_raise_announced { base, effective_ms }`; the base in force does not change |
+| `apply_passport_base()` | anyone | needs a pending raise and `now >= effective_ms`; applies it, clears it, emits `passport_base_set { base }` |
+
+An LP who deposited before the announcement is unlocked before the raise binds (its lock is its deposit time plus `min_hold_ms`, which is
+earlier than the announcement time plus `min_hold_ms`), so every LP can leave before a raise applies. A lower base (and a lower score) can
+only shrink the next line, so it needs no notice.
+
+### Views
+
+- `get_passport(card) -> { borrower, score, reasons, record, limit_cap }` (null for an unknown card); `record` has its amounts and
+  `last_event_ms` as decimal strings.
+- `get_pool_passport() -> { base, pending_base, effective_ms, version }` (`pending_base` and `effective_ms` null when nothing is pending).
+- `PoolView`, `LineView` and `LpView` are unchanged (the web parses them).
+
+### Tests, each written failing first, and the rule each pins
+
+| Test | Rule |
+| --- | --- |
+| `passport_score_properties` (math, random records) | one more qualifying on-time repay never lowers the score; a default never raises it and lowers it while fewer than 2 are counted and the score is above 0; the score stays in 0..=1000; recovered never counts above defaults |
+| `passport_vectors_match` (vectors/passport.json) | records to score, reasons and cap; the same file feeds the web later |
+| `dust_and_zero_fee_repays_do_not_count` | a repay with under 10 percent drawn or a zero fee moves neither counter |
+| `the_record_follows_the_borrower_not_the_card` | a new card for a borrower with a default starts at that borrower's score, not 500 |
+| `a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms` | lower at once and clears a pending raise; a raise not in force 1 ms before `now + min_hold_ms`, applied at it; an LP who deposited before the announcement withdraws before it binds |
+| `set_passport_base_is_owner_only_with_one_yocto` | a non owner refused, no deposit refused |
+| `open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay` | the cap text and score; the same limit opens after a qualifying repay |
+| `the_record_counts_each_pool_event` | funded, failed funding, repay on time, late, default, recovery, write-off |
+| `migrate_moves_every_field_and_backfills_only_what_the_state_proves`, `migrate_twice_is_refused`, `layout_*` | the v1 to v2 move, the backfill rule, the appended prefix |
+| the property test, extended | the sum rules unchanged with records and the cap in force |
+| sandbox `upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works` | the pinned wasm runs a history (deposit, card, collateral, line, repay, second line, default, recovery sweep); `get_pool`, `get_line`, `list_lines`, `get_lp`, `get_unclaimed` are snapshotted; deploy plus migrate in one transaction; every view is equal and `get_passport` reads 1 default, score 200, backfilled; then a new deposit, a withdraw after the lock, an over-cap `open_line` refused with the cap text, an `open_line` inside the cap, an agent payment to the booked merchant through the verdict (Allow), a sweep, an on-time repay that raises the score and the cap, a second `open_line` at the earlier refused limit, a default and a recovery sweep all work on the upgraded state with the sum rules asserted. There is no rollback on the live pool, so this test gates the live run |
+
+Mutants (each applied alone, killed by a named test, rows in docs/mutation.md): the cap not enforced, a dust repay counted, migrate drops
+a field, the record keyed by card instead of borrower, a raise applied at once.
+
+### Live plan (pool.airlock-credit-c1108d.testnet only)
+
+After the coordinator removes `target/arena/LIVE_OK` and 65 minutes have passed since the last arena transaction:
+`scripts/credit-passport-run.ts` checks the four keys (pool, issuer, borrower, agent), that no line is open or past due and no escalation
+is pending on the card, then the storage: the pool balance must cover `(new wasm bytes + new state bytes) x 1e19 + LP assets + unclaimed
++ 0.2 NEAR`, else the issuer tops it up first. One transaction deploys the wasm and calls `migrate(passport_base = 1 NEAR)`; the code hash
+must equal the committed wasm and the pool views must equal the snapshot. Then, with every number read from `get_passport`: the
+over-cap limit `L` in `(cap, 1.4 x cap]` is refused with the cap text, a line of 0.3 NEAR opens, the agent pays the booked merchant 0.05
+NEAR (Allow), the issuer sweeps the rest, the borrower repays on time with the fee, the score and cap rise, `L` opens and is closed at once
+by a sweep and a repay (an undrawn close counts as neither on time nor late). No line stays open. Expected: 200 and 0.4 NEAR before, 280
+and 0.56 NEAR after.
+
+### What this does not do
+
+- The backfill counts only what the state proves: the live borrower starts at 200, not at a reconstructed history.
+- The score is pool side only; held and refused payments are not inputs.
+- The record is keyed by borrower account: a borrower on a NEW account starts fresh at 500 (the full base). The Passport stops a reset on
+  the same account, not a new identity; only the issuer registers borrowers, so onboarding is where identity is checked.
+- The cap is per line, not per pool: many fresh borrowers can each take up to the base.
