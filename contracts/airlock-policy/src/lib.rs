@@ -42,8 +42,8 @@ pub mod policy;
 #[cfg(test)]
 mod redteam;
 pub mod request;
-pub mod solana;
 pub mod roles;
+pub mod solana;
 pub mod task;
 #[cfg(test)]
 pub mod testutil;
