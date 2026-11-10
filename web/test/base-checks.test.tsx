@@ -1,5 +1,6 @@
 // AIR-350: the Base payment checks section of /credit: the pure parts (list file, view answer, explorerBaseTx), the reader and the component.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { BASE_CHECK_LIST, baseCheckRowOf, explorerBaseTx, parseBaseCheckList, readBaseChecks } from '../src/credit/baseChecks.ts';
@@ -13,8 +14,10 @@ const REC = '1794340215416';
 const entry = { txId: TX, nearTx: NEAR_TX };
 const answer = (over: Record<string, unknown> = {}): Record<string, unknown> => ({ tx_id: TX, payload_hash: HASH, signature: '{}', asked_by: ASKER, recorded_ms: REC, ...over });
 
-test('the committed list is empty today', () => {
-  assert.deepEqual(BASE_CHECK_LIST, []);
+test('every entry of the committed list is well formed, so none is dropped silently', () => {
+  const raw = JSON.parse(readFileSync(new URL('../src/credit/base-checks.json', import.meta.url), 'utf8')) as { checks: unknown[] };
+  assert.equal(BASE_CHECK_LIST.length, raw.checks.length);
+  assert.ok(BASE_CHECK_LIST.length >= 1);
 });
 
 test('parseBaseCheckList keeps good entries, drops bad ones and duplicates', () => {
