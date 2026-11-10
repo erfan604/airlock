@@ -204,7 +204,8 @@ test('under strict mode the bound line says that every amount read from an email
   const before = text(view({ state: ok(list) }));
   assert.doesNotMatch(before, /Every amount read from an email waits/);
   assert.match(before, /A larger amount read from the email is held for the owner and never paid without approval\./);
-  assert.equal(ARENA_STRICT_SINCE_MS, null, 'not claimed until the card holds the strict root');
+  // the card took its strict root on 2026-11-10 (book_set_root 3facSJMX..., CREDIT STRICT OK epoch 2), so the page config carries the date
+  assert.equal(ARENA_STRICT_SINCE_MS, 1794294892027);
 });
 
 test('a flood refusal has its own line and is not in the blocked count', () => {

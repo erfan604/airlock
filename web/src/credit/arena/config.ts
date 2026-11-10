@@ -14,12 +14,12 @@ export const ARENA_INVOICE_YOCTO = '10000000000000000000000';
  * When the coordinator's cron started (ms since the epoch), or null. The cadence word ("every hour") shows only once this is at least 24 h old
  * AND the chain shows at least CADENCE_MIN_ATTEMPTS attempts.
  */
-export const ARENA_CRON_SINCE_MS: number | null = null;
+export const ARENA_CRON_SINCE_MS: number | null = 1794296724000; // 2026-11-10T07:45:24Z, the first keep-alive run that calls the arena and the loop
 /**
  * When the card took its strict book root (AIR-355, ms since the epoch), or null. Set by the coordinator once `credit-strict.ts --verify`
  * answers CREDIT STRICT OK; until then the strip keeps the wording of the capped book.
  */
-export const ARENA_STRICT_SINCE_MS: number | null = null;
+export const ARENA_STRICT_SINCE_MS: number | null = 1794294892027; // 2026-11-10T07:14:52Z, book_set_root 3facSJMXLUG61w8h8AZhA2EREdx17cZ6Wks35vc94tZo, verified CREDIT STRICT OK epoch 2
 export const CADENCE_MIN_ATTEMPTS = 6;
 /** "Live" is said only while the last attempt is younger than this. */
 export const LIVE_WINDOW_MS = 3 * 3_600_000;
