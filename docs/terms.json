@@ -11,7 +11,7 @@
       { "role": "The borrower", "account": "borrower.airlock-credit-c1108d" },
       { "role": "The agent", "account": "agent.airlock-credit-c1108d" }
     ],
-    "row": 348
+    "row": 350
   },
   "parts": [
     {
@@ -28,8 +28,8 @@
             { "role": "Proved", "file": "proofs/Verdict.lean", "line": 115, "has": "theorem p3_allowed_in_book", "name": "p3_allowed_in_book" },
             { "role": "Proved", "file": "proofs/Verdict.lean", "line": 12, "has": "theorem allow_iff", "name": "allow_iff" },
             { "role": "Kani", "file": "contracts/airlock-verdict/src/proofs.rs", "line": 127, "has": "fn p03_allowed_recipient_in_book", "name": "p03_allowed_recipient_in_book" },
-            { "role": "Shown", "tx": "BNq34shewEcee6haPAuGoaR9fxFz8mXS2fhu6WUpYNpY", "what": "an injected payee held", "row": 371 },
-            { "role": "Shown", "tx": "25rQep4msvH5K1YFaJvuEupCEUbqtbQysjgSUy9BcVpW", "what": "a sweep back to the pool", "row": 376 }
+            { "role": "Shown", "tx": "BNq34shewEcee6haPAuGoaR9fxFz8mXS2fhu6WUpYNpY", "what": "an injected payee held", "row": 373 },
+            { "role": "Shown", "tx": "25rQep4msvH5K1YFaJvuEupCEUbqtbQysjgSUy9BcVpW", "what": "a sweep back to the pool", "row": 378 }
           ]
         },
         {
@@ -41,7 +41,7 @@
             { "role": "Enforced", "file": "contracts/airlock-verdict/src/lib.rs", "line": 214, "to": 217, "has": "Rule 8", "name": "rule 8" },
             { "role": "Proved", "file": "proofs/Verdict.lean", "line": 105, "has": "theorem p2_p15_allowed_recipient_trusted", "name": "p2_p15_allowed_recipient_trusted" },
             { "role": "Kani", "file": "contracts/airlock-verdict/src/proofs.rs", "line": 117, "has": "fn p02_p15_allowed_recipient_trust_set", "name": "p02_p15_allowed_recipient_trust_set" },
-            { "role": "Shown", "tx": "BNq34shewEcee6haPAuGoaR9fxFz8mXS2fhu6WUpYNpY", "what": "an injected payee held", "row": 371 }
+            { "role": "Shown", "tx": "BNq34shewEcee6haPAuGoaR9fxFz8mXS2fhu6WUpYNpY", "what": "an injected payee held", "row": 373 }
           ]
         },
         {
@@ -54,7 +54,7 @@
             { "role": "Enforced", "file": "contracts/airlock-policy/src/escalation.rs", "line": 447, "to": 451, "has": "approve_and_remember is refused when an approver is set", "name": "the borrower cannot add payees" },
             { "role": "Tested", "file": "contracts/airlock-policy/src/redteam.rs", "line": 519, "has": "fn rt_con_borrower_pays_himself_is_refused", "name": "rt_con_borrower_pays_himself_is_refused" },
             { "role": "Tested", "file": "docs/CLAIMS.md", "line": 38, "has": "| C21 |", "name": "claim C21" },
-            { "role": "Shown", "tx": "12VC9dH5f9n7RLRq2h8uDAQDSw2upBwwDygDzjuU69iy", "what": "the borrower's approve of his own account refused", "row": 373 }
+            { "role": "Shown", "tx": "12VC9dH5f9n7RLRq2h8uDAQDSw2upBwwDygDzjuU69iy", "what": "the borrower's approve of his own account refused", "row": 375 }
           ]
         },
         {
@@ -67,7 +67,7 @@
             { "role": "Enforced", "file": "contracts/airlock-policy/src/policy.rs", "line": 297, "has": "strict", "name": "a payee without a cap" },
             { "role": "Proved", "file": "proofs/Verdict.lean", "line": 123, "has": "theorem p4_p14_p23_untrusted_amount_bounded", "name": "p4_p14_p23_untrusted_amount_bounded" },
             { "role": "Kani", "file": "contracts/airlock-verdict/src/proofs.rs", "line": 137, "has": "fn p04_p14_p23_untrusted_amount_inside_cap_and_budget", "name": "p04_p14_p23_untrusted_amount_inside_cap_and_budget" },
-            { "role": "Measured", "file": "docs/BENCH.md", "line": 7, "has": "strict mode A1 in 0 and default mode A2 in 10", "name": "strict mode paid 0 of 250 attack runs, default mode 10 of 250" },
+            { "role": "Measured", "file": "docs/BENCH.md", "line": 37, "has": "strict mode A1 in 0 and default mode A2 in 10", "name": "strict mode paid 0 of 250 attack runs, default mode 10 of 250" },
             { "role": "Shown", "tx": "3facSJMXLUG61w8h8AZhA2EREdx17cZ6Wks35vc94tZo", "what": "the book without caps set on the card (epoch 2)" }
           ]
         },
@@ -93,7 +93,7 @@
             { "role": "Proved", "file": "proofs/Verdict.lean", "line": 192, "has": "theorem p21_allowed_in_task_bound", "name": "p21_allowed_in_task_bound" },
             { "role": "Kani", "file": "contracts/airlock-verdict/src/proofs.rs", "line": 355, "has": "fn p21_allowed_inside_task_bound", "name": "p21_allowed_inside_task_bound" },
             { "role": "Kani", "file": "contracts/airlock-verdict/src/ledger.rs", "line": 385, "has": "fn l3_task_bound_holds", "name": "l3_task_bound_holds" },
-            { "role": "Shown", "tx": "5TKhYsPcH8QFoGtXxqRVKCsJfvePgFxUTAXaF7V8vuG", "what": "a payment allowed inside its task", "row": 370 }
+            { "role": "Shown", "tx": "5TKhYsPcH8QFoGtXxqRVKCsJfvePgFxUTAXaF7V8vuG", "what": "a payment allowed inside its task", "row": 372 }
           ]
         },
         {
@@ -119,7 +119,7 @@
             { "role": "Tested", "file": "contracts/airlock-credit/src/math.rs", "line": 169, "has": "fn withdraw_rounds_down_and_never_pays_more_than_pro_rata", "name": "withdraw_rounds_down_and_never_pays_more_than_pro_rata" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/math.rs", "line": 180, "has": "fn deposit_then_withdraw_never_gains", "name": "deposit_then_withdraw_never_gains" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1011, "has": "fn property_random_operations_keep_the_accounting", "name": "property_random_operations_keep_the_accounting" },
-            { "role": "Shown", "tx": "5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs", "what": "a lender's 3 NEAR withdrawn as 3.03 NEAR", "row": 378 }
+            { "role": "Shown", "tx": "5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs", "what": "a lender's 3 NEAR withdrawn as 3.03 NEAR", "row": 380 }
           ]
         },
         {
@@ -133,8 +133,8 @@
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 746, "has": "fn an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default", "name": "an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 407, "has": "fn deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default", "name": "deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 644, "has": "fn deposits_stay_closed_between_a_default_and_its_recovery", "name": "deposits_stay_closed_between_a_default_and_its_recovery" },
-            { "role": "Shown", "tx": "5n4ZoQW6fe5KSd7SqNunDWwRQhe4xLepH5ZmjfH9dgon", "what": "a deposit refused while a line was past due", "row": 381 },
-            { "role": "Shown", "tx": "6Hzfv7JbAobTBbNMr7x8PuuCbDgN3JQt5y5Xg4w6eTQs", "what": "a deposit refused before a loss was recovered", "row": 383 }
+            { "role": "Shown", "tx": "5n4ZoQW6fe5KSd7SqNunDWwRQhe4xLepH5ZmjfH9dgon", "what": "a deposit refused while a line was past due", "row": 383 },
+            { "role": "Shown", "tx": "6Hzfv7JbAobTBbNMr7x8PuuCbDgN3JQt5y5Xg4w6eTQs", "what": "a deposit refused before a loss was recovered", "row": 385 }
           ]
         },
         {
@@ -146,7 +146,7 @@
             { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 291, "to": 314, "has": "pub fn withdraw", "name": "withdraw" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 172, "has": "fn withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond", "name": "withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 701, "has": "fn shares_are_held_for_min_hold_ms_after_a_deposit", "name": "shares_are_held_for_min_hold_ms_after_a_deposit" },
-            { "role": "Shown", "tx": "5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs", "what": "a lender withdraws all its shares", "row": 378 }
+            { "role": "Shown", "tx": "5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs", "what": "a lender withdraws all its shares", "row": 380 }
           ]
         },
         {
@@ -158,7 +158,7 @@
             { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 718, "to": 754, "has": "pub fn default", "name": "default" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 502, "has": "fn default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss", "name": "default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 524, "has": "fn default_with_collateral_above_what_is_owed_returns_the_rest", "name": "default_with_collateral_above_what_is_owed_returns_the_rest" },
-            { "role": "Shown", "tx": "6Pk6PR71dnoPJGjxy1CpQWNGkdgE6a7DmEec5ZnJQcxA", "what": "a default: collateral seized, the rest a loss", "row": 382 }
+            { "role": "Shown", "tx": "6Pk6PR71dnoPJGjxy1CpQWNGkdgE6a7DmEec5ZnJQcxA", "what": "a default: collateral seized, the rest a loss", "row": 384 }
           ]
         }
       ]
@@ -202,7 +202,7 @@
             { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 691, "to": 694, "has": "math::fee_of(outstanding", "name": "repay" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 458, "has": "fn repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral", "name": "repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 490, "has": "fn a_fully_swept_line_owes_nothing", "name": "a_fully_swept_line_owes_nothing" },
-            { "role": "Shown", "tx": "N2344KkGfQG5e3L7p6jwDL8bonzcPoT8mvdqFNhvEi8", "what": "a repay of 0.5 NEAR kept plus its 10 percent fee", "row": 377 }
+            { "role": "Shown", "tx": "N2344KkGfQG5e3L7p6jwDL8bonzcPoT8mvdqFNhvEi8", "what": "a repay of 0.5 NEAR kept plus its 10 percent fee", "row": 379 }
           ]
         },
         {
@@ -223,7 +223,7 @@
           "refs": [
             { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 309, "to": 313, "has": "insufficient idle liquidity", "name": "withdraw" },
             { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 22, "to": 23, "has": "DEFAULT_COLLATERAL_BPS: u32 = 3_000", "name": "collateral ratio" },
-            { "role": "Measured", "file": "docs/EVIDENCE.md", "line": 388, "has": "`min_hold_ms` 60000", "name": "the pool's hold, read from the chain" }
+            { "role": "Measured", "file": "docs/EVIDENCE.md", "line": 390, "has": "`min_hold_ms` 60000", "name": "the pool's hold, read from the chain" }
           ]
         },
         {
@@ -233,7 +233,7 @@
           "status": "in force",
           "network": true,
           "refs": [
-            { "role": "Measured", "file": "docs/EVIDENCE.md", "line": 348, "has": "between our own accounts", "name": "the accounts of the run" }
+            { "role": "Measured", "file": "docs/EVIDENCE.md", "line": 350, "has": "between our own accounts", "name": "the accounts of the run" }
           ]
         },
         {

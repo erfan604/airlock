@@ -14,7 +14,7 @@ These terms bind the pool, the card it funds, the issuer who runs both, the borr
 - The borrower: `borrower.airlock-credit-c1108d`
 - The agent: `agent.airlock-credit-c1108d`
 
-Code hashes: `docs/EVIDENCE.md` line 348.
+Code hashes: `docs/EVIDENCE.md` line 350.
 
 ## 1. What the card and the pool do
 
@@ -25,15 +25,15 @@ Code hashes: `docs/EVIDENCE.md` line 348.
 - Proved: `proofs/Verdict.lean` 115, `p3_allowed_in_book`
 - Proved: `proofs/Verdict.lean` 12, `allow_iff`
 - Kani: `contracts/airlock-verdict/src/proofs.rs` 127, `p03_allowed_recipient_in_book`
-- Shown: an injected payee held, transaction `BNq34shewEcee6haPAuGoaR9fxFz8mXS2fhu6WUpYNpY` (`docs/EVIDENCE.md` line 371)
-- Shown: a sweep back to the pool, transaction `25rQep4msvH5K1YFaJvuEupCEUbqtbQysjgSUy9BcVpW` (`docs/EVIDENCE.md` line 376)
+- Shown: an injected payee held, transaction `BNq34shewEcee6haPAuGoaR9fxFz8mXS2fhu6WUpYNpY` (`docs/EVIDENCE.md` line 373)
+- Shown: a sweep back to the pool, transaction `25rQep4msvH5K1YFaJvuEupCEUbqtbQysjgSUy9BcVpW` (`docs/EVIDENCE.md` line 378)
 
 **1.2** A hijacked agent cannot choose the payee: a payee picked by outside text is held for a person to decide. *(in force)*
 
 - Enforced: `contracts/airlock-verdict/src/lib.rs` 214 to 217, `rule 8`
 - Proved: `proofs/Verdict.lean` 105, `p2_p15_allowed_recipient_trusted`
 - Kani: `contracts/airlock-verdict/src/proofs.rs` 117, `p02_p15_allowed_recipient_trust_set`
-- Shown: an injected payee held, transaction `BNq34shewEcee6haPAuGoaR9fxFz8mXS2fhu6WUpYNpY` (`docs/EVIDENCE.md` line 371)
+- Shown: an injected payee held, transaction `BNq34shewEcee6haPAuGoaR9fxFz8mXS2fhu6WUpYNpY` (`docs/EVIDENCE.md` line 373)
 
 **1.3** The borrower cannot approve a payment to an account outside the book; the issuer can override it, and either of them can reject it. *(in force)*
 
@@ -41,7 +41,7 @@ Code hashes: `docs/EVIDENCE.md` line 348.
 - Enforced: `contracts/airlock-policy/src/escalation.rs` 447 to 451, `the borrower cannot add payees`
 - Tested: `contracts/airlock-policy/src/redteam.rs` 519, `rt_con_borrower_pays_himself_is_refused`
 - Tested: `docs/CLAIMS.md` 38, `claim C21`
-- Shown: the borrower's approve of his own account refused, transaction `12VC9dH5f9n7RLRq2h8uDAQDSw2upBwwDygDzjuU69iy` (`docs/EVIDENCE.md` line 373)
+- Shown: the borrower's approve of his own account refused, transaction `12VC9dH5f9n7RLRq2h8uDAQDSw2upBwwDygDzjuU69iy` (`docs/EVIDENCE.md` line 375)
 
 **1.4** An amount read from outside text is never paid on the card; it is held for the owner, because no payee in the card's book has a cap for such amounts. *(in force)*
 
@@ -49,7 +49,7 @@ Code hashes: `docs/EVIDENCE.md` line 348.
 - Enforced: `contracts/airlock-policy/src/policy.rs` 297, `a payee without a cap`
 - Proved: `proofs/Verdict.lean` 123, `p4_p14_p23_untrusted_amount_bounded`
 - Kani: `contracts/airlock-verdict/src/proofs.rs` 137, `p04_p14_p23_untrusted_amount_inside_cap_and_budget`
-- Measured: `docs/BENCH.md` 7, `strict mode paid 0 of 250 attack runs, default mode 10 of 250`
+- Measured: `docs/BENCH.md` 37, `strict mode paid 0 of 250 attack runs, default mode 10 of 250`
 - Shown: the book without caps set on the card (epoch 2), transaction `3facSJMXLUG61w8h8AZhA2EREdx17cZ6Wks35vc94tZo`
 
 **1.5** A payment that outside text decided to make is never paid by itself. *(in force)*
@@ -65,7 +65,7 @@ Code hashes: `docs/EVIDENCE.md` line 348.
 - Proved: `proofs/Verdict.lean` 192, `p21_allowed_in_task_bound`
 - Kani: `contracts/airlock-verdict/src/proofs.rs` 355, `p21_allowed_inside_task_bound`
 - Kani: `contracts/airlock-verdict/src/ledger.rs` 385, `l3_task_bound_holds`
-- Shown: a payment allowed inside its task, transaction `5TKhYsPcH8QFoGtXxqRVKCsJfvePgFxUTAXaF7V8vuG` (`docs/EVIDENCE.md` line 370)
+- Shown: a payment allowed inside its task, transaction `5TKhYsPcH8QFoGtXxqRVKCsJfvePgFxUTAXaF7V8vuG` (`docs/EVIDENCE.md` line 372)
 
 **1.7** A plain transfer to the pool cannot move the share price. *(in force)*
 
@@ -81,7 +81,7 @@ Code hashes: `docs/EVIDENCE.md` line 348.
 - Tested: `contracts/airlock-credit/src/math.rs` 169, `withdraw_rounds_down_and_never_pays_more_than_pro_rata`
 - Tested: `contracts/airlock-credit/src/math.rs` 180, `deposit_then_withdraw_never_gains`
 - Tested: `contracts/airlock-credit/src/tests.rs` 1011, `property_random_operations_keep_the_accounting`
-- Shown: a lender's 3 NEAR withdrawn as 3.03 NEAR, transaction `5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs` (`docs/EVIDENCE.md` line 378)
+- Shown: a lender's 3 NEAR withdrawn as 3.03 NEAR, transaction `5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs` (`docs/EVIDENCE.md` line 380)
 
 **1.9** An overdue line counts as zero in the share price before anyone calls default, and deposits stay closed while a line is overdue or a loss is unrecovered. *(in force)*
 
@@ -90,22 +90,22 @@ Code hashes: `docs/EVIDENCE.md` line 348.
 - Tested: `contracts/airlock-credit/src/tests.rs` 746, `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default`
 - Tested: `contracts/airlock-credit/src/tests.rs` 407, `deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default`
 - Tested: `contracts/airlock-credit/src/tests.rs` 644, `deposits_stay_closed_between_a_default_and_its_recovery`
-- Shown: a deposit refused while a line was past due, transaction `5n4ZoQW6fe5KSd7SqNunDWwRQhe4xLepH5ZmjfH9dgon` (`docs/EVIDENCE.md` line 381)
-- Shown: a deposit refused before a loss was recovered, transaction `6Hzfv7JbAobTBbNMr7x8PuuCbDgN3JQt5y5Xg4w6eTQs` (`docs/EVIDENCE.md` line 383)
+- Shown: a deposit refused while a line was past due, transaction `5n4ZoQW6fe5KSd7SqNunDWwRQhe4xLepH5ZmjfH9dgon` (`docs/EVIDENCE.md` line 383)
+- Shown: a deposit refused before a loss was recovered, transaction `6Hzfv7JbAobTBbNMr7x8PuuCbDgN3JQt5y5Xg4w6eTQs` (`docs/EVIDENCE.md` line 385)
 
 **1.10** A lender's shares can be withdrawn by that lender alone, once the hold has passed, from money the pool holds idle. *(in force)*
 
 - Enforced: `contracts/airlock-credit/src/lib.rs` 291 to 314, `withdraw`
 - Tested: `contracts/airlock-credit/src/tests.rs` 172, `withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond`
 - Tested: `contracts/airlock-credit/src/tests.rs` 701, `shares_are_held_for_min_hold_ms_after_a_deposit`
-- Shown: a lender withdraws all its shares, transaction `5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs` (`docs/EVIDENCE.md` line 378)
+- Shown: a lender withdraws all its shares, transaction `5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs` (`docs/EVIDENCE.md` line 380)
 
 **1.11** On default the collateral pays the principal before the fee, and what it does not cover is a loss to the lenders. *(in force)*
 
 - Enforced: `contracts/airlock-credit/src/lib.rs` 718 to 754, `default`
 - Tested: `contracts/airlock-credit/src/tests.rs` 502, `default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss`
 - Tested: `contracts/airlock-credit/src/tests.rs` 524, `default_with_collateral_above_what_is_owed_returns_the_rest`
-- Shown: a default: collateral seized, the rest a loss, transaction `6Pk6PR71dnoPJGjxy1CpQWNGkdgE6a7DmEec5ZnJQcxA` (`docs/EVIDENCE.md` line 382)
+- Shown: a default: collateral seized, the rest a loss, transaction `6Pk6PR71dnoPJGjxy1CpQWNGkdgE6a7DmEec5ZnJQcxA` (`docs/EVIDENCE.md` line 384)
 
 ## 2. Limits
 
@@ -126,7 +126,7 @@ Code hashes: `docs/EVIDENCE.md` line 348.
 - Enforced: `contracts/airlock-credit/src/lib.rs` 691 to 694, `repay`
 - Tested: `contracts/airlock-credit/src/tests.rs` 458, `repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral`
 - Tested: `contracts/airlock-credit/src/tests.rs` 490, `a_fully_swept_line_owes_nothing`
-- Shown: a repay of 0.5 NEAR kept plus its 10 percent fee, transaction `N2344KkGfQG5e3L7p6jwDL8bonzcPoT8mvdqFNhvEi8` (`docs/EVIDENCE.md` line 377)
+- Shown: a repay of 0.5 NEAR kept plus its 10 percent fee, transaction `N2344KkGfQG5e3L7p6jwDL8bonzcPoT8mvdqFNhvEi8` (`docs/EVIDENCE.md` line 379)
 
 **2.5** The issuer sets the terms of new lines. The collateral ratio of new lines changes at once in either direction, and open lines keep theirs. From the upgrade, a cut of the Passport base applies at once and a raise waits for the hold, 60 seconds on this pool. *(from the upgrade)*
 
@@ -137,11 +137,11 @@ Code hashes: `docs/EVIDENCE.md` line 348.
 
 - Enforced: `contracts/airlock-credit/src/lib.rs` 309 to 313, `withdraw`
 - Enforced: `contracts/airlock-credit/src/lib.rs` 22 to 23, `collateral ratio`
-- Measured: `docs/EVIDENCE.md` 388, `the pool's hold, read from the chain`
+- Measured: `docs/EVIDENCE.md` 390, `the pool's hold, read from the chain`
 
 **2.7** All of this runs on NEAR's test network with test money. The issuer, the borrower, the merchant and the agent are the team's own accounts, and so are the two lenders of the recorded run. *(in force)*
 
-- Measured: `docs/EVIDENCE.md` 348, `the accounts of the run`
+- Measured: `docs/EVIDENCE.md` 350, `the accounts of the run`
 
 **2.8** The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.11 and limits 2.4 to 2.6 cite tests. *(in force)*
 
@@ -166,8 +166,8 @@ Code hashes: `docs/EVIDENCE.md` line 348.
 - `contracts/airlock-verdict/src/ledger.rs`: 385
 - `contracts/airlock-verdict/src/lib.rs`: 202 to 209, 210 to 213, 214 to 217, 218 to 222, 227 to 237
 - `contracts/airlock-verdict/src/proofs.rs`: 104, 117, 127, 137, 355
-- `docs/BENCH.md`: 7
+- `docs/BENCH.md`: 37
 - `docs/CLAIMS.md`: 38
-- `docs/EVIDENCE.md`: 348, 370, 371, 373, 376, 377, 378, 381, 382, 383, 388
+- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390
 - `proofs/Verdict.lean`: 12, 96, 105, 115, 123, 192
 - `runtime/src/economy/facts.ts`: 1 to 3, 24 to 26
