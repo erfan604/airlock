@@ -34,16 +34,21 @@
   gap: var(--space-5);
   min-width: 0;
 }
+/* AIR-346 (D15): the page title is a heading, and every block sits in the card's one 36rem column, the connect button included */
 .approvals-title {
   max-width: 36rem;
   margin: 0 auto;
   width: 100%;
-  font-family: var(--font-data);
-  font-weight: 500;
-  font-size: 13px;
-  line-height: 16px;
-  letter-spacing: 0.02em;
-  color: var(--ink-3);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 36px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+@media (min-width: 720px) {
+  .approvals-title {
+    font-size: 48px;
+  }
 }
 .approvals-reveal,
 .approvals-more,
@@ -56,11 +61,9 @@
   line-height: 24px;
   overflow-wrap: anywhere;
 }
+/* AIR-346: the access line is a plain sentence, not a boxed notice */
 .approvals-reveal {
-  padding: var(--space-4);
-  border: 1px solid var(--hair);
-  border-radius: var(--radius-m);
-  background: var(--raised);
+  color: var(--ink-2);
 }
 .approvals-error {
   padding: var(--space-3) var(--space-4) 0;
@@ -68,7 +71,73 @@
 .approval-item {
   display: grid;
   gap: var(--space-4);
+  max-width: 36rem;
+  width: 100%;
+  margin: 0 auto;
   min-width: 0;
+}
+
+/* the example slip: a paper request with the held stamp across it, the same object as the rendered stamp stills; square corners, no glow */
+.approval-example {
+  margin-block: 0;
+}
+.ex-slip {
+  position: relative;
+  padding: var(--space-5) var(--space-5) var(--space-6);
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--paper);
+  overflow: hidden;
+}
+.ex-slip-head {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--paper) 60%, var(--ink));
+}
+.ex-slip-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+}
+.ex-slip-fields dt {
+  font-size: 14px;
+  line-height: 22px;
+  font-style: italic;
+  color: color-mix(in srgb, var(--paper) 60%, var(--ink));
+}
+.ex-slip-fields dd {
+  margin: 0;
+  min-width: 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid color-mix(in srgb, var(--paper) 25%, var(--ink));
+  font-size: 15px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+.ex-slip-amount {
+  font-family: var(--font-data);
+  font-size: 18px;
+}
+.ex-slip-stamp {
+  position: absolute;
+  right: var(--space-4);
+  top: var(--space-4);
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border: 3px solid color-mix(in srgb, var(--signal) 80%, var(--paper));
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--signal) 80%, var(--paper));
+  transform: rotate(-4deg);
 }
 
 .cli-panel {

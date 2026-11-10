@@ -174,3 +174,22 @@ test('loading view: the needs-JavaScript text is only inside noscript, in the lo
   }
   assert.ok(renderToStaticMarkup(<ApprovalsLoading policy="p.testnet" error />).includes('The chain could not be read. Reload to try again.'));
 });
+
+// AIR-346 (D15, D16): with nothing held, the page still shows what a held request is: one example slip from the recorded run, labelled as an
+// example, with no button on it (approve and reject need the owner wallet and a real request).
+test('view: the empty state shows one example slip, labelled recorded, with no buttons', () => {
+  const html = renderToStaticMarkup(<StaticApprovalsView {...common} data={{ cards: [], more: 0, privateBook: false }} access={{ kind: 'signed-out' }} />);
+  const at = html.indexOf('data-testid="approvals-example"');
+  assert.ok(at > 0, 'the example slip');
+  const slip = html.slice(at, html.indexOf('</figure>', at));
+  assert.ok(slip.includes('9.4 NEAR'), 'the amount of the recorded correction');
+  assert.ok(slip.includes('over the cap you set'), 'why it was held');
+  assert.ok(/example/i.test(slip) && /recorded/i.test(slip));
+  assert.ok(!slip.includes('<button'));
+  assert.ok(!/testnet|erfan/i.test(slip.replace(/<[^>]+>/g, ' ')));
+});
+
+test('view: a page with a held request shows no example slip', async () => {
+  const html = renderToStaticMarkup(<StaticApprovalsView {...common} data={await data()} access={{ kind: 'signed-out' }} />);
+  assert.ok(!html.includes('data-testid="approvals-example"'));
+});

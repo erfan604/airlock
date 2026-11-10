@@ -6,6 +6,17 @@
   margin: 0 auto;
   min-width: 0;
 }
+/* AIR-346 (D18): the page title, above the recorded-run label */
+.replay-h1 {
+  margin: 0;
+  font-size: 36px;
+  line-height: 1.05;
+}
+@media (min-width: 720px) {
+  .replay-h1 {
+    font-size: 48px;
+  }
+}
 .replay-banner {
   margin: 0;
   padding: var(--space-3) var(--space-4);

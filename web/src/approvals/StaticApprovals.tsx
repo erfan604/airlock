@@ -15,7 +15,8 @@ import { ApprovalCard, bookDeps, merge } from './ApprovalsRoute.tsx';
 import { rpcView } from '../chain/rpc.ts';
 import type { Actions, ApprovalsData } from './ApprovalsRoute.tsx';
 import type { ApproveResult } from './Card.tsx';
-import { accountText, explorerAccount } from '../components/account.ts';
+import { accountText, demoLabel, explorerAccount } from '../components/account.ts';
+import example from '../../fixtures/card-correction.json' with { type: 'json' };
 import { REASON } from '../replay/outcome.ts';
 import { DEFAULT_POLICY, accessOf, explorerTx, isExpired, policyFromSearch, readHistory, readStaticChain } from './staticChain.ts';
 import type { Access } from './staticChain.ts';
@@ -149,10 +150,11 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
             Nothing is held on this policy right now.
           </p>
           <p className="approvals-more">
-            A request is held when its payee or amount came from outside text. To make one from the repository, run <code>pnpm demo:live</code> (act 2 holds a correction) or <code>pnpm tsx scripts/e2e-testnet.ts B01</code>, then reload this page. See <a href={url('use')}>the quickstart</a>.
+            A request is held when its payee or amount came from outside text. To make one from the repository, run <code>pnpm demo:live</code> (act 2 holds a correction), then reload this page. See <a href={url('use')}>the quickstart</a>.
           </p>
         </div>
       ) : null}
+      {data.cards.length === 0 ? <ExampleSlip /> : null}
       {data.cards.map((c) => {
         const expired = isExpired(c.view, now);
         const no = c.view.id ?? '';
@@ -182,6 +184,31 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
       {history === undefined ? null : <History history={history} />}
       {data.more > 0 ? <p className="approvals-more" data-testid="approvals-more">{`${data.more} more held`}</p> : null}
     </main>
+  );
+}
+
+/**
+ * AIR-346 (D15, D16): what a held request is, for a visitor who arrives when nothing is held. One slip with the payee, amount and reason of the
+ * recorded correction (fixtures/card-correction.json, the request the replay holds in act 2), marked as an example, and no button on it.
+ */
+export function ExampleSlip() {
+  const v = example.view;
+  return (
+    <figure className="approval-item approval-example" data-testid="approvals-example">
+      <figcaption className="approvals-more">An example from the recorded run, so you can see what waits here. On a real held request the owner gets Approve and Reject, and the wallet signs the one they pick.</figcaption>
+      <div className="ex-slip" aria-label="Example payment request">
+        <p className="ex-slip-head">Payment request</p>
+        <dl className="ex-slip-fields">
+          <dt>Pay</dt>
+          <dd>{`${demoLabel(v.payee)}, in your address book`}</dd>
+          <dt>Amount</dt>
+          <dd className="ex-slip-amount">{`${v.display.amount_decimal} ${v.display.asset_symbol}`}</dd>
+          <dt>Why</dt>
+          <dd>{REASON[v.reason] ?? v.reason}</dd>
+        </dl>
+        <p className="ex-slip-stamp" aria-hidden="true">Held for you</p>
+      </div>
+    </figure>
   );
 }
 

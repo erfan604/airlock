@@ -233,6 +233,7 @@ export function ReplayShell({ api = liveReplayApi }: { api?: ReplayApi }) {
   const act = loaded !== null && loaded !== 'error' ? loaded.acts.find((a) => a.id === active) : undefined;
   return (
     <main className="page replay" data-testid="replay-shell">
+      <h1 className="replay-h1" data-testid="replay-title">The recorded run, act by act</h1>
       <p className="replay-banner" data-testid="replay-banner">
         {`Replay of recorded run ${act?.source ?? ''}`.trim()}
         {act === undefined ? null : (

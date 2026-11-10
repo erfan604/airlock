@@ -61,3 +61,15 @@ test('replayMode is true only for the x-airlock-mode: replay header, and false w
     false,
   );
 });
+
+// AIR-346 (D18): the replay page has a title, so the outline and a screen reader start from it, and it comes before the recorded-run label.
+test('replay shell: an h1 names the page, before the banner', async () => {
+  const { createElement } = await import('react');
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const { ReplayShell } = await import('../src/replay/ReplayShell.tsx');
+  const html = renderToStaticMarkup(createElement(ReplayShell));
+  const h1 = html.indexOf('<h1');
+  assert.ok(h1 >= 0, 'an h1');
+  assert.ok(h1 < html.indexOf('data-testid="replay-banner"'));
+  assert.ok(html.includes('The recorded run, act by act'));
+});
