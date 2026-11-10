@@ -8,6 +8,7 @@ export const NAV: { path: string; label: string; match: string[] }[] = [
   { path: 'credit', label: 'Credit', match: ['/credit'] },
   { path: 'lend', label: 'Lend', match: ['/lend'] },
   { path: 'break', label: 'Break the proof', match: ['/break'] },
+  { path: 'terms', label: 'Terms', match: ['/terms'] },
   { path: 'try', label: 'Try it', match: ['/try'] },
   { path: 'use', label: 'Use it', match: ['/use'] },
   { path: 'replay', label: 'Replay', match: ['/replay', '/task'] },
