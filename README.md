@@ -12,8 +12,7 @@ Strict mode has run on the live credit card since 2026-11-10T07:14:52Z: every am
 | Open https://airlock-ere.pages.dev/replay/ | A recorded testnet run: an invoice paid, an injected correction held, a tampered approval refused, each with its transaction |
 | `pnpm i && scripts/claims-run.sh --tier node` (Node 24 and pnpm, no keys) | One PASS or SKIP line per claim, ending `CLAIMS TIER node OK <n> run, <k> skipped` |
 | Open https://airlock-ere.pages.dev/lend/ (no wallet) | One click makes you an account from the public faucet and lends 1 NEAR into the live pool |
-
-Landing soon, not linked yet: the attacker page, where your browser signs a real attempt with a published scoped key.
+| Open https://airlock-ere.pages.dev/rob/ (no wallet) | Your browser signs a real attempt on a practice card with a published key: an attack is held or blocked with the contract's reason, the owner's payment is paid |
 
 Also live: https://airlock-ere.pages.dev/credit/ (the pool), https://airlock-ere.pages.dev/terms/ (its terms, each with its code line, proof or test) and https://airlock-ere.pages.dev/challenge/ (a published scoped key and the attempt counter).
 
