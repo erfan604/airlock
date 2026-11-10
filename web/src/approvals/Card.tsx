@@ -203,6 +203,8 @@ export type CardViewProps = {
 
 export function CardView({ viewOnly = false, model, readOnly, state, onOpen, onCancel, onConfirm, onReject, rejectRef, sheetRejectRef, forcingInput = '', onForcingInput, remember, remembered = false }: CardViewProps) {
   const sheetTitleId = useId();
+  // the hosted page prints the payee trimmed: the full key is the title of every place it is printed short
+  const shortened = model.rows.some((r) => r.shown !== undefined);
   const forcingId = useId();
   const stamp = stampFor(readOnly, state, remembered);
   const rememberIds = useId();
@@ -220,7 +222,7 @@ export function CardView({ viewOnly = false, model, readOnly, state, onOpen, onC
     <section className="card" data-testid="card" data-state={state.kind} data-request-state={readOnly}>
       <div className="card-body" inert={sheetOpen}>
         <VerdictStamp state={stamp.state} />
-        <h2 className="card-title" data-testid="card-title">
+        <h2 className="card-title" data-testid="card-title" title={shortened ? model.args.to : undefined}>
           {model.title}
         </h2>
         <p className="card-reason" data-testid="reason">
@@ -255,7 +257,7 @@ export function CardView({ viewOnly = false, model, readOnly, state, onOpen, onC
         ) : null}
         <Manifest order={offender ? 'offender-first' : 'canonical'} offender={offender}>
           {model.rows.map((row) => (
-            <ManifestRow key={row.name} name={row.name} value={row.shown ?? row.value} seals={row.seals} emphasized={row.name === model.offender} sourceLine={sourceLineOf(row, model)} />
+            <ManifestRow key={row.name} name={row.name} value={row.shown ?? row.value} {...(row.shown === undefined ? {} : { fullValue: row.value })} seals={row.seals} emphasized={row.name === model.offender} sourceLine={sourceLineOf(row, model)} />
           ))}
         </Manifest>
         {model.snippet !== null ? <Specimen text={model.snippet} channel={model.specimenChannel} source={model.ageText ?? undefined} testId="specimen" /> : null}
@@ -299,7 +301,7 @@ export function CardView({ viewOnly = false, model, readOnly, state, onOpen, onC
         <>
           <div className="card-scrim" aria-hidden="true" />
           <div className="card-sheet" role="dialog" aria-modal="true" aria-labelledby={sheetTitleId} data-testid="sheet">
-            <h3 className="card-sheet-title" id={sheetTitleId} data-testid="sheet-title">
+            <h3 className="card-sheet-title" id={sheetTitleId} data-testid="sheet-title" title={shortened ? model.args.to : undefined}>
               {model.sheetTitle}
             </h3>
             <p className="card-sheet-line" role="status">

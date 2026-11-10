@@ -46,10 +46,10 @@ test('the tube band lights the step its loop is showing, and wraps every 6 s', (
 // AIR-346 (D9): the landing leads with the pool, and the one number under the hero buttons is read from the pool contract the way /credit reads
 // it; until that read lands, or when it fails, the page shows the recorded value and says it is recorded.
 test('poolLine: the recorded value is labelled recorded, a live read says it is live, a failed read keeps the recorded value and says why', () => {
-  assert.deepEqual(poolLine({ kind: 'recorded' }), { held: '2.12 NEAR', lost: '0 NEAR', note: `Recorded from the pool contract on ${RECORDED_POOL.atText}.`, live: false });
+  assert.deepEqual(poolLine({ kind: 'recorded' }), { held: '3.21 NEAR', lost: '0 NEAR', note: `Recorded from the pool contract on ${RECORDED_POOL.atText}.`, live: false });
   assert.deepEqual(poolLine({ kind: 'live', assets: '3500000000000000000000000', losses: '0' }), { held: '3.5 NEAR', lost: '0 NEAR', note: 'Read from the pool contract as this page opened.', live: true });
   const failed = poolLine({ kind: 'failed' });
-  assert.equal(failed.held, '2.12 NEAR');
+  assert.equal(failed.held, '3.21 NEAR');
   assert.equal(failed.live, false);
   assert.ok(failed.note.startsWith('Recorded from the pool contract') && failed.note.includes('could not be read'));
   assert.equal(poolLine({ kind: 'live', assets: '1234567000000000000000000000', losses: '10000000000000000000000' }).held, '1,234.56 NEAR');

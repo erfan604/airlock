@@ -20,6 +20,8 @@ export function frameFor(seals: readonly LabelKey[]): FrameKind {
 }
 
 export type ManifestRowProps = {
+  /** the full value when `value` is a short display form of it (the approval card's payee) */
+  fullValue?: string;
   name: string;
   value: ReactNode;
   seals: readonly LabelKey[];
@@ -28,9 +30,10 @@ export type ManifestRowProps = {
   testId?: string;
 };
 
-export function ManifestRow({ name, value, seals, sourceLine, emphasized, testId }: ManifestRowProps) {
+export function ManifestRow({ name, value, seals, sourceLine, emphasized, testId, fullValue }: ManifestRowProps) {
   const frame = frameFor(seals);
-  const cell = <div className="manifest-value">{value}</div>;
+  // a value shown in a short form carries its full form as the title, one hover or long-press away
+  const cell = <div className="manifest-value" title={fullValue}>{value}</div>;
   return (
     <div className={emphasized ? 'manifest-row manifest-row-emphasized' : 'manifest-row'} data-testid={testId ?? 'manifest-row'} data-name={name} data-frame={frame}>
       <div className="manifest-name">{name}</div>

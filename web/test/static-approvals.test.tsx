@@ -9,7 +9,7 @@ import chain from '../fixtures/chain-policy-v3.json' with { type: 'json' };
 import correction from '../fixtures/card-correction.json' with { type: 'json' };
 import { loadApprovals } from '../src/approvals/ApprovalsRoute.tsx';
 import { approveArgs } from '../src/approvals/cardModel.ts';
-import { StaticApprovalsView } from '../src/approvals/StaticApprovals.tsx';
+import { StaticApprovalsView, shortPayee } from '../src/approvals/StaticApprovals.tsx';
 import { CREDIT_CARD } from '../src/credit/net.ts';
 import { DEFAULT_POLICY, accessOf, explorerTx, isExpired, policyFromSearch, readStaticChain } from '../src/approvals/staticChain.ts';
 import { ROUTES } from '../src/routes.ts';
@@ -122,8 +122,8 @@ test('view: the owner sees the buttons and the reveal instruction', async () => 
   assert.ok(html.includes('data-testid="open-approve"'));
   assert.ok(html.includes('data-testid="access" data-access="owner"'));
   assert.ok(html.includes('data-testid="reveal-instruction"'));
-  // AIR-351: the hosted page prints the payee short (an account with the owner's name is a plain label); the wallet block keeps the full key
-  assert.ok(html.includes('Pay 9.4 NEAR to demo account?'));
+  // the hosted page prints the payee trimmed (no near:, no .testnet), never a label; the wallet block keeps the full key
+  assert.ok(html.includes('Pay 9.4 NEAR to accountant.erfan-airlock?'));
 });
 
 test('view: a non-owner account sees the card and the words view only, with no button that signs', async () => {
@@ -201,4 +201,31 @@ test('view: the hosted card shows the payee short, and the values it would sign 
   const visible = html.replace(/<code>[\s\S]*?<\/code>/g, '').replace(/<[^>]+>/g, ' ');
   assert.ok(!/testnet/.test(visible), visible.match(/.{0,40}testnet.{0,40}/)?.[0]);
   assert.ok(html.includes('<code>near:accountant.erfan-airlock.testnet</code>'), 'the wallet block keeps the exact payee');
+});
+
+// Security review of bb85634: the approval card's short form is a pure, reversible trim, so two different payees never read the same.
+test('shortPayee: only a leading near: and a trailing .testnet are dropped; distinct keys stay distinct; no label, no truncation', () => {
+  assert.equal(shortPayee('near:merchant.airlock-credit-c1108d.testnet'), 'merchant.airlock-credit-c1108d');
+  assert.equal(shortPayee('near:accountant.erfan-airlock.testnet'), 'accountant.erfan-airlock', 'the real payee wins over the owner-name rule on this card');
+  assert.equal(shortPayee('near:Bob.testnet'), 'Bob', 'never lower-cased');
+  assert.equal(shortPayee('near:bob.near'), 'near:bob.near', 'a key that is not near:<id>.testnet stays whole');
+  const evm = `evm:84532:0x${'ab'.repeat(20)}`;
+  assert.equal(shortPayee(evm), evm, 'a non-near key stays whole');
+  assert.equal(shortPayee('sol:devnet:11111111111111111111111111111111'), 'sol:devnet:11111111111111111111111111111111');
+  const pairs: [string, string][] = [
+    ['near:agent.airlock-credit-c1108d.testnet', 'near:xagent.airlock-credit-c1108d.testnet'],
+    ['near:erfan-agent.testnet', 'near:erfan-agent2.testnet'],
+    ['near:demo-agent.testnet', 'near:erfan-agent.testnet'],
+    ['near:shop.testnet', 'near:shop.testnet.testnet'],
+    ['near:shop.testnet', 'shop.testnet'],
+    ['near:shop.testnet', 'near:shop'],
+    [evm, `evm:84532:0x${'ab'.repeat(19)}ac`],
+  ];
+  for (const [a, b] of pairs) assert.notEqual(shortPayee(a), shortPayee(b), `${a} and ${b}`);
+  assert.equal(shortPayee(`near:${'a'.repeat(56)}.testnet`), 'a'.repeat(56), 'never truncated');
+});
+
+test('view: the short payee carries the full key as its title, one hover away', async () => {
+  const html = renderToStaticMarkup(<StaticApprovalsView {...common} data={await data()} access={{ kind: 'owner', account: OWNER }} />);
+  assert.ok(html.includes('title="near:accountant.erfan-airlock.testnet"'), 'the TO row text names the full key');
 });

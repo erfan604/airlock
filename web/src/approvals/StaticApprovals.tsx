@@ -53,8 +53,16 @@ const STATE_WORD: Record<string, string> = {
   Failed: 'Approved, payment failed',
 };
 
-/** AIR-351: a payee key as the hosted page prints it, the site's short form (accountText: no `near:`, no network suffix, the owner's names a label). */
-export const shortPayee = (key: string): string => (key.startsWith('near:') ? accountText(key.slice('near:'.length)) : key);
+/**
+ * A payee key as the approval card prints it: `near:<id>.testnet` becomes `<id>`, and every other key stays exactly as it is. A pure,
+ * reversible trim (an output without `:` can only have come from `near:<output>.testnet`; every other output is the key itself), so two
+ * different payees never read the same. No label, no truncation, no case change: on this card the real payee wins over the site's rule
+ * about the owner's name, because an approver must be able to tell any two payees apart (security review of bb85634).
+ */
+export function shortPayee(key: string): string {
+  const m = /^near:([^:]+)\.testnet$/.exec(key);
+  return m === null ? key : (m[1] as string);
+}
 
 /** The payee of an earlier request: a plain name linked to the explorer (the owner's own names get a label), the full id in the link target only. */
 function Payee({ payee }: { payee: string }) {

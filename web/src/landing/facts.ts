@@ -75,9 +75,9 @@ export function factsOf(d: BenchData): Facts | null {
 /**
  * AIR-346 (D9): the one live number under the hero, the pool's assets and its recorded losses as `get_pool` answers them (read by
  * credit/chain.ts, the same read /credit makes). Until the read lands, and when it fails, the line shows this recorded value and says so.
- * Recorded 2026-11-09 21:59 MST from pool.airlock-credit-c1108d: assets 2.12 NEAR, losses 0.
+ * Recorded 2026-11-10 11:23 MST from pool.airlock-credit-c1108d: assets 3.219 NEAR, losses 0.
  */
-export const RECORDED_POOL = { assets: '2120000000000000000000000', losses: '0', atText: 'Nov 9, 2026' } as const;
+export const RECORDED_POOL = { assets: '3219000000000000000000000', losses: '0', atText: 'Nov 10, 2026' } as const;
 
 export type PoolRead = { kind: 'recorded' } | { kind: 'failed' } | { kind: 'live'; assets: string; losses: string };
 export type PoolLine = { held: string; lost: string; note: string; live: boolean };

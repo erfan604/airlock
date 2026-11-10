@@ -22,15 +22,21 @@ export function redirectsOf(paths: readonly string[]): { from: string; to: strin
 
 const REPO = /github\.com\/erfan604\/airlock/gi;
 
-/** The owner-rule problems in what a reader sees: `prose` is the visible text with code hidden, `code` the visible code blocks. */
-export function visibleProblems(prose: string, code: readonly string[]): string[] {
+/**
+ * The owner-rule problems in what a reader sees: `prose` is the visible text with code hidden, `code` the visible code blocks. `payees` are the
+ * payees printed on live approval cards: on that card the real payee wins over the owner-name rule (an approver must tell any two payees
+ * apart), so the owner's name inside one of them is not a problem; the word testnet still is, and the card's trim removes it.
+ */
+export function visibleProblems(prose: string, code: readonly string[], payees: readonly string[] = []): string[] {
   const out: string[] = [];
-  for (const m of prose.matchAll(/.{0,40}(erfan|testnet).{0,40}/gi)) out.push(`text: ${m[0].trim()}`);
+  for (const m of prose.matchAll(/.{0,40}testnet.{0,40}/gi)) out.push(`text: ${m[0].trim()}`);
+  const named = payees.filter((p) => p.trim() !== '').reduce((t, p) => t.split(p.trim()).join(' '), prose);
+  for (const m of named.matchAll(/.{0,40}erfan.{0,40}/gi)) out.push(`text: ${m[0].trim()}`);
   for (const c of code) for (const m of c.replace(REPO, '').matchAll(/.{0,40}erfan.{0,40}/gi)) out.push(`code: ${m[0].trim()}`);
   return out;
 }
 
-async function readVisible(page: Page): Promise<{ prose: string; code: string[] }> {
+async function readVisible(page: Page): Promise<{ prose: string; code: string[]; payees: string[] }> {
   return page.evaluate(() => {
     const blocks = Array.from(document.querySelectorAll<HTMLElement>('code, pre, kbd, samp'));
     // a block inside a closed <details> or otherwise not rendered has no boxes: it is not on screen
@@ -40,7 +46,9 @@ async function readVisible(page: Page): Promise<{ prose: string; code: string[] 
     blocks.forEach((b) => (b.style.display = 'none'));
     const prose = `${document.title}\n${document.body.innerText}`;
     blocks.forEach((b, i) => (b.style.display = old[i] ?? ''));
-    return { prose, code };
+    // the payee of each approval card as it is printed (the TO row), for the one exemption of visibleProblems
+    const payees = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="card"] [data-name="TO"] .manifest-value')).map((e) => e.innerText);
+    return { prose, code, payees };
   });
 }
 
@@ -52,6 +60,9 @@ const run: E2E = async ({ page, baseUrl }) => {
   assert.deepEqual(visibleProblems('Pay kanocotton', ['near account create-account <you>.testnet network-config testnet']), []);
   assert.deepEqual(visibleProblems('', ['git clone https://github.com/erfan604/airlock.git']), []);
   assert.ok(visibleProblems('', ['sign-as erfan-agent.testnet']).length > 0, "the owner's name in a visible command fails");
+  assert.deepEqual(visibleProblems('Pay 1 NEAR to accountant.erfan-airlock?', [], ['accountant.erfan-airlock']), [], 'a live approval card names its real payee');
+  assert.ok(visibleProblems('Pay 1 NEAR to accountant.erfan-airlock? Erfan says hi', [], ['accountant.erfan-airlock']).length > 0, 'only the payee itself is exempt');
+  assert.ok(visibleProblems('Pay 1 NEAR to x.testnet?', [], ['x.testnet']).length > 0, 'testnet is never exempt');
 
   const found: string[] = [];
   const paths = PAGES.map((p) => p.path);
@@ -80,8 +91,8 @@ const run: E2E = async ({ page, baseUrl }) => {
       // the chain reads (pool, challenge board, approvals) land after load; give them time so their text is part of the check
       await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
       await page.waitForTimeout(1_000);
-      const { prose, code } = await readVisible(page);
-      for (const p of visibleProblems(prose, code)) found.push(`${path} @${String(viewport.width)} ${p}`);
+      const { prose, code, payees } = await readVisible(page);
+      for (const p of visibleProblems(prose, code, payees)) found.push(`${path} @${String(viewport.width)} ${p}`);
     }
   }
 
