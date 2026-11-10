@@ -17,6 +17,8 @@ import { UsePage } from './use/UsePage.tsx';
 import { CreditPage } from './credit/CreditPage.tsx';
 // AIR-192: the read-only Bench page loads on demand, so the shell's bundle does not grow
 const BenchPage = lazy(() => import('./bench/BenchPage.tsx'));
+// AIR-361: Break the proof runs six wasm modules; it loads on demand like the Bench page
+const BreakPage = lazy(() => import('./break/BreakPage.tsx'));
 
 const hostedApi = hostedChallengeApi();
 
@@ -39,4 +41,5 @@ export const ROUTES: Record<string, () => ReactElement> = {
   '/challenge': () => createElement(ChallengeView, STATIC ? { api: hostedApi, pollMs: 30_000, hosted: true } : {}),
   '/live': () => createElement(StaticLive),
   '/bench': () => createElement(Suspense, { fallback: null }, createElement(BenchPage)),
+  '/break': () => createElement(Suspense, { fallback: null }, createElement(BreakPage)),
 };

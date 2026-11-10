@@ -20,6 +20,7 @@ import './styles/bench.css';
 import './styles/fixtures.css';
 import './styles/site.css';
 import './styles/credit.css';
+import './styles/break.css';
 import { App } from './App.tsx';
 
 if (!ZOD_JITLESS) throw new Error('zod is not configured without eval');

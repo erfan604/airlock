@@ -58,6 +58,12 @@ export const PAGES: PageMeta[] = [
     description:
       'A credit network for AI agents on NEAR\'s test network: LPs stake into a pool, each agent spends from a credit line the pool funds, and every payment goes through the AIRLOCK guard. A live scene of the pool, its credit lines and their payments, read from the chain.',
   },
+  {
+    path: '/break',
+    title: 'Break the proof | AIRLOCK',
+    description:
+      'The airlock-verdict gate the NEAR contract runs, compiled to WebAssembly, beside copies of itself with one rule taken out. Pick an attack and a copy: the real gate refuses, the copy pays, and beside it stand the Kani harness that fails on the copy and the Lean theorem it breaks.',
+  },
   { path: '/task', title: 'Task, recorded | AIRLOCK', description: 'The recorded run under the name a live operator reads.', alias: '/replay' },
 ];
 

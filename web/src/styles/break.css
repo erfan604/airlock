@@ -1,0 +1,574 @@
+/* AIR-361: the /break page. Two machines side by side take the same request: a slip drops into each slot, the real gate pulls its striped
+   shutter down and the slip comes back up, the broken copy lights green and a payout slides out of its tray. Tokens only; stripes mean held,
+   green means paid. Motion is transform and opacity, plays once per run, and base.css turns it off under reduced motion (the end state is the
+   element's own style, so a reduced motion visitor sees the result at once). Nothing may push the page wider than the viewport at 320 px. */
+.brk {
+  display: grid;
+  gap: var(--space-7);
+  max-width: 80rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.brk-head {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 46rem;
+}
+.brk-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 1;
+}
+@media (min-width: 720px) {
+  .brk-title {
+    font-size: 64px;
+  }
+}
+.brk-lede,
+.brk .brk-lede {
+  font-size: 18px;
+  color: var(--ink-2);
+}
+.brk-h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.1;
+}
+.brk-h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.15;
+}
+.brk-mono {
+  font-family: var(--font-data);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+}
+.brk-status,
+.brk .brk-status {
+  color: var(--ink-3);
+}
+
+/* the pickers: plain cards with a ring that fills when picked (the Try page's vocabulary) */
+.brk-step {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.brk-attacks,
+.brk-copies {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .brk-attacks {
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-3);
+  }
+}
+.brk-attacks > li,
+.brk-copies > li {
+  display: flex;
+  min-width: 0;
+}
+.brk-pick {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-3) var(--space-7) var(--space-3) var(--space-4);
+  border: 1.5px solid var(--edge);
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 200ms var(--ease-out), transform 160ms var(--ease-out);
+}
+.brk-pick:hover {
+  border-color: var(--ink-3);
+}
+.brk-pick:active {
+  transform: scale(0.985);
+}
+.brk-pick::after {
+  content: '';
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-4);
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--edge);
+  border-radius: 50%;
+  transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+}
+.brk-pick[aria-pressed='true'] {
+  border-color: var(--xray);
+}
+.brk-pick[aria-pressed='true']::after {
+  border-color: var(--xray);
+  box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 8px var(--xray);
+}
+.brk-pick-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.15;
+}
+.brk-pick-line,
+.brk .brk-pick-line {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.brk-nowrap {
+  white-space: nowrap;
+}
+.brk-copy-id {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink);
+}
+
+/* what goes into both machines: the story, then where each value came from */
+.brk-attack-sheet {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 52rem;
+  min-width: 0;
+}
+.brk-story,
+.brk .brk-story {
+  font-size: 18px;
+  color: var(--ink);
+}
+.brk-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+}
+.brk-values > div {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+.brk-values dt {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-3);
+}
+.brk-values dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+.brk-origin {
+  color: var(--ink-2);
+}
+.brk-source,
+.brk .brk-source {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.brk-constructed {
+  color: var(--signal);
+  font-weight: 600;
+}
+
+/* the floor: the two machines and the copy list */
+.brk-floor {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+@media (min-width: 1080px) {
+  .brk-floor {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.brk-pair {
+  scroll-margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .brk-pair {
+    gap: var(--space-5);
+  }
+}
+.brk-copies-wrap {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.brk-result,
+.brk .brk-result {
+  grid-column: 1 / -1;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+@media (min-width: 720px) {
+  .brk-result,
+  .brk .brk-result {
+    font-size: 30px;
+  }
+}
+.brk-again {
+  grid-column: 1 / -1;
+  justify-self: start;
+  width: auto;
+}
+
+/* one machine */
+.brk-machine {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  margin: 0;
+  min-width: 0;
+  border: 1.5px solid var(--edge);
+  border-radius: var(--radius-l);
+  background: var(--raised);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+.brk-plate {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .brk-plate {
+    padding: var(--space-4) var(--space-5) var(--space-3);
+  }
+}
+.brk-plate-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.1;
+}
+@media (min-width: 720px) {
+  .brk-plate-name {
+    font-size: 26px;
+  }
+}
+.brk-plate-id {
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.brk-machine-copy .brk-plate-name {
+  color: var(--ink-2);
+}
+
+/* the slot: a dark bar with a slit; the slip drops in from above and, on a refusal, comes back up */
+.brk-slot {
+  position: relative;
+  height: 52px;
+  margin: 0 var(--space-3);
+  border-radius: var(--radius-s);
+  background: var(--sunk);
+  overflow: hidden;
+}
+@media (min-width: 720px) {
+  .brk-slot {
+    margin: 0 var(--space-5);
+  }
+}
+.brk-slit {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 9px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--hair);
+}
+.brk-slip {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  max-width: calc(100% - 16px);
+  padding: 3px var(--space-2);
+  border-radius: 3px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translateX(-50%);
+  animation: brk-drop 320ms var(--ease-out) backwards;
+}
+.brk-slip-to {
+  font-weight: 400;
+}
+@media (max-width: 479px) {
+  .brk-slip-to {
+    display: none;
+  }
+}
+[data-state='refused'] .brk-slip {
+  animation: brk-drop 320ms var(--ease-out) backwards, brk-bounce 360ms var(--ease-out) 420ms backwards;
+}
+[data-state='paid'] .brk-slip {
+  animation: brk-drop 320ms var(--ease-out) backwards, brk-swallow 280ms var(--ease-out) 380ms forwards;
+}
+@keyframes brk-drop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -36px);
+  }
+}
+@keyframes brk-bounce {
+  0% {
+    transform: translate(-50%, 18px);
+  }
+}
+@keyframes brk-swallow {
+  to {
+    opacity: 0;
+    transform: translate(-50%, 34px);
+  }
+}
+
+/* the window: the answer, large */
+.brk-window {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  margin: var(--space-3);
+  padding: var(--space-4) var(--space-3) var(--space-3);
+  min-height: 9.5rem;
+  border-radius: var(--radius-m);
+  background: var(--sunk);
+  overflow: hidden;
+}
+@media (min-width: 720px) {
+  .brk-window {
+    margin: var(--space-4) var(--space-5);
+    padding: var(--space-5) var(--space-4) var(--space-4);
+    min-height: 10.5rem;
+  }
+}
+.brk-shutter {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 10px;
+  background: var(--stripe);
+  transform-origin: top;
+  animation: brk-shutter 300ms var(--ease-out) 420ms backwards;
+}
+@keyframes brk-shutter {
+  from {
+    transform: scaleY(0);
+  }
+}
+.brk-word,
+.brk .brk-word {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1;
+  animation: brk-land 300ms var(--ease-out) 420ms backwards;
+}
+@media (min-width: 720px) {
+  .brk-word,
+  .brk .brk-word {
+    font-size: 48px;
+  }
+}
+.brk-word-idle {
+  color: var(--ink-3);
+  animation: none;
+}
+.brk-word-refused {
+  color: var(--signal);
+}
+.brk-word-paid {
+  color: var(--clear);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--clear) 45%, transparent);
+}
+@keyframes brk-land {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+.brk-why,
+.brk .brk-why {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink);
+  overflow-wrap: break-word;
+  animation: fade 280ms var(--ease-out) 560ms backwards;
+}
+@media (min-width: 720px) {
+  .brk-why,
+  .brk .brk-why {
+    font-size: 16px;
+    line-height: 23px;
+  }
+}
+.brk-why-words {
+  color: var(--ink-2);
+}
+
+/* the tray: a payout slides out of the paying machine */
+.brk-tray {
+  position: relative;
+  height: 44px;
+  margin: 0 var(--space-3) var(--space-3);
+  border-top: 1px dashed var(--edge);
+  overflow: hidden;
+}
+@media (min-width: 720px) {
+  .brk-tray {
+    margin: 0 var(--space-5) var(--space-4);
+  }
+}
+.brk-payout {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  max-width: 100%;
+  padding: 4px var(--space-3);
+  border-radius: 3px;
+  background: var(--clear);
+  color: var(--on-clear);
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: brk-payout 380ms var(--ease-out) 600ms backwards;
+}
+@keyframes brk-payout {
+  from {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+}
+[data-state='paid'].brk-machine {
+  border-color: color-mix(in srgb, var(--clear) 60%, var(--edge));
+  box-shadow: var(--lift), var(--glow-clear);
+  transition: border-color 300ms var(--ease-out) 420ms, box-shadow 300ms var(--ease-out) 420ms;
+}
+
+/* the evidence: the rule, the harness, the theorem */
+.brk-evidence {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.brk-ev-grid {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+@media (min-width: 1080px) {
+  .brk-ev-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6) var(--space-7);
+  }
+  .brk-ev:nth-child(2) {
+    grid-row: span 2;
+  }
+}
+.brk-ev {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.brk-ev-meta,
+.brk .brk-ev-meta {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.brk-name {
+  color: var(--ink);
+}
+.brk-code {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-m);
+  background: var(--sunk);
+  color: var(--ink-2);
+  font-family: var(--font-data);
+  font-size: 12.5px;
+  line-height: 19px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.brk-lean {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+.brk-diff span {
+  display: block;
+}
+.brk-del {
+  color: var(--alarm);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--alarm) 50%, transparent);
+}
+.brk-add {
+  color: var(--clear);
+}
+.brk-ctx {
+  color: var(--ink-3);
+}
+
+/* what this shows and what it does not */
+.brk-cover {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 52rem;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--hair);
+}
+.brk-claim,
+.brk .brk-claim {
+  color: var(--ink);
+}
+.brk-coverage,
+.brk .brk-coverage {
+  color: var(--ink-2);
+}
