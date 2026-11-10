@@ -20,7 +20,7 @@ pub const STATE_VERSION: u32 = 2;
 /// The Passport cap base of a pool made by `new` without one: 100 NEAR (a fresh borrower at score 500 may take a line of this size).
 pub const DEFAULT_PASSPORT_BASE: u128 = 100 * 1_000_000_000_000_000_000_000_000;
 
-/// A repay moves the Passport counters only when the card kept at least `passport_base / 10` of the line (an absolute floor, so lines
+/// A repay moves the Passport counters only when the card kept at least `floor_base / 10` of the line (an absolute floor, so lines
 /// of a few yocto kept in full cannot farm the score) ...
 pub const MIN_QUALIFYING_DRAW_DIV: u128 = 10;
 /// ... and the line charged at least 1 percent, so every counted repay paid the LPs a real fee.
@@ -136,6 +136,8 @@ pub struct PoolPassportView {
     pub pending_base: Option<U128>,
     pub effective_ms: Option<U64>,
     pub version: u32,
+    /// the highest base the pool has had in force: a repay counts only when the card kept at least a tenth of it
+    pub floor_base: U128,
 }
 
 #[near(serializers = [borsh, json])]
@@ -247,6 +249,8 @@ pub struct Pool {
     pub passport_base: u128,
     /// an announced raise of the base and the time from which `apply_passport_base` applies it
     pub pending_base: Option<(u128, u64)>,
+    /// the highest base this pool has had in force. It never falls, so a cut of the base cannot lower the draw a repay needs to count
+    pub floor_base: u128,
     /// the state version (`STATE_VERSION`)
     pub version: u32,
 }
@@ -413,6 +417,7 @@ impl Pool {
             records: LookupMap::new(StorageKey::Records),
             passport_base: passport_base.map_or(DEFAULT_PASSPORT_BASE, |v| v.0),
             pending_base: None,
+            floor_base: passport_base.map_or(DEFAULT_PASSPORT_BASE, |v| v.0),
             version: STATE_VERSION,
         }
     }
@@ -443,6 +448,7 @@ impl Pool {
             records: LookupMap::new(StorageKey::Records),
             passport_base: passport_base.0,
             pending_base: None,
+            floor_base: passport_base.0,
             version: STATE_VERSION,
         };
         let backfilled = pool.backfill();
@@ -710,6 +716,34 @@ impl Pool {
                 math::near_decimal(cap)
             ));
         }
+        // The cap is per borrower, not per card: what the borrower still holds on their other cards counts toward it, and a loss or a
+        // line past due on any of them refuses a new line (the pool holds 100 cards at most, so the walk is bounded).
+        let mut held_elsewhere: u128 = 0;
+        for (other, k) in self.cards.iter() {
+            if *other == card || k.borrower != c.borrower {
+                continue;
+            }
+            require!(
+                k.loss == 0,
+                "the borrower has an unrecovered loss on another card"
+            );
+            if let Some(l) = k.line.as_ref() {
+                if matches!(l.state, LineState::Open) {
+                    require!(
+                        ms() <= l.due_ms,
+                        "the borrower has a line past due on another card"
+                    );
+                    held_elsewhere = held_elsewhere.saturating_add(l.limit - l.returned);
+                }
+            }
+        }
+        if limit.saturating_add(held_elsewhere) > cap {
+            env::panic_str(&format!(
+                "the limit is above what is left of the borrower's Passport cap of {} NEAR (score {score}): {} NEAR is out on their other cards",
+                math::near_decimal(cap),
+                math::near_decimal(held_elsewhere)
+            ));
+        }
         require!(fee_bps <= MAX_FEE_BPS, "the fee is above 50 percent");
         require!(
             due_ms > ms() && due_ms <= ms() + MAX_TERM_MS,
@@ -923,10 +957,10 @@ impl Pool {
         );
         let collateral = line.collateral;
         // AIR-333: only a repay of a line the card really drew counts, on time or late. Three floors: the card kept at least 10 percent
-        // of the limit, at least a tenth of the cap base (absolute, so dust lines kept in full do not count), and the line charged
-        // at least 1 percent.
+        // of the limit, at least a tenth of the highest cap base this pool has had (absolute, so dust lines kept in full do not count,
+        // and a cut of the base does not lower it), and the line charged at least 1 percent.
         let qualifies = outstanding.saturating_mul(10) >= line.limit
-            && outstanding >= self.passport_base / MIN_QUALIFYING_DRAW_DIV
+            && outstanding >= self.floor_base / MIN_QUALIFYING_DRAW_DIV
             && line.fee_bps >= MIN_QUALIFYING_FEE_BPS
             && fee > 0;
         let on_time = ms() <= line.due_ms;
@@ -1037,6 +1071,7 @@ impl Pool {
             &format!("the raise of the Passport base applies from {effective_ms}")
         );
         self.passport_base = base;
+        self.floor_base = self.floor_base.max(base);
         self.pending_base = None;
         emit("passport_base_set", json!({ "base": base.to_string() }));
     }
@@ -1063,6 +1098,7 @@ impl Pool {
             pending_base: self.pending_base.map(|(b, _)| U128(b)),
             effective_ms: self.pending_base.map(|(_, t)| U64(t)),
             version: self.version,
+            floor_base: U128(self.floor_base),
         }
     }
 

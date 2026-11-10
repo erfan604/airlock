@@ -84,6 +84,20 @@ fn funded_pool() -> Pool {
     p
 }
 
+/// A funded pool made with `base` as its Passport cap base (so the draw a repay needs to count is a tenth of `base`).
+fn funded_pool_with_base(base: u128) -> Pool {
+    call_as(OWNER, 0, NOW);
+    let mut p = Pool::new(
+        OWNER.parse().unwrap(),
+        Some(near_sdk::json_types::U64(0)),
+        Some(U128(base)),
+    );
+    call_as(LP1, 100 * NEAR, NOW);
+    p.deposit();
+    register(&mut p);
+    p
+}
+
 /// What the last call sent as plain transfers, `(receiver, amount)`.
 fn transfers() -> Vec<(String, u128)> {
     get_created_receipts()
@@ -1120,17 +1134,19 @@ fn layout_the_pool_state_keeps_its_field_order_and_prefixes() {
     p.min_hold_ms = 9;
     p.passport_base = 10;
     p.pending_base = Some((11, 12));
+    p.floor_base = 13;
     let pool_hex = hex(&near_sdk::borsh::to_vec(&p).unwrap());
     assert_eq!(
         pool_hex,
         format!(
-            "{V1_HEX}{}{}{}{}",
+            "{V1_HEX}{}{}{}{}{}",
             "0100000004",
             "0a000000000000000000000000000000",
             "010b0000000000000000000000000000000c00000000000000",
+            "0d000000000000000000000000000000",
             "02000000"
         ),
-        "Pool v2: the v1 bytes, then the records prefix (4), passport_base u128, pending_base Option<(u128, u64)>, version u32"
+        "Pool v2: the v1 bytes, then the records prefix (4), passport_base u128, pending_base Option<(u128, u64)>, floor_base u128, version u32"
     );
 }
 
@@ -1245,6 +1261,7 @@ fn a_fresh_borrower_starts_at_500_with_the_base_as_cap() {
         (pv.base.0, pv.pending_base, pv.effective_ms, pv.version),
         (DEFAULT_PASSPORT_BASE, None, None, STATE_VERSION)
     );
+    assert_eq!(pv.floor_base.0, DEFAULT_PASSPORT_BASE);
 }
 
 #[test]
@@ -1301,10 +1318,9 @@ fn the_record_counts_each_pool_event() {
 
 #[test]
 fn dust_and_zero_fee_repays_do_not_count() {
-    let mut p = funded_pool();
     // a cap base of 10 NEAR, so the absolute floor (1 NEAR) equals the relative one on these 10 NEAR lines; the absolute floor alone
     // is `ten_dust_lines_kept_in_full_do_not_raise_the_score`
-    set_base(&mut p, 10 * NEAR, NOW);
+    let mut p = funded_pool_with_base(10 * NEAR);
     // 5 percent kept: below the 10 percent floor
     open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW);
     sweep_back(&mut p, CARD, 9_500 * NEAR / 1_000, NOW);
@@ -1403,6 +1419,85 @@ fn ten_dust_lines_kept_in_full_do_not_raise_the_score() {
     assert_eq!((pp.record.repaid_on_time, pp.score), (1, 580));
 }
 
+/// Push review 2026-11-10: the draw a repay needs to count was a tenth of the base in force, and the issuer can cut the base at once.
+/// The floor follows the highest base the pool has had, so a cut, a run of small lines and a raise back leave the score where it was.
+#[test]
+fn a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count() {
+    let mut p = funded_pool();
+    let cut = DEFAULT_PASSPORT_BASE / 1_000;
+    set_base(&mut p, cut, NOW);
+    let pv = p.get_pool_passport();
+    assert_eq!((pv.base.0, pv.floor_base.0), (cut, DEFAULT_PASSPORT_BASE));
+    // ten lines at the whole cut cap, kept in full, fee 5 percent, each repaid on time
+    for i in 0..10u64 {
+        open_on(&mut p, CARD, BORROWER, cut, 500, NOW + i * DAY);
+        repay_at(&mut p, CARD, BORROWER, NOW + i * DAY);
+    }
+    let pp = passport(&p, CARD);
+    assert_eq!(
+        (pp.record.repaid_on_time, pp.score, pp.limit_cap.0),
+        (0, 500, cut),
+        "lines under a tenth of the highest base do not count after a cut"
+    );
+    // the raise back is announced and applied: the cap is the base again, never more
+    set_base(&mut p, DEFAULT_PASSPORT_BASE, NOW + 11 * DAY);
+    call_as("anyone.test.near", 0, NOW + 11 * DAY);
+    p.apply_passport_base();
+    let pp = passport(&p, CARD);
+    assert_eq!((pp.score, pp.limit_cap.0), (500, DEFAULT_PASSPORT_BASE));
+    // a raise lifts the floor with it, and a later cut leaves it there
+    set_base(&mut p, 3 * DEFAULT_PASSPORT_BASE, NOW + 12 * DAY);
+    call_as("anyone.test.near", 0, NOW + 12 * DAY);
+    p.apply_passport_base();
+    set_base(&mut p, DEFAULT_PASSPORT_BASE, NOW + 13 * DAY);
+    let pv = p.get_pool_passport();
+    assert_eq!(
+        (pv.base.0, pv.floor_base.0),
+        (DEFAULT_PASSPORT_BASE, 3 * DEFAULT_PASSPORT_BASE)
+    );
+}
+
+/// Push review 2026-11-10: the cap was checked per card, so two cards of one borrower could each take a full cap.
+#[test]
+fn the_cap_counts_what_the_borrower_holds_on_their_other_cards() {
+    let mut p = funded_pool_with_base(50 * NEAR);
+    register_as(&mut p, CARD2, BORROWER);
+    register_as(&mut p, CARD3, OTHER);
+    let due = near_sdk::json_types::U64(NOW + 30 * DAY);
+    // 30 of the 50 NEAR cap go out on the first card
+    open_on(&mut p, CARD, BORROWER, 30 * NEAR, 500, NOW);
+    funded(&mut p, CARD, 30 * NEAR, NOW);
+    // the second card may take what is left (20), not a full cap
+    call_as(BORROWER, 10 * NEAR, NOW);
+    p.post_collateral(acct(CARD2));
+    call_as(OWNER, 0, NOW);
+    let msg = panics(|| p.open_line(acct(CARD2), U128(21 * NEAR), 500, due));
+    assert!(
+        msg.contains("what is left of the borrower's Passport cap of 50 NEAR (score 500): 30 NEAR is out on their other cards"),
+        "{msg}"
+    );
+    // a sweep on the first card frees room: 10 back, so 30 fit on the second
+    sweep_back(&mut p, CARD, 10 * NEAR, NOW);
+    call_as(OWNER, 0, NOW);
+    let msg = panics(|| p.open_line(acct(CARD2), U128(31 * NEAR), 500, due));
+    assert!(msg.contains("20 NEAR is out on their other cards"), "{msg}");
+    // another borrower's card has its own cap
+    open_on(&mut p, CARD3, OTHER, 50 * NEAR, 500, NOW);
+    assert_eq!(p.get_line(acct(CARD3)).unwrap().state, LineState::Open);
+    // once the first card's line is past due, the borrower gets no new line on any card
+    call_as(OWNER, 0, NOW + 31 * DAY);
+    let late = near_sdk::json_types::U64(NOW + 40 * DAY);
+    let msg = panics(|| p.open_line(acct(CARD2), U128(NEAR), 500, late));
+    assert!(msg.contains("a line past due on another card"), "{msg}");
+    // after the default leaves a loss on the first card, the same
+    call_as("anyone.test.near", 0, NOW + 31 * DAY);
+    p.default(acct(CARD));
+    assert!(p.cards.get(&acct(CARD)).unwrap().loss > 0);
+    call_as(OWNER, 0, NOW + 31 * DAY);
+    let msg = panics(|| p.open_line(acct(CARD2), U128(NEAR), 500, late));
+    assert!(msg.contains("an unrecovered loss on another card"), "{msg}");
+}
+
 #[test]
 fn the_record_follows_the_borrower_not_the_card() {
     let mut p = funded_pool();
@@ -1435,8 +1530,7 @@ fn the_record_follows_the_borrower_not_the_card() {
 
 #[test]
 fn open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay() {
-    let mut p = funded_pool();
-    set_base(&mut p, 10 * NEAR, NOW);
+    let mut p = funded_pool_with_base(10 * NEAR);
     call_as(BORROWER, 4 * NEAR, NOW);
     p.post_collateral(acct(CARD));
     call_as(OWNER, 0, NOW);
