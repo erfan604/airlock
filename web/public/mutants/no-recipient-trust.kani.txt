@@ -1,0 +1,36 @@
+copy: no-recipient-trust (scripts/canary/untrusted-recipient.patch applied to contracts/airlock-verdict)
+harness: p02_p15_allowed_recipient_trust_set, recorded 2026-11-10T06:17Z
+Kani Rust Verifier 0.68.0 (cargo plugin)
+
+Checking harness proofs::p02_p15_allowed_recipient_trust_set...
+Check 4: proofs::p02_p15_allowed_recipient_trust_set.assertion.1
+	 - Status: FAILURE
+	 - Description: "assertion failed: r.labels.recipient != 0 && r.labels.recipient & !0b0111 == 0"
+	 - Location: src/proofs.rs:121:9 in function proofs::p02_p15_allowed_recipient_trust_set
+
+SUMMARY:
+ ** 1 of 145 failed
+
+ ** 1 of 1 cover properties satisfied
+
+Failed Checks: assertion failed: r.labels.recipient != 0 && r.labels.recipient & !0b0111 == 0
+ File: "src/proofs.rs", line 121, in proofs::p02_p15_allowed_recipient_trust_set
+
+VERIFICATION:- FAILED
+Verification Time: 0.16220641s
+
+control: the same harness on the unpatched crate
+VERIFICATION:- SUCCESSFUL
+
+cargo test on the copy (tests vectors, rules and diff_quick):
+Running tests/diff_quick.rs
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/rules.rs
+test t11_oracle_recipient_escalates ... FAILED
+test t10_untrusted_recipient_without_entry_escalates ... FAILED
+test t30_pc_then_recipient_trust_then_new_recipient_then_payee_limit_then_amount_trust ... FAILED
+test result: FAILED. 29 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/vectors.rs
+test verdicts_match_expect ... FAILED
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+(diff_quick compares with the Lean answers only when DIFF_CASES is set, so here it passes without comparing.)

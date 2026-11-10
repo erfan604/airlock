@@ -1,0 +1,35 @@
+copy: no-task-bound (scripts/canary/m06-no-task-remainder.patch applied to contracts/airlock-verdict)
+harness: p21_allowed_inside_task_bound, recorded 2026-11-10T06:17Z
+Kani Rust Verifier 0.68.0 (cargo plugin)
+
+Checking harness proofs::p21_allowed_inside_task_bound...
+Check 6: proofs::p21_allowed_inside_task_bound.assertion.1
+	 - Status: FAILURE
+	 - Description: "assertion failed: r.amount <= t.remaining"
+	 - Location: src/proofs.rs:361:17 in function proofs::p21_allowed_inside_task_bound
+
+SUMMARY:
+ ** 1 of 141 failed (1 unreachable)
+
+ ** 1 of 1 cover properties satisfied
+
+Failed Checks: assertion failed: r.amount <= t.remaining
+ File: "src/proofs.rs", line 361, in proofs::p21_allowed_inside_task_bound
+
+VERIFICATION:- FAILED
+Verification Time: 0.16739546s
+
+control: the same harness on the unpatched crate
+VERIFICATION:- SUCCESSFUL
+
+cargo test on the copy (tests vectors, rules and diff_quick):
+Running tests/diff_quick.rs
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/rules.rs
+test t20_task_remaining_is_inclusive ... FAILED
+test t29_task_before_pc ... FAILED
+test result: FAILED. 30 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/vectors.rs
+test verdicts_match_expect ... FAILED
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+(diff_quick compares with the Lean answers only when DIFF_CASES is set, so here it passes without comparing.)

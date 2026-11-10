@@ -1,0 +1,36 @@
+copy: no-trigger-rule (scripts/canary/m01-skip-pc-rule.patch applied to contracts/airlock-verdict)
+harness: p01_untrusted_pc_never_allowed, recorded 2026-11-10T06:17Z
+Kani Rust Verifier 0.68.0 (cargo plugin)
+
+Checking harness proofs::p01_untrusted_pc_never_allowed...
+Check 5: proofs::p01_untrusted_pc_never_allowed.assertion.1
+	 - Status: FAILURE
+	 - Description: "assertion failed: out != Verdict::Allow"
+	 - Location: src/proofs.rs:112:5 in function proofs::p01_untrusted_pc_never_allowed
+
+SUMMARY:
+ ** 1 of 145 failed
+
+ ** 0 of 1 cover properties satisfied
+
+Failed Checks: assertion failed: out != Verdict::Allow
+ File: "src/proofs.rs", line 112, in proofs::p01_untrusted_pc_never_allowed
+
+VERIFICATION:- FAILED
+Verification Time: 0.18714792s
+
+control: the same harness on the unpatched crate
+VERIFICATION:- SUCCESSFUL
+
+cargo test on the copy (tests vectors, rules and diff_quick):
+Running tests/diff_quick.rs
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/rules.rs
+test t07_untrusted_pc_escalates ... FAILED
+test t29_task_before_pc ... FAILED
+test t30_pc_then_recipient_trust_then_new_recipient_then_payee_limit_then_amount_trust ... FAILED
+test result: FAILED. 29 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/vectors.rs
+test verdicts_match_expect ... FAILED
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+(diff_quick compares with the Lean answers only when DIFF_CASES is set, so here it passes without comparing.)

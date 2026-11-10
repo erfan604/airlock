@@ -1,0 +1,9 @@
+# AIR-361 Break the proof: copies of the verdict with one rule taken out, shown on the /break page beside the real gate.
+# Columns, tab separated: id, patch file (in scripts/canary), title (the rule the copy lost), attack id (scripts/break-proof-attacks.ts),
+# Kani harness (a function in contracts/airlock-verdict/src/proofs.rs that must fail on the copy), Lean theorem@line (proofs/Verdict.lean).
+# scripts/build-verdict-mutants.sh builds web/public/mutants/<id>.wasm from each row; scripts/break-proof-attacks.ts writes the manifest.
+no-text-amount-cap	m04-untrusted-no-cap.patch	Rule 11: an amount read from outside text needs a cap for that payee	own-B01-incap	p04_p14_p23_untrusted_amount_inside_cap_and_budget	p4_p14_p23_untrusted_amount_bounded@123
+no-trigger-rule	m01-skip-pc-rule.patch	Rule 7: a payment that outside text decided to make never pays by itself	own-S01	p01_untrusted_pc_never_allowed	p1_untrusted_pc_not_allowed@96
+no-book-rule	m03-default-payee.patch	Rule 9: a payee outside the address book is held	new-payee	p03_allowed_recipient_in_book	p3_allowed_in_book@115
+no-task-bound	m06-no-task-remainder.patch	Rule 6: nothing above what is left of the task the owner signed	repeat-invoice	p21_allowed_inside_task_bound	p21_allowed_in_task_bound@192
+no-recipient-trust	untrusted-recipient.patch	Rule 8: a payee picked by outside text is held, even when it is in the book	own-S03	p02_p15_allowed_recipient_trust_set	p2_p15_allowed_recipient_trusted@105
