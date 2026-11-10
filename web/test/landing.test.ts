@@ -6,7 +6,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseBench } from '../src/bench/types.ts';
-import { factsOf } from '../src/landing/facts.ts';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { RECORDED_POOL, factsOf, poolLine } from '../src/landing/facts.ts';
+import { Landing } from '../src/landing/Landing.tsx';
 import { stepAt } from '../src/landing/TubeBand.tsx';
 
 const bench = parseBench(JSON.parse(readFileSync(new URL('../public/bench.json', import.meta.url), 'utf8')) as unknown);
@@ -36,4 +39,29 @@ test('a bench file without the payment-task table gives no facts, never a guess'
 
 test('the tube band lights the step its loop is showing, and wraps every 6 s', () => {
   assert.deepEqual([0, 1.5, 1.7, 3.1, 3.3, 5.9, 6.0, 7.7].map(stepAt), [0, 0, 1, 1, 2, 2, 0, 1]);
+});
+
+// AIR-346 (D9): the landing leads with the pool, and the one number under the hero buttons is read from the pool contract the way /credit reads
+// it; until that read lands, or when it fails, the page shows the recorded value and says it is recorded.
+test('poolLine: the recorded value is labelled recorded, a live read says it is live, a failed read keeps the recorded value and says why', () => {
+  assert.deepEqual(poolLine({ kind: 'recorded' }), { held: '2.12 NEAR', lost: '0 NEAR', note: `Recorded from the pool contract on ${RECORDED_POOL.atText}.`, live: false });
+  assert.deepEqual(poolLine({ kind: 'live', assets: '3500000000000000000000000', losses: '0' }), { held: '3.5 NEAR', lost: '0 NEAR', note: 'Read from the pool contract as this page opened.', live: true });
+  const failed = poolLine({ kind: 'failed' });
+  assert.equal(failed.held, '2.12 NEAR');
+  assert.equal(failed.live, false);
+  assert.ok(failed.note.startsWith('Recorded from the pool contract') && failed.note.includes('could not be read'));
+  assert.equal(poolLine({ kind: 'live', assets: '1234567000000000000000000000', losses: '10000000000000000000000' }).held, '1,234.56 NEAR');
+  assert.equal(poolLine({ kind: 'live', assets: '0', losses: '10000000000000000000000' }).lost, '0.01 NEAR');
+});
+
+test('landing: the hero names the lending pool, the pool line sits under the buttons, the stale fixture sentence is gone, and /live is not linked', () => {
+  const html = renderToStaticMarkup(createElement(Landing));
+  assert.ok(html.includes('A lending pool for AI agents on NEAR.'));
+  const actions = html.indexOf('hero-actions');
+  const pool = html.indexOf('data-testid="hero-pool"');
+  assert.ok(actions > 0 && pool > actions, 'the pool line comes after the hero buttons');
+  assert.ok(html.indexOf('data-testid="landing-credit"') < html.indexOf('data-testid="landing-case"'), 'credit leads the body');
+  assert.ok(!html.includes('badged fixture'));
+  assert.ok(!html.includes('href="/live"'));
+  assert.ok(html.includes(`Recorded from the pool contract on ${RECORDED_POOL.atText}.`), 'the prerender carries the recorded value, labelled');
 });

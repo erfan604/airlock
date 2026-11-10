@@ -5,9 +5,9 @@ export type PageMeta = { path: string; title: string; description: string; alias
 export const PAGES: PageMeta[] = [
   {
     path: '/',
-    title: 'AIRLOCK: a payment gate for AI agents that checks where every value came from',
+    title: 'AIRLOCK: a lending pool for AI agents on NEAR',
     description:
-      'AIRLOCK is provenance-gated signing for AI agent wallets on NEAR. A policy contract checks where the payee and the amount of every payment came from (the owner, the address book, or outside text such as an email) and holds what outside text decided.',
+      "AIRLOCK is a lending pool for AI agents on NEAR: lenders fund a credit line held on a card that pays only merchants the owner booked, and a policy contract checks where every payee and amount came from (the owner, the address book, or outside text such as an email), so a hijacked agent cannot send the lenders' money anywhere but a booked merchant.",
   },
   {
     path: '/try',

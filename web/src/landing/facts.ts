@@ -2,6 +2,7 @@
 // number is a cell of that file or the difference of two of its counts; when a cell is missing the fact is null and the band is not drawn,
 // so the page never shows a number the bench did not produce.
 import type { BenchData, Table } from '../bench/types.ts';
+import { formatNear } from '../credit/model.ts';
 
 export type Count = { k: string; n: string };
 export type Facts = {
@@ -69,4 +70,23 @@ export function factsOf(d: BenchData): Facts | null {
     strictAlone,
     strictTapped,
   };
+}
+
+/**
+ * AIR-346 (D9): the one live number under the hero, the pool's assets and its recorded losses as `get_pool` answers them (read by
+ * credit/chain.ts, the same read /credit makes). Until the read lands, and when it fails, the line shows this recorded value and says so.
+ * Recorded 2026-11-09 21:59 MST from pool.airlock-credit-c1108d: assets 2.12 NEAR, losses 0.
+ */
+export const RECORDED_POOL = { assets: '2120000000000000000000000', losses: '0', atText: 'Nov 9, 2026' } as const;
+
+export type PoolRead = { kind: 'recorded' } | { kind: 'failed' } | { kind: 'live'; assets: string; losses: string };
+export type PoolLine = { held: string; lost: string; note: string; live: boolean };
+
+/** Yocto as NEAR with at most two decimals, truncated, and no `.00` on a whole amount. */
+const nearShort = (yocto: string): string => `${formatNear(yocto, 2).replace(/\.00$/, '').replace(/(\.[0-9])0$/, '$1')} NEAR`;
+
+export function poolLine(read: PoolRead): PoolLine {
+  if (read.kind === 'live') return { held: nearShort(read.assets), lost: nearShort(read.losses), note: 'Read from the pool contract as this page opened.', live: true };
+  const note = `Recorded from the pool contract on ${RECORDED_POOL.atText}${read.kind === 'failed' ? '; the chain could not be read just now' : ''}.`;
+  return { held: nearShort(RECORDED_POOL.assets), lost: nearShort(RECORDED_POOL.losses), note, live: false };
 }

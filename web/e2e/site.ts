@@ -22,7 +22,10 @@ export async function checkLanding(page: Page, baseUrl: string): Promise<void> {
   assert.equal(await id('fig-default', page).locator('.fig-big').innerText(), '10 of 250');
   assert.equal(await id('fig-honest', page).locator('.fig-big').innerText(), '44 of 70');
   assert.equal(await id('cta-try', page).getAttribute('href'), '/try');
-  assert.equal(await id('cta-replay', page).getAttribute('href'), '/replay');
+  assert.equal(await id('cta-pool', page).getAttribute('href'), '/credit');
+  // AIR-346: the pool line under the hero buttons, live or recorded and saying which
+  await id('hero-pool', page).waitFor();
+  assert.ok(/NEAR in the pool, .* NEAR lost\.\s+(Read from|Recorded from) the pool contract/.test(await id('hero-pool', page).innerText()));
   // AIR-312: the hired-agent section links the Try page in the hired world
   assert.ok((await id('landing-hire', page).innerText()).includes('is the task bound.'));
   assert.equal(await id('cta-hired', page).getAttribute('href'), '/try?s=hired');
@@ -111,7 +114,7 @@ export async function checkHired(page: Page, baseUrl: string): Promise<void> {
     const rule = p.expect.default.split(':')[1];
     if (rule !== undefined) assert.ok((await id('try-verdict', page).innerText()).includes(rule), `${p.id} rule ${rule}`);
   }
-  assert.equal(await id('try-pays', page).innerText(), 'The hired agent would pay inference-bi11ing.testnet $4.00');
+  assert.equal(await id('try-pays', page).innerText(), 'The hired agent would pay inference-bi11ing $4.00');
   // the link the landing uses opens the hired world on arrival
   await page.goto(`${baseUrl}/try?s=hired`);
   await page.locator('[data-testid="try"][data-world="hired"]').waitFor();

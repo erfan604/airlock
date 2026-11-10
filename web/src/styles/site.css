@@ -33,6 +33,14 @@ h1 {
   text-underline-offset: 4px;
   transition: text-decoration-color var(--press), color var(--press);
 }
+/* AIR-346 (D24): a link inside running text gets a 44 px tall hit area. Vertical padding on an inline box grows its hit area without moving the
+   line box, so the text sets exactly as before; the focus ring is pulled back in to hug the words. */
+:is(.page, .landing) :is(p, li, dd, figcaption) a {
+  padding-block: 11px;
+}
+:is(.page, .landing) :is(p, li, dd, figcaption) a:focus-visible {
+  outline-offset: -9px;
+}
 .page a:hover,
 .landing a:hover {
   color: var(--xray);
@@ -255,6 +263,28 @@ h1 {
   flex-wrap: wrap;
   gap: var(--space-3);
   animation: rise 520ms var(--ease-out) 360ms backwards;
+}
+/* AIR-346: the pool's one number under the buttons, a spoken sentence with the two amounts in the data face; no tile, no badge */
+.hero-pool {
+  max-width: 40rem;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  animation: rise 520ms var(--ease-out) 480ms backwards;
+}
+.hero-pool-num {
+  font-family: var(--font-data);
+  font-weight: 500;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.hero-pool-note {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 14px;
+  color: var(--ink-3);
 }
 @media (min-width: 720px) {
   .hero-copy {

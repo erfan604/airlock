@@ -49,7 +49,10 @@ const run: E2E = async ({ page, baseUrl }) => {
   const home = await get('/');
   const t = textOf(home.body);
   for (const s of [
-    'A payment gate for AI agents that checks where every value came from.',
+    'A lending pool for AI agents on NEAR.',
+    'in the pool,',
+    'Recorded from the pool contract on',
+    'How the pool lends',
     'Same payee, new amount',
     '68 of 69 attacks that worked on an agent with no guard paid a payee already in the owner',
     '0 of 250 attack runs moved money with AIRLOCK in strict mode.',
