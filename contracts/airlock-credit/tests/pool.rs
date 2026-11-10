@@ -802,7 +802,10 @@ async fn upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works() {
     // ---- the upgrade: one transaction, DeployContract then migrate ----
     let r = Contract::deploy(fx.pool.clone())
         .use_code(std::fs::read(&new_wasm).unwrap())
-        .with_init_call("migrate", json!({ "passport_base": ONE_NEAR.to_string() }))
+        .with_init_call(
+            "migrate",
+            json!({ "passport_base": ONE_NEAR.to_string(), "mpc_signer": "v1.signer-prod.testnet", "foreign_domain_id": 3 }),
+        )
         .unwrap()
         .with_signer(pool_signer.clone())
         .send_to(&w.net)
@@ -851,11 +854,100 @@ async fn upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works() {
         &fx.pool,
         &pool_signer,
         "migrate",
-        json!({ "passport_base": "1" }),
+        json!({ "passport_base": "1", "mpc_signer": "v1.signer-prod.testnet", "foreign_domain_id": 3 }),
         0,
     )
     .await;
     fails_with(&again, "Cannot deserialize");
+
+    // ---- AIR-350: the Base payment check on the upgraded state ----
+    // There is no MPC signer in the sandbox (and contracts/mock-mpc has no verify_foreign_transaction), so this walks the refusals, the
+    // private callback and the failure path: the call to the absent signer fails, nothing is recorded and the fee less 1 yocto goes back.
+    let cfg = view(&fx, "get_base_check_config", json!({})).await;
+    assert_eq!(
+        cfg,
+        json!({ "mpc_signer": "v1.signer-prod.testnet", "domain_id": 3, "fee": (ONE_NEAR / 100).to_string() }),
+        "{cfg}"
+    );
+    let tx_id = "943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63";
+    let pool_before = pool_view(&fx).await;
+    fails_with(
+        &send(
+            w,
+            &fx.pool,
+            &fx.lp1.0,
+            &fx.lp1.1,
+            "check_base_payment",
+            json!({ "tx_id": format!("0x{}", &tx_id[2..]) }),
+            ONE_NEAR / 100,
+        )
+        .await,
+        "tx_id must be exactly 64 lowercase hex characters",
+    );
+    fails_with(
+        &send(
+            w,
+            &fx.pool,
+            &fx.lp1.0,
+            &fx.lp1.1,
+            "check_base_payment",
+            json!({ "tx_id": tx_id }),
+            ONE_NEAR / 100 - 1,
+        )
+        .await,
+        "at least 0.01 NEAR",
+    );
+    fails_with(
+        &send(
+            w,
+            &fx.pool,
+            &fx.lp1.0,
+            &fx.lp1.1,
+            "on_base_check",
+            json!({ "tx_id": tx_id, "asked_by": fx.lp1.0, "fee": "1" }),
+            0,
+        )
+        .await,
+        "Method on_base_check is private",
+    );
+    let r = send(
+        w,
+        &fx.pool,
+        &fx.lp1.0,
+        &fx.lp1.1,
+        "check_base_payment",
+        json!({ "tx_id": tx_id }),
+        ONE_NEAR / 100,
+    )
+    .await;
+    let events = extract_event_logs(&r).expect("the events parse");
+    let unchecked: Vec<&Value> = events
+        .iter()
+        .filter(|e| e["event"] == "base_payment_unchecked")
+        .collect();
+    assert_eq!(unchecked.len(), 1, "{events:?}");
+    assert_eq!(
+        unchecked[0]["data"][0]["refund"],
+        json!((ONE_NEAR / 100 - 1).to_string()),
+        "{events:?}"
+    );
+    assert!(
+        !r.logs().iter().any(|l| l.contains("payout_failed")),
+        "the refund reached the asker"
+    );
+    assert_eq!(
+        view(&fx, "get_unclaimed", json!({ "account": fx.lp1.0 })).await,
+        json!("0")
+    );
+    assert_eq!(
+        view(&fx, "get_base_check", json!({ "tx_id": tx_id })).await,
+        Value::Null
+    );
+    assert_eq!(
+        pool_view(&fx).await,
+        pool_before,
+        "the fee is not pool money"
+    );
 
     // ---- the upgraded pool still works ----
     // a new deposit, refused withdraw inside the lock, the withdraw after it

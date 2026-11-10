@@ -4,7 +4,8 @@
 // The live run, in order (every number read from get_passport, never hardcoded):
 //   1. snapshot the pool views; a storage top-up from the issuer only if the pool balance falls short;
 //   2. ONE transaction deploys res/airlock_credit_v2.wasm and calls migrate(passport_base = 1 NEAR); the code hash must equal the committed
-//      wasm and every snapshotted view must read the same;
+//      wasm and every snapshotted view must read the same; migrate also sets the MPC signer v1.signer-prod.testnet and domain 3 (AIR-350),
+//      read back from get_base_check_config;
 //   3. get_passport before; a limit L in (cap, 1.4 x cap] is refused with the cap text; a line of 0.3 NEAR opens inside the cap; the agent
 //      pays the booked merchant 0.1 NEAR through the verdict (Allow); the issuer sweeps the rest; the borrower repays on time with the fee;
 //   4. get_passport after; L now opens and is closed at once (a sweep of all of it and a repay of 0), so no line stays open.
@@ -37,6 +38,9 @@ const A = { issuer, pool: sub('pool'), card: sub('card'), borrower: sub('borrowe
 const OLD_WASM = join(REPO, 'contracts', 'airlock-credit', 'res', 'airlock_credit_c1108d.wasm');
 const NEW_WASM = join(REPO, 'contracts', 'airlock-credit', 'res', 'airlock_credit_v2.wasm');
 const BASE = ONE; // migrate(passport_base): a borrower at score 500 may take 1 NEAR
+// AIR-350: migrate also sets the MPC signer and the foreign transaction domain check_base_payment asks (domain 3 is ForeignTx on testnet)
+const MPC_SIGNER = 'v1.signer-prod.testnet';
+const FOREIGN_DOMAIN = 3;
 const FIRST = (3n * ONE) / 10n; // the line inside the cap
 const PAY = ONE / 10n; // the agent's payment: at least 10 percent of FIRST and at least a tenth of BASE (the absolute floor), so the repay counts
 const MARGIN = ONE / 5n; // the storage preflight margin
@@ -248,7 +252,7 @@ async function main(): Promise<void> {
     if (views.lines.some((l) => l.state === 'Open')) stop('a line opened after the preflight');
 
     // 2. the upgrade: one transaction, DeployContract then migrate
-    const r = run(['contract', 'deploy', A.pool, 'use-file', NEW_WASM, 'with-init-call', 'migrate', 'json-args', JSON.stringify({ passport_base: BASE.toString() }), 'prepaid-gas', '100 Tgas', 'attached-deposit', '0 NEAR', 'network-config', 'testnet', 'sign-with-keychain', 'send']);
+    const r = run(['contract', 'deploy', A.pool, 'use-file', NEW_WASM, 'with-init-call', 'migrate', 'json-args', JSON.stringify({ passport_base: BASE.toString(), mpc_signer: MPC_SIGNER, foreign_domain_id: FOREIGN_DOMAIN }), 'prepaid-gas', '100 Tgas', 'attached-deposit', '0 NEAR', 'network-config', 'testnet', 'sign-with-keychain', 'send']);
     const tx = txOf(r.out);
     if (r.code !== 0 || tx === undefined || /ExecutionError|Failure|panicked/.test(r.out)) stop(`the upgrade failed: ${r.out.slice(-600)}`);
     row('upgrade: one transaction deploys res/airlock_credit_v2.wasm and calls migrate(passport_base = 1 NEAR)', A.pool, tx);
@@ -263,6 +267,8 @@ async function main(): Promise<void> {
   console.log(`code hash ${hash} equals res/airlock_credit_v2.wasm`);
   const pv = await view<{ base: string; version: number }>(A.pool, 'get_pool_passport');
   if (pv.base !== BASE.toString() || pv.version !== 2) stop(`get_pool_passport ${JSON.stringify(pv)}`);
+  const bc = await view<{ mpc_signer: string; domain_id: number }>(A.pool, 'get_base_check_config');
+  if (bc.mpc_signer !== MPC_SIGNER || bc.domain_id !== FOREIGN_DOMAIN) stop(`get_base_check_config ${JSON.stringify(bc)}`);
 
   if (process.env.UNPAUSE_CARD === '1') {
     const policy = await view<{ paused: boolean }>(A.card, 'get_policy');

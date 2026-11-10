@@ -33,6 +33,8 @@ fn pool() -> Pool {
         OWNER.parse().unwrap(),
         Some(near_sdk::json_types::U64(0)),
         None,
+        None,
+        None,
     )
 }
 
@@ -91,6 +93,8 @@ fn funded_pool_with_base(base: u128) -> Pool {
         OWNER.parse().unwrap(),
         Some(near_sdk::json_types::U64(0)),
         Some(U128(base)),
+        None,
+        None,
     );
     call_as(LP1, 100 * NEAR, NOW);
     p.deposit();
@@ -712,7 +716,13 @@ const HOLD: u64 = 3_600_000;
 
 fn held_pool() -> Pool {
     call_as(OWNER, 0, NOW);
-    let mut p = Pool::new(acct(OWNER), Some(near_sdk::json_types::U64(HOLD)), None);
+    let mut p = Pool::new(
+        acct(OWNER),
+        Some(near_sdk::json_types::U64(HOLD)),
+        None,
+        None,
+        None,
+    );
     call_as(LP1, 100 * NEAR, NOW);
     p.deposit();
     register(&mut p);
@@ -1065,6 +1075,7 @@ fn layout_the_storage_keys_follow_declaration_order() {
         StorageKey::Unclaimed,
         StorageKey::Locks,
         StorageKey::Records,
+        StorageKey::BaseChecks,
     ];
     let bytes: Vec<Vec<u8>> = keys
         .iter()
@@ -1072,7 +1083,14 @@ fn layout_the_storage_keys_follow_declaration_order() {
         .collect();
     assert_eq!(
         bytes,
-        vec![vec![0u8], vec![1u8], vec![2u8], vec![3u8], vec![4u8]],
+        vec![
+            vec![0u8],
+            vec![1u8],
+            vec![2u8],
+            vec![3u8],
+            vec![4u8],
+            vec![5u8]
+        ],
         "a StorageKey is appended, never inserted"
     );
 }
@@ -1135,18 +1153,22 @@ fn layout_the_pool_state_keeps_its_field_order_and_prefixes() {
     p.passport_base = 10;
     p.pending_base = Some((11, 12));
     p.floor_base = 13;
+    p.foreign_domain_id = 14;
     let pool_hex = hex(&near_sdk::borsh::to_vec(&p).unwrap());
     assert_eq!(
         pool_hex,
         format!(
-            "{V1_HEX}{}{}{}{}{}",
+            "{V1_HEX}{}{}{}{}{}{}{}{}",
             "0100000004",
             "0a000000000000000000000000000000",
             "010b0000000000000000000000000000000c00000000000000",
             "0d000000000000000000000000000000",
+            "0100000005",
+            "1600000076312e7369676e65722d70726f642e746573746e6574",
+            "0e00000000000000",
             "02000000"
         ),
-        "Pool v2: the v1 bytes, then the records prefix (4), passport_base u128, pending_base Option<(u128, u64)>, floor_base u128, version u32"
+        "Pool v2: the v1 bytes, then the records prefix (4), passport_base u128, pending_base Option<(u128, u64)>, floor_base u128, the base checks prefix (5), mpc_signer string, foreign_domain_id u64, version u32"
     );
 }
 
@@ -1715,7 +1737,7 @@ fn write_v1_state() {
 #[test]
 fn migrate_moves_every_field_and_backfills_only_what_the_state_proves() {
     write_v1_state();
-    let p = Pool::migrate(U128(NEAR));
+    let p = Pool::migrate(U128(NEAR), acct(SIGNER), 3);
     assert_eq!(
         (
             p.owner_id.clone(),
@@ -1751,6 +1773,12 @@ fn migrate_moves_every_field_and_backfills_only_what_the_state_proves() {
     assert_eq!(
         (pv.base.0, pv.pending_base, pv.version),
         (NEAR, None, STATE_VERSION)
+    );
+    // AIR-350: migrate sets the signer and the domain it is given, not the defaults of `new`
+    let cfg = p.get_base_check_config();
+    assert_eq!(
+        (cfg.mpc_signer, cfg.domain_id, cfg.fee.0),
+        (acct(SIGNER), 3, BASE_CHECK_FEE)
     );
     // BORROWER: two cards, each one line, each a default; the cleared loss is not a recovery, the open loss is not a write-off
     let pp = passport(&p, CARD);
@@ -1828,7 +1856,7 @@ fn migrate_of_the_live_shape_gives_one_default_and_score_200() {
     };
     env::state_write(&v1);
     drop(v1);
-    let p = Pool::migrate(U128(NEAR));
+    let p = Pool::migrate(U128(NEAR), acct(SIGNER), 3);
     let pp = passport(&p, CARD);
     assert_eq!(
         (pp.score, pp.limit_cap.0, pp.record.defaults),
@@ -1839,10 +1867,10 @@ fn migrate_of_the_live_shape_gives_one_default_and_score_200() {
 #[test]
 fn migrate_twice_is_refused() {
     write_v1_state();
-    let p = Pool::migrate(U128(NEAR));
+    let p = Pool::migrate(U128(NEAR), acct(SIGNER), 3);
     env::state_write(&p);
     drop(p);
-    let msg = panics(|| Pool::migrate(U128(NEAR)));
+    let msg = panics(|| Pool::migrate(U128(NEAR), acct(SIGNER), 3));
     assert!(msg.contains("Cannot deserialize"), "{msg}");
 }
 
@@ -1882,5 +1910,410 @@ fn the_c1108d_wasm_is_pinned() {
         hex(&sha),
         "1f915ce22956f33c4b65d092838c0429e2255dd6d224b6c58db8f9b941343419",
         "res/airlock_credit_c1108d.wasm is the code deployed on pool.airlock-credit-c1108d.testnet"
+    );
+}
+
+// ---- the Base payment check (AIR-350) ----
+
+const SIGNER: &str = "signer.test.near";
+const TX: &str = "943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63";
+const HASH: &str = "b38ee2231f49b349ec841663233049d739fbd6b00c786b729cda8814b92021c1";
+/// The answer the testnet signer gave for `TX` on 2026-11-10 (research notes, AIR-342 spike).
+const ANSWER: &str = r#"{"payload_hash":"b38ee2231f49b349ec841663233049d739fbd6b00c786b729cda8814b92021c1","signature":{"scheme":"Secp256k1","big_r":{"affine_point":"026424731f59b19f8b6fbe27e2c7c0d080920fa54011cc29b2767e601efffbe43e"},"s":{"scalar":"5866b53569dcbe797b3049205f49d911c7a1bf03be94d03d2dac6e28fab6871e"},"recovery_id":0}}"#;
+
+/// A pool that asks `SIGNER` on domain 3, with an LP's deposit in it.
+fn checking_pool() -> Pool {
+    call_as(OWNER, 0, NOW);
+    let mut p = Pool::new(
+        acct(OWNER),
+        Some(near_sdk::json_types::U64(0)),
+        None,
+        Some(acct(SIGNER)),
+        Some(3),
+    );
+    call_as(LP1, 10 * NEAR, NOW);
+    p.deposit();
+    p
+}
+
+/// `who` asks about `tx` with `fee` attached and 300 Tgas prepaid.
+fn ask(p: &mut Pool, who: &str, tx: &str, fee: u128) {
+    testing_env!(ctx(who, fee, NOW).prepaid_gas(Gas::from_tgas(300)).build());
+    let _ = p.check_base_payment(tx.to_string());
+}
+
+/// Runs `on_base_check` with the signer's `result`.
+fn answer(p: &mut Pool, tx: &str, who: &str, fee: u128, result: PromiseResult) {
+    testing_env!(
+        ctx(POOL, 0, NOW + 18_000).build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![result]
+    );
+    p.on_base_check(tx.to_string(), acct(who), U128(fee));
+}
+
+fn ok_answer() -> PromiseResult {
+    PromiseResult::Successful(ANSWER.as_bytes().to_vec())
+}
+
+fn events(name: &str) -> Vec<near_sdk::serde_json::Value> {
+    get_logs()
+        .iter()
+        .filter_map(|l| l.strip_prefix("EVENT_JSON:"))
+        .map(|j| near_sdk::serde_json::from_str::<near_sdk::serde_json::Value>(j).unwrap())
+        .filter(|e| e["event"] == name)
+        .collect()
+}
+
+#[test]
+fn base_check_refuses_an_id_that_is_not_64_lowercase_hex() {
+    let mut p = checking_pool();
+    let upper = TX.to_ascii_uppercase();
+    let with_0x = format!("0x{}", &TX[2..]);
+    let non_hex = format!("{}g", &TX[..63]);
+    for bad in ["", &TX[..63], &format!("{TX}0"), &with_0x, &upper, &non_hex] {
+        testing_env!(
+            ctx(LP1, BASE_CHECK_FEE, NOW)
+                .prepaid_gas(Gas::from_tgas(300))
+                .build()
+        );
+        let msg = panics(|| p.check_base_payment(bad.to_string()));
+        assert!(
+            msg.contains("tx_id must be exactly 64 lowercase hex characters"),
+            "{bad}: {msg}"
+        );
+    }
+    assert!(is_base_tx_id(TX));
+}
+
+#[test]
+fn base_check_refuses_a_fee_below_the_floor_and_too_little_gas() {
+    let mut p = checking_pool();
+    testing_env!(
+        ctx(LP1, BASE_CHECK_FEE - 1, NOW)
+            .prepaid_gas(Gas::from_tgas(300))
+            .build()
+    );
+    let msg = panics(|| p.check_base_payment(TX.to_string()));
+    assert!(msg.contains("at least 0.01 NEAR"), "{msg}");
+    testing_env!(
+        ctx(LP1, BASE_CHECK_FEE, NOW)
+            .prepaid_gas(Gas::from_tgas(59))
+            .build()
+    );
+    let msg = panics(|| p.check_base_payment(TX.to_string()));
+    assert!(msg.contains("at least 60 Tgas"), "{msg}");
+    // exactly the fee and the gas floor is enough
+    testing_env!(
+        ctx(LP1, BASE_CHECK_FEE, NOW)
+            .prepaid_gas(GAS_BASE_CHECK_MIN)
+            .build()
+    );
+    let _ = p.check_base_payment(TX.to_string());
+}
+
+#[test]
+fn base_check_asks_the_configured_signer_with_one_yocto() {
+    let mut p = checking_pool();
+    ask(&mut p, LP2, TX, BASE_CHECK_FEE);
+    let receipts = get_created_receipts();
+    let calls: Vec<_> = receipts
+        .iter()
+        .flat_map(|r| {
+            r.actions.iter().filter_map(move |a| match a {
+                near_sdk::mock::MockAction::FunctionCallWeight {
+                    method_name,
+                    args,
+                    attached_deposit,
+                    prepaid_gas,
+                    ..
+                } => Some((
+                    r.receiver_id.to_string(),
+                    String::from_utf8(method_name.clone()).unwrap(),
+                    near_sdk::serde_json::from_slice::<near_sdk::serde_json::Value>(args).unwrap(),
+                    attached_deposit.as_yoctonear(),
+                    prepaid_gas.as_tgas(),
+                )),
+                _ => None,
+            })
+        })
+        .collect();
+    assert_eq!(calls.len(), 2, "{calls:?}");
+    let (to, method, args, deposit, tgas) = calls[0].clone();
+    assert_eq!(
+        (to.as_str(), method.as_str(), deposit),
+        (SIGNER, "verify_foreign_transaction", 1)
+    );
+    assert!(tgas >= 20, "{tgas} Tgas");
+    assert_eq!(
+        args,
+        near_sdk::serde_json::json!({"request":{"request":{"Base":{"tx_id":TX,"extractors":["BlockHash"],"finality":"Finalized"}},"domain_id":3,"payload_version":1}})
+    );
+    let (to, method, args, deposit, _) = calls[1].clone();
+    assert_eq!(
+        (to.as_str(), method.as_str(), deposit),
+        (POOL, "on_base_check", 0)
+    );
+    assert_eq!(
+        args,
+        near_sdk::serde_json::json!({"tx_id": TX, "asked_by": LP2, "fee": BASE_CHECK_FEE.to_string()})
+    );
+}
+
+#[test]
+fn a_signed_answer_is_recorded_and_the_view_returns_it() {
+    let mut p = checking_pool();
+    assert_eq!(p.get_base_check(TX.to_string()), None);
+    ask(&mut p, LP2, TX, BASE_CHECK_FEE);
+    answer(&mut p, TX, LP2, BASE_CHECK_FEE, ok_answer());
+    let got = p.get_base_check(TX.to_string()).expect("recorded");
+    assert_eq!(
+        (
+            got.tx_id.as_str(),
+            got.payload_hash.as_str(),
+            got.asked_by.as_str(),
+            got.recorded_ms.0
+        ),
+        (TX, HASH, LP2, NOW + 18_000)
+    );
+    let sent: near_sdk::serde_json::Value = near_sdk::serde_json::from_str(ANSWER).unwrap();
+    let stored: near_sdk::serde_json::Value =
+        near_sdk::serde_json::from_str(&got.signature).unwrap();
+    assert_eq!(
+        stored, sent["signature"],
+        "the signature object as returned"
+    );
+    let ev = events("base_payment_checked");
+    assert_eq!(ev.len(), 1);
+    assert_eq!(
+        ev[0]["data"][0],
+        near_sdk::serde_json::json!({"tx_id": TX, "payload_hash": HASH, "asked_by": LP2})
+    );
+    assert!(transfers().is_empty(), "exactly the fee: nothing goes back");
+    // a fee above the floor: the excess goes back
+    const TX2: &str = "0000000000000000000000000000000000000000000000000000000000000002";
+    answer(&mut p, TX2, LP2, BASE_CHECK_FEE + 7, ok_answer());
+    assert_eq!(transfers(), vec![(LP2.to_string(), 7)]);
+    // the config view
+    let cfg = p.get_base_check_config();
+    assert_eq!(
+        (cfg.mpc_signer.as_str(), cfg.domain_id, cfg.fee.0),
+        (SIGNER, 3, BASE_CHECK_FEE)
+    );
+}
+
+#[test]
+fn new_defaults_to_the_testnet_signer_and_domain_3() {
+    let p = pool();
+    let cfg = p.get_base_check_config();
+    assert_eq!(
+        (cfg.mpc_signer.as_str(), cfg.domain_id),
+        ("v1.signer-prod.testnet", 3)
+    );
+}
+
+#[test]
+fn a_recorded_id_is_refused_and_a_late_duplicate_keeps_the_earlier_answer() {
+    let mut p = checking_pool();
+    // two checks in flight for one id: both are sent
+    ask(&mut p, LP1, TX, BASE_CHECK_FEE);
+    ask(&mut p, LP2, TX, BASE_CHECK_FEE);
+    answer(&mut p, TX, LP1, BASE_CHECK_FEE, ok_answer());
+    // the later answer keeps the earlier record and refunds the later fee less the yocto the signer took
+    let other = ANSWER.replace(HASH, &"ab".repeat(32));
+    answer(
+        &mut p,
+        TX,
+        LP2,
+        BASE_CHECK_FEE,
+        PromiseResult::Successful(other.into_bytes()),
+    );
+    let got = p.get_base_check(TX.to_string()).unwrap();
+    assert_eq!(
+        (got.payload_hash.as_str(), got.asked_by.as_str()),
+        (HASH, LP1)
+    );
+    assert_eq!(transfers(), vec![(LP2.to_string(), BASE_CHECK_FEE - 1)]);
+    let ev = events("base_payment_unchecked");
+    assert_eq!(ev.len(), 1);
+    assert_eq!(
+        ev[0]["data"][0]["reason"],
+        "this Base transaction is already recorded"
+    );
+    // a new check of a recorded id is refused up front
+    testing_env!(
+        ctx(LP2, BASE_CHECK_FEE, NOW)
+            .prepaid_gas(Gas::from_tgas(300))
+            .build()
+    );
+    let msg = panics(|| p.check_base_payment(TX.to_string()));
+    assert!(msg.contains("already recorded"), "{msg}");
+}
+
+#[test]
+fn a_failed_check_records_nothing_and_refunds_the_fee() {
+    let mut p = checking_pool();
+    ask(&mut p, LP2, TX, BASE_CHECK_FEE);
+    answer(&mut p, TX, LP2, BASE_CHECK_FEE, PromiseResult::Failed);
+    assert_eq!(p.get_base_check(TX.to_string()), None);
+    assert_eq!(transfers(), vec![(LP2.to_string(), BASE_CHECK_FEE - 1)]);
+    let ev = events("base_payment_unchecked");
+    assert_eq!(ev.len(), 1);
+    assert_eq!(
+        ev[0]["data"][0],
+        near_sdk::serde_json::json!({"tx_id": TX, "asked_by": LP2, "reason": "the signer call failed or timed out", "refund": (BASE_CHECK_FEE - 1).to_string()})
+    );
+    assert!(events("base_payment_checked").is_empty());
+    // a failed refund is parked for claim like every payout
+    testing_env!(
+        ctx(POOL, 0, NOW).build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![PromiseResult::Failed]
+    );
+    p.on_payout(acct(LP2), U128(BASE_CHECK_FEE - 1));
+    assert_eq!(p.get_unclaimed(acct(LP2)).0, BASE_CHECK_FEE - 1);
+    // the id can be asked again
+    ask(&mut p, LP2, TX, BASE_CHECK_FEE);
+}
+
+#[test]
+fn an_unreadable_or_oversized_answer_records_nothing() {
+    let sig = r#"{"scheme":"Secp256k1","recovery_id":0}"#;
+    let long_sig = format!(r#"{{"pad":"{}"}}"#, "a".repeat(MAX_BASE_SIGNATURE_BYTES));
+    let oversized = format!(
+        r#"{{"payload_hash":"{HASH}","signature":{sig},"pad":"{}"}}"#,
+        "a".repeat(MAX_BASE_ANSWER_BYTES)
+    );
+    let cases: Vec<(String, &str)> = vec![
+        ("not json".to_string(), "the answer is not JSON"),
+        (
+            format!(r#"{{"signature":{sig}}}"#),
+            "no payload_hash string",
+        ),
+        (
+            format!(r#"{{"payload_hash":7,"signature":{sig}}}"#),
+            "no payload_hash string",
+        ),
+        (
+            format!(r#"{{"payload_hash":"{}","signature":{sig}}}"#, &HASH[..62]),
+            "not 64 hex",
+        ),
+        (
+            format!(
+                r#"{{"payload_hash":"{}zz","signature":{sig}}}"#,
+                &HASH[..62]
+            ),
+            "not 64 hex",
+        ),
+        (
+            format!(r#"{{"payload_hash":"{HASH}"}}"#),
+            "no signature object",
+        ),
+        (
+            format!(r#"{{"payload_hash":"{HASH}","signature":"{}"}}"#, "ab"),
+            "no signature object",
+        ),
+        (
+            format!(r#"{{"payload_hash":"{HASH}","signature":{long_sig}}}"#),
+            "longer than 512 bytes",
+        ),
+        (oversized, "longer than 2048 bytes"),
+    ];
+    for (body, reason) in cases {
+        let mut p = checking_pool();
+        answer(
+            &mut p,
+            TX,
+            LP2,
+            BASE_CHECK_FEE,
+            PromiseResult::Successful(body.clone().into_bytes()),
+        );
+        assert_eq!(p.get_base_check(TX.to_string()), None, "{body}");
+        let ev = events("base_payment_unchecked");
+        assert_eq!(ev.len(), 1, "{body}");
+        let got = ev[0]["data"][0]["reason"].as_str().unwrap().to_string();
+        assert!(got.contains(reason), "{body}: {got}");
+        assert_eq!(transfers(), vec![(LP2.to_string(), BASE_CHECK_FEE - 1)]);
+    }
+    // an upper case hash is read and stored lower case
+    let mut p = checking_pool();
+    let upper = ANSWER.replace(HASH, &HASH.to_ascii_uppercase());
+    answer(
+        &mut p,
+        TX,
+        LP2,
+        BASE_CHECK_FEE,
+        PromiseResult::Successful(upper.into_bytes()),
+    );
+    assert_eq!(p.get_base_check(TX.to_string()).unwrap().payload_hash, HASH);
+}
+
+#[test]
+fn the_base_check_fee_cannot_move_the_share_price() {
+    let mut p = checking_pool();
+    let before = p.get_pool();
+    let fields = |p: &Pool| {
+        (
+            p.idle,
+            p.lent,
+            p.total_shares,
+            p.fees_earned,
+            p.losses,
+            p.staked,
+        )
+    };
+    let before_fields = fields(&p);
+    // a recorded check, a failed one, an unreadable one, and a fee above the floor
+    ask(&mut p, LP2, TX, BASE_CHECK_FEE);
+    answer(&mut p, TX, LP2, BASE_CHECK_FEE, ok_answer());
+    const TX3: &str = "0000000000000000000000000000000000000000000000000000000000000003";
+    ask(&mut p, LP2, TX3, 3 * BASE_CHECK_FEE);
+    answer(&mut p, TX3, LP2, 3 * BASE_CHECK_FEE, PromiseResult::Failed);
+    answer(
+        &mut p,
+        TX3,
+        LP2,
+        BASE_CHECK_FEE,
+        PromiseResult::Successful(b"{}".to_vec()),
+    );
+    answer(&mut p, TX3, LP2, 5 * BASE_CHECK_FEE, ok_answer());
+    // the account balance grew by the fees; the pool accounts with its own fields
+    testing_env!(
+        ctx(LP2, 0, NOW)
+            .account_balance(NearToken::from_near(1_000))
+            .build()
+    );
+    assert_eq!(fields(&p), before_fields);
+    assert_eq!(p.get_pool(), before);
+    assert_eq!(p.get_lp(acct(LP1)).value.0, 10 * NEAR);
+}
+
+#[test]
+fn the_fee_covers_the_storage_of_the_largest_record() {
+    let mut p = checking_pool();
+    let longest: AccountId = format!("{}.near", "a".repeat(59)).parse().unwrap();
+    assert_eq!(longest.as_str().len(), 64);
+    let sig = format!(r#"{{"p":"{}"}}"#, "a".repeat(MAX_BASE_SIGNATURE_BYTES - 8));
+    assert_eq!(sig.len(), MAX_BASE_SIGNATURE_BYTES);
+    let body = format!(r#"{{"payload_hash":"{HASH}","signature":{sig}}}"#);
+    let used = env::storage_usage();
+    answer(
+        &mut p,
+        TX,
+        longest.as_str(),
+        BASE_CHECK_FEE,
+        PromiseResult::Successful(body.into_bytes()),
+    );
+    p.base_checks.flush();
+    assert!(p.get_base_check(TX.to_string()).is_some());
+    let grew = u128::from(env::storage_usage() - used);
+    let cost = grew * env::storage_byte_cost().as_yoctonear();
+    assert!(
+        cost < BASE_CHECK_FEE, // the fee also pays the 1 yocto the signer takes
+        "{grew} bytes cost {cost} yocto, above the fee"
     );
 }

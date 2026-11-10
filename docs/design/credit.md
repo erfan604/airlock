@@ -280,9 +280,11 @@ held and refused payments are not inputs: they are the guard working, not the bo
 - `src/legacy.rs` holds `PoolV1`, a verbatim copy of the deployed `Pool` (the c1108d layout, pinned by the layout tests).
 - `Pool` gains, after `min_hold_ms`: `records: LookupMap<AccountId, CreditRecord>` under a new `StorageKey::Records` appended after
   `Locks` (prefix byte 4), then `passport_base: u128`, `pending_base: Option<(u128, u64)>` (value, effective time in ms),
-  `floor_base: u128` (the highest base in force so far) and `version: u32` (2). `Card`, `Line`, `LineState` and the four existing prefixes keep their bytes, so no stored card or LP entry is
+  `floor_base: u128` (the highest base in force so far), then (AIR-350, see below) `base_checks: LookupMap<String, BaseCheck>` under a new
+  `StorageKey::BaseChecks` appended after `Records` (prefix byte 5), `mpc_signer: AccountId` and `foreign_domain_id: u64`, and last
+  `version: u32` (2). `Card`, `Line`, `LineState` and the four existing prefixes keep their bytes, so no stored card or LP entry is
   rewritten.
-- `migrate(passport_base: U128)` is `#[private] #[init(ignore_state)]`: it reads `PoolV1`, moves every field unchanged, sets the base (and `floor_base` to it) and
+- `migrate(passport_base: U128, mpc_signer: AccountId, foreign_domain_id: u64)` is `#[private] #[init(ignore_state)]`: it reads `PoolV1`, moves every field unchanged, sets the base (and `floor_base` to it) and
   backfills the records. Run on an already migrated state it fails (the stored bytes are no longer a `PoolV1`). The live upgrade is ONE
   transaction with two actions, `DeployContract` then `FunctionCall migrate`, so the pool never runs new code on old state.
 - The deployed bytes are kept as `res/airlock_credit_c1108d.wasm`, sha256
@@ -401,8 +403,8 @@ and 0.56 NEAR after.
   `near_decimal`), `vectors/passport.json` (11 records with score, reasons and cap; read by `passport_vectors_match`).
 - `res/airlock_credit.wasm` stays the c1108d bytes (sha256 `1f915ce2...`, the hash docs/EVIDENCE.md and
   `scripts/credit-evidence-check.sh` read); `res/airlock_credit_c1108d.wasm` is the same bytes pinned by `the_c1108d_wasm_is_pinned` for
-  the rehearsal; `res/airlock_credit_v2.wasm` is the upgrade the live run deploys (sha256
-  `ca3cc0578e8ea66324bbc589fbd14f5069e8ae50641c53a79de83f3ee8cd32be`, code hash `EcT5rh9xoPkighMRmiDKm8nV8wGYkew8c5QvgvwgLGb7`). Its
+  the rehearsal; `res/airlock_credit_v2.wasm` is the upgrade the live run deploys (rebuilt with AIR-350; sha256
+  `e754b6aa1b6f06dde89fb388d799d7adfb4589429a0c9fe745073018109f0bcd`, code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`). Its
   preflight refuses to run unless the v2 file equals the wasm the sandbox rehearsal ran.
 - Tests: 62 unit tests (15 new ones failed against stubs of the rules before the rules were written: score, cap, near string,
   record writes, backfill, cap base) and 5 sandbox tests. The rehearsal passed on its first run; it is the gate, and every rule it walks
@@ -412,3 +414,79 @@ and 0.56 NEAR after.
   and a paused card refuses the agent's payment. `UNPAUSE_CARD=1` lets the issuer unpause it as the first live step, logged as a row.
   Storage needs no top-up: the pool holds 5.45 NEAR against 4.92 NEAR needed.
 - Not live yet: the upgrade waits for the coordinator's LIVE_OK handshake. Nothing in README, CLAIMS or EVIDENCE claims the Passport.
+
+## AIR-350: the pool asks the MPC network whether a Base payment landed, and keeps the answer
+
+The AIR-342 spike (2026-11-10) showed the testnet MPC signer answers `verify_foreign_transaction` for a Base Sepolia transaction, but the
+answer lived in the receipt of whoever asked and nowhere else: the signer keeps no copy. With AIR-350 the pool is the asker and
+the keeper: it asks the MPC network and records its signed answer, so anyone can later read with a view that a given Base Sepolia
+transaction was checked back on NEAR. It enforces nothing:
+no line, repay, default or cap reads it.
+
+### API
+
+- `check_base_payment(tx_id: String) -> Promise`, `#[payable]`, anyone. `tx_id` is exactly 64 lowercase hex characters, no 0x. The
+  attached deposit is at least `BASE_CHECK_FEE` (0.01 NEAR) and the prepaid gas at least 60 Tgas (`GAS_BASE_CHECK_MIN`), each refused
+  with its own message. An id already recorded is refused. The call sends `verify_foreign_transaction` to the configured signer with
+  `{"request":{"request":{"Base":{"tx_id":<tx_id>,"extractors":["BlockHash"],"finality":"Finalized"}},"domain_id":<domain>,"payload_version":1}}`,
+  1 yocto and 20 Tgas, then `on_base_check` with 20 Tgas of static gas.
+- `on_base_check(tx_id: String, asked_by: AccountId, fee: U128)`, `#[private]`. It reads at most 2,048 bytes of the answer. A readable
+  answer (`payload_hash` a string of 64 hex, stored lowercase; `signature` a JSON object of at most 512 bytes as compact JSON) for an id
+  not yet recorded is stored as `BaseCheck { payload_hash, signature, asked_by, recorded_ms }`, the event `base_payment_checked` is
+  emitted and any fee above 0.01 NEAR goes back. A failed or timed out call, a longer answer, an unreadable one, or an id recorded while
+  this check was in flight stores nothing, emits `base_payment_unchecked` with the reason, and refunds the fee less the 1 yocto sent to
+  the signer through `payout` (a failed refund is parked in `unclaimed` for `claim`).
+- Views: `get_base_check(tx_id) -> Option<BaseCheckView>` (`tx_id`, `payload_hash`, `signature`, `asked_by`, `recorded_ms`) and
+  `get_base_check_config() -> { mpc_signer, domain_id, fee }`.
+- `new` takes optional `mpc_signer` and `foreign_domain_id` (defaults `v1.signer-prod.testnet` and 3, the domain whose purpose is
+  ForeignTx on testnet); `migrate` takes both explicitly, and `scripts/credit-passport-run.ts` passes `v1.signer-prod.testnet` and 3 and
+  reads them back from `get_base_check_config` after the upgrade.
+
+### Choices
+
+- Two checks of one id can be in flight at once: the call refuses an id already recorded, and the callback keeps the record
+  written earlier and refunds the later fee. A pending marker would refuse the second check up front, but a callback that never ran would
+  leave the id blocked for good; the refund path needs no extra state.
+- The signature is kept as the compact JSON of the object the signer returned. The contract's JSON library sorts object keys, so the
+  stored text may order keys differently from the receipt; the values are the same.
+- The fee is not pool money: no pool field (`idle`, `lent`, `total_shares`, `fees_earned`, `losses`, `staked`) moves, so the share price
+  cannot move. 0.01 NEAR covers the storage of the largest record the bounds allow (a 64 character account, a 512 byte signature) plus
+  the 1 yocto, pinned by `the_fee_covers_the_storage_of_the_largest_record`.
+
+### Limits
+
+- The answer says the transaction is final and succeeded and binds its id to a block hash (the `BlockHash` extractor). It does not name
+  the payee or the amount.
+- The pool does not recompute the payload hash and does not check the signature against `public_key(domain 3)`; it records what the
+  signer returned. Anyone can check both offline, as the AIR-342 spike did.
+- V1 answers successes and not failures: a failed or unfinalized Base transaction gets no answer, which the pool records as nothing (refund).
+- There is no sandbox test of a signer answer: `contracts/mock-mpc` has no `verify_foreign_transaction` and its wasm is pinned for the
+  policy tests, so it is not changed. The answer path is covered by unit tests with mocked promise results built from the answer the
+  testnet signer gave on 2026-11-10. The sandbox walks the refusals, the private callback and the failure path (the sandbox has no
+  `v1.signer-prod.testnet`, so the call fails and the fee less 1 yocto goes back).
+
+### Tests
+
+| Test | Rule |
+| --- | --- |
+| `base_check_refuses_an_id_that_is_not_64_lowercase_hex` | empty, 63 and 65 characters, a 0x prefix, upper case and a non hex character are refused |
+| `base_check_refuses_a_fee_below_the_floor_and_too_little_gas` | one yocto under the fee and 59 Tgas are refused; exactly the fee and 60 Tgas pass |
+| `base_check_asks_the_configured_signer_with_one_yocto` | one receipt goes to the configured signer, `verify_foreign_transaction`, 1 yocto, at least 20 Tgas, the exact args; the other is `on_base_check` on the pool |
+| `a_signed_answer_is_recorded_and_the_view_returns_it` | the record, the view, the event, no refund at exactly the fee, the excess back above it, the config view |
+| `a_recorded_id_is_refused_and_a_late_duplicate_keeps_the_earlier_answer` | two checks in flight: the earlier answer stays, the later fee goes back; a recorded id is refused up front |
+| `a_failed_check_records_nothing_and_refunds_the_fee` | no record, the fee less 1 yocto back, the event, a failed refund parked for `claim`, the id can be asked again |
+| `an_unreadable_or_oversized_answer_records_nothing` | not JSON, no or a non string hash, a short or non hex hash, no or a non object signature, a signature over 512 bytes, an answer over 2,048 bytes; an upper case hash is stored lowercase |
+| `the_base_check_fee_cannot_move_the_share_price` | checks recorded, failed, unreadable and overpaid leave `get_pool` and every pool field unchanged |
+| `the_fee_covers_the_storage_of_the_largest_record` | the storage of the largest record costs less than the fee |
+| `new_defaults_to_the_testnet_signer_and_domain_3`, `migrate_moves_every_field_and_backfills_only_what_the_state_proves`, `layout_*` | the defaults, migrate sets the signer and domain it is given, the appended prefix 5 and fields |
+| sandbox `upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works` | after the upgrade: the config view, a 0x id and a fee under the floor refused, `on_base_check` called from an account refused as private, a check against the absent signer records nothing, refunds the fee less 1 yocto with nothing parked, and leaves `get_pool` unchanged |
+
+Mutants are listed in docs/mutation.md.
+
+### AIR-350 as built
+
+- `src/lib.rs` (`BaseCheck`, `check_base_payment`, `on_base_check`, `parse_base_answer`, the two views, the state fields),
+  `src/tests.rs` (10 new tests: 8 failed against stubs of the two calls before they were written; the share price test, a guard, and
+  the defaults test passed against the stubs), `tests/pool.rs` (the sandbox checks above), `scripts/credit-passport-run.ts` (the migrate args).
+- `res/airlock_credit_v2.wasm` is rebuilt with it: sha256 `e754b6aa1b6f06dde89fb388d799d7adfb4589429a0c9fe745073018109f0bcd`, code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`.
+- Not live: nothing in README, CLAIMS or EVIDENCE claims it.

@@ -70,41 +70,41 @@ Code hashes: `docs/EVIDENCE.md` line 350.
 **1.7** A plain transfer to the pool cannot move the share price. *(in force)*
 
 - Enforced: `contracts/airlock-credit/src/lib.rs` 3 to 5, `own accounting fields`
-- Enforced: `contracts/airlock-credit/src/lib.rs` 290 to 293, `assets_at`
-- Tested: `contracts/airlock-credit/src/tests.rs` 174, `a_plain_transfer_to_the_contract_cannot_move_the_share_price`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 383 to 386, `assets_at`
+- Tested: `contracts/airlock-credit/src/tests.rs` 178, `a_plain_transfer_to_the_contract_cannot_move_the_share_price`
 
 **1.8** Deposits and withdrawals price a share the same way, and every rounding goes in the pool's favour. *(in force)*
 
-- Enforced: `contracts/airlock-credit/src/lib.rs` 482, `deposit`
-- Enforced: `contracts/airlock-credit/src/lib.rs` 517 to 519, `withdraw`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 585, `deposit`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 620 to 622, `withdraw`
 - Enforced: `contracts/airlock-credit/src/math.rs` 54 to 70, `share math`
 - Tested: `contracts/airlock-credit/src/math.rs` 247, `withdraw_rounds_down_and_never_pays_more_than_pro_rata`
 - Tested: `contracts/airlock-credit/src/math.rs` 258, `deposit_then_withdraw_never_gains`
-- Tested: `contracts/airlock-credit/src/tests.rs` 1046, `property_random_operations_keep_the_accounting`
+- Tested: `contracts/airlock-credit/src/tests.rs` 1056, `property_random_operations_keep_the_accounting`
 - Shown: a lender's 3 NEAR withdrawn as 3.03 NEAR, transaction `5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs` (`docs/EVIDENCE.md` line 380)
 
 **1.9** An overdue line counts as zero in the share price before anyone calls default, and deposits stay closed while a line is overdue or a loss is unrecovered. *(in force)*
 
-- Enforced: `contracts/airlock-credit/src/lib.rs` 271 to 278, `impaired_at`
-- Enforced: `contracts/airlock-credit/src/lib.rs` 476 to 483, `deposit`
-- Tested: `contracts/airlock-credit/src/tests.rs` 768, `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default`
-- Tested: `contracts/airlock-credit/src/tests.rs` 429, `deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default`
-- Tested: `contracts/airlock-credit/src/tests.rs` 666, `deposits_stay_closed_between_a_default_and_its_recovery`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 368 to 375, `impaired_at`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 579 to 586, `deposit`
+- Tested: `contracts/airlock-credit/src/tests.rs` 778, `an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default`
+- Tested: `contracts/airlock-credit/src/tests.rs` 433, `deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default`
+- Tested: `contracts/airlock-credit/src/tests.rs` 670, `deposits_stay_closed_between_a_default_and_its_recovery`
 - Shown: a deposit refused while a line was past due, transaction `5n4ZoQW6fe5KSd7SqNunDWwRQhe4xLepH5ZmjfH9dgon` (`docs/EVIDENCE.md` line 383)
 - Shown: a deposit refused before a loss was recovered, transaction `6Hzfv7JbAobTBbNMr7x8PuuCbDgN3JQt5y5Xg4w6eTQs` (`docs/EVIDENCE.md` line 385)
 
 **1.10** A lender's shares can be withdrawn by that lender alone, once the hold has passed, from money the pool holds idle. *(in force)*
 
-- Enforced: `contracts/airlock-credit/src/lib.rs` 496 to 519, `withdraw`
-- Tested: `contracts/airlock-credit/src/tests.rs` 190, `withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond`
-- Tested: `contracts/airlock-credit/src/tests.rs` 723, `shares_are_held_for_min_hold_ms_after_a_deposit`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 605 to 628, `withdraw`
+- Tested: `contracts/airlock-credit/src/tests.rs` 194, `withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond`
+- Tested: `contracts/airlock-credit/src/tests.rs` 733, `shares_are_held_for_min_hold_ms_after_a_deposit`
 - Shown: a lender withdraws all its shares, transaction `5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs` (`docs/EVIDENCE.md` line 380)
 
 **1.11** On default the collateral pays the principal before the fee, and what it does not cover is a loss to the lenders. *(in force)*
 
-- Enforced: `contracts/airlock-credit/src/lib.rs` 960 to 997, `default`
-- Tested: `contracts/airlock-credit/src/tests.rs` 524, `default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss`
-- Tested: `contracts/airlock-credit/src/tests.rs` 546, `default_with_collateral_above_what_is_owed_returns_the_rest`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1097 to 1134, `default`
+- Tested: `contracts/airlock-credit/src/tests.rs` 528, `default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss`
+- Tested: `contracts/airlock-credit/src/tests.rs` 550, `default_with_collateral_above_what_is_owed_returns_the_rest`
 - Shown: a default: collateral seized, the rest a loss, transaction `6Pk6PR71dnoPJGjxy1CpQWNGkdgE6a7DmEec5ZnJQcxA` (`docs/EVIDENCE.md` line 384)
 
 ## 2. Limits
@@ -123,28 +123,28 @@ Code hashes: `docs/EVIDENCE.md` line 350.
 
 **2.4** The fee is charged on what the card kept, so a sweep before the repay lowers it, and a card that returns everything owes no fee. *(in force)*
 
-- Enforced: `contracts/airlock-credit/src/lib.rs` 952 to 955, `repay`
-- Tested: `contracts/airlock-credit/src/tests.rs` 480, `repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral`
-- Tested: `contracts/airlock-credit/src/tests.rs` 512, `a_fully_swept_line_owes_nothing`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1055 to 1058, `repay`
+- Tested: `contracts/airlock-credit/src/tests.rs` 484, `repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral`
+- Tested: `contracts/airlock-credit/src/tests.rs` 516, `a_fully_swept_line_owes_nothing`
 - Shown: a repay of 0.5 NEAR kept plus its 10 percent fee, transaction `N2344KkGfQG5e3L7p6jwDL8bonzcPoT8mvdqFNhvEi8` (`docs/EVIDENCE.md` line 379)
 
 **2.5** The issuer sets the terms of new lines. The collateral ratio of new lines changes at once in either direction, and open lines keep theirs. From the upgrade, a cut of the Passport base applies at once and a raise waits for the hold, 60 seconds on this pool. A cut does not lower the draw a repay must keep to count toward the score, and the cap counts what one borrower account holds across all its cards. *(from the upgrade)*
 
-- Enforced: `contracts/airlock-credit/src/lib.rs` 1034 to 1039, `set_collateral_bps`
-- Tested: `contracts/airlock-credit/src/tests.rs` 578, `the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs`
-- Enforced: `contracts/airlock-credit/src/lib.rs` 1046, `set_passport_base`
-- Enforced: `contracts/airlock-credit/src/lib.rs` 1065, `apply_passport_base`
-- Enforced: `contracts/airlock-credit/src/lib.rs` 715, `open_line refuses a limit above the cap`
-- Tested: `contracts/airlock-credit/src/tests.rs` 1575, `a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms`
-- Tested: `contracts/airlock-credit/src/tests.rs` 1532, `open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay`
-- Tested: `contracts/airlock-credit/src/tests.rs` 1359, `ten_dust_lines_kept_in_full_do_not_raise_the_score`
-- Tested: `contracts/airlock-credit/src/tests.rs` 1425, `a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count`
-- Tested: `contracts/airlock-credit/src/tests.rs` 1462, `the_cap_counts_what_the_borrower_holds_on_their_other_cards`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1137 to 1142, `set_collateral_bps`
+- Tested: `contracts/airlock-credit/src/tests.rs` 582, `the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1149, `set_passport_base`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1168, `apply_passport_base`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 818, `open_line refuses a limit above the cap`
+- Tested: `contracts/airlock-credit/src/tests.rs` 1597, `a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms`
+- Tested: `contracts/airlock-credit/src/tests.rs` 1554, `open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay`
+- Tested: `contracts/airlock-credit/src/tests.rs` 1381, `ten_dust_lines_kept_in_full_do_not_raise_the_score`
+- Tested: `contracts/airlock-credit/src/tests.rs` 1447, `a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count`
+- Tested: `contracts/airlock-credit/src/tests.rs` 1484, `the_cap_counts_what_the_borrower_holds_on_their_other_cards`
 
 **2.6** Lenders can leave 60 seconds after a deposit on this pool, and then for as much as the pool holds idle; money lent out waits for its repayment. Collateral is 30 percent of a line, and the pool bears any loss beyond it. *(in force)*
 
-- Enforced: `contracts/airlock-credit/src/lib.rs` 523 to 527, `withdraw`
-- Enforced: `contracts/airlock-credit/src/lib.rs` 35 to 36, `collateral ratio`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 626 to 630, `withdraw`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 38 to 39, `collateral ratio`
 - Measured: `docs/EVIDENCE.md` 390, `the pool's hold, read from the chain`
 
 **2.7** All of this runs on NEAR's test network with test money. The issuer, the borrower, the merchant and the agent are the team's own accounts, and so are the two lenders of the recorded run. *(in force)*
@@ -153,7 +153,7 @@ Code hashes: `docs/EVIDENCE.md` line 350.
 
 **2.8** The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.11 and limits 2.4 to 2.6 cite tests. *(in force)*
 
-- Tested: `contracts/airlock-credit/src/tests.rs` 1046, `the pool's property test`
+- Tested: `contracts/airlock-credit/src/tests.rs` 1056, `the pool's property test`
 
 **2.9** An hourly loop borrows 0.09 NEAR from the pool, pays the booked merchant and repays with a 10 percent fee. Its borrower and merchant are the team's accounts, so the fee the lenders earn from it is the team's own money. *(in force)*
 
@@ -164,9 +164,9 @@ Code hashes: `docs/EVIDENCE.md` line 350.
 ## Schedule of cited files
 
 - `bench/runs/recorded/transcripts/own-S01.A1.1.json`: 215
-- `contracts/airlock-credit/src/lib.rs`: 3 to 5, 35 to 36, 271 to 278, 290 to 293, 476 to 483, 482, 496 to 519, 517 to 519, 523 to 527, 715, 952 to 955, 960 to 997, 1034 to 1039, 1046, 1065
+- `contracts/airlock-credit/src/lib.rs`: 3 to 5, 38 to 39, 368 to 375, 383 to 386, 579 to 586, 585, 605 to 628, 620 to 622, 626 to 630, 818, 1055 to 1058, 1097 to 1134, 1137 to 1142, 1149, 1168
 - `contracts/airlock-credit/src/math.rs`: 54 to 70, 247, 258
-- `contracts/airlock-credit/src/tests.rs`: 174, 190, 429, 480, 512, 524, 546, 578, 666, 723, 768, 1046, 1359, 1425, 1462, 1532, 1575
+- `contracts/airlock-credit/src/tests.rs`: 178, 194, 433, 484, 516, 528, 550, 582, 670, 733, 778, 1056, 1381, 1447, 1484, 1554, 1597
 - `contracts/airlock-policy/src/escalation.rs`: 447 to 451
 - `contracts/airlock-policy/src/policy.rs`: 297, 478
 - `contracts/airlock-policy/src/redteam.rs`: 519

@@ -4,6 +4,8 @@
 // the contract balance, so a plain transfer to the contract cannot move the share price. Every state change happens before the promise that
 // moves NEAR; a transfer that can fail has a callback that restores the state or parks the amount for `claim`.
 // AIR-333 adds the Credit Passport: a record per borrower written by the pool's own events, a 0 to 1000 score, and a cap on the next line.
+// AIR-350 adds the Base payment check: the pool asks the MPC network (`verify_foreign_transaction`) whether a Base Sepolia transaction is
+// final and succeeded, and records its signed answer so anyone can read it later with a view. It enforces nothing about lines or money.
 use near_sdk::json_types::{U64, U128};
 use near_sdk::serde_json::json;
 use near_sdk::store::{IterableMap, LookupMap};
@@ -41,6 +43,24 @@ pub const MAX_CARDS: u32 = 100;
 const GAS_ROLES: Gas = Gas::from_tgas(10);
 const GAS_CALLBACK: Gas = Gas::from_tgas(10);
 
+/// AIR-350: the fee of one Base payment check, 0.01 NEAR. It pays the storage of the record and the 1 yocto the signer takes; it is never
+/// pool money (no pool field moves), and a check that records nothing refunds it less that 1 yocto.
+pub const BASE_CHECK_FEE: u128 = 10_000_000_000_000_000_000_000;
+/// The testnet MPC signer a pool made by `new` without one asks.
+pub const DEFAULT_MPC_SIGNER: &str = "v1.signer-prod.testnet";
+/// The signer's domain for foreign transaction checks on testnet (domain 3, purpose ForeignTx, checked live 2026-11-10).
+pub const DEFAULT_FOREIGN_DOMAIN: u64 = 3;
+/// The most bytes of the signer's answer the callback reads; a longer answer records nothing.
+pub const MAX_BASE_ANSWER_BYTES: usize = 2_048;
+/// The most bytes of the stored signature text, so the fee always covers the record's storage.
+pub const MAX_BASE_SIGNATURE_BYTES: usize = 512;
+/// Gas for the signer's `verify_foreign_transaction` (the testnet signer refuses under 15 Tgas).
+const GAS_MPC_VERIFY: Gas = Gas::from_tgas(20);
+/// Gas for `on_base_check`: it writes the record and may start a refund with its own 10 Tgas callback.
+const GAS_BASE_CHECK_CALLBACK: Gas = Gas::from_tgas(20);
+/// The prepaid gas `check_base_payment` needs: the signer call, the callback and the call itself.
+pub const GAS_BASE_CHECK_MIN: Gas = Gas::from_tgas(60);
+
 #[derive(BorshStorageKey)]
 #[near]
 pub enum StorageKey {
@@ -50,6 +70,73 @@ pub enum StorageKey {
     Locks,
     /// AIR-333: the Passport records, keyed by borrower account (appended: prefix byte 4)
     Records,
+    /// AIR-350: the Base payment checks, keyed by Base transaction id (appended: prefix byte 5)
+    BaseChecks,
+}
+
+/// AIR-350: what the MPC network answered when the pool asked about one Base Sepolia transaction. The answer says the transaction is final
+/// and succeeded and binds its id to a block hash; it does not name the payee or the amount, and the pool does not recompute the hash.
+#[near(serializers = [borsh])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BaseCheck {
+    /// the signed payload hash, 64 lowercase hex
+    pub payload_hash: String,
+    /// the signature object of the answer as compact JSON
+    pub signature: String,
+    /// the account that paid the fee
+    pub asked_by: AccountId,
+    pub recorded_ms: u64,
+}
+
+/// `BaseCheck` as JSON, with the transaction id it answers.
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BaseCheckView {
+    pub tx_id: String,
+    pub payload_hash: String,
+    pub signature: String,
+    pub asked_by: AccountId,
+    pub recorded_ms: U64,
+}
+
+/// Which signer and domain the pool asks, and the fee of one check.
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BaseCheckConfigView {
+    pub mpc_signer: AccountId,
+    pub domain_id: u64,
+    pub fee: U128,
+}
+
+/// True for a Base transaction id as the signer takes it: exactly 64 lowercase hex characters, no 0x.
+pub fn is_base_tx_id(tx_id: &str) -> bool {
+    tx_id.len() == 64
+        && tx_id
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+
+/// Reads the signer's answer `{payload_hash, signature}`: the hash must be 64 hex (stored lowercase) and the signature a JSON object of at
+/// most `MAX_BASE_SIGNATURE_BYTES` as compact JSON. Returns the hash and the signature text, or why the answer is not readable.
+pub fn parse_base_answer(bytes: &[u8]) -> Result<(String, String), &'static str> {
+    let v: near_sdk::serde_json::Value =
+        near_sdk::serde_json::from_slice(bytes).map_err(|_| "the answer is not JSON")?;
+    let hash = v
+        .get("payload_hash")
+        .and_then(|h| h.as_str())
+        .ok_or("the answer has no payload_hash string")?;
+    if hash.len() != 64 || !hash.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("the payload_hash is not 64 hex characters");
+    }
+    let sig = v
+        .get("signature")
+        .filter(|s| s.is_object())
+        .ok_or("the answer has no signature object")?;
+    let text = near_sdk::serde_json::to_string(sig).map_err(|_| "the signature is not readable")?;
+    if text.len() > MAX_BASE_SIGNATURE_BYTES {
+        return Err("the signature is longer than 512 bytes");
+    }
+    Ok((hash.to_ascii_lowercase(), text))
 }
 
 /// What the pool's own events prove about a borrower (AIR-333). Keyed by `Card.borrower`, so every card of one borrower shares it.
@@ -251,6 +338,12 @@ pub struct Pool {
     pub pending_base: Option<(u128, u64)>,
     /// the highest base this pool has had in force. It never falls, so a cut of the base cannot lower the draw a repay needs to count
     pub floor_base: u128,
+    /// AIR-350: the signed answers of the Base payment checks, keyed by Base transaction id
+    pub base_checks: LookupMap<String, BaseCheck>,
+    /// AIR-350: the MPC signer `check_base_payment` asks
+    pub mpc_signer: AccountId,
+    /// AIR-350: the signer's domain id for foreign transaction checks
+    pub foreign_domain_id: u64,
     /// the state version (`STATE_VERSION`)
     pub version: u32,
 }
@@ -398,6 +491,8 @@ impl Pool {
         owner_id: AccountId,
         min_hold_ms: Option<near_sdk::json_types::U64>,
         passport_base: Option<U128>,
+        mpc_signer: Option<AccountId>,
+        foreign_domain_id: Option<u64>,
     ) -> Self {
         Self {
             owner_id,
@@ -418,16 +513,21 @@ impl Pool {
             passport_base: passport_base.map_or(DEFAULT_PASSPORT_BASE, |v| v.0),
             pending_base: None,
             floor_base: passport_base.map_or(DEFAULT_PASSPORT_BASE, |v| v.0),
+            base_checks: LookupMap::new(StorageKey::BaseChecks),
+            mpc_signer: mpc_signer
+                .unwrap_or_else(|| DEFAULT_MPC_SIGNER.parse().expect("a valid account id")),
+            foreign_domain_id: foreign_domain_id.unwrap_or(DEFAULT_FOREIGN_DOMAIN),
             version: STATE_VERSION,
         }
     }
 
     /// AIR-333: the in-place upgrade from the c1108d state (`legacy::PoolV1`). Deploy the new wasm and call this in the same transaction.
     /// Every stored field keeps its value; the records are backfilled from what the stored state proves (see `backfill`). Refused on a
-    /// state that is not a `PoolV1` (a second migrate cannot read the new layout as the old one).
+    /// state that is not a `PoolV1` (a second migrate cannot read the new layout as the old one). AIR-350: it also sets the MPC signer and
+    /// the foreign transaction domain `check_base_payment` asks.
     #[private]
     #[init(ignore_state)]
-    pub fn migrate(passport_base: U128) -> Self {
+    pub fn migrate(passport_base: U128, mpc_signer: AccountId, foreign_domain_id: u64) -> Self {
         let old: legacy::PoolV1 =
             env::state_read().unwrap_or_else(|| env::panic_str("there is no state to migrate"));
         let mut pool = Self {
@@ -449,12 +549,15 @@ impl Pool {
             passport_base: passport_base.0,
             pending_base: None,
             floor_base: passport_base.0,
+            base_checks: LookupMap::new(StorageKey::BaseChecks),
+            mpc_signer: mpc_signer.clone(),
+            foreign_domain_id,
             version: STATE_VERSION,
         };
         let backfilled = pool.backfill();
         emit(
             "migrated",
-            json!({ "version": STATE_VERSION, "passport_base": passport_base.0.to_string(), "records": backfilled }),
+            json!({ "version": STATE_VERSION, "passport_base": passport_base.0.to_string(), "records": backfilled, "mpc_signer": mpc_signer, "foreign_domain_id": foreign_domain_id }),
         );
         pool
     }
@@ -1074,6 +1177,120 @@ impl Pool {
         self.floor_base = self.floor_base.max(base);
         self.pending_base = None;
         emit("passport_base_set", json!({ "base": base.to_string() }));
+    }
+
+    // ---- the Base payment check (AIR-350) ----
+
+    /// Anyone, with at least `BASE_CHECK_FEE` attached and `GAS_BASE_CHECK_MIN` prepaid: the pool asks the configured MPC signer whether
+    /// the Base Sepolia transaction `tx_id` (64 lowercase hex, no 0x) is final and succeeded, and `on_base_check` records the signed answer.
+    /// The fee is not pool money. A transaction already recorded is refused. Two checks of one id in flight both reach the signer; the
+    /// callback keeps the record written earlier and refunds the later one. This enforces nothing about lines or money.
+    #[payable]
+    pub fn check_base_payment(&mut self, tx_id: String) -> Promise {
+        require!(
+            is_base_tx_id(&tx_id),
+            "tx_id must be exactly 64 lowercase hex characters, without 0x"
+        );
+        let fee = env::attached_deposit().as_yoctonear();
+        require!(
+            fee >= BASE_CHECK_FEE,
+            "check_base_payment needs an attached fee of at least 0.01 NEAR"
+        );
+        require!(
+            env::prepaid_gas() >= GAS_BASE_CHECK_MIN,
+            "check_base_payment needs at least 60 Tgas of prepaid gas"
+        );
+        require!(
+            self.base_checks.get(&tx_id).is_none(),
+            "this Base transaction is already recorded"
+        );
+        let asked_by = env::predecessor_account_id();
+        let args = json!({
+            "request": {
+                "request": { "Base": { "tx_id": tx_id, "extractors": ["BlockHash"], "finality": "Finalized" } },
+                "domain_id": self.foreign_domain_id,
+                "payload_version": 1
+            }
+        });
+        Promise::new(self.mpc_signer.clone())
+            .function_call(
+                "verify_foreign_transaction".to_string(),
+                args.to_string().into_bytes(),
+                NearToken::from_yoctonear(1),
+                GAS_MPC_VERIFY,
+            )
+            .then(
+                Self::ext(env::current_account_id())
+                    .with_static_gas(GAS_BASE_CHECK_CALLBACK)
+                    .on_base_check(tx_id, asked_by, U128(fee)),
+            )
+    }
+
+    /// Callback of `check_base_payment`. A readable answer for an id not yet recorded is stored and `base_payment_checked` is emitted (a
+    /// fee above `BASE_CHECK_FEE` goes back). A failed or timed out call, an answer longer than `MAX_BASE_ANSWER_BYTES`, an unreadable
+    /// answer or an id recorded meanwhile stores nothing, refunds the fee less the 1 yocto sent to the signer and emits
+    /// `base_payment_unchecked`. Refunds go through `payout`, so a failed refund is parked for `claim`.
+    #[private]
+    pub fn on_base_check(&mut self, tx_id: String, asked_by: AccountId, fee: U128) {
+        let fee = fee.0;
+        let answer = match env::promise_result_checked(0, MAX_BASE_ANSWER_BYTES) {
+            Ok(bytes) => parse_base_answer(&bytes),
+            Err(PromiseError::TooLong(_)) => Err("the answer is longer than 2048 bytes"),
+            Err(_) => Err("the signer call failed or timed out"),
+        };
+        let answer = answer.and_then(|a| {
+            if self.base_checks.get(&tx_id).is_some() {
+                Err("this Base transaction is already recorded")
+            } else {
+                Ok(a)
+            }
+        });
+        match answer {
+            Ok((payload_hash, signature)) => {
+                self.base_checks.insert(
+                    tx_id.clone(),
+                    BaseCheck {
+                        payload_hash: payload_hash.clone(),
+                        signature,
+                        asked_by: asked_by.clone(),
+                        recorded_ms: ms(),
+                    },
+                );
+                emit(
+                    "base_payment_checked",
+                    json!({ "tx_id": tx_id, "payload_hash": payload_hash, "asked_by": asked_by }),
+                );
+                self.payout(asked_by, fee.saturating_sub(BASE_CHECK_FEE));
+            }
+            Err(reason) => {
+                let refund = fee.saturating_sub(1);
+                emit(
+                    "base_payment_unchecked",
+                    json!({ "tx_id": tx_id, "asked_by": asked_by, "reason": reason, "refund": refund.to_string() }),
+                );
+                self.payout(asked_by, refund);
+            }
+        }
+    }
+
+    /// The signed answer the pool recorded for a Base Sepolia transaction id, or null.
+    pub fn get_base_check(&self, tx_id: String) -> Option<BaseCheckView> {
+        self.base_checks.get(&tx_id).map(|c| BaseCheckView {
+            tx_id: tx_id.clone(),
+            payload_hash: c.payload_hash.clone(),
+            signature: c.signature.clone(),
+            asked_by: c.asked_by.clone(),
+            recorded_ms: U64(c.recorded_ms),
+        })
+    }
+
+    /// The MPC signer and domain `check_base_payment` asks, and its fee.
+    pub fn get_base_check_config(&self) -> BaseCheckConfigView {
+        BaseCheckConfigView {
+            mpc_signer: self.mpc_signer.clone(),
+            domain_id: self.foreign_domain_id,
+            fee: U128(BASE_CHECK_FEE),
+        }
     }
 
     // ---- views ----

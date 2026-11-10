@@ -55,3 +55,17 @@ Five more, applied alone on 2026-11-10 against the two rules added that day (62 
 - what the borrower holds on other cards not added to the cap: killed by `the_cap_counts_what_the_borrower_holds_on_their_other_cards`
 - a new line allowed while another card of the borrower has a line past due: killed by `the_cap_counts_what_the_borrower_holds_on_their_other_cards`
 - a new line allowed while another card of the borrower has an unrecovered loss: killed by `the_cap_counts_what_the_borrower_holds_on_their_other_cards`
+
+## Credit pool (contracts/airlock-credit): Base payment check mutants (AIR-350)
+
+Each mutant below was applied alone to `src/lib.rs` on 2026-11-10 and the library tests (`cargo test --lib`, 72 tests) were run; every
+one was killed.
+
+- a tx id in upper case accepted (`is_base_tx_id` takes any hex digit): killed by `base_check_refuses_an_id_that_is_not_64_lowercase_hex`
+- the fee floor removed from `check_base_payment`: killed by `base_check_refuses_a_fee_below_the_floor_and_too_little_gas`
+- the fee counted as pool money (`idle += fee` in `check_base_payment`): killed by `the_base_check_fee_cannot_move_the_share_price`
+- a failed check refunds nothing: killed by `a_failed_check_records_nothing_and_refunds_the_fee`, `a_recorded_id_is_refused_and_a_late_duplicate_keeps_the_earlier_answer`, `an_unreadable_or_oversized_answer_records_nothing`
+- a late duplicate overwrites the recorded answer (the callback's recorded check removed): killed by `a_recorded_id_is_refused_and_a_late_duplicate_keeps_the_earlier_answer`
+- the answer read without the 2,048 byte bound: killed by `an_unreadable_or_oversized_answer_records_nothing`
+- the signer asked with 0 yocto: killed by `base_check_asks_the_configured_signer_with_one_yocto`
+- a failed check stores a record: killed by `a_failed_check_records_nothing_and_refunds_the_fee`, `a_recorded_id_is_refused_and_a_late_duplicate_keeps_the_earlier_answer`, `an_unreadable_or_oversized_answer_records_nothing`
