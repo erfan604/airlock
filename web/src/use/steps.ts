@@ -2,11 +2,17 @@
 // every command here appears in that file verbatim). Testnet only. `<you>` is the reader's own account name.
 export type Step = { id: string; title: string; text: string; cmd?: string; last?: string; note?: string };
 
-/** AIR-319: the one-line path, shown before the steps and marked "after publish" until the package is on npm. */
+const CLONE = 'git clone https://github.com/erfan604/airlock.git && cd airlock && pnpm i';
+
+/**
+ * The first check on the page (AIR-346, D23): the clone path of docs/QUICKSTART.md, which works today. `npm view airlock-near-mcp version`
+ * answered 404 on 2026-11-09, so the one-line npx path (AIR-319) stays off the page until the package is published.
+ */
 export const ONE_LINE = {
-  title: 'One line, after publish',
-  text: 'With only Node installed, check the AIRLOCK MCP server and its verdict: five cases decided by the real verdict, no key and no network. This works once the package is published on npm; the steps below work today.',
-  cmd: 'npx -y airlock-near-mcp --check',
+  title: 'Check it in two lines',
+  text: 'Clone and install, then build the AIRLOCK MCP server and check its verdict: five cases decided by the real verdict, no key and no network. Step 1 below is the same clone; the steps after it deploy your own policy.',
+  before: CLONE,
+  cmd: 'pnpm -C packages/airlock-near-mcp build && node packages/airlock-near-mcp/dist/cli.js --check',
   last: 'AIRLOCK MCP OK',
 };
 
@@ -17,7 +23,7 @@ export const STEPS: Step[] = [
     id: 'clone',
     title: 'Get the code',
     text: 'Clone the repository and install. The committed policy wasm is used as is, so nothing is compiled.',
-    cmd: 'git clone https://github.com/erfan604/airlock.git && cd airlock && pnpm i',
+    cmd: CLONE,
     last: 'Done in <n>s using pnpm v12.14.0',
   },
   {

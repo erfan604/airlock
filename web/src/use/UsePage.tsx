@@ -72,6 +72,10 @@ export function UsePage(): ReactElement {
         </h2>
         <p className="use-text">{ONE_LINE.text}</p>
         <div className="use-cmd">
+          <code className="use-code">{ONE_LINE.before}</code>
+          <Copy text={ONE_LINE.before} />
+        </div>
+        <div className="use-cmd">
           <code className="use-code">{ONE_LINE.cmd}</code>
           <Copy text={ONE_LINE.cmd} />
         </div>

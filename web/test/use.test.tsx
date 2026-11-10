@@ -36,11 +36,16 @@ test('use: the prerendered page carries every step as text and no copy button', 
   assert.ok(!html.includes('use-copy'));
 });
 
-test('use: the one-line npx path comes first and says it works after publish', () => {
+// AIR-346 (D23): `npm view airlock-near-mcp version` answered 404 on 2026-11-09, so the npx line would fail for anyone who pastes it. The first
+// command is the clone check that works today (run by hand: it ends AIRLOCK MCP OK), and the npx line is not on the page until the package resolves.
+test('use: the first command is the clone check that works today, and the unpublished npx line is not shown', () => {
   const html = unescape(renderToStaticMarkup(<UsePage />));
   assert.ok(html.includes(ONE_LINE.cmd));
   assert.ok(html.indexOf(ONE_LINE.cmd) < html.indexOf(STEPS[0]?.title ?? 'x'));
-  assert.ok(/after publish/i.test(ONE_LINE.title));
+  assert.ok(ONE_LINE.cmd.includes('node packages/airlock-near-mcp/dist/cli.js --check'), ONE_LINE.cmd);
+  assert.ok(!html.includes('npx -y airlock-near-mcp'), 'the npx line fails until the package is published');
+  assert.ok(!/after publish/i.test(html));
+  assert.equal(ONE_LINE.last, 'AIRLOCK MCP OK');
 });
 
 test('use: routed, listed for the sitemap and llms.txt, and in the nav', () => {
