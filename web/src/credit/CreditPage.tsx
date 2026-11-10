@@ -6,7 +6,10 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import type { ReactElement, ReactNode } from 'react';
 import { explorerTx } from '../approvals/staticChain.ts';
 import { NEAR_RPC } from '../../csp.ts';
-import { PRERENDER } from '../static.ts';
+import { PRERENDER, STATIC } from '../static.ts';
+import { readAccountTxs, poolEvents } from '../lender/lenders.ts';
+import { baseChecksOf, explorerBaseTx } from './baseChecks.ts';
+import type { BaseCheckRow } from './baseChecks.ts';
 import { readLp } from './chain.ts';
 import { connectWallet } from '../wallet/connector.ts';
 import { DEFAULT_POOL, poolFromSearch, useCredit } from './useCredit.ts';
@@ -469,6 +472,62 @@ export function Passports({ lines, events, fixture }: { lines: readonly Line[]; 
   );
 }
 
+const shortHex = (h: string): string => `${h.slice(0, 8)}...${h.slice(-6)}`;
+
+/** AIR-350: the Base payments the pool asked NEAR's MPC network about, newest first. Nothing at all (no heading, no box) until there is a row. */
+export function BaseChecks({ rows, nowMs }: { rows: readonly BaseCheckRow[]; nowMs: number }) {
+  if (rows.length === 0) return null;
+  return (
+    <section className="cr-wide" aria-labelledby="cr-base-h" data-testid="credit-base-checks">
+      <h2 id="cr-base-h" className="cr-h2">
+        Paid on Base, checked back on NEAR
+      </h2>
+      <p className="cr-note">The pool asked NEAR's MPC network about each Base payment below and keeps the signed answer. The answer says the transaction is final and succeeded. It does not name the payee or the amount, and nothing about a credit line depends on it.</p>
+      <div className="cr-scroll" tabIndex={0} role="region" aria-label="Base payment checks table">
+        <table className="cr-table">
+          <thead>
+            <tr>
+              <th scope="col">Base transaction</th>
+              <th scope="col">Recorded on NEAR</th>
+              <th scope="col">Asked by</th>
+              <th scope="col">When</th>
+              <th scope="col">Payload hash</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const link = explorerBaseTx(r.txId);
+              return (
+                <tr key={r.txId} data-testid="base-check-row">
+                  <th scope="row">
+                    {link === null ? (
+                      shortHex(r.txId)
+                    ) : (
+                      <a href={link} target="_blank" rel="noopener noreferrer" aria-label="View the Base transaction on the explorer" title={`0x${r.txId}`}>
+                        {`0x${shortHex(r.txId)}`}
+                      </a>
+                    )}
+                  </th>
+                  <td>
+                    <TxLink tx={r.nearTx} what="NEAR check" label="tx" />
+                  </td>
+                  <td>
+                    <Account id={r.askedBy} max={34} />
+                  </td>
+                  <td>{agoText(nowMs - r.atMs)}</td>
+                  <td>
+                    <span title={r.payloadHash}>{shortHex(r.payloadHash)}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function Legend() {
   return (
     <ul className="cr-legend" aria-label="What the scene shows">
@@ -541,6 +600,24 @@ export function CreditPage(): ReactElement {
       });
     }
   }, []);
+
+  // AIR-350: the pool's base_payment_checked events, read once from the chain like /lend does. Not read in the local replay console (STATIC false: no request
+  // off origin), not at prerender, and a failed read leaves the section absent.
+  const livePool = state.kind === 'live' ? state.poolId : null;
+  const [baseRows, setBaseRows] = useState<BaseCheckRow[]>([]);
+  useEffect(() => {
+    if (livePool === null || !STATIC || PRERENDER) return undefined;
+    let current = true;
+    readAccountTxs(fetch, livePool).then(
+      (read) => {
+        if (current) setBaseRows(baseChecksOf(poolEvents(read.txs, livePool)));
+      },
+      () => undefined,
+    );
+    return () => {
+      current = false;
+    };
+  }, [livePool]);
 
   const pool = state.kind === 'fixture' || state.kind === 'live' ? state.pool : null;
   const events = state.kind === 'fixture' || state.kind === 'live' ? state.events : [];
@@ -650,6 +727,7 @@ export function CreditPage(): ReactElement {
           </div>
           <LinesTable lines={pool.lines} selected={selected} onSelect={pick} nowMs={nowMs} />
           <Passports lines={pool.lines} events={events} fixture={state.kind === 'fixture'} />
+          {state.kind === 'live' ? <BaseChecks rows={baseRows} nowMs={now} /> : null}
           {state.kind === 'live' ? <ArenaStrip nowMs={now} Link={TxLink} /> : null}
         </>
       )}
