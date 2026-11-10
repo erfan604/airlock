@@ -70,6 +70,12 @@ export const PAGES: PageMeta[] = [
     description:
       'Lend 1 NEAR into the live AIRLOCK Credit pool from an account of your own: the page makes the account from the public faucet, keeps the key in your browser, and shows your shares, what they are worth, and the attacks refused on the card the pool lends to while your money is in.',
   },
+  {
+    path: '/terms',
+    title: 'Terms of the credit pool | AIRLOCK',
+    description:
+      'The terms of the AIRLOCK credit pool as a numbered agreement: each term with the line of code that enforces it, the proof or test that covers it and a transaction that shows it, and the limits in the same numbering.',
+  },
   { path: '/task', title: 'Task, recorded | AIRLOCK', description: 'The recorded run under the name a live operator reads.', alias: '/replay' },
 ];
 

@@ -22,6 +22,7 @@ import './styles/site.css';
 import './styles/credit.css';
 import './styles/break.css';
 import './styles/lender.css';
+import './styles/terms.css';
 import { App } from './App.tsx';
 
 if (!ZOD_JITLESS) throw new Error('zod is not configured without eval');

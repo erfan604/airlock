@@ -1,0 +1,242 @@
+/* AIR-362: the /terms page, set as a typed agreement: Courier Prime throughout, one measure, numbered clauses with the limits in the same
+   numbering and size, references in small capitals under each clause, the status as italic text in the right margin, a schedule at the end.
+   No boxes, fills or marks. Tokens only; the print sheet below sets it black on white with the site's bar and footer removed. */
+.terms {
+  max-width: 60rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.terms-doc {
+  display: grid;
+  gap: var(--space-7);
+  font-family: var(--font-evidence);
+  color: var(--ink);
+  min-width: 0;
+}
+.terms .terms-doc p,
+.terms .terms-doc li,
+.terms .terms-doc dd,
+.terms .terms-doc dt {
+  font-family: var(--font-evidence);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.terms-head {
+  display: grid;
+  gap: var(--space-3);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--hair);
+  text-align: center;
+}
+.terms .terms-kicker {
+  font-variant: small-caps;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+.terms-title,
+.terms h1.terms-title {
+  margin: 0;
+  font-family: var(--font-evidence);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+@media (min-width: 720px) {
+  .terms-title,
+  .terms h1.terms-title {
+    font-size: 38px;
+  }
+}
+.terms .terms-asof {
+  font-style: italic;
+  color: var(--ink-2);
+}
+.terms .terms-claim {
+  max-width: 40rem;
+  margin: 0 auto;
+  color: var(--ink-2);
+}
+.terms-part {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.terms-h2 {
+  margin: 0;
+  font-family: var(--font-evidence);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.4;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+.terms-parties {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.terms-party {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+  gap: 0 var(--space-4);
+  min-width: 0;
+}
+.terms-party-role {
+  color: var(--ink-2);
+}
+.terms-sign {
+  grid-column: 2;
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--edge);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.terms-id {
+  overflow-wrap: anywhere;
+}
+.terms-clauses {
+  display: grid;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* number, body and the status in the margin; on a phone the status sits under the number */
+.terms-clause {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  min-width: 0;
+}
+@media (min-width: 900px) {
+  .terms-clause {
+    grid-template-columns: 3.5rem minmax(0, 1fr) 9rem;
+    gap: 0 var(--space-5);
+  }
+}
+.terms-n {
+  font-weight: 700;
+  line-height: 1.6;
+}
+.terms-body {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.terms .terms-status {
+  grid-column: 2;
+  grid-row: 2;
+  font-style: italic;
+  color: var(--ink-3);
+}
+@media (min-width: 900px) {
+  .terms .terms-status {
+    grid-column: 3;
+    grid-row: 1;
+    text-align: right;
+  }
+}
+.terms .terms-status[data-status='upgrade'] {
+  color: var(--ink-2);
+}
+.terms .terms-refs {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  overflow-wrap: break-word;
+}
+.terms-role {
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: var(--ink-2);
+}
+.terms-refs a {
+  color: var(--ink-2);
+  font-variant: small-caps;
+  text-underline-offset: 2px;
+}
+.terms-files {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+.terms-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .terms-file {
+    grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+.terms-files dd {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+@media print {
+  @page {
+    margin: 18mm 16mm;
+  }
+  html,
+  body {
+    background: #fff;
+  }
+  body:has(.terms) .shell-bar,
+  body:has(.terms) .site-foot,
+  body:has(.terms) .skip-link {
+    display: none;
+  }
+  .terms,
+  .terms .terms-doc,
+  .terms .terms-doc p,
+  .terms .terms-doc li,
+  .terms .terms-doc dd,
+  .terms .terms-doc dt,
+  .terms .terms-status,
+  .terms .terms-refs,
+  .terms-role,
+  .terms-party-role,
+  .terms-sign,
+  .terms .terms-asof,
+  .terms .terms-claim,
+  .terms .terms-kicker {
+    color: #000;
+  }
+  .terms .terms-doc p,
+  .terms .terms-doc li,
+  .terms .terms-doc dd,
+  .terms .terms-doc dt {
+    font-size: 10.5pt;
+  }
+  .terms .terms-refs {
+    font-size: 8.5pt;
+  }
+  .terms-head,
+  .terms-sign {
+    border-color: #000;
+  }
+  .terms-clause {
+    grid-template-columns: 3rem minmax(0, 1fr) 7rem;
+    break-inside: avoid;
+  }
+  .terms .terms-status {
+    grid-column: 3;
+    grid-row: 1;
+    text-align: right;
+  }
+  .terms .terms-status[data-status='upgrade'] {
+    color: #000;
+  }
+  .terms-refs a {
+    color: #000;
+    text-decoration: none;
+  }
+}
