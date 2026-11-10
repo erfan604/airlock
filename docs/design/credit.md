@@ -256,7 +256,7 @@ Each mutant was applied alone and the library tests run (the unit tests of `src/
 
 ## Summary (moved from the README, section AIRLOCK Credit)
 
-LPs deposit NEAR in a pool contract, and an agent borrows through a card: an AIRLOCK policy that the issuer owns, with the borrower as its approver and the pool as its sponsor [C21]. The card is a normal AIRLOCK policy, so its Base lane is the one shown in [C10] and [C2b] and its Solana lane the one in the Solana lane section of `docs/EVIDENCE.md`, and this page shows no credit card spending on either chain.
+LPs deposit NEAR in a pool contract, and an agent borrows through a card: an AIRLOCK policy that the issuer owns, with the borrower as its approver and the pool as its sponsor [C21]. The card is a normal AIRLOCK policy, so its Base lane is the one shown in [C10] and [C2b] and its Solana lane the one in the Solana lane section of `docs/EVIDENCE.md`. The credit card paid a booked merchant on Base Sepolia through MPC; an injected address was refused (2026-11-10, AIR-339) [C25]. The ETH it spent was placed on its Base address by us; credit lines live on NEAR. The card has not spent on Solana.
 
 A borrower who asks his agent to pay his own account cannot approve it, because the approver may approve only a payee that is in the issuer's book [C21]. On testnet that approve reverted with the contract's own text [C19]. LPs earn the fee: an LP deposited 3 NEAR and withdrew 3.03 NEAR after the borrower repaid with a fee [C19]. A line that is not repaid defaults after its due date, the collateral is seized and the rest is booked as a loss, and on testnet a sweep of the paused card recovered that loss [C19]. While a line is past due or a loss is unrecovered the pool refuses deposits, and shares are held for a minimum time after a deposit, so a newcomer cannot buy cheap before a repay or a recovery [C20]. The pool's rules are pinned by 42 unit tests and a sandbox suite [C20].
 
@@ -511,3 +511,9 @@ Mutants are listed in docs/mutation.md.
   0x943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63 in NEAR transaction `4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz`
   (event `base_payment_checked`, payload hash b38ee2231f49b349ec841663233049d739fbd6b00c786b729cda8814b92021c1); docs/EVIDENCE.md (Base
   payment checked back on NEAR by the pool) and C24.
+- The card's own payment checked (2026-11-10): the credit card paid the booked merchant on Base Sepolia through MPC (AIR-339, Base
+  transaction 0xab2b3f8472b2faeb08fb842df676c3f84182e19389308f3245e05b5d4e63683c, C25), and once Base had finalized it, about 21 minutes
+  after it was mined, `lp1.airlock-credit-c1108d.testnet` asked the pool about it in NEAR transaction
+  `8KReKRKbYWAdmRz1dcRmw5rqR41tzhkzz75N31mLzGbQ` (event `base_payment_checked`, payload hash
+  cbe31ebcb482f8e759eb4cfc67ae344b8332caa537ab8ca5dc90c097d98272f4). A check cannot be made sooner: the request asks for finality
+  `Finalized`. docs/EVIDENCE.md (The card's Base payment checked back on NEAR by the pool) and C24.

@@ -240,7 +240,7 @@
         {
           "n": "2.7",
           "kind": "limit",
-          "text": "All of this runs on NEAR's test network with test money. The issuer, the borrower, the merchant and the agent are the team's own accounts, and so are the two lenders of the recorded run.",
+          "text": "All of this runs on NEAR's test network with test money, and the card's one Base payment ran on Base Sepolia with test ETH the team put on the card's Base address. The issuer, the borrower, the merchant and the agent are the team's own accounts, and so are the two lenders of the recorded run; the merchant's Base address is derived from the merchant's account.",
           "status": "in force",
           "network": true,
           "refs": [
@@ -270,7 +270,7 @@
         {
           "n": "2.10",
           "kind": "limit",
-          "text": "Anyone who pays the pool 0.01 NEAR can have it ask the MPC signer it names whether a Base payment is final and succeeded, and the pool keeps the signed answer. The answer binds the transaction to a block hash and names no payee and no amount. The pool does not check the signature, and no line, limit or share price depends on the answer. The payment checked on 10 November 2026 was made by an older account of the team, not by the card.",
+          "text": "Anyone who pays the pool 0.01 NEAR can have it ask the MPC signer it names whether a Base payment is final and succeeded, and the pool keeps the signed answer. A payment can be checked once Base has finalized it, about 21 minutes after the card's payment was mined. The answer binds the transaction to a block hash and names no payee and no amount. The pool does not check the signature, and no line, limit or share price depends on the answer. Two payments were checked on 10 November 2026: one made by an older account of the team, and one made by the card itself.",
           "status": "in force",
           "refs": [
             { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1189, "has": "pub fn check_base_payment", "name": "check_base_payment" },
@@ -280,7 +280,8 @@
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2066, "has": "fn a_signed_answer_is_recorded_and_the_view_returns_it", "name": "a_signed_answer_is_recorded_and_the_view_returns_it" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2156, "has": "fn a_failed_check_records_nothing_and_refunds_the_fee", "name": "a_failed_check_records_nothing_and_refunds_the_fee" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2256, "has": "fn the_base_check_fee_cannot_move_the_share_price", "name": "the_base_check_fee_cannot_move_the_share_price" },
-            { "role": "Shown", "tx": "4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz", "what": "the pool records the signed answer for a Base Sepolia payment", "row": 466 }
+            { "role": "Shown", "tx": "4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz", "what": "the pool records the signed answer for a Base Sepolia payment", "row": 466 },
+            { "role": "Shown", "tx": "8KReKRKbYWAdmRz1dcRmw5rqR41tzhkzz75N31mLzGbQ", "what": "the pool records the signed answer for the card's own Base payment", "row": 512 }
           ]
         }
       ]

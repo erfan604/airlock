@@ -150,7 +150,7 @@ Code hashes: `docs/EVIDENCE.md` line 436.
 - Enforced: `contracts/airlock-credit/src/lib.rs` 38 to 39, `collateral ratio`
 - Measured: `docs/EVIDENCE.md` 390, `the pool's hold, read from the chain`
 
-**2.7** All of this runs on NEAR's test network with test money. The issuer, the borrower, the merchant and the agent are the team's own accounts, and so are the two lenders of the recorded run. *(in force)*
+**2.7** All of this runs on NEAR's test network with test money, and the card's one Base payment ran on Base Sepolia with test ETH the team put on the card's Base address. The issuer, the borrower, the merchant and the agent are the team's own accounts, and so are the two lenders of the recorded run; the merchant's Base address is derived from the merchant's account. *(in force)*
 
 - Measured: `docs/EVIDENCE.md` 350, `the accounts of the run`
 
@@ -164,7 +164,7 @@ Code hashes: `docs/EVIDENCE.md` line 436.
 - Enforced: `runtime/src/economy/facts.ts` 24 to 26, `0.09 NEAR at 10 percent`
 - Shown: the loop's repay with its fee, transaction `C3ZKyFdahsiHExAertB1XSubq3LLcQQuEG9xJvKvfwpJ`
 
-**2.10** Anyone who pays the pool 0.01 NEAR can have it ask the MPC signer it names whether a Base payment is final and succeeded, and the pool keeps the signed answer. The answer binds the transaction to a block hash and names no payee and no amount. The pool does not check the signature, and no line, limit or share price depends on the answer. The payment checked on 10 November 2026 was made by an older account of the team, not by the card. *(in force)*
+**2.10** Anyone who pays the pool 0.01 NEAR can have it ask the MPC signer it names whether a Base payment is final and succeeded, and the pool keeps the signed answer. A payment can be checked once Base has finalized it, about 21 minutes after the card's payment was mined. The answer binds the transaction to a block hash and names no payee and no amount. The pool does not check the signature, and no line, limit or share price depends on the answer. Two payments were checked on 10 November 2026: one made by an older account of the team, and one made by the card itself. *(in force)*
 
 - Enforced: `contracts/airlock-credit/src/lib.rs` 1189, `check_base_payment`
 - Enforced: `contracts/airlock-credit/src/lib.rs` 1194 to 1198, `the fee of 0.01 NEAR`
@@ -174,6 +174,7 @@ Code hashes: `docs/EVIDENCE.md` line 436.
 - Tested: `contracts/airlock-credit/src/tests.rs` 2156, `a_failed_check_records_nothing_and_refunds_the_fee`
 - Tested: `contracts/airlock-credit/src/tests.rs` 2256, `the_base_check_fee_cannot_move_the_share_price`
 - Shown: the pool records the signed answer for a Base Sepolia payment, transaction `4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz` (`docs/EVIDENCE.md` line 466)
+- Shown: the pool records the signed answer for the card's own Base payment, transaction `8KReKRKbYWAdmRz1dcRmw5rqR41tzhkzz75N31mLzGbQ` (`docs/EVIDENCE.md` line 512)
 
 ## Schedule of cited files
 
@@ -190,6 +191,6 @@ Code hashes: `docs/EVIDENCE.md` line 436.
 - `contracts/airlock-verdict/src/proofs.rs`: 104, 117, 127, 137, 355
 - `docs/BENCH.md`: 37
 - `docs/CLAIMS.md`: 38
-- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390, 436, 442, 443, 450, 466
+- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390, 436, 442, 443, 450, 466, 512
 - `proofs/Verdict.lean`: 12, 96, 105, 115, 123, 192
 - `runtime/src/economy/facts.ts`: 1 to 3, 24 to 26
