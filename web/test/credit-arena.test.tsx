@@ -11,7 +11,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { TxLink } from '../src/credit/CreditPage.tsx';
 import { ArenaView } from '../src/credit/arena/ArenaStrip.tsx';
 import type { ArenaSample } from '../src/credit/arena/ArenaStrip.tsx';
-import { ARENA_AGENT, ARENA_CARD, ARENA_INVOICE_YOCTO, ARENA_MERCHANT_KEY, ARENA_TASK_PREFIX } from '../src/credit/arena/config.ts';
+import { ARENA_AGENT, ARENA_CARD, ARENA_INVOICE_YOCTO, ARENA_MERCHANT_KEY, ARENA_STRICT_SINCE_MS, ARENA_TASK_PREFIX } from '../src/credit/arena/config.ts';
 import { countsOf, headline } from '../src/credit/arena/model.ts';
 import type { ArenaAttempt } from '../src/credit/arena/model.ts';
 import { ARENA_MAX_PAGES, newArenaCache, readArena } from '../src/credit/arena/read.ts';
@@ -193,6 +193,18 @@ test('the strip shows the counts, the invoice line and the latest five rows with
   assert.match(t, /Paid the merchant less than the invoice 1/);
   assert.doesNotMatch(html, /data-testid="arena-flood"/);
   assert.doesNotMatch(t, /testnet|erfan/i);
+});
+
+test('under strict mode the bound line says that every amount read from an email waits for the owner', () => {
+  const list = [at(300, 'held'), at(200, 'held'), at(100, 'held')];
+  const strict = text(view({ state: ok(list), strictSinceMs: NOW - 400 * MIN }));
+  assert.match(strict, /Every amount read from an email waits for the owner\. The arena never approves, and each held request expires after one hour\./);
+  assert.doesNotMatch(strict, /A larger amount read from the email/);
+  // strict mode is said only when the page config carries its date
+  const before = text(view({ state: ok(list) }));
+  assert.doesNotMatch(before, /Every amount read from an email waits/);
+  assert.match(before, /A larger amount read from the email is held for the owner and never paid without approval\./);
+  assert.equal(ARENA_STRICT_SINCE_MS, null, 'not claimed until the card holds the strict root');
 });
 
 test('a flood refusal has its own line and is not in the blocked count', () => {

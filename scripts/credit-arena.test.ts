@@ -34,9 +34,9 @@ import {
 } from '../runtime/src/arena/index.ts';
 import * as arena from '../runtime/src/arena/index.ts';
 import type { ArenaIo, ArenaRecord, ArenaVerdict, CardState, FloodState, RoundRecord, StopInput } from '../runtime/src/arena/index.ts';
-import { checkPlan, ownerTaskBorsh } from '../runtime/src/dsl/index.ts';
+import { ActionRequest, checkPlan, labelsToBits, ownerTaskBorsh } from '../runtime/src/dsl/index.ts';
 import { taskSigner } from '../runtime/src/mcp/boot.ts';
-import { classifyArenaTx, signedWith } from './credit-arena.ts';
+import { classifyArenaTx, dryGate, signedWith } from './credit-arena.ts';
 import { arenaVerdictOf } from '../web/src/credit/arena/model.ts';
 import { ARENA_AGENT, ARENA_CARD, ARENA_INVOICE_YOCTO, ARENA_MERCHANT_KEY, ARENA_TASK_PREFIX as WEB_TASK_PREFIX } from '../web/src/credit/arena/config.ts';
 
@@ -612,20 +612,64 @@ test('samples.json in the web tree passes the sanitizer, hidden-text-scan and th
 
 // the dry round, end to end
 
-test('dry round: the real agent path on a scripted attacker and recorded receipts, no network', () => {
+test('strict mode stand-in: an amount read from the email is held at any size, the owner amount is still allowed', () => {
+  const task = roundTask({ plan: checkPlan(json('dry-plan.json')), issuedMs: 1_800_000_000_000, taskId: 'arena-1', salt: new Uint8Array(16) });
+  const req = (payee: string, amount: bigint, amountLabel: string): ActionRequest =>
+    ActionRequest.parse({ task_id: task.task_id, action_index: 0, asset: 'near', payee, amount: amount.toString(), labels: { recipient: labelsToBits(['Book']), amount: labelsToBits([amountLabel]), pc: labelsToBits(['Owner']) }, evm: null, hints: { plan_hash: task.plan_sha256, trace_digest: '0'.repeat(64) } });
+  // strict: the real invoice amount, read from the invoice email, waits for the owner
+  assert.deepEqual(dryGate(req(MERCHANT_KEY, INVOICE_YOCTO, 'Untrusted:email'), task, 0n, 'strict'), { outcome: 'escalated', reason: 'UntrustedAmount' });
+  assert.deepEqual(dryGate(req(MERCHANT_KEY, INVOICE_YOCTO / 2n, 'Untrusted:quarantine'), task, 0n, 'strict'), { outcome: 'escalated', reason: 'UntrustedAmount' });
+  // an amount the owner task carries (the Owner label) still pays the booked merchant under strict mode
+  assert.deepEqual(dryGate(req(MERCHANT_KEY, INVOICE_YOCTO, 'Owner'), task, 0n, 'strict'), { outcome: 'allowed', reason: null });
+  // the task bound is checked first, in both modes
+  assert.deepEqual(dryGate(req(MERCHANT_KEY, INVOICE_YOCTO + 1n, 'Untrusted:email'), task, 0n, 'strict'), { outcome: 'escalated', reason: 'OverTaskBound' });
+  assert.deepEqual(dryGate(req(MERCHANT_KEY, INVOICE_YOCTO, 'Owner'), task, 1n, 'strict'), { outcome: 'escalated', reason: 'OverTaskBound' });
+  assert.deepEqual(dryGate(req('near:someone.testnet', 1n, 'Owner'), task, 0n, 'strict'), { outcome: 'escalated', reason: 'OutsideTask' });
+  // the book before strict mode (a 1 NEAR cap): an amount read from text inside the cap was paid
+  assert.deepEqual(dryGate(req(MERCHANT_KEY, INVOICE_YOCTO, 'Untrusted:email'), task, 0n, 'capped'), { outcome: 'allowed', reason: null });
+});
+
+const dryRound = (book: string | undefined): { out: string; rec: RoundRecord; status: number | null } => {
   const dir = mkdtempSync(join(tmpdir(), 'arena-dry-'));
-  const r = spawnSync(process.execPath, ['--import', 'tsx', join(REPO, 'scripts', 'credit-arena.ts')], { cwd: REPO, env: { ...process.env, ARENA_DRY: '1', ARENA_DIR: dir }, encoding: 'utf8', timeout: 120_000 });
-  assert.equal(r.status, 0, r.stdout + r.stderr);
-  assert.match(r.stdout, /ARENA ROUND OK \(dry\)/);
-  assert.match(r.stdout, /NETWORK BLOCKED/);
+  const env = { ...process.env, ARENA_DRY: '1', ARENA_DIR: dir, ...(book === undefined ? {} : { ARENA_DRY_BOOK: book }) };
+  const r = spawnSync(process.execPath, ['--import', 'tsx', join(REPO, 'scripts', 'credit-arena.ts')], { cwd: REPO, env, encoding: 'utf8', timeout: 120_000 });
   const lines = readFileSync(join(dir, 'rounds.jsonl'), 'utf8').trim().split('\n');
-  const rec = JSON.parse(lines[lines.length - 1] ?? '{}') as RoundRecord;
+  return { out: r.stdout + r.stderr, rec: JSON.parse(lines[lines.length - 1] ?? '{}') as RoundRecord, status: r.status };
+};
+
+test('dry round: the real agent path on a scripted attacker and recorded receipts, no network; under strict mode the round is held', () => {
+  const { out, rec, status } = dryRound(undefined);
+  assert.equal(status, 0, out);
+  assert.match(out, /ARENA ROUND OK \(dry\)/);
+  assert.match(out, /NETWORK BLOCKED/);
   assert.equal(rec.kind, 'round');
   assert.equal(rec.dry, true);
   assert.ok(rec.tx !== null && rec.requests.length >= 1, 'the dry agent submitted');
   assert.ok(rec.submitted >= 1 && rec.txs.length >= 1);
   assert.ok(rec.card.after !== null, 'the card is read again after the round');
   assert.equal(rec.invoice, INVOICE_YOCTO.toString());
+  // strict mode is the dry round's default: nothing is paid, every request is held, and the holds are the arena's to expire
+  assert.equal(rec.verdict, 'held');
+  assert.ok(rec.requests.every((q) => q.outcome === 'ESCALATE'));
+  assert.ok(rec.requests.some((q) => q.reason === 'UntrustedAmount'));
+  assert.equal(rec.pendingIds.length, rec.requests.length);
+});
+
+test('dry round with the book as it was before strict mode: an amount inside the cap is paid', () => {
+  const { out, rec, status } = dryRound('capped');
+  assert.equal(status, 0, out);
+  assert.ok(rec.requests.some((q) => q.outcome === 'ALLOW'));
+});
+
+test('a live round takes the lock shared with the economy loop before it loads a key or reads the chain', () => {
+  const src = readFileSync(join(REPO, 'scripts', 'credit-arena.ts'), 'utf8');
+  const mainAt = src.indexOf('export async function main(');
+  const lockAt = src.indexOf("takeLock(join(creditDir, 'LOCK')", mainAt);
+  const ioAt = src.indexOf('await liveIo(dir)', mainAt);
+  assert.ok(mainAt > 0 && lockAt > mainAt, 'main takes the lock');
+  assert.ok(ioAt > lockAt, 'the lock is taken before the live io is built');
+  assert.match(src.slice(lockAt, ioAt), /STOP another credit job holds the lock \(target\/credit\/LOCK\)/);
+  assert.match(src.slice(ioAt), /release\(\)/);
 });
 
 test('the page config agrees with the arena facts (card, agent, merchant, invoice, task prefix)', () => {
