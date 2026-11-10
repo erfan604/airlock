@@ -1,6 +1,46 @@
 # Architecture
 
-The diagrams are ASCII so machine readers can parse them. The README holds the overview diagram.
+The diagrams are ASCII so machine readers can parse them.
+
+## Overview (moved from the README)
+
+```
+owner (wallet, NEAR Connect)         untrusted text: email, files, web
+   | signs the task bound and approvals       |
+   v                                          v
+console (web) <---- session ----> runtime: planner LLM -> plan (DSL, checked)
+                                     interpreter labels every value by origin
+                                     quarantined reader LLM: tainted output only
+                                             | submit_batch (agent key)
+                                             v
+                       policy contract (NEAR): verdict (Kani, Lean model),
+                       book, caps, ledgers, task bound, queue, approvals
+                                             | builds the transaction itself
+                                             v
+                                   MPC signer (Chain Signatures) -> NEAR or Base Sepolia
+```
+
+## What is enforced where (the README table before the cut)
+
+| Guarantee | Enforced by | Claim |
+| --- | --- | --- |
+| Allow needs recipient and amount labels from the owner, the book or policy, and the amount inside cap, daily and task bounds | the policy contract and its verdict | [C1b] |
+| The signature covers the recipient and amount the verdict saw | the contract builds the EVM transaction bytes | [C2a] |
+| A lying runtime stays inside the task, the book and the limits | the contract's ledgers and book | [C3b] |
+| Only an allowlisted agent submits | the contract's agent list | [C4] |
+| An approval binds recipient, asset and amount | the contract compares the five arguments of `approve` after the request id (`to`, `asset`, `amount`, `why`, `book`) | [C8a] |
+| Ledgers are cumulative across a batch | the contract's ledgers | [C9] |
+| Labels are decided by code, never by a model | the interpreter and the tools layer | [C1b] |
+
+The runtime is in local mode (unattested): no TEE registration transaction is linked in `docs/EVIDENCE.md`, so no guarantee here depends on the TEE [C4]. The agent can submit only requests inside the owner's bounds [C3b].
+
+## Console (moved from the README)
+
+The owner console is a dark NEAR-themed React app with CSS motion and the Mona Sans typeface (AIR-296). Its Content-Security-Policy allows scripts only from the page and a per-response nonce, and the `Specimen` component is the only place untrusted text reaches the screen. `scripts/security-pass.sh` re-checks both.
+
+## Repo map (moved from the README)
+
+`contracts/airlock-verdict` verdict, checked by Kani and a Lean model | `contracts/airlock-policy` NEAR contract | `proofs/` Lean | `runtime/` agent, server and tools | `web/` console | `bench/` benchmark | `fixtures/` demo world | `docs/` | `scripts/`
 
 ## Components and trust
 | Component | Path | Trusted for | Enforced by |

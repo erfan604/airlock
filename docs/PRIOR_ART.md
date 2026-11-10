@@ -1,5 +1,19 @@
 # Prior art and what is new here
 
+## What is different (moved from the README)
+
+Provenance labelling of values is published (CaMeL, FIDES, interbolt, NaAP x Sekisho), and wallet guards (caps, allowlists, blocklists, mandates) check what the owner authorized, not where a value came from. AIRLOCK puts the origin check in the signing authority: a NEAR contract decides, builds the transaction itself and asks the MPC signer, so the agent process cannot bypass the check [PA18]. The agent controls what it submits and which labels it claims; the contract controls the verdict, the caps, the task bound and the address book, and the agent's key only reaches `submit_batch` (see What is enforced where). The decision function is checked three ways, a Lean model, Kani on the shipped Rust and 40,000 differential cases [C7a]. Pc taint, amount provenance and enforcement at the signer are not documented in interbolt or FIDES at the pinned commits [PA3] [PA4]. The long comparison with links is the table below.
+
+The README section Prior art, before it was cut to three sentences:
+
+AIRLOCK moves origin-based admission, published in CaMeL, FIDES, PACT and ROPE, into the signing authority. Ancestors: CaMeL, FIDES, PACT, ROPE, ToolFence, Bactrian, Notary, Cedar and LLMbda. Neighbours: GUARDDOG, Mandate and NearVault check caps and allowlists, and the long form with links is `docs/PRIOR_ART.md`.
+
+Two shipped systems are read at pinned commits in the section Pinned readings below. `deconvolute-labs/interbolt` (Apache-2.0) gates tool calls on the provenance of their arguments, and its benchmark repository reports a banking attack success of 0 of 144 under its policy [PA4]. Microsoft FIDES, shipped in `microsoft/agent-framework` (MIT, merged 2026-05-05), labels content and checks tool calls in agent middleware [PA3]. NaAP x Sekisho (ETHGlobal Tokyo, 2026) has the same planner, quarantined reader and labelled interpreter pattern, and its signer is a TypeScript service where AIRLOCK's check is a NEAR contract [PA18]. OutLayer bounds and reports on the action in a TDX keystore, while AIRLOCK decides whether the recipient and amount trace to the owner [PA14].
+
+AIRLOCK's distinguishing points are pc taint (the condition of a branch taints the actions inside it), amount provenance (an amount read from untrusted data is bounded by an owner cap and a signed task bound, not only checked for presence) and enforcement at the signer (a NEAR contract builds the transaction and asks the MPC signer, so the agent process cannot bypass the check). The reading of interbolt and FIDES found none of the three documented in their READMEs or architecture notes at the pinned commits.
+
+## The comparison table
+
 | Work | What it does | What AIRLOCK adds |
 | --- | --- | --- |
 | CaMeL (Debenedetti et al., 2025) | dual LLM, capability interpreter, deny-only banking policy | program-counter taint for trust, amount provenance, graded approvals, on-chain enforcement |

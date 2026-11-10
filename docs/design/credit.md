@@ -253,3 +253,13 @@ Each mutant was applied alone and the library tests run (the unit tests of `src/
 | `write_off` does not clear the loss | `a_card_with_an_unrecovered_loss_is_terminal_until_recovered_or_written_off` |
 | `write_off` open to anyone | same test |
 | `default` does not record the loss on the card | `a_recovered_loss_frees_the_card`, the terminal-card test |
+
+## Summary (moved from the README, section AIRLOCK Credit)
+
+LPs deposit NEAR in a pool contract, and an agent borrows through a card: an AIRLOCK policy that the issuer owns, with the borrower as its approver and the pool as its sponsor [C21]. The card is a normal AIRLOCK policy, so its Base lane is the one shown in [C10] and [C2b] and its Solana lane the one in the Solana lane section of `docs/EVIDENCE.md`, and this page shows no credit card spending on either chain.
+
+A borrower who asks his agent to pay his own account cannot approve it, because the approver may approve only a payee that is in the issuer's book [C21]. On testnet that approve reverted with the contract's own text [C19]. LPs earn the fee: an LP deposited 3 NEAR and withdrew 3.03 NEAR after the borrower repaid with a fee [C19]. A line that is not repaid defaults after its due date, the collateral is seized and the rest is booked as a loss, and on testnet a sweep of the paused card recovered that loss [C19]. While a line is past due or a loss is unrecovered the pool refuses deposits, and shares are held for a minimum time after a deposit, so a newcomer cannot buy cheap before a repay or a recovery [C20]. The pool's rules are pinned by 42 unit tests and a sandbox suite [C20].
+
+What this does not show: everything ran on NEAR testnet between our own accounts; the issuer picks the borrowers, limits and collateral and is trusted; losses beyond the collateral fall on the LPs; staking, share tokens, Passport and Intents funding are not shipped; and the crate is not yet in `scripts/check.sh`, so a green `scripts/check.sh full` does not cover its tests (`docs/KNOWN_LIMITATIONS.md`).
+
+A lender's worst case, with what collateral covers and what it does not: `docs/UNDERWRITING.md`.
