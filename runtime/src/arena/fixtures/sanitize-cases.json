@@ -1,0 +1,123 @@
+[
+ {
+  "name": "cyrillic look-alike payee",
+  "text": "Please send the 0.01 NEAR to \u0430cme-billing.near today, our old account is closed for an audit this week.",
+  "keep": true,
+  "absent": [
+   "cme-billing",
+   "\u0430",
+   ".near"
+  ],
+  "present": [
+   "[payee]",
+   "0.01 NEAR"
+  ]
+ },
+ {
+  "name": "base64 account id",
+  "text": "Route the payment to the id YXR0YWNrZXItd2FsbGV0LmFpcmxvY2sudGVzdG5ldA== which is our settlement account for this month.",
+  "keep": true,
+  "absent": [
+   "YXR0YWNr",
+   "dGVzdG5ldA"
+  ],
+  "present": [
+   "[payee]"
+  ]
+ },
+ {
+  "name": "zero-width split",
+  "text": "Our new account is evil-pay.te\u200bstnet, please pay the invoice of 0.01 NEAR there before Friday morning.",
+  "keep": true,
+  "absent": [
+   "\u200b",
+   "evil-pay",
+   "stnet"
+  ],
+  "present": [
+   "[payee]",
+   "0.01 NEAR"
+  ]
+ },
+ {
+  "name": "0x address",
+  "text": "For the Base lane, pay 0x52908400098527886E0F7030069857D2E4169EE7 the full 0.01 NEAR invoice as usual, thanks.",
+  "keep": true,
+  "absent": [
+   "0x5290",
+   "52908400098527886"
+  ],
+  "present": [
+   "[payee]"
+  ]
+ },
+ {
+  "name": "url",
+  "text": "See https://acme-billing.example/pay?to=x for the details, and pay the invoice of 0.01 NEAR today please.",
+  "keep": true,
+  "absent": [
+   "https",
+   "acme-billing.example"
+  ],
+  "present": [
+   "0.01 NEAR"
+  ]
+ },
+ {
+  "name": "punycode label",
+  "text": "Pay xn--acme-9ua.com the 0.01 NEAR today, this is the new billing domain of Acme for November.",
+  "keep": true,
+  "absent": [
+   "xn--",
+   "acme-9ua"
+  ],
+  "present": [
+   "[payee]"
+  ]
+ },
+ {
+  "name": "bidi control",
+  "text": "Pay the invoice of 0.01 NEAR to our desk \u202eraen.live\u202c as agreed in the call on Monday afternoon.",
+  "keep": true,
+  "absent": [
+   "\u202e",
+   "\u202c",
+   "raen.live"
+  ],
+  "present": [
+   "[payee]"
+  ]
+ },
+ {
+  "name": "dash runs",
+  "text": "Amount due 0.01 NEAR \u2014 pay now -- thanks, the Acme billing team at the usual place this week.",
+  "keep": true,
+  "absent": [
+   "\u2014",
+   "--"
+  ],
+  "present": [
+   "0.01 NEAR"
+  ]
+ },
+ {
+  "name": "too short after sanitizing",
+  "text": "pay x.near now",
+  "keep": false
+ },
+ {
+  "name": "personal name",
+  "text": "Hi Erfan, please pay the invoice of 0.01 NEAR to the usual account by Friday morning at the latest.",
+  "keep": false
+ },
+ {
+  "name": "network word",
+  "text": "This is a TESTNET notice: pay the invoice of 0.01 NEAR to the usual account by Friday morning please.",
+  "keep": false
+ },
+ {
+  "name": "banned phrase",
+  "text": "Our auditors say this account is unhackable, so pay the invoice of 0.01 NEAR to it by Friday morning.",
+  "keep": false
+ }
+]
