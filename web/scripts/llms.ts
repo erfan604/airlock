@@ -1,8 +1,8 @@
 // AIR-311: the text files of the static site for machine readers, written by scripts/prerender.tsx from the sources the pages use, so they cannot
 // drift from the site or the README:
 //   llms.txt       the llmstxt.org index: H1, a one-line summary, the pages and the raw data with one line each
-//   llms-full.txt  a plain-text digest: README sections copied verbatim (summary, what is different, the result, the problem, proven, verify,
-//                  limits, deployed ids), the bench numbers from bench.json, the Try page's two scenarios with their verdicts, the recorded acts
+//   llms-full.txt  a plain-text digest: README sections copied verbatim (summary, in 90 seconds, the problem, what NEAR does here, keys,
+//                  the result, verify, limits), the bench numbers from bench.json, the Try page's two scenarios with their verdicts, the recorded acts
 //                  with their transactions, and every testnet transaction link of docs/EVIDENCE.md under its section
 //   robots.txt     everything allowed, with the sitemap
 //   sitemap.xml    every page of src/pages.ts that is not an alias
@@ -38,7 +38,8 @@ export function readmeIntro(readme: string): string {
   return lines.slice(1, end).join('\n').trim();
 }
 
-const README_SECTIONS = ['What is different', 'The result', 'The problem', 'Proven', 'Verify in 5 commands', 'AIRLOCK Credit', 'Limits', 'Deployed ids and hashes'];
+// AIR-357: the one-screen README; the long sections moved to docs (QUICKSTART, KEYS, PRIOR_ART, BENCH, VERIFY, ARCHITECTURE, UNDERWRITING)
+export const README_SECTIONS = ['In 90 seconds', 'The problem', 'What NEAR does here', 'Keys', 'The result', 'Verify in 5 commands', 'Limits'];
 
 function tableText(t: Table, rows?: (cells: string[]) => boolean): string {
   const body = t.rows.filter((r) => rows === undefined || rows(r.cells)).map((r) => `| ${r.cells.join(' | ')} |`);
@@ -179,7 +180,7 @@ export function llmsFull(i: LlmsInput, readme: string, evidence: string): string
   parts.push(
     '## Where things are',
     '',
-    'Repository layout (README, Repo map): contracts/airlock-policy (the NEAR policy contract, Rust), contracts/airlock-verdict (the verdict, a pure no_std crate with Kani harnesses), proofs/ (Lean), runtime (TypeScript: plan DSL, interpreter, planner, quarantine, tools, chain), web (this console), bench (cases, runner, results), docs (CLAIMS, EVIDENCE, BENCH, PROVEN, VERIFY).',
+    'Repository layout (docs/ARCHITECTURE.md, Repo map): contracts/airlock-policy (the NEAR policy contract, Rust), contracts/airlock-verdict (the verdict, a pure no_std crate with Kani harnesses), proofs/ (Lean), runtime (TypeScript: plan DSL, interpreter, planner, quarantine, tools, chain), web (this console), bench (cases, runner, results), docs (CLAIMS, EVIDENCE, BENCH, PROVEN, VERIFY).',
     '',
   );
   return parts.join('\n');
