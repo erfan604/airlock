@@ -13,30 +13,30 @@ import type { BreakDoor, LendDoor, RobDoor } from './doors.ts';
 import { poolLine } from './facts.ts';
 import type { PoolRead } from './facts.ts';
 
-type DoorProps = { kind: 'lend' | 'rob' | 'break'; href: string; plate: string; title: string; what: string; number: string; caption: ReactNode; note: string; testId: string };
+type LeafProps = { plate: string; title: string; what: string; number: string; caption: ReactNode; note: string; testId: string };
 
-function Door({ kind, href, plate, title, what, number, caption, note, testId }: DoorProps): ReactElement {
+// The inside of a door. The anchor around it is written out at each door below, so every link target is a constant on its own line
+// (scripts/security-pass.sh reads them there).
+function DoorLeaf({ plate, title, what, number, caption, note, testId }: LeafProps): ReactElement {
   return (
-    <li className={`door door-${kind}`}>
-      <a className="door-frame" href={href} data-testid={testId}>
-        <span className="door-inside" aria-hidden="true" />
-        <span className="door-leaf">
-          <span className="door-plate">{plate}</span>
-          <span className="door-title">{title}</span>
-          <span className="door-what">{what}</span>
-          <span className="door-window">
-            <span className="door-number" data-testid={`${testId}-number`}>
-              {number}
-            </span>
-            <span className="door-caption">{caption}</span>
-            <span className="door-note" data-testid={`${testId}-note`}>
-              {note}
-            </span>
+    <>
+      <span className="door-inside" aria-hidden="true" />
+      <span className="door-leaf">
+        <span className="door-plate">{plate}</span>
+        <span className="door-title">{title}</span>
+        <span className="door-what">{what}</span>
+        <span className="door-window">
+          <span className="door-number" data-testid={`${testId}-number`}>
+            {number}
           </span>
-          <span className="door-bar" aria-hidden="true" />
+          <span className="door-caption">{caption}</span>
+          <span className="door-note" data-testid={`${testId}-note`}>
+            {note}
+          </span>
         </span>
-      </a>
-    </li>
+        <span className="door-bar" aria-hidden="true" />
+      </span>
+    </>
   );
 }
 
@@ -48,44 +48,50 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
         Three things to do in under a minute
       </h2>
       <ul className="door-wall" role="list">
-        <Door
-          kind="lend"
-          href={url('lend')}
-          plate="Lend"
-          title="Lend 1 NEAR to the agents"
-          what="One click makes you a real account of your own and lends 1 NEAR from it into the live pool."
-          number={String(lend.lenders)}
-          caption={
-            <>
-              {`lender ${lend.lenders === 1 ? 'account' : 'accounts'} not on the team's list so far. The pool holds `}
-              {p.held}.
-            </>
-          }
-          note={sourceNote(lend.source, "Read from the pool's own deposit records.")}
-          testId="door-lend"
-        />
-        <Door
-          kind="rob"
-          href={url('rob')}
-          plate="Rob it"
-          title="Send a real attack"
-          what="Your browser signs what a hijacked agent would send to a practice card, and the card's contract answers."
-          number={String(rob.paidOutside)}
-          caption={`paid to anyone but the booked shop, in ${String(rob.attempts)} ${rob.attempts === 1 ? 'attempt' : 'attempts'}.`}
-          note={sourceNote(rob.source, 'Read from the chain.')}
-          testId="door-rob"
-        />
-        <Door
-          kind="break"
-          href={url('break')}
-          plate="Break the proof"
-          title="Take one rule out of the gate"
-          what="Run an attack through the real gate and through a copy with one rule removed: the copy pays."
-          number={String(brk.copies)}
-          caption={`broken copies of the gate; Kani fails on ${brk.kaniFails === brk.copies ? 'each one' : `${String(brk.kaniFails)} of them`}.`}
-          note={sourceNote(brk.source, 'From the recorded Kani runs the page shows.')}
-          testId="door-break"
-        />
+        <li className="door door-lend">
+          <a className="door-frame" href={url('lend')} data-testid="door-lend">
+            <DoorLeaf
+              plate="Lend"
+              title="Lend 1 NEAR to the agents"
+              what="One click makes you a real account of your own and lends 1 NEAR from it into the live pool."
+              number={String(lend.lenders)}
+              caption={
+                <>
+                  {`lender ${lend.lenders === 1 ? 'account' : 'accounts'} not on the team's list so far. The pool holds `}
+                  {p.held}.
+                </>
+              }
+              note={sourceNote(lend.source, "Read from the pool's own deposit records.")}
+              testId="door-lend"
+            />
+          </a>
+        </li>
+        <li className="door door-rob">
+          <a className="door-frame" href={url('rob')} data-testid="door-rob">
+            <DoorLeaf
+              plate="Rob it"
+              title="Send a real attack"
+              what="Your browser signs what a hijacked agent would send to a practice card, and the card's contract answers."
+              number={String(rob.paidOutside)}
+              caption={`paid to anyone but the booked shop, in ${String(rob.attempts)} ${rob.attempts === 1 ? 'attempt' : 'attempts'}.`}
+              note={sourceNote(rob.source, 'Read from the chain.')}
+              testId="door-rob"
+            />
+          </a>
+        </li>
+        <li className="door door-break">
+          <a className="door-frame" href={url('break')} data-testid="door-break">
+            <DoorLeaf
+              plate="Break the proof"
+              title="Take one rule out of the gate"
+              what="Run an attack through the real gate and through a copy with one rule removed: the copy pays."
+              number={String(brk.copies)}
+              caption={`broken copies of the gate; Kani fails on ${brk.kaniFails === brk.copies ? 'each one' : `${String(brk.kaniFails)} of them`}.`}
+              note={sourceNote(brk.source, 'From the recorded Kani runs the page shows.')}
+              testId="door-break"
+            />
+          </a>
+        </li>
       </ul>
       <p className="doors-limits" data-testid="doors-limits">
         Runs on the NEAR test network, where NEAR has no value. The borrower and the merchant in the hourly loop are accounts the team runs, and the issuer books the payees a card may pay. <a href={url('terms')}>Every term, with its code line, proof or test</a>.
