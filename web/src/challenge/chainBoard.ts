@@ -34,15 +34,16 @@ function b64json(value: unknown): unknown {
 
 /**
  * What one transaction is for the board. `skip`: not a submit_batch of the published key to the policy (signed by `agent` when it is given). `pending`: it is one, but the policy
- * receipt is missing or not final. `final`: a failed call gives no observations, a successful one gives one per request.
+ * receipt is missing or not final. `final`: a failed call gives no observations, a successful one gives one per request. AIR-359: a `publicKey` of null
+ * takes the call whatever key signed it (a card's own agent key, the way lane1's ArenaTxCfg reads it); `agent` then still names the signer.
  */
-export function classifyTx(raw: unknown, policy: string, publicKey: string, book: ReadonlySet<string>, agent?: string): TxState {
+export function classifyTx(raw: unknown, policy: string, publicKey: string | null, book: ReadonlySet<string>, agent?: string): TxState {
   if (!isObj(raw) || !isObj(raw['transaction']) || !Array.isArray(raw['receipts'])) return { state: 'skip' };
   const tx = raw['transaction'];
   const hash = str(tx['hash']);
   const signer = str(tx['signer_id']);
   if (hash === null || signer === null || !HASH.test(hash)) return { state: 'skip' };
-  if (tx['public_key'] !== publicKey || tx['receiver_id'] !== policy || !Array.isArray(tx['actions'])) return { state: 'skip' };
+  if ((publicKey !== null && tx['public_key'] !== publicKey) || tx['receiver_id'] !== policy || !Array.isArray(tx['actions'])) return { state: 'skip' };
   // the published key may also be added to another account by anyone; only the challenge agent's own calls are attempts (security review 2026-11-07)
   if (agent !== undefined && signer !== agent) return { state: 'skip' };
   let args: unknown;

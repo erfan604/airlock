@@ -14,6 +14,9 @@ export const FASTNEAR_TX = 'https://tx.test.fastnear.com';
 /** A starting list for wallet icon images, extended by AIR-182. */
 export const ICON_ORIGINS = ['https://raw.githubusercontent.com'] as const;
 
+/** AIR-359: the public account faucet the /lend page calls from the visitor's browser, on their click (POST /account). */
+export const FAUCET = 'https://helper.testnet.near.org';
+
 /** NEAR testnet regular nodes in the order of plan/STACK.md section RPC, the one place that sets it. */
 export const NEAR_RPC = [
   'https://test.rpc.fastnear.com',
@@ -127,7 +130,8 @@ export function buildStaticCsp(opts: { header: boolean; nonce: string }): string
     join("font-src 'self'", uiOrigins(ids, 'font')),
     // only the NEAR testnet nodes of plan/STACK.md (the page's reads), the FastNEAR testnet transaction API (AIR-320 Steal this agent board)
     // and the wallet hosts of the pinned manifest
-    join(`connect-src 'self' ${NEAR_RPC.join(' ')} ${FASTNEAR_TX} ${WALLET_ORIGINS.join(' ')}`, uiOrigins(ids, 'connect')),
+    // AIR-359: and the public account faucet (/lend)
+    join(`connect-src 'self' ${NEAR_RPC.join(' ')} ${FASTNEAR_TX} ${FAUCET} ${WALLET_ORIGINS.join(' ')}`, uiOrigins(ids, 'connect')),
     `frame-src ${WALLET_ORIGINS.join(' ')}`,
     ...(opts.header ? ["frame-ancestors 'none'"] : []),
     "base-uri 'none'",
