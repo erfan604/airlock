@@ -18,6 +18,7 @@ import { depositCall, sendPoolCall, withdrawCall } from './wallet.ts';
 import type { SendResult } from './wallet.ts';
 import { CreditHeroMedia } from './HeroMedia.tsx';
 import { Poster } from './Poster.tsx';
+import { ArenaStrip } from './arena/ArenaStrip.tsx';
 import type { Quality } from './scene/CreditScene.tsx';
 
 const CreditScene = lazy(() => import('./scene/CreditScene.tsx'));
@@ -56,6 +57,17 @@ function Account({ id, max, what = 'demo account' }: { id: string; max: number; 
   return (
     <a href={link} target="_blank" rel="noopener noreferrer" aria-label={`View ${text} on the explorer`}>
       {text}
+    </a>
+  );
+}
+
+/** A transaction on the explorer, for the Arena strip: explorerTx gives a URL only for a bare base58 hash of 43 or 44 characters. */
+export function TxLink({ tx, what }: { tx: string | null; what: string }) {
+  const link = tx === null ? null : explorerTx(tx);
+  if (link === null) return null;
+  return (
+    <a href={link} target="_blank" rel="noopener noreferrer" aria-label={`View the ${what} transaction on the explorer`}>
+      tx
     </a>
   );
 }
@@ -637,6 +649,7 @@ export function CreditPage(): ReactElement {
           </div>
           <LinesTable lines={pool.lines} selected={selected} onSelect={pick} nowMs={nowMs} />
           <Passports lines={pool.lines} events={events} fixture={state.kind === 'fixture'} />
+          {state.kind === 'live' ? <ArenaStrip nowMs={now} Link={TxLink} /> : null}
         </>
       )}
     </main>
