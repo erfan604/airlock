@@ -1,0 +1,81 @@
+{
+  "made": "near-api-js 7.3.1 through runtime, scripts/gen-tx-vector.ts",
+  "secretKey": "ed25519:2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSdZd8hbDHTd21as7EAsg7ypityqfsw2pMQKJcVDVcAEsd",
+  "publicKey": "ed25519:9C6hybhQ6Aycep9jaUnP6uL9ZYvDjUp1aSkFWPUFJtpj",
+  "blockHash": "Bp3BbhbyBNoTt3LgewDgCezdiUAWKxiWq18vdj3PVUiS",
+  "cases": [
+    {
+      "name": "deposit",
+      "signerId": "lender-abc1234567.testnet",
+      "receiverId": "pool.airlock-credit-c1108d.testnet",
+      "nonce": "193000000000001",
+      "actions": [
+        {
+          "kind": "call",
+          "method": "deposit",
+          "args": "{}",
+          "gas": "60000000000000",
+          "deposit": "1000000000000000000000000"
+        }
+      ],
+      "txHex": "190000006c656e6465722d616263313233343536372e746573746e65740079b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640110715088af000022000000706f6f6c2e6169726c6f636b2d6372656469742d6331313038642e746573746e6574a0a1a2a3a4a5a6a7a8a9aaabacadaeafa0a1a2a3a4a5a6a7a8a9aaabacadaeaf0100000002070000006465706f736974020000007b7d00c0afd691360000000000a1edccce1bc2d3000000000000",
+      "hashHex": "e148ffdb673b58461c1e470b0f4d12bf5e334591de3fbfe261761f23406ecbbc",
+      "hashBase58": "GARHztxUzFKn9Z386gddizPY2G1moHny9ynUM1y8dDqV",
+      "signatureBase58": "5jNNoTF2BHx3goiRHmCUHGnuX7vEbeZQ1Hen2eHEivsiySTDPRXe1NJPuLCZ2vTyWpjaxr8mhLGRWFhnWiiek27f"
+    },
+    {
+      "name": "withdraw",
+      "signerId": "lender-abc1234567.testnet",
+      "receiverId": "pool.airlock-credit-c1108d.testnet",
+      "nonce": "193000000000002",
+      "actions": [
+        {
+          "kind": "call",
+          "method": "withdraw",
+          "args": "{\"shares\":\"990099009900990099009900\"}",
+          "gas": "80000000000000",
+          "deposit": "0"
+        }
+      ],
+      "txHex": "190000006c656e6465722d616263313233343536372e746573746e65740079b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640210715088af000022000000706f6f6c2e6169726c6f636b2d6372656469742d6331313038642e746573746e6574a0a1a2a3a4a5a6a7a8a9aaabacadaeafa0a1a2a3a4a5a6a7a8a9aaabacadaeaf0100000002080000007769746864726177250000007b22736861726573223a22393930303939303039393030393930303939303039393030227d00009573c248000000000000000000000000000000000000",
+      "hashHex": "e591e78400af249e02816f54efce35c8cb68f5940bda641a76e91092764672dc",
+      "hashBase58": "GT9QH7US1GiYTxhyX8LzFVfkgVi2VQw5hKQeYsKDdAuq",
+      "signatureBase58": "4DtKAkKbxAYXa6Z7h53LQ8Se7Uxd7XLNSUtUfUW1BPmUXbtjUoBr6NVREimgyoav8hvus86GJugZcv2nfrUnriCr"
+    },
+    {
+      "name": "submit_batch",
+      "signerId": "agent.airlock-try-x.testnet",
+      "receiverId": "try.airlock-try-x.testnet",
+      "nonce": "42",
+      "actions": [
+        {
+          "kind": "call",
+          "method": "submit_batch",
+          "args": "{\"reqs\":[]}",
+          "gas": "50000000000000",
+          "deposit": "0"
+        }
+      ],
+      "txHex": "1b0000006167656e742e6169726c6f636b2d7472792d782e746573746e65740079b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496642a00000000000000190000007472792e6169726c6f636b2d7472792d782e746573746e6574a0a1a2a3a4a5a6a7a8a9aaabacadaeafa0a1a2a3a4a5a6a7a8a9aaabacadaeaf01000000020c0000007375626d69745f62617463680b0000007b2272657173223a5b5d7d00203d88792d000000000000000000000000000000000000",
+      "hashHex": "4b0d48ef0f3ae6f6f66cd79cc91b4a7987869f3dc9822be36cb2e3a5f8be1345",
+      "hashBase58": "63yKwZN5bLUJ8jVemiwBcbAMYzftGX5G9QZ8azWEgBPS",
+      "signatureBase58": "3AcSEq92uMUekPMStXgrEeHhMzG8Eca7Bu82cGPjANPRqH8NkT7M3Sqsr6NZ1hNaGgh6i6LupwRc3kdnEsrMNYM1"
+    },
+    {
+      "name": "transfer",
+      "signerId": "lender-abc1234567.testnet",
+      "receiverId": "someone.testnet",
+      "nonce": "7",
+      "actions": [
+        {
+          "kind": "transfer",
+          "deposit": "500000000000000000000000"
+        }
+      ],
+      "txHex": "190000006c656e6465722d616263313233343536372e746573746e65740079b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad04966407000000000000000f000000736f6d656f6e652e746573746e6574a0a1a2a3a4a5a6a7a8a9aaabacadaeafa0a1a2a3a4a5a6a7a8a9aaabacadaeaf0100000003000080d07666e70de169000000000000",
+      "hashHex": "dc8de94d055a0ee4a6eca59d14178bc50428176aea93c6ece3388a71a0e04ae7",
+      "hashBase58": "FqxCdr7k87esvPewACmysc3Y9fYSwb8NtfBXfAHrRsDQ",
+      "signatureBase58": "SD76s3E2t9HFBAvdJtucwQjvdyMkXabUb1TWXtdnZE6nuDhHuFXCGeHMs6w85Se99aeMeodemXPqJQo59673hxe"
+    }
+  ]
+}
