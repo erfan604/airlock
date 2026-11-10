@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import { NEAR_RPC } from '../../csp.ts';
-import { explorerTx } from '../approvals/staticChain.ts';
+import { TxLink } from '../credit/CreditPage.tsx';
 import { readBook } from '../challenge/chainBoard.ts';
 import { RpcError } from '../chain/rpc.ts';
 import { eventLogs, functionCall, generateKey, keyFromSecret } from '../chain/tx.ts';
@@ -22,8 +22,8 @@ import type { AttackCount } from './attacks.ts';
 import { makeAccount } from './faucet.ts';
 import { activePause, checkedHistory, joinOf, loopSentence, loopStatus, mst, mstSeconds, parseSchedule, sinceJoined, valueLine } from './history.ts';
 import type { Schedule } from './history.ts';
-import { consumeFragment, loadSaved, restoreLink, saveLender } from './keystore.ts';
-import type { Saved } from './keystore.ts';
+import { adoptLink, decideLink, loadBackups, loadSaved, restoreLink, saveLender, switchTo, takeFragment, verifyLinkKey } from './keystore.ts';
+import type { Link, Saved } from './keystore.ts';
 import { countLenders, poolEvents, readAccountTxs, readLp } from './lenders.ts';
 import type { LenderCount, LpView, PoolEvent, PoolTx } from './lenders.ts';
 
@@ -32,17 +32,6 @@ const TGAS = 10n ** 12n;
 const DEPOSIT_GAS = 60n * TGAS;
 const WITHDRAW_GAS = 80n * TGAS;
 const RPC = { rpcUrls: NEAR_RPC };
-
-/** A transaction link: only a well-formed hash becomes a link (a hash read back from storage or a wallet is not trusted), else plain text. */
-function TxLink({ hash, children, testId }: { hash: string; children: string; testId?: string }): ReactElement {
-  const link = explorerTx(hash);
-  if (link === null) return <>{children}</>;
-  return (
-    <a href={link} target="_blank" rel="noopener noreferrer" data-testid={testId}>
-      {children}
-    </a>
-  );
-}
 
 /** An account as the page prints it: no network suffix, and a long name cut after its first 11 characters. */
 export function shortAccount(id: string): string {
@@ -55,6 +44,14 @@ export const near4 = (yocto: bigint): string => formatNear(((yocto + 5n * 10n **
 
 export type Step = 'making' | 'made' | 'lending' | 'done';
 export type Problem = { kind: 'limited'; resetMs: number | null } | { kind: 'unavailable' } | { kind: 'unsupported' } | { kind: 'deposit'; detail: string } | { kind: 'withdraw'; detail: string };
+
+export type LinkNote = 'bad' | 'not-a-key' | 'unreadable';
+
+const LINK_NOTE: Record<LinkNote, string> = {
+  bad: 'This is not a lender link this page can read, so nothing was changed.',
+  'not-a-key': 'The key in this link is not a key of that account, so nothing was changed.',
+  unreadable: 'The link could not be checked on the chain just now, so nothing was changed. Open it again to try once more.',
+};
 
 export type ChainView = {
   pool: PoolView;
@@ -76,6 +73,15 @@ export type LenderViewProps = {
   busy: boolean;
   walletTx: string | null;
   link: string | null;
+  /** why a restore link was not taken, when it was not */
+  linkNote: LinkNote | null;
+  /** a checked link naming another account than the saved one, waiting for the visitor's choice */
+  confirm: { linked: string; mine: string } | null;
+  /** accounts kept in this browser that the visitor switched away from */
+  backups: string[];
+  onKeep(): void;
+  onSwitch(): void;
+  onSwitchBack(accountId: string): void;
   onLend(): void;
   /** lend 1 NEAR from the account already made (its deposit failed or was never sent) */
   onRetry(): void;
@@ -171,9 +177,10 @@ function Slip({ pos, nowMs, chain, link, onWithdraw, onRetry, onCopy, copied, bu
         <p className="lend-slip-note">
           {lp === null ? '' : lp.shares === 0n ? 'You hold no shares now. ' : unlocked ? 'You can take it back now. ' : `You can take it back after ${mstSeconds(lp.lockedUntilMs)}. `}
           {tx === null ? null : (
-            <TxLink hash={tx} testId="lend-deposit-link">
-              See your deposit
-            </TxLink>
+            // the explorer link is the reviewed one of the credit page (its href is on the security-pass allow list); /lend adds no URL sink
+            <span data-testid="lend-deposit-link">
+              See your deposit: <TxLink tx={tx} what="deposit" />
+            </span>
           )}
         </p>
       </div>
@@ -227,6 +234,25 @@ export function LenderView(p: LenderViewProps): ReactElement {
         <p className="lend-lead">Put money in the pool that lends to AI agents. This page makes you an account, funds it from the public faucet, and lends 1 NEAR from it. Your key stays in this browser.</p>
       </header>
 
+      {p.linkNote === null ? null : (
+        <p className="lend-note" role="status" data-testid="lend-link-note">
+          {LINK_NOTE[p.linkNote]}
+        </p>
+      )}
+      {p.confirm === null ? null : (
+        <section className="lend-confirm" aria-label="Which account" data-testid="lend-confirm">
+          <p>{`This link holds a different lender account (${shortAccount(p.confirm.linked)}) than the one kept in this browser (${shortAccount(p.confirm.mine)}). Which one should this page show? Whichever you leave stays kept in this browser.`}</p>
+          <div className="lend-confirm-acts">
+            <button type="button" className="act act-primary" data-testid="lend-keep-mine" onClick={p.onKeep}>
+              Keep mine
+            </button>
+            <button type="button" className="act act-quiet" data-testid="lend-switch-linked" onClick={p.onSwitch}>
+              Switch to the linked account
+            </button>
+          </div>
+        </section>
+      )}
+
       {p.position === null ? (
         <section className="lend-act" aria-label="Lend">
           <button type="button" className="act act-primary lend-go" data-testid="lend-go" disabled={p.busy || closed !== null || p.steps !== null} onClick={p.onLend}>
@@ -249,11 +275,22 @@ export function LenderView(p: LenderViewProps): ReactElement {
       )}
       {p.walletTx === null ? null : (
         <p className="lend-note" data-testid="lend-wallet-tx">
-          Your wallet sent the deposit. <TxLink hash={p.walletTx}>See it</TxLink>.
+          Your wallet sent the deposit: <TxLink tx={p.walletTx} what="deposit" />.
         </p>
       )}
 
       {p.position === null ? null : <Slip pos={p.position} nowMs={p.nowMs} chain={p.chain} link={p.link} onWithdraw={p.onWithdraw} onRetry={p.onRetry} onCopy={p.onCopy} copied={p.copied} busy={p.busy} />}
+
+      {p.backups.length === 0 ? null : (
+        <div className="lend-backups" data-testid="lend-backups">
+          <p>{`Also kept in this browser: ${p.backups.map(shortAccount).join(', ')}`}</p>
+          {p.backups.map((b) => (
+            <button key={b} type="button" className="act act-quiet" data-testid="lend-switch-back" onClick={() => p.onSwitchBack(b)} disabled={p.busy}>
+              {`Switch to ${shortAccount(b)}`}
+            </button>
+          ))}
+        </div>
+      )}
 
       <section className="lend-ledger" aria-label="The pool">
         {p.position !== null && p.chain !== null && p.schedule !== null && join !== null ? (
@@ -329,14 +366,62 @@ export default function LenderPage(): ReactElement {
   const [walletTx, setWalletTx] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [reload, setReload] = useState(0);
+  const [linkNote, setLinkNote] = useState<LinkNote | null>(null);
+  const [pending, setPending] = useState<Link | null>(null);
+  const [backups, setBackups] = useState<string[]>([]);
 
-  // the restore link first: store it, then take it out of the address bar
+  // a restore link: out of the address bar at once; checked on chain (its key must be a key of the named account); taken as is when nothing is
+  // saved or it is the saved record, else held until the visitor chooses (security review of AIR-359)
   useEffect(() => {
-    if (PRERENDER) return;
-    consumeFragment(window.location, window.history, storage(), Date.now());
-    setSaved(loadSaved(storage()));
+    if (PRERENDER) return undefined;
+    let live = true;
+    const takeLink = (): void => {
+      const f = takeFragment(window.location, window.history);
+      const current = loadSaved(storage());
+      setSaved(current);
+      setBackups(loadBackups(storage()).map((b) => b.accountId));
+      setLinkNote(f.kind === 'bad' ? 'bad' : null);
+      if (f.kind !== 'key') return;
+      const link = { accountId: f.accountId, secretKey: f.secretKey };
+      void verifyLinkKey(RPC, link).then((v) => {
+        if (!live) return;
+        if (v !== 'ok') return setLinkNote(v);
+        if (decideLink(current, link) === 'differs' && current !== null) return setPending(link);
+        setSaved(adoptLink(storage(), link, Date.now()));
+      });
+    };
+    takeLink();
+    // a link opened while the page is already open only changes the fragment: read it the same way
+    window.addEventListener('hashchange', takeLink);
     const t = setInterval(() => setNow(Date.now()), 1_000);
-    return () => clearInterval(t);
+    return () => {
+      live = false;
+      window.removeEventListener('hashchange', takeLink);
+      clearInterval(t);
+    };
+  }, []);
+
+  const onKeep = useCallback(() => setPending(null), []);
+  const onSwitch = useCallback(() => {
+    if (pending === null) return;
+    const next = adoptLink(storage(), pending, Date.now());
+    setPending(null);
+    setLp(null);
+    setAttacks(null);
+    setSteps(null);
+    setProblem(null);
+    setSaved(next);
+    setBackups(loadBackups(storage()).map((b) => b.accountId));
+  }, [pending]);
+  const onSwitchBack = useCallback((accountId: string) => {
+    const next = switchTo(storage(), accountId);
+    if (next === null) return;
+    setLp(null);
+    setAttacks(null);
+    setSteps(null);
+    setProblem(null);
+    setSaved(next);
+    setBackups(loadBackups(storage()).map((b) => b.accountId));
   }, []);
 
   useEffect(() => {
@@ -518,7 +603,8 @@ export default function LenderPage(): ReactElement {
   }, [link]);
 
   const position = saved === null ? null : { saved, lp, attacks };
-  return <LenderView nowMs={nowMs} chain={chain} chainFailed={chainFailed} schedule={schedule} position={position} steps={steps} problem={problem} busy={busy} walletTx={walletTx} link={link} onLend={onLend} onRetry={onRetry} onWithdraw={onWithdraw} onWallet={onWallet} onCopy={onCopy} copied={copied} />;
+  const confirm = pending === null || saved === null ? null : { linked: pending.accountId, mine: saved.accountId };
+  return <LenderView linkNote={linkNote} confirm={confirm} backups={backups} onKeep={onKeep} onSwitch={onSwitch} onSwitchBack={onSwitchBack} nowMs={nowMs} chain={chain} chainFailed={chainFailed} schedule={schedule} position={position} steps={steps} problem={problem} busy={busy} walletTx={walletTx} link={link} onLend={onLend} onRetry={onRetry} onWithdraw={onWithdraw} onWallet={onWallet} onCopy={onCopy} copied={copied} />;
 }
 
 export { LenderPage };

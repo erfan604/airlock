@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import type { Page, Route } from 'playwright';
 import { CREDIT_POOL } from '../src/credit/net.ts';
 import { base58 } from '../src/preview/taskKey.ts';
+import vector from '../test/fixtures/tx-vector.json' with { type: 'json' };
 import { clipAudit } from './audit.ts';
 import type { E2E } from './types.ts';
 
@@ -133,7 +134,7 @@ const run: E2E = async ({ page, baseUrl }) => {
   // the link names the transaction the page signed: base58 of sha256 of the transaction bytes (the signed bytes less key type and signature)
   const signedBytes = Buffer.from(w.sent[0] ?? '', 'base64');
   const txHash = base58(createHash('sha256').update(signedBytes.subarray(0, signedBytes.length - 65)).digest());
-  assert.equal(await id('lend-deposit-link', page).getAttribute('href'), `https://testnet.nearblocks.io/txns/${txHash}`);
+  assert.equal(await page.locator('[data-testid="lend-deposit-link"] a').getAttribute('href'), `https://testnet.nearblocks.io/txns/${txHash}`);
   const tx = decoded(w.sent[0] ?? '');
   assert.deepEqual(tx, { signer: w.account, receiver: CREDIT_POOL, method: 'deposit', deposit: NEAR });
   await page.locator('[data-testid="lend-attacks"]', { hasText: 'since you joined:' }).waitFor();
@@ -155,6 +156,27 @@ const run: E2E = async ({ page, baseUrl }) => {
   await p2.locator('[data-testid="lend-position"]').waitFor();
   assert.equal(new URL(p2.url()).hash, '', 'the key is taken out of the address bar');
   await ctx.close();
+
+  // a restore link to another account: nothing is replaced until the visitor chooses; the record left is kept and can be switched back to
+  const mine = await id('lend-account', page).innerText();
+  const other = `${baseUrl}/lend/#k=${vector.secretKey.slice(8)}&a=lender-zzzzzzzzzz.testnet`;
+  await page.goto(other);
+  await id('lend-confirm', page).waitFor();
+  assert.equal(new URL(page.url()).hash, '', 'the key is out of the address bar before anything is decided');
+  assert.ok((await id('lend-confirm', page).innerText()).includes('This link holds a different lender account (lender-zzzz…)'));
+  await shot(page, 'confirm');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await id('lend-keep-mine', page).click();
+  assert.equal(await id('lend-confirm', page).count(), 0);
+  assert.equal(await id('lend-account', page).innerText(), mine, 'keep mine changes nothing');
+  await page.goto(other);
+  await id('lend-switch-linked', page).click();
+  await page.locator('[data-testid="lend-account"]', { hasText: 'lender-zzzz…' }).waitFor();
+  assert.ok((await id('lend-backups', page).innerText()).includes(`Also kept in this browser: ${mine}`));
+  await shot(page, 'switched');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await id('lend-switch-back', page).click();
+  await page.locator('[data-testid="lend-account"]', { hasText: mine }).waitFor();
 
   // the faucet down: the fallback offers a wallet
   const ctx3 = await page.context().browser()?.newContext({ viewport: { width: 1440, height: 900 } });

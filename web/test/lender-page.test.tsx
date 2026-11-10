@@ -53,7 +53,7 @@ const CHAIN: ChainView = {
 
 const base = (o: Partial<LenderViewProps> = {}): string =>
   renderToStaticMarkup(
-    <LenderView nowMs={NOW} chain={null} chainFailed={false} schedule={null} position={null} steps={null} problem={null} busy={false} walletTx={null} link={null} onLend={() => undefined} onRetry={() => undefined} onWithdraw={() => undefined} onWallet={() => undefined} onCopy={() => undefined} copied={false} {...o} />,
+    <LenderView nowMs={NOW} chain={null} chainFailed={false} schedule={null} position={null} steps={null} problem={null} busy={false} walletTx={null} link={null} linkNote={null} confirm={null} backups={[]} onKeep={() => undefined} onSwitch={() => undefined} onSwitchBack={() => undefined} onLend={() => undefined} onRetry={() => undefined} onWithdraw={() => undefined} onWallet={() => undefined} onCopy={() => undefined} copied={false} {...o} />,
   );
 
 test('lend: routed lazily, listed for the prerender and the sitemap, and in the nav', () => {
@@ -141,4 +141,25 @@ test('lend: slip amounts round to four places, so 1 NEAR less a yocto reads 1.00
   assert.equal(near4(NEAR - 1n), '1.0000');
   assert.equal(near4(990_099_009_900_990_099_009_900n), '0.9901');
   assert.equal(near4(0n), '0.0000');
+});
+
+// AIR-359 security review: a restore link naming another account than the saved one replaces nothing until the visitor chooses.
+test('lend: a link to another account asks first, in a plain sentence with two buttons', () => {
+  const html = base({ confirm: { linked: 'lender-zzzzzzzzzz.testnet', mine: ME } });
+  const t = text(html);
+  assert.ok(t.includes('This link holds a different lender account (lender-zzzz…) than the one kept in this browser (lender-7k2q…).'));
+  assert.ok(html.includes('data-testid="lend-keep-mine"') && t.includes('Keep mine'));
+  assert.ok(html.includes('data-testid="lend-switch-linked"') && t.includes('Switch to the linked account'));
+  assert.deepEqual(copyProblems(t), []);
+});
+
+test('lend: a refused link says why and changes nothing; a backup can be switched back to', () => {
+  const t = text(base({ linkNote: 'not-a-key' }));
+  assert.ok(t.includes('The key in this link is not a key of that account, so nothing was changed.'));
+  assert.ok(text(base({ linkNote: 'unreadable' })).includes('could not be checked on the chain just now, so nothing was changed'));
+  assert.ok(text(base({ linkNote: 'bad' })).includes('not a lender link this page can read'));
+  const html = base({ backups: ['lender-bbbbbbbbbb.testnet'] });
+  assert.ok(text(html).includes('Also kept in this browser: lender-bbbb…'));
+  assert.ok(!text(html).includes('lender-bbbb….'), 'no full stop after the ellipsis');
+  assert.ok(html.includes('data-testid="lend-switch-back"'));
 });

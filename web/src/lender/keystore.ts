@@ -1,7 +1,10 @@
 // AIR-359: the lender's key lives in this browser only (localStorage `airlock.lender.v1`) and in the restore link the visitor keeps:
 // `/lend/#k=<base58 of the 64 secret bytes>&a=<account>`. The fragment never reaches a server; the page reads it, stores it and removes it from
-// the address bar. A malformed fragment is refused, never half-used. The public half of the key is checked against its seed by chain/tx.ts.
-import { base58Decode } from '../chain/tx.ts';
+// the address bar. A malformed fragment is refused, never half-used. A good one is checked on chain (its key must be an access key of the account
+// it names) and, when it names another account than the saved one, waits for the visitor to choose; the record switched away from is kept.
+import { base58Decode, keyFromSecret, readAccessKey } from '../chain/tx.ts';
+import { RpcError } from '../chain/rpc.ts';
+import type { RpcConfig } from '../chain/rpc.ts';
 
 export const STORE_KEY = 'airlock.lender.v1';
 
@@ -71,16 +74,76 @@ export function parseFragment(hash: string): Fragment {
   return { kind: 'key', accountId: a, secretKey };
 }
 
-/** Takes a restore fragment from the address: stores it when it is good, and always removes it from the address bar. */
-export function consumeFragment(loc: { hash: string; pathname: string; search: string }, hist: { replaceState(data: unknown, unused: string, url: string): void }, store: Store | null, nowMs: number): Fragment {
+/** Takes a restore fragment out of the address bar (always, good or bad) and returns it. Nothing is stored here: a link is checked on chain first,
+ * and one that names another account than the saved one waits for the visitor's choice (security review of AIR-359). */
+export function takeFragment(loc: { hash: string; pathname: string; search: string }, hist: { replaceState(data: unknown, unused: string, url: string): void }): Fragment {
   const f = parseFragment(loc.hash);
-  if (f.kind === 'none') return f;
-  hist.replaceState(null, '', `${loc.pathname}${loc.search}`);
-  if (f.kind === 'key') {
-    const prev = loadSaved(store);
-    const keep = prev !== null && prev.accountId === f.accountId && prev.secretKey === f.secretKey;
-    saveLender(store, keep ? prev : { accountId: f.accountId, secretKey: f.secretKey, createdMs: nowMs, depositTx: null });
-  }
+  if (f.kind !== 'none') hist.replaceState(null, '', `${loc.pathname}${loc.search}`);
   return f;
 }
 
+export type Link = { accountId: string; secretKey: string };
+
+/** `new`: nothing is saved; `same`: the link is the saved record; `differs`: another account or another key, so the visitor is asked first. */
+export function decideLink(saved: Saved | null, link: Link): 'new' | 'same' | 'differs' {
+  if (saved === null) return 'new';
+  return saved.accountId === link.accountId && saved.secretKey === link.secretKey ? 'same' : 'differs';
+}
+
+export const BACKUP_KEY = 'airlock.lender.v1.backups';
+const MAX_BACKUPS = 5;
+
+/** The records the visitor switched away from, newest first. */
+export function loadBackups(store: Store | null): Saved[] {
+  try {
+    const text = store?.getItem(BACKUP_KEY);
+    const raw = text === null || text === undefined ? [] : (JSON.parse(text) as unknown);
+    return Array.isArray(raw) ? raw.map(parseSaved).filter((x): x is Saved => x !== null) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveBackups(store: Store | null, list: readonly Saved[]): void {
+  try {
+    store?.setItem(BACKUP_KEY, JSON.stringify(list.slice(0, MAX_BACKUPS)));
+  } catch {
+    // storage refused: the restore links are then the only copies, as for the main record
+  }
+}
+
+/** Makes a checked link the current record. A different saved record is kept first as a backup; the same link again changes nothing. */
+export function adoptLink(store: Store | null, link: Link, nowMs: number): Saved | null {
+  const prev = loadSaved(store);
+  if (prev !== null && decideLink(prev, link) === 'same') return prev;
+  if (prev !== null) saveBackups(store, [prev, ...loadBackups(store).filter((b) => b.accountId !== prev.accountId || b.secretKey !== prev.secretKey)]);
+  const next: Saved = { accountId: link.accountId, secretKey: link.secretKey, createdMs: nowMs, depositTx: null };
+  return saveLender(store, next) ? next : null;
+}
+
+/** Switches back to a backup record; the current one becomes a backup. null when there is no such backup. */
+export function switchTo(store: Store | null, accountId: string): Saved | null {
+  const list = loadBackups(store);
+  const target = list.find((b) => b.accountId === accountId);
+  if (target === undefined) return null;
+  const cur = loadSaved(store);
+  const rest = list.filter((b) => b !== target);
+  saveBackups(store, cur === null ? rest : [cur, ...rest]);
+  return saveLender(store, target) ? target : null;
+}
+
+/** Whether the public key of the link's secret is an access key of the account it names, read with view_access_key. */
+export async function verifyLinkKey(rpc: RpcConfig, link: Link): Promise<'ok' | 'not-a-key' | 'unreadable'> {
+  let pub: string;
+  try {
+    pub = (await keyFromSecret(link.secretKey)).publicKeyText;
+  } catch {
+    return 'not-a-key';
+  }
+  try {
+    await readAccessKey(rpc, link.accountId, pub);
+    return 'ok';
+  } catch (e) {
+    return e instanceof RpcError ? 'not-a-key' : 'unreadable';
+  }
+}

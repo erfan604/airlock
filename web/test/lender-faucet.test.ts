@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { FAUCET_URL, LENDER_ID, askFaucet, makeAccount, newLenderId } from '../src/lender/faucet.ts';
-import { STORE_KEY, consumeFragment, loadSaved, parseFragment, restoreLink, saveLender } from '../src/lender/keystore.ts';
+import { STORE_KEY, adoptLink, decideLink, loadBackups, loadSaved, parseFragment, restoreLink, saveLender, switchTo, takeFragment, verifyLinkKey } from '../src/lender/keystore.ts';
 import vector from './fixtures/tx-vector.json' with { type: 'json' };
 
 const PUB = 'ed25519:9C6hybhQ6Aycep9jaUnP6uL9ZYvDjUp1aSkFWPUFJtpj';
@@ -92,17 +92,60 @@ test('keystore: the restore link carries the key and account in the fragment; pa
   assert.deepEqual(parseFragment(`#k=${SAVED.secretKey.slice(8)}`), { kind: 'bad' });
 });
 
-test('keystore: consuming the fragment stores a good key and always removes the fragment from the address', () => {
+test('keystore: taking the fragment removes it from the address and stores nothing', () => {
   const s = memoryStore();
   const replaced: string[] = [];
   const hist = { replaceState: (_d: unknown, _u: string, url: string) => void replaced.push(url) };
-  const good = consumeFragment({ hash: new URL(restoreLink('https://x/lend/', SAVED)).hash, pathname: '/lend/', search: '' }, hist, s, 5);
+  const good = takeFragment({ hash: new URL(restoreLink('https://x/lend/', SAVED)).hash, pathname: '/lend/', search: '' }, hist);
   assert.equal(good.kind, 'key');
   assert.deepEqual(replaced, ['/lend/']);
-  assert.equal(loadSaved(s)?.accountId, SAVED.accountId);
-  const bad = consumeFragment({ hash: '#k=zz&a=q', pathname: '/lend/', search: '?x=1' }, hist, memoryStore(), 5);
-  assert.equal(bad.kind, 'bad');
+  assert.equal(loadSaved(s), null, 'a link is not saved until it is checked (and, when it differs, confirmed)');
+  assert.equal(takeFragment({ hash: '#k=zz&a=q', pathname: '/lend/', search: '?x=1' }, hist).kind, 'bad');
   assert.deepEqual(replaced, ['/lend/', '/lend/?x=1']);
-  assert.equal(consumeFragment({ hash: '', pathname: '/lend/', search: '' }, hist, s, 5).kind, 'none');
+  assert.equal(takeFragment({ hash: '', pathname: '/lend/', search: '' }, hist).kind, 'none');
   assert.equal(replaced.length, 2, 'nothing to remove');
+});
+
+const OTHER = { accountId: 'lender-zzzzzzzzzz.testnet', secretKey: SAVED.secretKey };
+
+test('keystore: a link equal to the saved record or with nothing saved needs no question; a different one does', () => {
+  assert.equal(decideLink(null, OTHER), 'new');
+  assert.equal(decideLink(SAVED, { accountId: SAVED.accountId, secretKey: SAVED.secretKey }), 'same');
+  assert.equal(decideLink(SAVED, OTHER), 'differs');
+  assert.equal(decideLink(SAVED, { accountId: SAVED.accountId, secretKey: 'ed25519:other' }), 'differs', 'same account, another key');
+});
+
+test('keystore: switching to a linked account keeps the previous record as a backup, and the page can switch back', () => {
+  const s = memoryStore();
+  saveLender(s, SAVED);
+  const now = adoptLink(s, OTHER, 9);
+  assert.equal(now?.accountId, OTHER.accountId);
+  assert.equal(loadSaved(s)?.accountId, OTHER.accountId);
+  assert.deepEqual(loadBackups(s).map((b) => b.accountId), [SAVED.accountId]);
+  // the same link again changes nothing and adds no backup
+  adoptLink(s, OTHER, 10);
+  assert.equal(loadBackups(s).length, 1);
+  const back = switchTo(s, SAVED.accountId);
+  assert.equal(back?.accountId, SAVED.accountId);
+  assert.equal(loadSaved(s)?.accountId, SAVED.accountId);
+  assert.deepEqual(loadBackups(s).map((b) => b.accountId), [OTHER.accountId], 'the record switched away from becomes the backup');
+  assert.equal(switchTo(s, 'nobody.testnet'), null);
+});
+
+function keyRpc(answer: 'key' | 'missing' | 'down'): typeof fetch {
+  return (async (_u: string, init: RequestInit) => {
+    if (answer === 'down') throw new Error('offline');
+    const body = JSON.parse(String(init.body)) as { params: { public_key: string } };
+    assert.equal(body.params.public_key, vector.publicKey, 'the key derived from the link secret is the one asked about');
+    const result = answer === 'key' ? { nonce: 7, block_hash: 'Bp3BbhbyBNoTt3LgewDgCezdiUAWKxiWq18vdj3PVUiS', permission: 'FullAccess' } : { error: 'access key does not exist while viewing', logs: [] };
+    return Response.json({ jsonrpc: '2.0', id: 'airlock', result });
+  }) as unknown as typeof fetch;
+}
+
+test('keystore: a link is checked on chain: its key must be an access key of the named account', async () => {
+  const rpc = (a: 'key' | 'missing' | 'down') => ({ rpcUrls: ['https://rpc.example'], fetch: keyRpc(a) });
+  assert.equal(await verifyLinkKey(rpc('key'), OTHER), 'ok');
+  assert.equal(await verifyLinkKey(rpc('missing'), OTHER), 'not-a-key');
+  assert.equal(await verifyLinkKey(rpc('down'), OTHER), 'unreadable');
+  assert.equal(await verifyLinkKey(rpc('key'), { accountId: 'a.testnet', secretKey: 'ed25519:1111' }), 'not-a-key', 'a secret that is not a key at all');
 });

@@ -208,3 +208,23 @@
   border-color: var(--xray);
   color: var(--xray);
 }
+
+/* a restore link to another account: one sentence and the two choices, no box */
+.lend-confirm,
+.lend-backups {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+.lend .lend-confirm p {
+  color: var(--ink);
+}
+.lend .lend-backups p {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.lend-confirm-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
