@@ -489,4 +489,15 @@ Mutants are listed in docs/mutation.md.
   `src/tests.rs` (10 new tests: 8 failed against stubs of the two calls before they were written; the share price test, a guard, and
   the defaults test passed against the stubs), `tests/pool.rs` (the sandbox checks above), `scripts/credit-passport-run.ts` (the migrate args).
 - `res/airlock_credit_v2.wasm` is rebuilt with it: sha256 `e754b6aa1b6f06dde89fb388d799d7adfb4589429a0c9fe745073018109f0bcd`, code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`.
-- Not live: nothing in README, CLAIMS or EVIDENCE claims it.
+- Rehearsed against the real signer on 2026-11-10 (19:50Z, signer weather GOOD): this exact wasm was deployed with `new` on a throwaway
+  test network account, `rehearse-52be79.airlock-fund-0c111e.testnet`, which was deleted afterwards. Three calls, each by the account
+  that funded it:
+  - a check of the Base Sepolia transaction 0x943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63 with 0.01 NEAR and 100 Tgas
+    recorded the answer in about 14 s (NEAR transaction `8a6k6Hzdw8tYm9mNZeoupj7nXXffKoGbLB8nRuvMZQGd`, event `base_payment_checked`).
+    `get_base_check` returned payload hash b38ee2231f49b349ec841663233049d739fbd6b00c786b729cda8814b92021c1, the hash the AIR-342 spike
+    got for the same transaction. All receipts together burnt 13.74 Tgas, so the 60 Tgas floor has room;
+  - the same id again was refused with `this Base transaction is already recorded`;
+  - a check of an id that is no Base transaction, with exactly 60 Tgas, ended with `base_payment_unchecked`, reason `the signer call
+    failed or timed out`, and a refund of the fee less 1 yocto (NEAR transaction `FQcfS89WaSb9eoYh4ZzzovWDy83LvM6L3b952vtENiEv`).
+  So the signer's answer does reach `on_base_check` as its promise result. Not rehearsed: a signer timeout, and an answer over the read bound.
+- Not live on the pool: nothing in README, CLAIMS or EVIDENCE claims it.
