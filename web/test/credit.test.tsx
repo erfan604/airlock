@@ -14,7 +14,7 @@ import { LinesTable, Passports } from '../src/credit/CreditPage.tsx';
 import { explorerAccount, shownAccount } from '../src/credit/model.ts';
 import { CreditHeroMedia } from '../src/credit/HeroMedia.tsx';
 import { CREDIT_LOOP, CREDIT_MEDIA, CREDIT_POSTER } from '../src/credit/media.ts';
-import { parseLp, assetsFor, bps, derive, formatNear, parseEventLog, parseNear, parsePool, passportOf, percent, refusedSum, returnBps, sharesFor } from '../src/credit/model.ts';
+import { parseLp, assetsFor, bps, derive, formatNear, parseEventLog, parseNear, parsePool, percent, refusedSum, returnBps, sharesFor } from '../src/credit/model.ts';
 import type { CreditEvent } from '../src/credit/model.ts';
 import { HELD_TIMEOUT, flightsOf, ringPos, rosterOf, settle, shatter, stepFlight, worldPos } from '../src/credit/scene/choreo.ts';
 import { DEFAULT_POOL, mergeEvents, nextDelay, poolFromSearch } from '../src/credit/useCredit.ts';
@@ -99,14 +99,10 @@ test('the fixture looks like a young pool, not a promise: single-digit APY, 20 t
   assert.ok(FIXTURE_POOL.lines.every((l) => l.state === 'repaid' || BigInt(l.dueMs) > BigInt(FIXTURE_NOW)), 'no fixture line is past due');
 });
 
-test('refusedSum and passportOf read events only', () => {
+test('refusedSum reads events only', () => {
   const ev = (kind: CreditEvent['kind'], who: string, amount: string): CreditEvent => ({ id: `${kind}${who}${amount}`, kind, atMs: 1, who, amount, chain: null, requestId: null, tx: null, fixture: false });
   const list = [ev('card_refused', 'a', '5'), ev('card_refused', 'b', '7'), ev('card_paid', 'a', '9'), ev('repaid', 'a', '1')];
   assert.equal(refusedSum(list), 12n);
-  const p = passportOf('a', list);
-  assert.deepEqual([p.allowed, p.refused, p.repaid, p.defaulted], [1, 1, 1, false]);
-  assert.ok(passportOf('a', [ev('defaulted', 'a', '0')]).score < 10);
-  assert.equal(passportOf('zzz', list).score, 50);
 });
 
 test('the fixture is deterministic, every event is marked, and the stolen counter reads the pool losses', () => {
@@ -268,7 +264,7 @@ test('owner rule: an account name that contains erfan is never printed, it is a 
   const html = renderToStaticMarkup(
     <>
       <LinesTable lines={lines} selected={null} onSelect={() => undefined} nowMs={BigInt(FIXTURE_NOW)} />
-      <Passports lines={lines} events={[]} fixture />
+      <Passports rows={[{ card: 'card.erfan-airlock.testnet', passport: { borrower: 'agent.erfan-airlock.testnet', score: 500, limitCap: '1000000000000000000000000', reasons: ['base +500'], record: { linesOpened: 1, repaidOnTime: 0, repaidLate: 0, defaults: 0 } } }]} pool={null} />
       <Ticker events={[{ id: 'x', kind: 'card_paid', atMs: 1, who: 'agent.erfan-airlock.testnet', amount: '1', chain: 'near', requestId: null, tx: null, fixture: false }]} nowMs={5} live="live" />
     </>,
   );

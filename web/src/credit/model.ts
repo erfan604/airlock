@@ -259,27 +259,6 @@ export function refusedSum(events: readonly CreditEvent[]): bigint {
   return sum;
 }
 
-export type Passport = { allowed: number; held: number; refused: number; repaid: number; defaulted: boolean; score: number };
-
-/** A card's record read from its events. The score is 0 to 100: on-time repayment and allowed spend raise it, refusals and a default cut it. Integer math. */
-export function passportOf(card: string, events: readonly CreditEvent[], lineDefaulted = false): Passport {
-  let allowed = 0;
-  let held = 0;
-  let refused = 0;
-  let repaid = 0;
-  let defaulted = lineDefaulted;
-  for (const e of events) {
-    if (e.who !== card) continue;
-    if (e.kind === 'card_paid') allowed += 1;
-    else if (e.kind === 'card_held') held += 1;
-    else if (e.kind === 'card_refused') refused += 1;
-    else if (e.kind === 'repaid') repaid += 1;
-    else if (e.kind === 'defaulted') defaulted = true;
-  }
-  const raw = 50 + Math.min(allowed, 20) * 2 + Math.min(repaid, 5) * 4 - Math.min(refused, 10) * 3 - (defaulted ? 60 : 0);
-  return { allowed, held, refused, repaid, defaulted, score: Math.max(0, Math.min(100, raw)) };
-}
-
 export function shortId(id: string, max = 22): string {
   return id.length <= max ? id : `${id.slice(0, max - 9)}...${id.slice(-6)}`;
 }

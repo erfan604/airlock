@@ -10,11 +10,13 @@ import { PRERENDER, STATIC } from '../static.ts';
 import { explorerBaseTx, readBaseChecks } from './baseChecks.ts';
 import type { BaseCheckRow } from './baseChecks.ts';
 import { readLp } from './chain.ts';
+import { readPassports, readPoolPassport } from './passport.ts';
+import type { PassportRow, PoolPassport } from './passport.ts';
 import { connectWallet } from '../wallet/connector.ts';
 import { DEFAULT_POOL, poolFromSearch, useCredit } from './useCredit.ts';
 import type { CreditState } from './useCredit.ts';
 import { accountText } from '../components/account.ts';
-import { assetsFor, derive, explorerAccount, shownAccount, formatNear, parseNear, passportOf, percent, refusedSum, shortId, sharesFor } from './model.ts';
+import { assetsFor, derive, explorerAccount, shownAccount, formatNear, parseNear, percent, refusedSum, shortId, sharesFor } from './model.ts';
 import type { CreditEvent, EventKind, Line, PoolView } from './model.ts';
 import { depositCall, sendPoolCall, withdrawCall } from './wallet.ts';
 import type { SendResult } from './wallet.ts';
@@ -435,37 +437,43 @@ export function LinesTable({ lines, selected, onSelect, nowMs }: { lines: readon
   );
 }
 
-export function Passports({ lines, events, fixture }: { lines: readonly Line[]; events: readonly CreditEvent[]; fixture: boolean }) {
+/** The Credit Passport the pool contract keeps for each borrower, as the contract answered. Nothing at all (no heading, no box) until at least one card has one. */
+export function Passports({ rows, pool }: { rows: readonly PassportRow[]; pool: PoolPassport | null }) {
+  if (rows.length === 0) return null;
+  const r = 34;
+  const c = 2 * Math.PI * r;
   return (
     <section className="cr-wide" aria-labelledby="cr-pass-h" data-testid="credit-passports">
       <h2 id="cr-pass-h" className="cr-h2">
         Agent Credit Passports
       </h2>
       <p className="cr-note">
-        {`An agent account's record, read from its events: allowed, held and refused payments and repayments. ${fixture ? 'These are fixture records. ' : ''}The score is arithmetic on that record, shown here before the passport token (AIR-333) exists.`}
+        {`The pool contract keeps each borrower's record and computes the score, and the score caps the borrower's next line. A repay counts only when the card kept at least a tenth of the line and at least a tenth of the base${pool === null ? '' : ` (the base is ${formatNear(pool.floorBase)} NEAR)`}. These are rules of thumb on the pool's own events, not a credit model.`}
       </p>
       <ul className="cr-passes">
-        {lines.map((l) => {
-          const p = passportOf(l.card, events, l.state === 'defaulted');
-          const r = 34;
-          const c = 2 * Math.PI * r;
-          return (
-            <li key={l.card} className="cr-pass" data-testid="passport-card" data-score={p.score}>
-              <svg className="cr-pass-ring" viewBox="0 0 84 84" role="img" aria-label={`Score ${String(p.score)} out of 100`}>
-                <circle cx="42" cy="42" r={r} fill="none" stroke="var(--hair)" strokeWidth="3" />
-                <circle cx="42" cy="42" r={r} fill="none" stroke={p.defaulted ? 'var(--alarm)' : 'var(--clear)'} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(c * p.score) / 100} ${c}`} transform="rotate(-90 42 42)" />
-                <text x="42" y="48" textAnchor="middle" className="cr-pass-score">
-                  {p.score}
-                </text>
-              </svg>
-              <div className="cr-pass-body">
-                <p className="cr-pass-name">{shortId(accountText(l.card, 'demo line'), 34)}</p>
-                <p className="cr-pass-line">{`${String(p.allowed)} allowed, ${String(p.held)} held, ${String(p.refused)} refused`}</p>
-                <p className="cr-pass-line">{p.defaulted ? 'Defaulted' : `${String(p.repaid)} repaid on time`}</p>
-              </div>
-            </li>
-          );
-        })}
+        {rows.map(({ card, passport: p }) => (
+          <li key={card} className="cr-pass" data-testid="passport-card" data-score={p.score}>
+            <svg className="cr-pass-ring" viewBox="0 0 84 84" role="img" aria-label={`Score ${String(p.score)} out of 1000`}>
+              <circle cx="42" cy="42" r={r} fill="none" stroke="var(--hair)" strokeWidth="3" />
+              <circle cx="42" cy="42" r={r} fill="none" stroke={p.record.defaults > 0 ? 'var(--alarm)' : 'var(--clear)'} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(c * p.score) / 1000} ${c}`} transform="rotate(-90 42 42)" />
+              <text x="42" y="48" textAnchor="middle" className="cr-pass-score">
+                {p.score}
+              </text>
+            </svg>
+            <div className="cr-pass-body">
+              <p className="cr-pass-name">
+                <Account id={p.borrower} max={34} />
+              </p>
+              <p className="cr-pass-line">{`The next line may be at most ${formatNear(p.limitCap)} NEAR`}</p>
+              {p.reasons.map((reason, i) => (
+                <p key={i} className="cr-pass-line" data-testid="passport-reason">
+                  {reason}
+                </p>
+              ))}
+              <p className="cr-pass-line">{`${String(p.record.linesOpened)} lines opened, ${String(p.record.repaidOnTime)} repaid on time, ${String(p.record.repaidLate)} repaid late, ${String(p.record.defaults)} defaults`}</p>
+            </div>
+          </li>
+        ))}
       </ul>
     </section>
   );
@@ -618,6 +626,28 @@ export function CreditPage(): ReactElement {
     };
   }, [livePool]);
 
+  // The contract's own Credit Passport per card and the pool's base, read once per change of the lines (same guards as the Base checks: live state, hosted site, never at prerender). A failed read leaves the block absent.
+  const lineKey = state.kind === 'live' ? state.pool.lines.map((l) => `${l.card}:${l.state}:${l.returned}`).join(',') : '';
+  const [passportRows, setPassportRows] = useState<PassportRow[]>([]);
+  const [poolPassport, setPoolPassport] = useState<PoolPassport | null>(null);
+  useEffect(() => {
+    if (livePool === null || !STATIC || PRERENDER || lineKey === '') return undefined;
+    let current = true;
+    const cfg = { pool: livePool, rpcUrls: NEAR_RPC };
+    const cards = lineKey.split(',').map((k) => k.split(':')[0] ?? '');
+    Promise.all([readPassports(cfg, cards), readPoolPassport(cfg)]).then(
+      ([rows, base]) => {
+        if (!current) return;
+        setPassportRows(rows);
+        setPoolPassport(base);
+      },
+      () => undefined,
+    );
+    return () => {
+      current = false;
+    };
+  }, [livePool, lineKey]);
+
   const pool = state.kind === 'fixture' || state.kind === 'live' ? state.pool : null;
   const events = state.kind === 'fixture' || state.kind === 'live' ? state.events : [];
   const known = pool?.lines.some((l) => l.card === selected) === true;
@@ -725,7 +755,7 @@ export function CreditPage(): ReactElement {
             <Ticker events={events} nowMs={now} live={state.kind} />
           </div>
           <LinesTable lines={pool.lines} selected={selected} onSelect={pick} nowMs={nowMs} />
-          <Passports lines={pool.lines} events={events} fixture={state.kind === 'fixture'} />
+          {state.kind === 'live' ? <Passports rows={passportRows} pool={poolPassport} /> : null}
           {state.kind === 'live' ? <BaseChecks rows={baseRows} nowMs={now} /> : null}
           {state.kind === 'live' ? <ArenaStrip nowMs={now} Link={TxLink} /> : null}
         </>
