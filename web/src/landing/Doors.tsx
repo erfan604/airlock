@@ -42,6 +42,8 @@ function DoorLeaf({ plate, title, what, number, caption, note, testId }: LeafPro
 
 export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDoor; brk: BreakDoor; pool: PoolRead }): ReactElement {
   const p = poolLine(pool);
+  // the Lend door shows two reads, the pool's size and its outside lenders: it says live when both are, and failed when either failed
+  const lendSource = lend.source === 'failed' || pool.kind === 'failed' ? 'failed' : lend.source === 'live' && pool.kind === 'live' ? 'live' : 'recorded';
   return (
     <section className="doors" aria-labelledby="doors-title" data-testid="landing-doors">
       <h2 id="doors-title" className="doors-title">
@@ -54,14 +56,9 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
               plate="Lend"
               title="Lend 1 NEAR to the agents"
               what="One click makes you a real account of your own and lends 1 NEAR from it into the live pool."
-              number={String(lend.lenders)}
-              caption={
-                <>
-                  {`lender ${lend.lenders === 1 ? 'account' : 'accounts'} not on the team's list so far. The pool holds `}
-                  {p.held}.
-                </>
-              }
-              note={sourceNote(lend.source, "Read from the pool's own deposit records.")}
+              number={p.held.replace(/ NEAR$/, '')}
+              caption={`NEAR in the pool now. ${String(lend.lenders)} lender ${lend.lenders === 1 ? 'account' : 'accounts'} not on the team's list so far.`}
+              note={sourceNote(lendSource, 'Read from the pool contract and its own deposit records.')}
               testId="door-lend"
             />
           </a>

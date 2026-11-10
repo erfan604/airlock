@@ -82,9 +82,12 @@ test('doors: each door links its page, shows its one number, and says recorded u
   assert.ok(t.includes('Runs on the NEAR test network, where NEAR has no value.') && t.includes('the issuer books the payees'));
   assert.ok(!/testnet|erfan/i.test(t));
   const live = text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 3, source: 'live' }, rob: { attempts: 1, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 4, source: 'live' }, pool: { kind: 'live', assets: '3201000000000000000000000', losses: '0' } })));
-  assert.ok(live.includes("3 lender accounts not on the team's list so far. The pool holds 3.2 NEAR."));
+  assert.ok(live.includes("3.2 NEAR in the pool now. 3 lender accounts not on the team's list so far."));
   assert.ok(live.includes('in 1 attempt.') && live.includes('Kani fails on 4 of them.'));
-  assert.ok(live.includes("Read from the pool's own deposit records.") && !live.includes('Recorded'));
+  assert.ok(live.includes('Read from the pool contract and its own deposit records.') && !live.includes('Recorded'));
+  // the Lend door shows two reads: one live and one recorded is not live
+  const half = text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 3, source: 'live' }, rob: { attempts: 1, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 5, source: 'live' }, pool: { kind: 'failed' } })));
+  assert.ok(half.includes(`Recorded ${RECORDED.atText}; it could not be read just now.`) && !half.includes('Read from the pool contract and its own deposit records.'));
   const failed = text(renderToStaticMarkup(createElement(DoorsView, { lend: recordedLend(true), rob: recordedRob(), brk: recordedBreak(), pool: { kind: 'recorded' } })));
   assert.ok(failed.includes(`Recorded ${RECORDED.atText}; it could not be read just now.`));
 });
