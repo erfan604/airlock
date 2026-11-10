@@ -1,5 +1,5 @@
 // AIR-329: the two transactions an LP signs on the credit pool, built as exactly one FunctionCall each (the same discipline as wallet/approve.ts).
-// `deposit` attaches the NEAR the LP puts in; `withdraw` attaches 1 yoctoNEAR and names the shares to redeem. Method and argument names follow the
+// `deposit` attaches the NEAR the LP puts in; `withdraw` attaches nothing (it is not #[payable], so a deposit reverts it, AIR-359) and names the shares to redeem. Method and argument names follow the
 // AIR-328 ticket's view and event shapes; the page keeps them disabled while no pool is deployed (fixture mode).
 import { currentWallet } from '../wallet/connector.ts';
 
@@ -19,7 +19,7 @@ export function depositCall(pool: string, yocto: bigint): PoolCall {
 
 export function withdrawCall(pool: string, shares: bigint): PoolCall {
   if (shares <= 0n) throw new Error('a withdrawal must redeem more than 0 shares');
-  return { receiverId: pool, actions: [{ type: 'FunctionCall', params: { methodName: 'withdraw', args: { shares: shares.toString() }, gas: (WITHDRAW_TGAS * TGAS).toString(), deposit: '1' } }] };
+  return { receiverId: pool, actions: [{ type: 'FunctionCall', params: { methodName: 'withdraw', args: { shares: shares.toString() }, gas: (WITHDRAW_TGAS * TGAS).toString(), deposit: '0' } }] };
 }
 
 export type SendResult = { ok: true; tx: string } | { ok: false; reason: 'cancelled' | 'failed' };

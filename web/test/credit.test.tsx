@@ -193,7 +193,8 @@ test('wallet calls are one FunctionCall with the right deposit and refuse zero',
   assert.equal(d.actions[0].params.deposit, '5');
   const w = withdrawCall('pool.testnet', 7n);
   assert.deepEqual(w.actions[0].params.args, { shares: '7' });
-  assert.equal(w.actions[0].params.deposit, '1');
+  // AIR-359: withdraw is not #[payable] (contracts/airlock-credit/src/lib.rs withdraw), so any attached deposit makes it revert
+  assert.equal(w.actions[0].params.deposit, '0');
   assert.throws(() => depositCall('p', 0n));
   assert.throws(() => withdrawCall('p', 0n));
 });
