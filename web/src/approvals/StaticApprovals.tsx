@@ -53,6 +53,9 @@ const STATE_WORD: Record<string, string> = {
   Failed: 'Approved, payment failed',
 };
 
+/** AIR-351: a payee key as the hosted page prints it, the site's short form (accountText: no `near:`, no network suffix, the owner's names a label). */
+export const shortPayee = (key: string): string => (key.startsWith('near:') ? accountText(key.slice('near:'.length)) : key);
+
 /** The payee of an earlier request: a plain name linked to the explorer (the owner's own names get a label), the full id in the link target only. */
 function Payee({ payee }: { payee: string }) {
   const id = payee.replace(/^near:/, '');
@@ -167,7 +170,7 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
                 This request expired. The contract refuses an approval after the expiry, so it is shown without buttons.
               </p>
             ) : null}
-            <ApprovalCard card={c} ownerId={ownerId} contractId={policy} actions={actions} nowMs={nowMs} onDone={onDone} viewOnly={access.kind !== 'owner' || expired} />
+            <ApprovalCard displayPayee={shortPayee} card={c} ownerId={ownerId} contractId={policy} actions={actions} nowMs={nowMs} onDone={onDone} viewOnly={access.kind !== 'owner' || expired} />
             {tx !== undefined ? (
               <p className="approvals-more" data-testid="tx-result" data-hash={tx.hash}>
                 {tx.kind === 'approve' ? 'Approved. ' : 'Rejected. '}

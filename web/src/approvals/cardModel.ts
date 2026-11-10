@@ -52,15 +52,16 @@ export function displayMismatch(v: RequestView, asset: AssetEntryViewJson): bool
 export const CARD_TITLE_TEMPLATE = 'Pay {amount} {symbol} to {to}?';
 
 /** Fills `CARD_TITLE_TEMPLATE` from the stored arguments; a value is inserted once and never re-scanned for placeholders. */
-export function cardTitle(args: ApproveArgs): string {
-  const values: Record<string, string> = { amount: args.amount, symbol: args.asset, to: args.to };
+export function cardTitle(args: ApproveArgs, shownTo: string = args.to): string {
+  const values: Record<string, string> = { amount: args.amount, symbol: args.asset, to: shownTo };
   return CARD_TITLE_TEMPLATE.replace(/\{(amount|symbol|to)\}/g, (_m, k: string) => values[k] ?? '');
 }
 
 export type RowName = 'TO' | 'AMOUNT' | 'BECAUSE';
 export const ROW_ORDER: readonly RowName[] = ['TO', 'AMOUNT', 'BECAUSE'];
 
-export type CardRow = { name: RowName; value: string; seals: readonly LabelName[] };
+/** `value` is the stored value (the look-alike diff compares it); `shown`, when set, is the display form the page prints instead. */
+export type CardRow = { name: RowName; value: string; shown?: string; seals: readonly LabelName[] };
 
 export type CapLine = {
   binds: 'CAP' | 'BUDGET LEFT';
@@ -84,7 +85,7 @@ export type DiffModel = { result: LookalikeResult | null; label: BookLabel | nul
 export type ForcingModel = { required: boolean; target: string; label: string };
 
 /** What the card needs besides the request: the keys and labels of the book rows, and the forcing minimum. */
-export type CardExtras = { /** false: the policy keeps a private book and the owner's book file is not loaded here (AIR-326) */ bookLoaded?: boolean; bookKeys?: readonly string[]; bookLabels?: Readonly<Record<string, string>>; forcingMinAmount?: bigint };
+export type CardExtras = { /** false: the policy keeps a private book and the owner's book file is not loaded here (AIR-326) */ bookLoaded?: boolean; bookKeys?: readonly string[]; bookLabels?: Readonly<Record<string, string>>; forcingMinAmount?: bigint; /** AIR-351: the hosted page's display form of a payee key (titles, the TO row, the sentence). Never used for a value that is compared, signed or sent. */ displayPayee?: (key: string) => string };
 
 export type SourceChip = { row: RowName; from: string | null; sender: Untrusted | null; age: string | null };
 
@@ -308,20 +309,22 @@ export function buildCardModel(
   const claimsBook = bitsToLabels(v.labels.recipient & ~UNKNOWN_BIT).includes('Book');
   const labelMismatch = outsideBook && claimsBook;
   const toSeals = labelMismatch ? sealsOf(v.labels.recipient).filter((l) => l !== 'Book') : sealsOf(v.labels.recipient);
+  const shown = extras.displayPayee;
+  const payeeText = shown === undefined ? v.payee : shown(v.payee);
   const rows: CardRow[] = [
-    { name: 'TO', value: v.payee, seals: toSeals },
+    shown === undefined ? { name: 'TO', value: v.payee, seals: toSeals } : { name: 'TO', value: v.payee, shown: payeeText, seals: toSeals },
     { name: 'AMOUNT', value: `${args.amount} ${args.asset}`, seals: sealsOf(v.labels.amount) },
     { name: 'BECAUSE', value: becauseValue(v.labels.pc, rowChannels('BECAUSE')), seals: sealsOf(v.labels.pc) },
   ];
   return Object.freeze<CardModel>({
     no: args.id,
     requestId: v.request_id,
-    title: cardTitle(args),
-    sheetTitle: `Approve ${args.amount} ${args.asset} to ${args.to}?`,
+    title: cardTitle(args, payeeText),
+    sheetTitle: `Approve ${args.amount} ${args.asset} to ${payeeText}?`,
     approveLabel: `Approve ${args.amount} ${args.asset}`,
     ref: `Request #${args.id}`,
     reason: args.why,
-    sentence: sentenceFor(args.why, { payee: v.payee, channel, cap }),
+    sentence: sentenceFor(args.why, { payee: payeeText, channel, cap }),
     offender,
     rows,
     chip,

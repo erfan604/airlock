@@ -38,6 +38,8 @@ export type CardProps = {
   bookKeys: readonly string[];
   /** Label per book key, for the diff sentence. A missing label leaves the sentence without one. */
   bookLabels?: Readonly<Record<string, string>>;
+  /** AIR-351: the hosted page's display form of a payee key; the args, the checks and the wallet block keep the full key */
+  displayPayee?: (key: string) => string;
   onApprove(a: ApproveArgs): Promise<ApproveResult>;
   /** The second action of the sheet (AIR-299): approve and enter the payee into the book. Absent: the sheet offers the plain approve only. */
   onApproveAndRemember?(a: RememberArgs): Promise<ApproveResult>;
@@ -253,7 +255,7 @@ export function CardView({ viewOnly = false, model, readOnly, state, onOpen, onC
         ) : null}
         <Manifest order={offender ? 'offender-first' : 'canonical'} offender={offender}>
           {model.rows.map((row) => (
-            <ManifestRow key={row.name} name={row.name} value={row.value} seals={row.seals} emphasized={row.name === model.offender} sourceLine={sourceLineOf(row, model)} />
+            <ManifestRow key={row.name} name={row.name} value={row.shown ?? row.value} seals={row.seals} emphasized={row.name === model.offender} sourceLine={sourceLineOf(row, model)} />
           ))}
         </Manifest>
         {model.snippet !== null ? <Specimen text={model.snippet} channel={model.specimenChannel} source={model.ageText ?? undefined} testId="specimen" /> : null}
@@ -268,7 +270,10 @@ export function CardView({ viewOnly = false, model, readOnly, state, onOpen, onC
             {ARG_NAMES.map((name) => (
               <div className="card-arg" key={name}>
                 <dt>{name}</dt>
-                <dd data-testid={`arg-${name}`}>{model.args[name]}</dd>
+                {/* the exact values the wallet signs: code, never shortened */}
+                <dd data-testid={`arg-${name}`}>
+                  <code>{model.args[name]}</code>
+                </dd>
               </div>
             ))}
           </dl>
@@ -375,7 +380,7 @@ function snapshot(p: CardProps): Snapshot {
   try {
     const now = p.nowMs !== undefined ? (DECIMAL.test(p.nowMs) ? BigInt(p.nowMs) : null) : BigInt(Date.now());
     if (now === null) return { ok: false, code: 'BadClock' };
-    return { ok: true, model: buildCardModel(p.view, p.evidence, p.ledgers, p.asset, p.book, now, { bookLoaded: p.bookLoaded ?? true, bookKeys: p.bookKeys, bookLabels: p.bookLabels }) };
+    return { ok: true, model: buildCardModel(p.view, p.evidence, p.ledgers, p.asset, p.book, now, { bookLoaded: p.bookLoaded ?? true, bookKeys: p.bookKeys, bookLabels: p.bookLabels, ...(p.displayPayee === undefined ? {} : { displayPayee: p.displayPayee }) }) };
   } catch (e) {
     return { ok: false, code: e instanceof CardError ? e.code : 'BadView' };
   }

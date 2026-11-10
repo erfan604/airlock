@@ -166,7 +166,7 @@ export type ApprovalsViewProps = {
   onReload?(): void;
 };
 
-export function ApprovalCard({ viewOnly = false, card, ownerId, contractId, actions, scope, nowMs, onDone, attestations }: { card: CardData; viewOnly?: boolean } & Omit<ApprovalsViewProps, 'data'>) {
+export function ApprovalCard({ viewOnly = false, card, ownerId, contractId, actions, scope, nowMs, onDone, attestations, displayPayee }: { card: CardData; viewOnly?: boolean; displayPayee?: (key: string) => string } & Omit<ApprovalsViewProps, 'data'>) {
   const no = card.view.id ?? '';
   const [failures, setFailures] = useState(() => readFailures(scope ?? { network: 'testnet', contractId }, no));
   const walletOffered = allowedWallet(PRIMARY_WALLET_ID) !== null;
@@ -203,7 +203,7 @@ export function ApprovalCard({ viewOnly = false, card, ownerId, contractId, acti
   const showCli = !viewOnly && cliArgs !== null && (!walletOffered || failures >= MAX_FAILURES);
   return (
     <div className="approval-item" data-testid="approval-item">
-      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookLoaded={card.bookLoaded} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onApproveAndRemember={actions.approveAndRemember === undefined || !card.bookLoaded ? undefined : wrapped.approveAndRemember} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} viewOnly={viewOnly} />
+      <Card view={card.view} evidence={card.evidence} ledgers={card.ledgers} asset={card.asset} book={card.book} bookLoaded={card.bookLoaded} bookKeys={card.bookKeys} bookLabels={card.bookLabels} onApprove={wrapped.approve} onApproveAndRemember={actions.approveAndRemember === undefined || !card.bookLoaded ? undefined : wrapped.approveAndRemember} onReject={wrapped.reject} scope={scope ?? { network: 'testnet', contractId }} nowMs={nowMs} viewOnly={viewOnly} {...(displayPayee === undefined ? {} : { displayPayee })} />
       {showCli && cliArgs !== null ? <CliPanel args={cliArgs} contractId={contractId} ownerId={ownerId} /> : null}
       {attestations !== undefined ? <VerifiedPanel attestations={attestations} /> : null}
     </div>

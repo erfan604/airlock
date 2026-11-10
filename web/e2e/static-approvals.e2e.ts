@@ -104,7 +104,8 @@ const run: E2E = async ({ page, baseUrl }) => {
     // a pending card read from the chain, before any wallet: the values and the labels of the recorded request, no signing button
     await open(OWNER);
     assert.equal(await id(page, 'approvals-policy').innerText(), 'Held requests on the credit line policy');
-    assert.equal(await id(page, 'card-title').innerText(), 'Pay 9.4 NEAR to near:accountant.erfan-airlock.testnet?');
+    // the hosted page prints the payee short; the wallet block (arg-to) and the signed call below keep the full key
+    assert.equal(await id(page, 'card-title').innerText(), 'Pay 9.4 NEAR to demo account?');
     assert.equal(await id(page, 'arg-to').textContent(), 'near:accountant.erfan-airlock.testnet');
     assert.equal(await id(page, 'arg-amount').textContent(), '9.4');
     assert.equal(await id(page, 'arg-why').textContent(), 'OverTaskBound');

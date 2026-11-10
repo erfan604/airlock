@@ -122,7 +122,8 @@ test('view: the owner sees the buttons and the reveal instruction', async () => 
   assert.ok(html.includes('data-testid="open-approve"'));
   assert.ok(html.includes('data-testid="access" data-access="owner"'));
   assert.ok(html.includes('data-testid="reveal-instruction"'));
-  assert.ok(html.includes('Pay 9.4 NEAR to near:accountant.erfan-airlock.testnet?'));
+  // AIR-351: the hosted page prints the payee short (an account with the owner's name is a plain label); the wallet block keeps the full key
+  assert.ok(html.includes('Pay 9.4 NEAR to demo account?'));
 });
 
 test('view: a non-owner account sees the card and the words view only, with no button that signs', async () => {
@@ -192,4 +193,12 @@ test('view: the empty state shows one example slip, labelled recorded, with no b
 test('view: a page with a held request shows no example slip', async () => {
   const html = renderToStaticMarkup(<StaticApprovalsView {...common} data={await data()} access={{ kind: 'signed-out' }} />);
   assert.ok(!html.includes('data-testid="approvals-example"'));
+});
+
+// AIR-351 follow-up: the hosted card prints the payee in the short form; the args it would approve keep the full key.
+test('view: the hosted card shows the payee short, and the values it would sign stay the full key', async () => {
+  const html = renderToStaticMarkup(<StaticApprovalsView {...common} data={await data()} access={{ kind: 'owner', account: OWNER }} />);
+  const visible = html.replace(/<code>[\s\S]*?<\/code>/g, '').replace(/<[^>]+>/g, ' ');
+  assert.ok(!/testnet/.test(visible), visible.match(/.{0,40}testnet.{0,40}/)?.[0]);
+  assert.ok(html.includes('<code>near:accountant.erfan-airlock.testnet</code>'), 'the wallet block keeps the exact payee');
 });

@@ -650,3 +650,33 @@ test('headline: an honest display matches and flags nothing', () => {
   assert.equal(viewHtml(m).includes('display-mismatch'), false);
   assert.deepEqual(approveArgs(inputs().view, inputs().asset), approveArgs(inputs().view));
 });
+
+// AIR-351 follow-up: the hosted /approvals page prints payees in the site's short form (no `near:`, no network suffix), as a display option
+// of that page only. Everything that is compared, signed or sent keeps the full stored payee: the approve args, the wallet block, the
+// look-alike check and the forcing step. The console (no option) is unchanged.
+test('display: a short payee form changes the visible strings only; the args and every checked value keep the full payee', () => {
+  const full = 'near:merchant.airlock-credit-c1108d.testnet';
+  const short = (k: string): string => k.replace(/^near:/, '').replace(/\.testnet$/, '');
+  const i = inputs({ viewPatch: { payee: full } });
+  const evidence = parseEvidence({ sender: i.sender, snippet: i.snippet }, i.view.labels);
+  const plain = buildCardModel(i.view, evidence, i.ledgers, i.asset, i.book, NOW);
+  const m = buildCardModel(i.view, evidence, i.ledgers, i.asset, i.book, NOW, { displayPayee: short });
+  assert.equal(m.title, 'Pay 9.4 NEAR to merchant.airlock-credit-c1108d?');
+  assert.equal(m.sheetTitle, 'Approve 9.4 NEAR to merchant.airlock-credit-c1108d?');
+  const to = m.rows.find((r) => r.name === 'TO');
+  assert.equal(to?.shown, 'merchant.airlock-credit-c1108d');
+  assert.equal(to?.value, full, 'the row value (the look-alike diff input) stays the full key');
+  assert.ok(!m.sentence.includes('.testnet'));
+  // what is approved, signed and sent: unchanged and full
+  assert.equal(m.args.to, full);
+  assert.deepEqual(m.args, approveArgs(i.view, i.asset));
+  assert.deepEqual(m.args, plain.args);
+  // the console keeps the full key everywhere
+  assert.equal(plain.title, `Pay 9.4 NEAR to ${full}?`);
+  assert.equal(plain.rows.find((r) => r.name === 'TO')?.shown, undefined);
+  // the rendered card: the short title and TO row, and the wallet block with the exact full key, as code
+  const markup = viewHtml(m, IDLE);
+  assert.equal(textOf(markup, 'card-title'), 'Pay 9.4 NEAR to merchant.airlock-credit-c1108d?');
+  assert.equal(textOf(markup, 'arg-to'), full);
+  assert.ok(/data-testid="arg-to"><code>/.test(markup), 'the signed values are code, exact');
+});
