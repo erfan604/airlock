@@ -114,9 +114,24 @@ export function sentenceOf(a: Attempt): string {
   return `${amount}. ${reasonWords(a.reason)}`.trim();
 }
 
+const SHOWN_PLACES = 4;
+
+/** Yocto as NEAR text for a reader: at most four decimals, truncated, thousands grouped; an amount above zero but under 0.0001 says so instead of 0. */
 export function nearText(yocto: string): string {
-  return `${formatBaseUnits(BigInt(yocto), 24)} NEAR`;
+  const v = BigInt(yocto);
+  const step = 10n ** BigInt(24 - SHOWN_PLACES);
+  if (v > 0n && v < step) return `less than 0.${'0'.repeat(SHOWN_PLACES - 1)}1 NEAR`;
+  const [whole = '0', frac] = formatBaseUnits((v / step) * step, 24).split('.');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${frac === undefined ? grouped : `${grouped}.${frac}`} NEAR`;
 }
+
+/** Text with every decimal number cut to at most four decimals (truncated, trailing zeros dropped): for amounts the page prints as it was given them. */
+export const trimDecimals = (text: string): string =>
+  text.replace(/\b([0-9]+)\.([0-9]+)\b/g, (_m, whole: string, frac: string) => {
+    const cut = frac.slice(0, SHOWN_PLACES).replace(/0+$/, '');
+    return cut === '' ? whole : `${whole}.${cut}`;
+  });
 
 const HASH = /^[A-Za-z0-9]{20,100}$/;
 export const EXPLORER = 'https://testnet.nearblocks.io/txns/';
@@ -157,7 +172,7 @@ export function foldBoard(b: Board, a: Attempt): Board {
 
 /** Why the visitor's attempt was not run, in words for the page. The codes are the service's refusals. */
 const REFUSALS: Record<string, string> = {
-  live_off: 'Door one is shut: the board shows recorded attempts until the challenge goes live.',
+  live_off: 'The text door is shut: the board shows recorded attempts until the challenge goes live.',
   paused: 'The challenge is paused.',
   empty: 'Paste some text first.',
   too_long: 'That text is too long.',
@@ -169,7 +184,7 @@ const REFUSALS: Record<string, string> = {
   float_low: 'The challenge float is used up for today. It is closed until tomorrow.',
   float_unknown: 'The challenge could not read its float, so it is closed for now.',
   engine_failed: 'The agent could not run that attempt. Nothing was paid.',
-  hosted: 'Door one needs the live planner and a model key, which this hosted copy does not hold. Door two below works here, from your own shell.',
+  hosted: 'Giving it text needs the live planner and a model key, which this hosted copy does not hold. The agent key above works here, from your own shell; the console in the repository opens this door (pnpm demo).',
 };
 
 export const refusalWords = (code: string): string => (Object.hasOwn(REFUSALS, code) ? REFUSALS[code] : undefined) ?? 'The attempt was not run.';

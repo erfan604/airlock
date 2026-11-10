@@ -73,6 +73,9 @@ async function hostedChallenge(page: Page, baseUrl: string, width: number): Prom
   assert.ok((await id('door-shut', page).innerText()).includes('hosted copy'));
   assert.equal(await id('key-public', page).innerText(), 'ed25519:7HeWNqtLJHGzmsjPZn9LbPgAgjVBpFPn4vrqTgjDcPfP');
   assert.ok((await id('key-secret', page).innerText()).startsWith('ed25519:'));
+  // AIR-346: the command names the real accounts, so it waits in a fold the reader opens; closed, it is not on screen
+  assert.equal(await id('command-text', page).isVisible(), false, 'the command starts folded');
+  await page.locator('[data-testid="command-fold"] summary').click();
   const command = await id('command-text', page).innerText();
   assert.ok(command.startsWith('near contract call-function as-transaction policy-v2.erfan-airlock.testnet submit_batch json-args'), 'the copy-paste command');
   assert.ok(command.includes('sign-as erfan-agent.testnet network-config testnet sign-with-plaintext-private-key ed25519:'));

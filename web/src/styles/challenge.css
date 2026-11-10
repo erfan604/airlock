@@ -19,28 +19,28 @@
   line-height: 44px;
   letter-spacing: -0.03em;
 }
-.ch-lede,
-.ch-help,
-.ch-note,
-.ch-fine {
+.challenge .ch-lede,
+.challenge .ch-help,
+.challenge .ch-note,
+.challenge .ch-fine {
   margin: 0;
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }
-.ch-lede {
+.challenge .ch-lede {
   max-width: 40rem;
   font-size: 18px;
   line-height: 28px;
 }
-.ch-help,
-.ch-note {
+.challenge .ch-help,
+.challenge .ch-note {
   font-size: 15px;
   line-height: 22px;
 }
-.ch-note {
+.challenge .ch-note {
   color: var(--ink);
 }
-.ch-fine {
+.challenge .ch-fine {
   font-size: 13px;
   line-height: 20px;
   color: var(--ink-3);
@@ -80,7 +80,8 @@
   border-top: 1px solid var(--hair);
   border-bottom: 1px solid var(--hair);
 }
-.ch-count {
+/* `.challenge` in front: the site's `.page p` rule (site.css) is more specific than a bare class and set this sentence at body size (D13) */
+.challenge .ch-count {
   margin: 0;
   font-family: var(--font-system);
   font-weight: 600;
@@ -91,9 +92,22 @@
   overflow-wrap: anywhere;
 }
 @media (min-width: 720px) {
-  .ch-count {
+  .challenge .ch-count {
     font-size: 40px;
     line-height: 52px;
+  }
+}
+/* the counter is the page's headline: the size of the title, the numbers in the data face */
+.challenge .ch-count-headline {
+  font-size: 34px;
+  line-height: 42px;
+  color: var(--ink-2);
+}
+@media (min-width: 720px) {
+  .challenge .ch-count-headline {
+    font-size: 52px;
+    line-height: 60px;
+    letter-spacing: -0.03em;
   }
 }
 .ch-num {
@@ -110,7 +124,7 @@
 .ch-num-alarm {
   color: var(--alarm);
 }
-.ch-pulse {
+.challenge .ch-pulse {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -163,6 +177,57 @@
     padding-left: var(--space-6);
   }
 }
+/* the hosted copy: one working door, a readable measure, no empty column beside it */
+@media (min-width: 880px) {
+  .ch-doors.ch-doors-one {
+    grid-template-columns: minmax(0, 44rem);
+  }
+  .ch-doors.ch-doors-one > .ch-door:first-child {
+    padding-right: 0;
+    border-right: 0;
+  }
+  .ch-doors.ch-doors-one > .ch-door:last-child {
+    padding-left: 0;
+  }
+}
+.ch-rules {
+  display: grid;
+  gap: var(--space-3);
+}
+.ch-door-shut {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--hair);
+}
+/* the paste-ready command: folded, the summary a 44 px target, the text exact inside */
+.ch-fold {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.ch-fold-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  width: fit-content;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--xray) 70%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+.ch-fold-summary:hover {
+  color: var(--xray);
+}
+.ch-fold[open] > .ch-fold-summary {
+  margin-bottom: var(--space-2);
+}
+.ch-command {
+  margin: 0;
+}
 .ch-door {
   display: grid;
   align-content: start;
@@ -182,7 +247,7 @@
   gap: var(--space-3);
   min-width: 0;
 }
-.ch-own-tx {
+.challenge .ch-own-tx {
   margin: 0;
   font-family: var(--font-data);
   font-size: 13px;
@@ -320,4 +385,8 @@
     justify-items: end;
     text-align: right;
   }
+}
+/* the sub-steps of the key door read as steps: room above each one */
+.ch-door h3.ch-door-title {
+  margin-top: var(--space-4);
 }

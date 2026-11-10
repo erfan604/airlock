@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ChallengeBody, AttemptRow } from '../src/challenge/ChallengeView.tsx';
 import type { ChallengeBodyProps } from '../src/challenge/ChallengeView.tsx';
-import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, newestFirst, settleRead, reasonWords, refusalWords, sentenceOf, shortSource, stateOf } from '../src/challenge/model.ts';
+import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, newestFirst, settleRead, reasonWords, refusalWords, sentenceOf, shortSource, stateOf, trimDecimals } from '../src/challenge/model.ts';
 import type { Attempt, ChallengeState } from '../src/challenge/model.ts';
 
 const NEAR = 10n ** 24n;
@@ -96,7 +96,7 @@ test('page, recorded mode: the banner, the shut door, the counting sentence and 
   assert.ok(/data-testid="ch-submit"[^>]*disabled/.test(html));
   assert.ok(/id="ch-input"[^>]*disabled/.test(html));
   assert.equal((html.match(/data-testid="attempt-row"/g) ?? []).length, 1);
-  assert.ok(html.includes('Door two: use the agent'));
+  assert.ok(html.includes('Use the agent&#x27;s own key'));
 });
 
 test('page, live mode with a key: the door is open, the key facts show, the secret only when published', () => {
@@ -184,4 +184,43 @@ test('hosted page, chain unreadable after a good read: keeps the last board and 
 
 test('the service page still blames the service when its own API fails', () => {
   assert.ok(body({ failed: true, state: null }).includes('did not answer'));
+});
+
+// AIR-346 (D11 to D14): amounts read like money, the owner's account names never show, door two leads and the counter is the headline.
+test('nearText: at most four decimals, truncated; a dust amount above zero never reads as zero', () => {
+  assert.equal(nearText('10000000000000000000002'), '0.01 NEAR');
+  assert.equal(nearText('995038219985575200000000'), '0.995 NEAR');
+  assert.equal(nearText('1'), 'less than 0.0001 NEAR');
+  assert.equal(nearText('0'), '0 NEAR');
+  assert.equal(nearText(near(1234)), '1,234 NEAR');
+});
+
+test('trimDecimals: a published amount string keeps at most four decimals', () => {
+  assert.equal(trimDecimals('0.9950382199855752 NEAR left'), '0.995 NEAR left');
+  assert.equal(trimDecimals('1 NEAR left'), '1 NEAR left');
+  assert.equal(trimDecimals('0.25 NEAR'), '0.25 NEAR');
+});
+
+const OWNER_KEY = { account: 'erfan-agent.testnet', publicKey: 'ed25519:PUB', secretKey: 'ed25519:SECRET', receiver: 'challenge.erfan-airlock.testnet', methods: ['submit_batch'], allowance: '0.9950382199855752 NEAR left' };
+const COMMAND = 'near contract call-function as-transaction challenge.erfan-airlock.testnet submit_batch json-args {} sign-as erfan-agent.testnet network-config testnet';
+
+/** The page as a reader sees it before opening anything: the markup with the closed folds and the tags removed. */
+const visible = (html: string): string => html.replace(/<details[\s\S]*?<\/details>/g, '').replace(/<[^>]+>/g, ' ');
+
+test('hosted page: door two comes before door one, and the counter is the headline', () => {
+  const html = body({ hosted: true, state: state({ hosted: true, mode: 'live', key: OWNER_KEY, command: COMMAND, board: foldBoard(EMPTY_BOARD, attempt(1)) }), rows: [attempt(1)] });
+  assert.ok(html.indexOf('data-testid="door-key"') < html.indexOf('data-testid="door-text"'), 'door two first');
+  assert.ok(html.indexOf('data-testid="ch-count"') < html.indexOf('data-testid="door-key"'), 'the counter before the doors');
+  assert.ok(/class="ch-count ch-count-headline"/.test(html));
+  assert.ok(html.indexOf('data-testid="door-key"') < html.indexOf('data-testid="ch-hosted"'), 'the mechanics come after the action');
+});
+
+test('hosted page: no owner name and no testnet in the text a reader sees; the paste-ready command sits in a fold, exact', () => {
+  const html = body({ hosted: true, state: state({ hosted: true, mode: 'live', key: OWNER_KEY, command: COMMAND, board: { ...EMPTY_BOARD, paidToBookYocto: '10000000000000000000002' } }) });
+  const text = visible(html);
+  assert.ok(!/erfan/i.test(text), text.match(/.{0,40}erfan.{0,40}/i)?.[0]);
+  assert.ok(!/testnet/i.test(text), text.match(/.{0,40}testnet.{0,40}/i)?.[0]);
+  assert.ok(/<details[^>]*data-testid="command-fold"/.test(html));
+  assert.ok(html.includes(COMMAND), 'the command is unchanged inside the fold');
+  assert.ok(text.includes('0.01 NEAR') && text.includes('0.995 NEAR left'));
 });
