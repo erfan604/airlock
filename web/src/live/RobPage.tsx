@@ -95,7 +95,7 @@ function Window({ mine, nowMs, shop, expired }: { mine: Mine; nowMs: number; sho
         <p className="brk-word brk-word-refused">Refused</p>
         <p className="brk-why" data-testid="rob-why">
           {`The contract turned the call down before deciding: ${s.why}. Nothing moved. Took ${took}. `}
-          {s.tx === null ? null : <TxLink tx={s.tx} what="attempt" />}
+          {s.tx === null ? null : <TxLink tx={s.tx} what="attempt" label="see the transaction" />}
         </p>
       </>
     );
@@ -107,7 +107,7 @@ function Window({ mine, nowMs, shop, expired }: { mine: Mine; nowMs: number; sho
         <p className="brk-word brk-word-paid">Paid</p>
         <p className="brk-why" data-testid="rob-why">
           {`The owner signed for this payment, so the card paid ${shop === null ? 'the shop' : 'the booked shop'}. Took ${took}. `}
-          <TxLink tx={s.tx} what="payment" />
+          <TxLink tx={s.tx} what="payment" label="see the transaction" />
         </p>
       </>
     );
@@ -122,7 +122,7 @@ function Window({ mine, nowMs, shop, expired }: { mine: Mine; nowMs: number; sho
         {`${lead} ${reasonWords(a.reason).replace(/^./, (c) => c.toUpperCase())}${queue ? '. Your attack was still refused; try again in a minute' : ''}. `}
         <span className="brk-mono rob-code" data-testid="rob-code">{a.reason ?? ''}</span>
         {` Took ${took}. `}
-        <TxLink tx={s.tx} what="attempt" />
+        <TxLink tx={s.tx} what="attempt" label="see the transaction" />
       </p>
     </>
   );
@@ -164,7 +164,7 @@ function Rows({ board, mineIds, shop, nowMs }: { board: Board; mineIds: readonly
             <span className="rob-row-meta">
               {mine ? <span className="rob-row-mine">yours, </span> : null}
               {`${agoText(r.atMs, nowMs)} `}
-              <TxLink tx={r.tx} what="attempt" />
+              <TxLink tx={r.tx} what="attempt" label="see the transaction" />
             </span>
           </li>
         );

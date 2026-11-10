@@ -95,7 +95,7 @@ test('lend: a position is a deposit slip with the short account, the shares, the
   assert.ok(t.includes('Shares 1.0000') && t.includes('Worth now 1.0000 NEAR'));
   assert.match(t, /You can take it back after \d\d:\d\d:\d\d MST\./);
   assert.ok(html.includes('href="https://testnet.nearblocks.io/txns/DepositTxHash1111111111111111111111111111111"'));
-  assert.ok(t.includes('See your deposit'));
+  assert.ok(t.includes('Your deposit: see the transaction'));
   assert.ok(!t.includes('Since you joined'), 'with no loop cycle yet the loop line alone says so, once');
   assert.equal(t.split('has not started').length, 2);
   assert.ok(t.includes('Attacks refused on the card this pool lends to since you joined: 7. Paid to an attacker: 0 NEAR.'));

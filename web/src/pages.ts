@@ -7,7 +7,7 @@ export const PAGES: PageMeta[] = [
     path: '/',
     title: 'AIRLOCK: a lending pool for AI agents on NEAR',
     description:
-      "AIRLOCK is a lending pool for AI agents on NEAR: lenders fund a credit line held on a card that pays only merchants the owner booked, and a policy contract checks where every payee and amount came from (the owner, the address book, or outside text such as an email), so a hijacked agent cannot send the lenders' money anywhere but a booked merchant.",
+      "AIRLOCK is a lending pool for AI agents on NEAR: lenders fund a credit line on a card that pays only merchants the owner booked, and a policy contract checks where every payee and amount came from. Three things to do in under a minute: lend 1 NEAR from an account of your own, send a real attack to a practice card and see the contract refuse it, or take one rule out of the gate and watch the copy pay.",
   },
   {
     path: '/try',

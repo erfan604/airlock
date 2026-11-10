@@ -1,4 +1,5 @@
-// AIR-311, AIR-346: the landing. Top to bottom: the hero over the muted scan loop with the pool's one live number, how the pool lends, the headline case (one booked payee, one email that changes only the
+// AIR-311, AIR-346: the landing. Top to bottom: the hero (the one sentence over the loop), the three doors (Lend, Rob it, Break the proof, each
+// with one number from where it lives) and the limits line, how the pool lends, the headline case (one booked payee, one email that changes only the
 // amount, the request field by field with where each value came from, AIRLOCK's verdict next to a payee-list guard's), the numbers from
 // bench.json, how it works, and what is and is not proven. Motion is CSS only and plays once; reduced motion shows the end state and the poster.
 import { useEffect, useState } from 'react';
@@ -8,16 +9,14 @@ import { loadBench } from '../bench/types.ts';
 import { Specimen } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
 import { plain } from '../components/plain.ts';
-import { STATIC, url } from '../static.ts';
+import { url } from '../static.ts';
 import { RequestSlip } from '../try/RequestSlip.tsx';
 import { WORLD, defaultKnobs, emailOf, formatDollars, parseDollars, payeeListGuard, standIn, verdictSentence } from '../try/model.ts';
 import { REASONS } from '../try/verdictWasm.ts';
 import type { WasmVerdict } from '../try/verdictWasm.ts';
-import { factsOf, poolLine } from './facts.ts';
-import type { Facts, PoolRead } from './facts.ts';
-import { readPool } from '../credit/chain.ts';
-import { CREDIT_POOL } from '../credit/net.ts';
-import { NEAR_RPC } from '../../csp.ts';
+import { factsOf } from './facts.ts';
+import type { Facts } from './facts.ts';
+import { Doors } from './Doors.tsx';
 import { HeroMedia } from './HeroMedia.tsx';
 import { TubeBand } from './TubeBand.tsx';
 import { preload } from '../preload.ts';
@@ -193,37 +192,6 @@ function CreditTeaser() {
   );
 }
 
-/** AIR-346 (D9): the one live number under the hero buttons. The prerender carries the recorded value, labelled; the hosted copy then reads the pool. */
-function HeroPool() {
-  const [read, setRead] = useState<PoolRead>({ kind: 'recorded' });
-  useEffect(() => {
-    // the local console (replay mode, no keys) makes no request off its own origin: it keeps the recorded value, labelled
-    if (!STATIC) return undefined;
-    let live = true;
-    readPool({ pool: CREDIT_POOL, rpcUrls: NEAR_RPC }).then(
-      (p) => {
-        if (live) setRead({ kind: 'live', assets: p.assets, losses: p.losses });
-      },
-      () => {
-        if (live) setRead({ kind: 'failed' });
-      },
-    );
-    return () => {
-      live = false;
-    };
-  }, []);
-  const line = poolLine(read);
-  return (
-    <p className="hero-pool" data-testid="hero-pool" data-live={line.live ? 'true' : 'false'}>
-      <span className="hero-pool-num" data-testid="hero-pool-held">{line.held}</span>
-      {' in the pool, '}
-      <span className="hero-pool-num" data-testid="hero-pool-lost">{line.lost}</span>
-      {' lost. '}
-      <span className="hero-pool-note">{line.note}</span>
-    </p>
-  );
-}
-
 const STEPS = [
   { title: 'Labels travel with values', body: 'Every value your agent handles carries where it came from: your own words, your address book, or outside text such as an email. No model sets a label.' },
   { title: 'The NEAR contract runs the verdict', body: 'The contract reads the labels, your book and your limits, and answers allow, hold for you, or block. The decision is a small pure function with no model in it.' },
@@ -310,21 +278,16 @@ export function Landing() {
       <section className="hero" aria-labelledby="hero-title">
         <HeroMedia />
         <div className="hero-copy">
+          {/* the words sit on a solid plate, so they stay legible over any loop or poster that replaces the current one */}
+          <div className="hero-plate">
           <h1 id="hero-title" className="hero-title">
             A lending pool for AI agents on NEAR.
           </h1>
           <p className="hero-line">Lenders fund a credit line held on a card that pays only merchants the owner booked. A contract checks where every payee and amount came from, so a hijacked agent cannot send the lenders&apos; money anywhere but a booked merchant.</p>
-          <div className="hero-actions">
-            <a className="act act-primary" href={url('credit')} data-testid="cta-pool">
-              See the pool
-            </a>
-            <a className="act act-quiet" href={url('try')} data-testid="cta-try">
-              Try to trick it
-            </a>
           </div>
-          <HeroPool />
         </div>
       </section>
+      <Doors />
       <div className="land-body">
         <CreditTeaser />
         <HeadlineCase />

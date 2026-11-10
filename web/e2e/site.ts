@@ -21,11 +21,12 @@ export async function checkLanding(page: Page, baseUrl: string): Promise<void> {
   assert.equal(await id('fig-strict', page).locator('.fig-big').innerText(), '0 of 250');
   assert.equal(await id('fig-default', page).locator('.fig-big').innerText(), '10 of 250');
   assert.equal(await id('fig-honest', page).locator('.fig-big').innerText(), '44 of 70');
-  assert.equal(await id('cta-try', page).getAttribute('href'), '/try');
-  assert.equal(await id('cta-pool', page).getAttribute('href'), '/credit');
+  // the three doors under the hero, each with its number and where it came from
+  assert.equal(await id('door-lend', page).getAttribute('href'), '/lend');
+  assert.equal(await id('door-rob', page).getAttribute('href'), '/rob');
+  assert.equal(await id('door-break', page).getAttribute('href'), '/break');
   // AIR-346: the pool line under the hero buttons, live or recorded and saying which
-  await id('hero-pool', page).waitFor();
-  assert.ok(/NEAR in the pool, .* NEAR lost\.\s+(Read from|Recorded from) the pool contract/.test(await id('hero-pool', page).innerText()));
+  for (const d of ['door-lend', 'door-rob', 'door-break']) assert.ok(/^(Read from|From the recorded|Recorded )/.test(await id(`${d}-note`, page).innerText()), d);
   // AIR-312: the hired-agent section links the Try page in the hired world
   assert.ok((await id('landing-hire', page).innerText()).includes('is the task bound.'));
   assert.equal(await id('cta-hired', page).getAttribute('href'), '/try?s=hired');

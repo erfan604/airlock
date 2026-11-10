@@ -62,12 +62,13 @@ function Account({ id, max, what = 'demo account' }: { id: string; max: number; 
 }
 
 /** A transaction on the explorer, for the Arena strip: explorerTx gives a URL only for a bare base58 hash of 43 or 44 characters. */
-export function TxLink({ tx, what }: { tx: string | null; what: string }) {
+/** `label`: the link's text (default `tx`); the href stays this one reviewed sink. */
+export function TxLink({ tx, what, label = 'tx' }: { tx: string | null; what: string; label?: string }) {
   const link = tx === null ? null : explorerTx(tx);
   if (link === null) return null;
   return (
     <a href={link} target="_blank" rel="noopener noreferrer" aria-label={`View the ${what} transaction on the explorer`}>
-      tx
+      {label}
     </a>
   );
 }

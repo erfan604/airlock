@@ -10,6 +10,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { RECORDED_POOL, factsOf, poolLine } from '../src/landing/facts.ts';
 import { Landing } from '../src/landing/Landing.tsx';
+import { DoorsView } from '../src/landing/Doors.tsx';
+import { RECORDED, recordedBreak, recordedLend, recordedRob } from '../src/landing/doors.ts';
 import { stepAt } from '../src/landing/TubeBand.tsx';
 
 const bench = parseBench(JSON.parse(readFileSync(new URL('../public/bench.json', import.meta.url), 'utf8')) as unknown);
@@ -54,14 +56,35 @@ test('poolLine: the recorded value is labelled recorded, a live read says it is 
   assert.equal(poolLine({ kind: 'live', assets: '0', losses: '10000000000000000000000' }).lost, '0.01 NEAR');
 });
 
-test('landing: the hero names the lending pool, the pool line sits under the buttons, the stale fixture sentence is gone, and /live is not linked', () => {
+test('landing: the hero names the lending pool and the three doors come right under it, before the older sections; /live is not linked', () => {
   const html = renderToStaticMarkup(createElement(Landing));
   assert.ok(html.includes('A lending pool for AI agents on NEAR.'));
-  const actions = html.indexOf('hero-actions');
-  const pool = html.indexOf('data-testid="hero-pool"');
-  assert.ok(actions > 0 && pool > actions, 'the pool line comes after the hero buttons');
-  assert.ok(html.indexOf('data-testid="landing-credit"') < html.indexOf('data-testid="landing-case"'), 'credit leads the body');
+  const hero = html.indexOf('id="hero-title"');
+  const doors = html.indexOf('data-testid="landing-doors"');
+  assert.ok(hero > 0 && doors > hero, 'the doors follow the hero');
+  for (const d of ['door-lend', 'door-rob', 'door-break']) assert.ok(html.indexOf(`data-testid="${d}"`) > doors, d);
+  assert.ok(doors < html.indexOf('data-testid="landing-credit"') && html.indexOf('data-testid="landing-credit"') < html.indexOf('data-testid="landing-case"'), 'the older sections come after the doors');
+  assert.ok(!html.includes('hero-actions') && !html.includes('data-testid="hero-pool"'));
   assert.ok(!html.includes('badged fixture'));
   assert.ok(!html.includes('href="/live"'));
-  assert.ok(html.includes(`Recorded from the pool contract on ${RECORDED_POOL.atText}.`), 'the prerender carries the recorded value, labelled');
+  assert.ok(html.includes('class="hero-plate"'), 'the words sit on a solid plate over any hero image');
+});
+
+test('doors: each door links its page, shows its one number, and says recorded until the chain is read', () => {
+  const text = (h: string): string => h.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/\s+/g, ' ');
+  const rec = renderToStaticMarkup(createElement(DoorsView, { lend: recordedLend(), rob: recordedRob(), brk: recordedBreak(), pool: { kind: 'recorded' } }));
+  assert.ok(rec.includes('href="/lend"') && rec.includes('href="/rob"') && rec.includes('href="/break"') && rec.includes('href="/terms"'));
+  const t = text(rec);
+  assert.ok(t.includes(`${String(RECORDED.lenders)} lender accounts not on the team's list so far.`));
+  assert.ok(t.includes(`${String(RECORDED.robPaidOutside)} paid to anyone but the booked shop, in ${String(RECORDED.robAttempts)} attempts.`));
+  assert.ok(t.includes(`${String(RECORDED.copies)} broken copies of the gate; Kani fails on each one.`));
+  assert.equal(t.split(`Recorded ${RECORDED.atText}.`).length, 4, 'all three doors say recorded');
+  assert.ok(t.includes('Runs on the NEAR test network, where NEAR has no value.') && t.includes('the issuer books the payees'));
+  assert.ok(!/testnet|erfan/i.test(t));
+  const live = text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 3, source: 'live' }, rob: { attempts: 1, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 4, source: 'live' }, pool: { kind: 'live', assets: '3201000000000000000000000', losses: '0' } })));
+  assert.ok(live.includes("3 lender accounts not on the team's list so far. The pool holds 3.2 NEAR."));
+  assert.ok(live.includes('in 1 attempt.') && live.includes('Kani fails on 4 of them.'));
+  assert.ok(live.includes("Read from the pool's own deposit records.") && !live.includes('Recorded'));
+  const failed = text(renderToStaticMarkup(createElement(DoorsView, { lend: recordedLend(true), rob: recordedRob(), brk: recordedBreak(), pool: { kind: 'recorded' } })));
+  assert.ok(failed.includes(`Recorded ${RECORDED.atText}; it could not be read just now.`));
 });

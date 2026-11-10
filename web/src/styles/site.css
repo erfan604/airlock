@@ -1595,3 +1595,206 @@ h1 {
   bottom: 0;
   background: linear-gradient(180deg, transparent, var(--paper));
 }
+
+/* the home's first screen: a shorter hero, its words on a solid plate (legible over any loop or poster), then the three doors */
+.landing .hero {
+  min-height: min(44vh, 400px);
+}
+.hero-plate {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 44rem;
+  padding: var(--space-5) var(--space-5) var(--space-5) 0;
+  background: var(--paper);
+  box-shadow: -40px 0 0 var(--paper);
+}
+.landing .hero-title {
+  font-size: 44px;
+}
+@media (min-width: 720px) {
+  .landing .hero-title {
+    font-size: 64px;
+  }
+  .landing .hero-copy {
+    padding-top: var(--space-7);
+    padding-bottom: var(--space-3);
+  }
+}
+@media (max-width: 719px) {
+  .hero-plate {
+    padding: var(--space-4) 0;
+    box-shadow: none;
+  }
+}
+
+/* the three doors: one wall, three frames on one sill. A door's leaf swings a little open on hover and settles on press, showing the lit
+   inside in the door's own colour; nothing moves under reduced motion. Square frames, no tiles. */
+.doors {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-7);
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .doors {
+    padding: var(--space-4) var(--space-5) var(--space-8);
+  }
+}
+.doors-title {
+  margin: 0;
+  font-family: var(--font-data);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.door-wall {
+  display: grid;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0 0 var(--space-3);
+  list-style: none;
+  border-bottom: 6px solid var(--edge);
+}
+@media (min-width: 960px) {
+  .door-wall {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-6);
+  }
+}
+.door {
+  min-width: 0;
+  perspective: 1400px;
+}
+.door-lend {
+  --door-light: var(--clear);
+}
+.door-rob {
+  --door-light: var(--signal);
+}
+.door-break {
+  --door-light: var(--xray);
+}
+.landing .door-frame {
+  position: relative;
+  display: block;
+  height: 100%;
+  padding: 10px 10px 0;
+  border: 1.5px solid var(--edge);
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
+  background: var(--sunk);
+  color: var(--ink);
+  text-decoration: none;
+}
+.door-inside {
+  position: absolute;
+  inset: 10px 10px 0;
+  background: color-mix(in srgb, var(--door-light) 70%, var(--paper));
+}
+.door-leaf {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  height: 100%;
+  min-height: 19rem;
+  padding: var(--space-4) var(--space-5) var(--space-7);
+  border: 1px solid var(--hair);
+  border-bottom: 0;
+  background: var(--raised);
+  box-shadow: var(--lift);
+  transform-origin: left center;
+  transition: transform 420ms var(--ease-out), box-shadow 420ms var(--ease-out);
+}
+.door-frame:hover .door-leaf,
+.door-frame:focus-visible .door-leaf {
+  transform: rotateY(-11deg);
+  box-shadow: var(--lift), 18px 0 32px -12px color-mix(in srgb, var(--door-light) 55%, transparent);
+}
+.door-frame:active .door-leaf {
+  transform: rotateY(-6deg) translateY(1px);
+  transition-duration: 120ms;
+}
+.landing .door-frame:hover {
+  color: var(--ink);
+}
+.door-frame:focus-visible {
+  outline: 2px solid var(--door-light);
+  outline-offset: 4px;
+}
+.door-plate {
+  justify-self: start;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--door-light);
+}
+.door-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1.05;
+}
+.door-what {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.door-window {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: 2px;
+  background: var(--sunk);
+}
+.door-number {
+  font-family: var(--font-data);
+  font-weight: 500;
+  font-size: 44px;
+  line-height: 1;
+  color: var(--door-light);
+}
+.door-caption {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.door-note {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.door-bar {
+  position: absolute;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  width: 44%;
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 30%, var(--raised));
+  transition: background 300ms var(--ease-out);
+}
+.door-frame:hover .door-bar {
+  background: var(--door-light);
+}
+.landing .doors-limits {
+  max-width: 52rem;
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .door-leaf,
+  .door-frame:hover .door-leaf,
+  .door-frame:focus-visible .door-leaf,
+  .door-frame:active .door-leaf {
+    transform: none;
+    transition: none;
+  }
+}

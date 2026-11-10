@@ -179,7 +179,7 @@ function Slip({ pos, nowMs, chain, link, onWithdraw, onRetry, onCopy, copied, bu
           {tx === null ? null : (
             // the explorer link is the reviewed one of the credit page (its href is on the security-pass allow list); /lend adds no URL sink
             <span data-testid="lend-deposit-link">
-              See your deposit: <TxLink tx={tx} what="deposit" />
+              Your deposit: <TxLink tx={tx} what="deposit" label="see the transaction" />
             </span>
           )}
         </p>
@@ -275,7 +275,7 @@ export function LenderView(p: LenderViewProps): ReactElement {
       )}
       {p.walletTx === null ? null : (
         <p className="lend-note" data-testid="lend-wallet-tx">
-          Your wallet sent the deposit: <TxLink tx={p.walletTx} what="deposit" />.
+          Your wallet sent the deposit: <TxLink tx={p.walletTx} what="deposit" label="see the transaction" />.
         </p>
       )}
 

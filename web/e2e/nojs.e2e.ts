@@ -50,8 +50,11 @@ const run: E2E = async ({ page, baseUrl }) => {
   const t = textOf(home.body);
   for (const s of [
     'A lending pool for AI agents on NEAR.',
-    'in the pool,',
-    'Recorded from the pool contract on',
+    'Three things to do in under a minute',
+    'Lend 1 NEAR to the agents',
+    'Send a real attack',
+    'Take one rule out of the gate',
+    'Recorded Nov 10, 2026.',
     'How the pool lends',
     'Same payee, new amount',
     '68 of 69 attacks that worked on an agent with no guard paid a payee already in the owner',
