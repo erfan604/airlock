@@ -5,11 +5,12 @@ import { url } from '../static.ts';
 
 export const NAV: { path: string; label: string; match: string[] }[] = [
   { path: '', label: 'Overview', match: ['/'] },
+  { path: 'credit', label: 'Credit', match: ['/credit'] },
+  { path: 'lend', label: 'Lend', match: ['/lend'] },
+  { path: 'break', label: 'Break the proof', match: ['/break'] },
   { path: 'try', label: 'Try it', match: ['/try'] },
   { path: 'use', label: 'Use it', match: ['/use'] },
   { path: 'replay', label: 'Replay', match: ['/replay', '/task'] },
-  { path: 'credit', label: 'Credit', match: ['/credit'] },
-  { path: 'break', label: 'Break the proof', match: ['/break'] },
   { path: 'approvals', label: 'Approvals', match: ['/approvals'] },
   { path: 'challenge', label: 'Challenge', match: ['/challenge'] },
   { path: 'bench', label: 'Bench', match: ['/bench'] },

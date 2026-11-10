@@ -1,0 +1,210 @@
+/* AIR-359: /lend. One column on the console tokens. The position is a paper deposit slip, the same object as the /approvals example slip and the
+   rendered stamp stills: cream paper, ink text, ruled fields, the share value as one drawn line. No tiles, no badges, no tinted boxes. */
+.lend {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 40rem;
+  margin: 0 auto;
+  min-width: 0;
+}
+.lend-head {
+  display: grid;
+  gap: var(--space-3);
+}
+.lend-title {
+  margin: 0;
+  font-size: 40px;
+  line-height: 1.02;
+}
+@media (min-width: 720px) {
+  .lend-title {
+    font-size: 64px;
+  }
+}
+.lend .lend-lead {
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.lend-act {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+.lend-go:disabled,
+.lend-withdraw:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.lend .lend-note {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+/* the steps, one line each, ticked as they finish */
+.lend-progress {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-data);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.lend-progress li::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--space-2);
+  border: 1px solid var(--ink-3);
+  vertical-align: 1px;
+}
+.lend-progress li[data-done='true'] {
+  color: var(--ink);
+}
+.lend-progress li[data-done='true']::before {
+  background: var(--clear);
+  border-color: var(--clear);
+}
+.lend-progress li[data-failed='true']::before {
+  background: var(--alarm);
+  border-color: var(--alarm);
+}
+.lend-problem {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+.lend .lend-problem p {
+  color: var(--ink);
+}
+
+/* the deposit slip */
+.lend-slip-wrap {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+.lend-slip {
+  width: 100%;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--paper);
+}
+.lend-slip-head {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--paper) 60%, var(--ink));
+}
+.lend-slip-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+}
+.lend-slip-fields dt {
+  font-size: 14px;
+  line-height: 24px;
+  font-style: italic;
+  color: color-mix(in srgb, var(--paper) 60%, var(--ink));
+}
+.lend-slip-fields dd {
+  margin: 0;
+  min-width: 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid color-mix(in srgb, var(--paper) 25%, var(--ink));
+  font-size: 15px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.lend-slip-fields .lend-num {
+  font-family: var(--font-data);
+  font-size: 18px;
+}
+.lend-line {
+  margin: var(--space-4) 0 0;
+  color: var(--paper);
+}
+.lend-line svg {
+  display: block;
+  width: 100%;
+  height: 64px;
+}
+.lend-line-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+  font-family: var(--font-data);
+  font-size: 12px;
+  color: color-mix(in srgb, var(--paper) 60%, var(--ink));
+}
+.lend .lend-slip-note {
+  margin: var(--space-4) 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--paper);
+}
+.lend .lend-slip a {
+  color: var(--paper);
+  text-decoration-color: color-mix(in srgb, var(--paper) 50%, var(--ink));
+}
+.lend-keep {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+.lend .lend-keep p {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.lend-key {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* the pool's lines: plain sentences, the fine print smaller */
+.lend-ledger {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--hair);
+}
+.lend .lend-ledger p {
+  margin: 0;
+}
+.lend .lend-fine {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* the landing's two button faces, on buttons here (site.css scopes them to the landing's links) */
+.lend .act {
+  cursor: pointer;
+}
+.lend .act-primary {
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+}
+.lend .act-primary:not(:disabled):hover {
+  background: var(--xray);
+}
+.lend .act-quiet {
+  border: 1px solid color-mix(in srgb, var(--ink) 40%, transparent);
+  background: transparent;
+  color: var(--ink);
+}
+.lend .act-quiet:not(:disabled):hover {
+  border-color: var(--xray);
+  color: var(--xray);
+}

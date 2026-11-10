@@ -64,6 +64,12 @@ export const PAGES: PageMeta[] = [
     description:
       'The airlock-verdict gate the NEAR contract runs, compiled to WebAssembly, beside copies of itself with one rule taken out. Pick an attack and a copy: the real gate refuses, the copy pays, and beside it stand the Kani harness that fails on the copy and the Lean theorem it breaks.',
   },
+  {
+    path: '/lend',
+    title: 'Lend to an agent | AIRLOCK',
+    description:
+      'Lend 1 NEAR into the live AIRLOCK Credit pool from an account of your own: the page makes the account from the public faucet, keeps the key in your browser, and shows your shares, what they are worth, and the attacks refused on the card the pool lends to while your money is in.',
+  },
   { path: '/task', title: 'Task, recorded | AIRLOCK', description: 'The recorded run under the name a live operator reads.', alias: '/replay' },
 ];
 

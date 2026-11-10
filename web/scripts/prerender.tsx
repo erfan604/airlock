@@ -24,6 +24,7 @@ export const SITE_ORIGIN = (process.env.SITE_ORIGIN ?? 'https://airlock-ere.page
 (globalThis as { __AIRLOCK_PRERENDER__?: { base: string } }).__AIRLOCK_PRERENDER__ = { base };
 const { App } = await import('../src/App.tsx');
 const { BenchPage } = await import('../src/bench/BenchPage.tsx');
+const { LenderPage } = await import('../src/lender/LenderPage.tsx');
 const { PAGES, pageUrl } = await import('../src/pages.ts');
 const { setPreload, preloadText, PRELOAD_ID } = await import('../src/preload.ts');
 const { parseBench } = await import('../src/bench/types.ts');
@@ -76,7 +77,7 @@ let pages = 0;
 async function write(route: string, file: string, mode: 'hydrate' | 'replace', pre: Preload | null): Promise<void> {
   const meta = PAGES.find((p) => p.path === route);
   setPreload(pre);
-  const body = await html(<App pathname={route} page={route === '/bench' ? <BenchPage /> : undefined} />);
+  const body = await html(<App pathname={route} page={route === '/bench' ? <BenchPage /> : route === '/lend' ? <LenderPage /> : undefined} />);
   setPreload(null);
   const title = meta?.title ?? 'Page not found | AIRLOCK';
   const head = [
@@ -103,7 +104,7 @@ for (const p of PAGES) {
   const pre: Preload | null = p.path === '/' ? { facts } : p.path === '/bench' ? { bench } : replayLike ? { replay } : null;
   // AIR-318: /approvals renders fresh too: what it shows depends on ?policy= and on the chain
   // the Bench page renders fresh over its prerendered text: the prerender leaves out the dot and whisker marks (bench/DotWhisker.tsx)
-  await write(p.path, file, replayLike || p.path === '/bench' || p.path === '/approvals' || p.path === '/credit' || p.path === '/break' ? 'replace' : 'hydrate', pre);
+  await write(p.path, file, replayLike || p.path === '/bench' || p.path === '/approvals' || p.path === '/credit' || p.path === '/break' || p.path === '/lend' ? 'replace' : 'hydrate', pre);
 }
 await write('/no-such-page', '404.html', 'replace', null);
 

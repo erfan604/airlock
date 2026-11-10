@@ -19,6 +19,8 @@ import { CreditPage } from './credit/CreditPage.tsx';
 const BenchPage = lazy(() => import('./bench/BenchPage.tsx'));
 // AIR-361: Break the proof runs six wasm modules; it loads on demand like the Bench page
 const BreakPage = lazy(() => import('./break/BreakPage.tsx'));
+// AIR-359: the lend page (its signer and faucet client) is a chunk of its own too
+const LenderPage = lazy(() => import('./lender/LenderPage.tsx'));
 
 const hostedApi = hostedChallengeApi();
 
@@ -42,4 +44,5 @@ export const ROUTES: Record<string, () => ReactElement> = {
   '/live': () => createElement(StaticLive),
   '/bench': () => createElement(Suspense, { fallback: null }, createElement(BenchPage)),
   '/break': () => createElement(Suspense, { fallback: null }, createElement(BreakPage)),
+  '/lend': () => createElement(Suspense, { fallback: null }, createElement(LenderPage)),
 };
