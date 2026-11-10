@@ -147,13 +147,28 @@ button {
 .site-tabs > li:first-child {
   display: none;
 }
-/* under 440px the five tabs (AIR-313 added Use it) no longer fit: the strip scrolls from its first tab and its right edge fades instead of
-   cutting a tab (with flex-end an overflowing strip would cut its first tab where no scroll reaches it) */
+/* under 440px the tabs no longer fit: the strip scrolls from its first tab (with flex-end an overflowing strip would cut its first tab where
+   no scroll reaches it). Under 720px each edge with tabs past it fades (D20): SiteNav sets `data-edge` from the scroll position, and the
+   prerendered strip says `end`, so a page read before the script runs still fades its right edge. */
 @media (max-width: 439px) {
   .site-tabs {
     justify-content: flex-start;
-    mask-image: linear-gradient(90deg, black 0, black calc(100% - 28px), transparent);
     padding-right: 28px;
+  }
+  /* the strip never fits this narrow: a mark not yet updated after a resize still fades the right edge */
+  .site-tabs[data-edge=''] {
+    mask-image: linear-gradient(90deg, black 0, black calc(100% - 32px), transparent);
+  }
+}
+@media (max-width: 719px) {
+  .site-tabs[data-edge='end'] {
+    mask-image: linear-gradient(90deg, black 0, black calc(100% - 32px), transparent);
+  }
+  .site-tabs[data-edge='start'] {
+    mask-image: linear-gradient(90deg, transparent, black 32px, black 100%);
+  }
+  .site-tabs[data-edge='start end'] {
+    mask-image: linear-gradient(90deg, transparent, black 32px, black calc(100% - 32px), transparent);
   }
 }
 .site-tab {
