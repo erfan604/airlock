@@ -4,6 +4,7 @@
 // host header on every document, and the recorded hashes taken from the golden files. The harness fails on any console error.
 // Run: pnpm build:static && pnpm -C web e2e static
 import assert from 'node:assert/strict';
+import { PUB as ROB_PUB } from '../test/fixtures/robPub.ts';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,6 +50,8 @@ const PUBLISHED = JSON.stringify({
 
 async function mockChain(page: Page): Promise<void> {
   await page.route('**/challenge-public.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: PUBLISHED }));
+  // AIR-356: the try card's public file is served by the host, not built: /rob reads a fixture here
+  await page.route('**/try-public.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ROB_PUB) }));
   await page.route('https://tx.test.fastnear.com/**', (r) => {
     const body = JSON.parse(r.request().postData() ?? '{}') as { tx_hashes?: string[] };
     const hashes = body.tx_hashes;
@@ -157,7 +160,7 @@ async function replayPage(page: Page, baseUrl: string, width: number): Promise<v
 
 /** AIR-323: every page loads with no CSP violation (zod's eval probe was reported on every page), the nav lists the pages and marks the current one. */
 async function cspAndNav(page: Page, baseUrl: string): Promise<void> {
-  const NAV = ['overview', 'credit', 'lend', 'break', 'terms', 'try', 'use', 'replay', 'approvals', 'challenge', 'bench', 'proven'];
+  const NAV = ['overview', 'credit', 'lend', 'rob', 'break', 'terms', 'try', 'use', 'replay', 'approvals', 'challenge', 'bench', 'proven'];
   for (const p of PAGES.filter((x) => x.alias === undefined)) {
     await page.goto(`${baseUrl}${p.path === '/' ? '/' : `${p.path}/`}`);
     await page.locator('main').first().waitFor();

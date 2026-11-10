@@ -1,0 +1,181 @@
+/* AIR-356: /rob, Rob it yourself. The /break vocabulary (pickers, one machine with its window, Refused in signal, Paid in clear) plus the
+   attempts board: one counting sentence with the number that matters set large, and plain rows. No tiles, no badges, no tinted boxes. */
+.rob .rob-picks {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 720px) {
+  .rob .rob-picks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.rob .rob-picks .brk-pick {
+  width: 100%;
+  height: 100%;
+}
+.rob-own {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4) 0 0;
+  border: 0;
+  border-top: 1px solid var(--hair);
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .rob-own {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 14rem);
+  }
+  .rob-own legend {
+    grid-column: 1 / -1;
+  }
+}
+.rob-own legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+}
+.rob-field {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.rob-field input {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-s);
+  background: var(--sunk);
+  color: var(--ink);
+  font-family: var(--font-data);
+  font-size: 16px;
+  min-width: 0;
+}
+.rob-own[data-picked='true'] .rob-field input {
+  border-color: var(--xray);
+}
+.rob-go-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.rob .act {
+  cursor: pointer;
+}
+.rob .act-primary {
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+}
+.rob .act-primary:not(:disabled):hover {
+  background: var(--xray);
+}
+.rob .act-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.rob-floor {
+  max-width: 44rem;
+  min-width: 0;
+}
+.rob .rob-code {
+  color: var(--ink-2);
+}
+
+/* the board */
+.rob-board {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.rob-count {
+  display: grid;
+  gap: var(--space-2);
+}
+.rob .rob-count-line {
+  margin: 0;
+  font-family: var(--font-system);
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.2;
+  color: var(--ink-2);
+}
+@media (min-width: 720px) {
+  .rob .rob-count-line {
+    font-size: 36px;
+  }
+}
+.rob-num {
+  font-family: var(--font-data);
+  font-weight: 500;
+  color: var(--clear);
+}
+.rob .rob-count-detail {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.rob-rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.rob-row {
+  display: grid;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--hair);
+  font-size: 15px;
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .rob-row {
+    grid-template-columns: 11rem minmax(0, 1fr) auto;
+    align-items: baseline;
+  }
+}
+.rob-row-word {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--signal);
+}
+.rob-row[data-verdict='paid_shop'] .rob-row-word {
+  color: var(--clear);
+}
+.rob-row[data-verdict='paid_outside'] .rob-row-word {
+  color: var(--alarm);
+}
+.rob-row[data-verdict='expired'] .rob-row-word {
+  color: var(--ink-3);
+}
+.rob-row-what {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+.rob-row-code {
+  color: var(--ink-3);
+}
+.rob-row-meta {
+  font-family: var(--font-data);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.rob-row[data-mine='true'] {
+  border-top-color: var(--xray);
+}
+.rob-row-mine {
+  color: var(--xray);
+}
+.rob-fine {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 46rem;
+}

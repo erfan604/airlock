@@ -21,6 +21,8 @@ const BenchPage = lazy(() => import('./bench/BenchPage.tsx'));
 const BreakPage = lazy(() => import('./break/BreakPage.tsx'));
 // AIR-359: the lend page (its signer and faucet client) is a chunk of its own too
 const LenderPage = lazy(() => import('./lender/LenderPage.tsx'));
+// AIR-356: Rob it yourself (the try card signer) loads on demand as well
+const RobPage = lazy(() => import('./live/RobPage.tsx'));
 // AIR-362: the term sheet of the credit pool, typeset from docs/terms.json
 const TermsPage = lazy(() => import('./terms/TermsPage.tsx'));
 
@@ -47,5 +49,6 @@ export const ROUTES: Record<string, () => ReactElement> = {
   '/bench': () => createElement(Suspense, { fallback: null }, createElement(BenchPage)),
   '/break': () => createElement(Suspense, { fallback: null }, createElement(BreakPage)),
   '/lend': () => createElement(Suspense, { fallback: null }, createElement(LenderPage)),
+  '/rob': () => createElement(Suspense, { fallback: null }, createElement(RobPage)),
   '/terms': () => createElement(Suspense, { fallback: null }, createElement(TermsPage)),
 };

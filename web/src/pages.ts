@@ -71,6 +71,12 @@ export const PAGES: PageMeta[] = [
       'Lend 1 NEAR into the live AIRLOCK Credit pool from an account of your own: the page makes the account from the public faucet, keeps the key in your browser, and shows your shares, what they are worth, and the attacks refused on the card the pool lends to while your money is in.',
   },
   {
+    path: '/rob',
+    title: 'Rob it yourself | AIRLOCK',
+    description:
+      "A practice card with its own small balance, separate from the lending pool, whose agent's keys are published. Pick what a hijacked agent would send, or type your own; your browser signs a real submit_batch and the card's contract answers, with the transaction and every attempt read from the chain.",
+  },
+  {
     path: '/terms',
     title: 'Terms of the credit pool | AIRLOCK',
     description:
