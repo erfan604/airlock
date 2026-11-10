@@ -6,7 +6,7 @@
 //   2. ONE transaction deploys res/airlock_credit_v2.wasm and calls migrate(passport_base = 1 NEAR); the code hash must equal the committed
 //      wasm and every snapshotted view must read the same; migrate also sets the MPC signer v1.signer-prod.testnet and domain 3 (AIR-350),
 //      read back from get_base_check_config;
-//   3. get_passport before; a limit L in (cap, 1.4 x cap] is refused with the cap text; a line of 0.3 NEAR opens inside the cap; the agent
+//   3. get_passport before; a limit L between the cap before and the cap one on-time repay gives is refused with the cap text; a line of 0.3 NEAR opens inside the cap; the agent
 //      pays the booked merchant 0.1 NEAR through the verdict (Allow); the issuer sweeps the rest; the borrower repays on time with the fee;
 //   4. get_passport after; L now opens and is closed at once (a sweep of all of it and a repay of 0), so no line stays open.
 // Each step prints `ROW <what> | <account> | <tx link>`; the rows go to target/credit-passport/rows.json. The near CLI signs from its
@@ -202,7 +202,8 @@ async function preflight(): Promise<{ topUp: bigint; upgraded: boolean }> {
   check(iss.amount >= topUp + (ONE * 3n) / 10n, `the issuer holds ${near(iss.amount)}: the top-up and 0.3 NEAR of gas`);
   const bor = await account(A.borrower);
   const col = (l: bigint): bigint => (l * BigInt(p.collateral_bps) + 9_999n) / 10_000n;
-  const borrowerNeed = col(FIRST) + col((BASE * 7n) / 10n) + PAY + PAY / 10n + (ONE * 3n) / 10n;
+  // the larger line is at most twice the base (the cap at score 1000); the passport is not readable before the upgrade, so this is the bound
+  const borrowerNeed = col(FIRST) + col(BASE * 2n) + PAY + PAY / 10n + (ONE * 3n) / 10n;
   check(bor.amount >= borrowerNeed, `the borrower holds ${near(bor.amount)}: both collaterals, the repay and gas (${near(borrowerNeed)})`);
   const agent = await account(A.agent);
   check(agent.amount >= (ONE * 3n) / 10n, `the agent holds ${near(agent.amount)} for the payment's gas`);
@@ -279,12 +280,16 @@ async function main(): Promise<void> {
   const pool = await view<PoolView>(A.pool, 'get_pool');
   const col = (l: bigint): bigint => (l * BigInt(pool.collateral_bps) + 9_999n) / 10_000n;
   const before = await passport();
-  if (before.score !== 200) stop(`the backfilled score is ${before.score}, not the expected 200: nothing is opened`);
+  // The score before is whatever migrate's backfill gave the borrower from the pool's stored state (200 while the pool held the defaulted
+  // line of the c1108d run, 500 once the hourly loop left a repaid line there). One qualifying on-time repay adds 80, so the cap after is
+  // known ahead: L is the middle of (cap before, cap after], which is refused before and opens after.
   const capBefore = BigInt(before.limit_cap);
+  const scoreAfter = Math.min(1000, before.score + 80);
+  const capAfterExpected = (BASE * BigInt(scoreAfter)) / 500n;
   const cent = ONE / 100n;
-  const L = (((capBefore * 5n) / 4n + cent - 1n) / cent) * cent; // 1.25 x cap, rounded up to 0.01 NEAR
-  if (!(L > capBefore && L * 5n <= capBefore * 7n)) stop(`L ${near(L)} is not in (cap, 1.4 x cap]`);
-  console.log(`L = ${near(L)}, in (${near(capBefore)}, ${near((capBefore * 7n) / 5n)}]`);
+  const L = ((capBefore + (capAfterExpected - capBefore) / 2n) / cent) * cent; // rounded down to 0.01 NEAR
+  if (!(L > capBefore && L <= capAfterExpected)) stop(`no L fits in (${near(capBefore)}, ${near(capAfterExpected)}] at score ${before.score}: nothing is opened`);
+  console.log(`L = ${near(L)}, in (${near(capBefore)}, ${near(capAfterExpected)}] (score ${before.score}, ${scoreAfter} after one on-time repay)`);
   if (FIRST > capBefore) stop(`the first line ${near(FIRST)} is above the cap ${near(capBefore)}`);
 
   const now = await blockMs();
@@ -335,7 +340,7 @@ async function main(): Promise<void> {
   const after = await passport();
   const capAfter = BigInt(after.limit_cap);
   if (after.score <= before.score || capAfter < L) stop(`the score went ${before.score} to ${after.score}, cap ${near(capAfter)} below L ${near(L)}`);
-  console.log(`score ${before.score} to ${after.score} (expected 280), cap ${near(capBefore)} to ${near(capAfter)} (expected 0.56 NEAR)`);
+  console.log(`score ${before.score} to ${after.score} (expected ${scoreAfter}), cap ${near(capBefore)} to ${near(capAfter)} (expected ${near(capAfterExpected)})`);
   must(`the borrower posts ${near(col(L))} of collateral for the larger line`, A.pool, () => call(A.pool, 'post_collateral', { card: A.card }, A.borrower, yocto(col(L))));
   const due2 = ((await blockMs()) + 86_400_000n).toString();
   must(`open_line(${near(L)}), refused before, now opens under the raised cap`, A.pool, () => call(A.pool, 'open_line', { card: A.card, limit: L.toString(), fee_bps: 1000, due_ms: due2 }, A.issuer));
