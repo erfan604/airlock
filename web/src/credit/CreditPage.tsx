@@ -7,8 +7,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { explorerTx } from '../approvals/staticChain.ts';
 import { NEAR_RPC } from '../../csp.ts';
 import { PRERENDER, STATIC } from '../static.ts';
-import { readAccountTxs, poolEvents } from '../lender/lenders.ts';
-import { baseChecksOf, explorerBaseTx } from './baseChecks.ts';
+import { explorerBaseTx, readBaseChecks } from './baseChecks.ts';
 import type { BaseCheckRow } from './baseChecks.ts';
 import { readLp } from './chain.ts';
 import { connectWallet } from '../wallet/connector.ts';
@@ -514,7 +513,7 @@ export function BaseChecks({ rows, nowMs }: { rows: readonly BaseCheckRow[]; now
                   <td>
                     <Account id={r.askedBy} max={34} />
                   </td>
-                  <td>{agoText(nowMs - r.atMs)}</td>
+                  <td>{agoText(nowMs - r.recordedMs)}</td>
                   <td>
                     <span title={r.payloadHash}>{shortHex(r.payloadHash)}</span>
                   </td>
@@ -601,16 +600,16 @@ export function CreditPage(): ReactElement {
     }
   }, []);
 
-  // AIR-350: the pool's base_payment_checked events, read once from the chain like /lend does. Not read in the local replay console (STATIC false: no request
+  // AIR-350: the listed Base checks, each read once from the pool's get_base_check view (no request for an empty list). Not read in the local replay console (STATIC false: no request
   // off origin), not at prerender, and a failed read leaves the section absent.
   const livePool = state.kind === 'live' ? state.poolId : null;
   const [baseRows, setBaseRows] = useState<BaseCheckRow[]>([]);
   useEffect(() => {
     if (livePool === null || !STATIC || PRERENDER) return undefined;
     let current = true;
-    readAccountTxs(fetch, livePool).then(
-      (read) => {
-        if (current) setBaseRows(baseChecksOf(poolEvents(read.txs, livePool)));
+    readBaseChecks({ pool: livePool, rpcUrls: NEAR_RPC }).then(
+      (rows) => {
+        if (current) setBaseRows(rows);
       },
       () => undefined,
     );

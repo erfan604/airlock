@@ -1,41 +1,52 @@
-// AIR-350: the Base payment checks section of /credit: the pure part (baseChecksOf, explorerBaseTx) and the component.
+// AIR-350: the Base payment checks section of /credit: the pure parts (list file, view answer, explorerBaseTx), the reader and the component.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { baseChecksOf, explorerBaseTx } from '../src/credit/baseChecks.ts';
+import { BASE_CHECK_LIST, baseCheckRowOf, explorerBaseTx, parseBaseCheckList, readBaseChecks } from '../src/credit/baseChecks.ts';
 import { BaseChecks } from '../src/credit/CreditPage.tsx';
-import type { PoolEvent } from '../src/lender/lenders.ts';
 
 const TX = '943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63';
 const HASH = 'b38ee2231f49b349ec841663233049d739fbd6b00c786b729cda8814b92021c1';
 const ASKER = 'lp1.airlock-credit-c1108d.testnet';
 const NEAR_TX = '9Kq4Zr2mXb7TfVhWcN5sYd3LpEu8aJgRvB6nCtQwHx1M';
-const ev = (data: Record<string, unknown>, atMs = 1_000, event = 'base_payment_checked', tx = NEAR_TX): PoolEvent => ({ event, data, atMs, tx });
-const good = (over: Record<string, unknown> = {}): Record<string, unknown> => ({ tx_id: TX, payload_hash: HASH, asked_by: ASKER, ...over });
+const REC = '1794340215416';
+const entry = { txId: TX, nearTx: NEAR_TX };
+const answer = (over: Record<string, unknown> = {}): Record<string, unknown> => ({ tx_id: TX, payload_hash: HASH, signature: '{}', asked_by: ASKER, recorded_ms: REC, ...over });
 
-test('baseChecksOf keeps a good event', () => {
-  assert.deepEqual(baseChecksOf([ev(good())]), [{ txId: TX, payloadHash: HASH, askedBy: ASKER, atMs: 1_000, nearTx: NEAR_TX }]);
+test('the committed list is empty today', () => {
+  assert.deepEqual(BASE_CHECK_LIST, []);
 });
 
-test('baseChecksOf drops malformed events and other event names', () => {
-  const bad = [
-    ev(good({ tx_id: TX.toUpperCase() })),
-    ev(good({ tx_id: `0x${TX}` })),
-    ev(good({ tx_id: TX.slice(0, 62) })),
-    ev(good({ payload_hash: HASH.slice(0, 63) })),
-    ev(good({ payload_hash: 5 })),
-    ev({ tx_id: TX, payload_hash: HASH }),
-    ev(good({ asked_by: 7 })),
-    ev(good(), 1_000, 'base_payment_unchecked'),
-    ev(good(), 1_000, 'deposit'),
-  ];
-  assert.deepEqual(baseChecksOf(bad), []);
-});
-
-test('baseChecksOf keeps the earliest of a duplicate tx_id and sorts newest first', () => {
+test('parseBaseCheckList keeps good entries, drops bad ones and duplicates', () => {
   const other = 'a'.repeat(64);
-  const rows = baseChecksOf([ev(good(), 3_000, 'base_payment_checked', 'late'), ev(good(), 1_000, 'base_payment_checked', 'early'), ev(good({ tx_id: other }), 2_000)]);
-  assert.deepEqual(rows.map((r) => [r.txId, r.atMs, r.nearTx]), [[other, 2_000, NEAR_TX], [TX, 1_000, 'early']]);
+  const raw = { checks: [{ tx_id: TX, near_tx: NEAR_TX }, { tx_id: TX, near_tx: NEAR_TX }, { tx_id: other, near_tx: NEAR_TX }, { tx_id: TX.toUpperCase(), near_tx: NEAR_TX }, { tx_id: `0x${TX}`, near_tx: NEAR_TX }, { tx_id: 'b'.repeat(64), near_tx: 'not a hash/../' }, { tx_id: 'c'.repeat(64) }, 5, null] };
+  assert.deepEqual(parseBaseCheckList(raw), [entry, { txId: other, nearTx: NEAR_TX }]);
+  assert.deepEqual(parseBaseCheckList(null), []);
+  assert.deepEqual(parseBaseCheckList({ checks: 'x' }), []);
+});
+
+test('baseCheckRowOf reads a good answer', () => {
+  assert.deepEqual(baseCheckRowOf(entry, answer()), { txId: TX, payloadHash: HASH, askedBy: ASKER, recordedMs: 1794340215416, nearTx: NEAR_TX });
+});
+
+test('baseCheckRowOf drops null and malformed answers', () => {
+  for (const bad of [null, 'x', answer({ tx_id: 'a'.repeat(64) }), answer({ payload_hash: HASH.slice(0, 63) }), answer({ recorded_ms: 'soon' }), answer({ recorded_ms: 5 }), answer({ asked_by: 7 })]) assert.equal(baseCheckRowOf(entry, bad), null);
+});
+
+test('readBaseChecks makes no request for an empty list and drops failures and nulls, newest first', async () => {
+  let calls = 0;
+  const none = await readBaseChecks({ pool: 'pool.x.testnet', rpcUrls: ['https://rpc.invalid'], fetch: (() => { calls += 1; return Promise.reject(new Error('no')); }) as typeof fetch }, []);
+  assert.deepEqual(none, []);
+  assert.equal(calls, 0);
+  const other = 'a'.repeat(64);
+  const fake = ((_u: unknown, init: { body: string }) => {
+    const args = JSON.parse(init.body) as { params: { args_base64: string } };
+    const asked = (JSON.parse(Buffer.from(args.params.args_base64, 'base64').toString()) as { tx_id: string }).tx_id;
+    const val = asked === TX ? answer() : asked === other ? answer({ tx_id: other, recorded_ms: '1794340215999' }) : null;
+    return Promise.resolve(new Response(JSON.stringify({ jsonrpc: '2.0', id: 1, result: { result: [...Buffer.from(JSON.stringify(val))] } })));
+  }) as unknown as typeof fetch;
+  const rows = await readBaseChecks({ pool: 'pool.x.testnet', rpcUrls: ['https://rpc.invalid'], fetch: fake }, [entry, { txId: other, nearTx: NEAR_TX }, { txId: 'd'.repeat(64), nearTx: NEAR_TX }]);
+  assert.deepEqual(rows.map((r) => r.txId), [other, TX]);
 });
 
 test('explorerBaseTx gives the URL only for 64 lowercase hex', () => {
@@ -48,7 +59,9 @@ test('the section renders nothing for no rows', () => {
 });
 
 test('the section shows the Base link, the NEAR link, the asker, the hash and the sentence for one row', () => {
-  const html = renderToStaticMarkup(<BaseChecks rows={baseChecksOf([ev(good())])} nowMs={1_000 + 120_000} />);
+  const row = baseCheckRowOf(entry, answer());
+  assert.notEqual(row, null);
+  const html = renderToStaticMarkup(<BaseChecks rows={row === null ? [] : [row]} nowMs={1794340215416 + 120_000} />);
   assert.ok(html.includes(`href="https://sepolia.basescan.org/tx/0x${TX}"`));
   assert.ok(html.includes(`href="https://testnet.nearblocks.io/txns/${NEAR_TX}"`));
   assert.ok(html.includes('Paid on Base, checked back on NEAR'));

@@ -1,27 +1,52 @@
-// AIR-350: the Base payments the pool has asked NEAR's MPC network about. Each `base_payment_checked` event of the pool carries the Base
-// transaction id, the hash of the signed answer and the account that asked; the page lists them. `base_payment_unchecked` stores nothing and is ignored.
-import type { PoolEvent } from '../lender/lenders.ts';
+// AIR-350: the Base payments the pool has asked NEAR's MPC network about. `base-checks.json` only says where to look (a Base tx id and the NEAR
+// transaction of its check); every value shown is read from the pool's own `get_base_check` view. A null answer, a failed read or a malformed answer
+// drops the entry. With an empty list no request is made.
+import { rpcView } from '../chain/rpc.ts';
+import { explorerTx } from '../approvals/staticChain.ts';
+import list from './base-checks.json' with { type: 'json' };
 
-export type BaseCheckRow = { txId: string; payloadHash: string; askedBy: string; atMs: number; nearTx: string };
+export type BaseCheckEntry = { txId: string; nearTx: string };
+export type BaseCheckRow = { txId: string; payloadHash: string; askedBy: string; recordedMs: number; nearTx: string };
 
 const HEX64 = /^[0-9a-f]{64}$/;
 const HEX64_ANY = /^[0-9a-fA-F]{64}$/;
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** The committed list of checks to look up. */
+export const BASE_CHECK_LIST: readonly BaseCheckEntry[] = parseBaseCheckList(list);
 
 /** The Base Sepolia explorer page of a transaction id: only exactly 64 lowercase hex characters (no 0x), else null. */
 export function explorerBaseTx(txId: string): string | null {
   return HEX64.test(txId) ? `https://sepolia.basescan.org/tx/0x${txId}` : null;
 }
 
-/** The well-formed `base_payment_checked` events as rows, one per Base transaction (the earliest answer), newest first. */
-export function baseChecksOf(events: readonly PoolEvent[]): BaseCheckRow[] {
-  const byTx = new Map<string, BaseCheckRow>();
-  for (const e of events) {
-    if (e.event !== 'base_payment_checked') continue;
-    const { tx_id: txId, payload_hash: payloadHash, asked_by: askedBy } = e.data;
-    if (typeof txId !== 'string' || !HEX64.test(txId) || typeof payloadHash !== 'string' || !HEX64_ANY.test(payloadHash) || typeof askedBy !== 'string') continue;
-    const row: BaseCheckRow = { txId, payloadHash, askedBy, atMs: e.atMs, nearTx: e.tx };
-    const have = byTx.get(txId);
-    if (have === undefined || row.atMs < have.atMs) byTx.set(txId, row);
+/** The well-formed entries of the list file, one per tx_id (the first). Anything else is dropped. */
+export function parseBaseCheckList(raw: unknown): BaseCheckEntry[] {
+  const checks = isObj(raw) && Array.isArray(raw['checks']) ? (raw['checks'] as unknown[]) : [];
+  const out = new Map<string, BaseCheckEntry>();
+  for (const c of checks) {
+    if (!isObj(c)) continue;
+    const txId = c['tx_id'];
+    const nearTx = c['near_tx'];
+    if (typeof txId !== 'string' || !HEX64.test(txId) || typeof nearTx !== 'string' || explorerTx(nearTx) === null || out.has(txId)) continue;
+    out.set(txId, { txId, nearTx });
   }
-  return [...byTx.values()].sort((a, b) => b.atMs - a.atMs);
+  return [...out.values()];
+}
+
+/** One `get_base_check` answer as a row, or null for null or anything malformed (including a tx_id other than the one asked for). */
+export function baseCheckRowOf(entry: BaseCheckEntry, raw: unknown): BaseCheckRow | null {
+  if (!isObj(raw)) return null;
+  const { tx_id: txId, payload_hash: payloadHash, asked_by: askedBy, recorded_ms: recorded } = raw;
+  if (txId !== entry.txId || typeof payloadHash !== 'string' || !HEX64_ANY.test(payloadHash) || typeof askedBy !== 'string' || askedBy === '') return null;
+  if (typeof recorded !== 'string' || !/^[0-9]{1,15}$/.test(recorded)) return null;
+  return { txId: entry.txId, payloadHash, askedBy, recordedMs: Number(recorded), nearTx: entry.nearTx };
+}
+
+/** Reads every listed check from the pool's view; entries that fail or answer null are left out. Newest first by recorded_ms. */
+export async function readBaseChecks(cfg: { pool: string; rpcUrls: readonly string[]; fetch?: typeof fetch }, entries: readonly BaseCheckEntry[] = BASE_CHECK_LIST): Promise<BaseCheckRow[]> {
+  if (entries.length === 0) return [];
+  const view = rpcView({ contractId: cfg.pool, rpcUrls: cfg.rpcUrls, ...(cfg.fetch === undefined ? {} : { fetch: cfg.fetch }) });
+  const rows = await Promise.all(entries.map((e) => view('get_base_check', { tx_id: e.txId }).then((raw) => baseCheckRowOf(e, raw), () => null)));
+  return rows.filter((r): r is BaseCheckRow => r !== null).sort((a, b) => b.recordedMs - a.recordedMs);
 }
