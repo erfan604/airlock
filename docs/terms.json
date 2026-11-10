@@ -5,13 +5,13 @@
   "parties": {
     "lead": "These terms bind the pool, the card it funds, the issuer who runs both, the borrower who holds the card, and every lender who deposits. Each contract signs with the hash of the code it runs, read from the chain on 10 November 2026.",
     "list": [
-      { "role": "The pool", "account": "pool.airlock-credit-c1108d", "code": "38ECVv72iiyNuNW5FBBu2vDK6do46FZUEiKYskLeMyAY" },
+      { "role": "The pool", "account": "pool.airlock-credit-c1108d", "code": "Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr" },
       { "role": "The card", "account": "card.airlock-credit-c1108d", "code": "6FCZRf51teMBxkLb2V5sc5bpLXDWws9RZgT3ERaUowTg" },
       { "role": "The issuer", "account": "airlock-credit-c1108d" },
       { "role": "The borrower", "account": "borrower.airlock-credit-c1108d" },
       { "role": "The agent", "account": "agent.airlock-credit-c1108d" }
     ],
-    "row": 350
+    "row": 436
   },
   "parts": [
     {
@@ -208,8 +208,8 @@
         {
           "n": "2.5",
           "kind": "limit",
-          "text": "The issuer sets the terms of new lines. The collateral ratio of new lines changes at once in either direction, and open lines keep theirs. From the upgrade, a cut of the Passport base applies at once and a raise waits for the hold, 60 seconds on this pool. A cut does not lower the draw a repay must keep to count toward the score, and the cap counts what one borrower account holds across all its cards.",
-          "status": "from the upgrade",
+          "text": "The issuer sets the terms of new lines. The collateral ratio of new lines changes at once in either direction, and open lines keep theirs. Since the pool was upgraded on 10 November 2026, a cut of the Passport base applies at once and a raise waits for the hold, 60 seconds on this pool. A cut does not lower the draw a repay must keep to count toward the score, and the cap counts what one borrower account holds across all its cards.",
+          "status": "in force",
           "refs": [
             { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1137, "to": 1142, "has": "pub fn set_collateral_bps", "name": "set_collateral_bps" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 582, "has": "fn the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs", "name": "the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs" },
@@ -220,7 +220,10 @@
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1554, "has": "fn open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay", "name": "open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1381, "has": "fn ten_dust_lines_kept_in_full_do_not_raise_the_score", "name": "ten_dust_lines_kept_in_full_do_not_raise_the_score" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1447, "has": "fn a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count", "name": "a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1484, "has": "fn the_cap_counts_what_the_borrower_holds_on_their_other_cards", "name": "the_cap_counts_what_the_borrower_holds_on_their_other_cards" }
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1484, "has": "fn the_cap_counts_what_the_borrower_holds_on_their_other_cards", "name": "the_cap_counts_what_the_borrower_holds_on_their_other_cards" },
+            { "role": "Shown", "tx": "AXfP2CKgY31WxbBfrisb9YfKbg3q3XYad3SA9GbazzUN", "what": "the upgrade that set the Passport base to 1 NEAR", "row": 442 },
+            { "role": "Shown", "tx": "BPFvcUAXnd4w9xZpaHTz8pcg7cqDyopNHAYebLaBoLqT", "what": "a line of 1.08 NEAR refused above the cap of 1 NEAR at score 500", "row": 443 },
+            { "role": "Shown", "tx": "42r73k13VE3cjmdhgk7C5vfYxKmhGzyruayNx6UoqoaR", "what": "the same line opened after one repay on time raised the cap to 1.16 NEAR", "row": 450 }
           ]
         },
         {
@@ -247,7 +250,7 @@
         {
           "n": "2.8",
           "kind": "limit",
-          "text": "The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.11 and limits 2.4 to 2.6 cite tests.",
+          "text": "The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.11 and limits 2.4 to 2.6 and 2.10 cite tests.",
           "status": "in force",
           "refs": [
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1056, "has": "fn property_random_operations_keep_the_accounting", "name": "the pool's property test" }
@@ -262,6 +265,22 @@
             { "role": "Enforced", "file": "runtime/src/economy/facts.ts", "line": 1, "to": 3, "has": "the fee comes from the team's money", "name": "the loop's accounts" },
             { "role": "Enforced", "file": "runtime/src/economy/facts.ts", "line": 24, "to": 26, "has": "LOOP_FEE_BPS = 1000", "name": "0.09 NEAR at 10 percent" },
             { "role": "Shown", "tx": "C3ZKyFdahsiHExAertB1XSubq3LLcQQuEG9xJvKvfwpJ", "what": "the loop's repay with its fee" }
+          ]
+        },
+        {
+          "n": "2.10",
+          "kind": "limit",
+          "text": "Anyone who pays the pool 0.01 NEAR can have it ask the MPC signer it names whether a Base payment is final and succeeded, and the pool keeps the signed answer. The answer binds the transaction to a block hash and names no payee and no amount. The pool does not check the signature, and no line, limit or share price depends on the answer. The payment checked on 10 November 2026 was made by an older account of the team, not by the card.",
+          "status": "in force",
+          "refs": [
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1189, "has": "pub fn check_base_payment", "name": "check_base_payment" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1194, "to": 1198, "has": "fee >= BASE_CHECK_FEE", "name": "the fee of 0.01 NEAR" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1234, "has": "pub fn on_base_check", "name": "on_base_check" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2018, "has": "fn base_check_asks_the_configured_signer_with_one_yocto", "name": "base_check_asks_the_configured_signer_with_one_yocto" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2066, "has": "fn a_signed_answer_is_recorded_and_the_view_returns_it", "name": "a_signed_answer_is_recorded_and_the_view_returns_it" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2156, "has": "fn a_failed_check_records_nothing_and_refunds_the_fee", "name": "a_failed_check_records_nothing_and_refunds_the_fee" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2256, "has": "fn the_base_check_fee_cannot_move_the_share_price", "name": "the_base_check_fee_cannot_move_the_share_price" },
+            { "role": "Shown", "tx": "4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz", "what": "the pool records the signed answer for a Base Sepolia payment", "row": 466 }
           ]
         }
       ]

@@ -8,13 +8,13 @@ Each term links to the line that enforces it, the proof or test that covers it, 
 
 These terms bind the pool, the card it funds, the issuer who runs both, the borrower who holds the card, and every lender who deposits. Each contract signs with the hash of the code it runs, read from the chain on 10 November 2026.
 
-- The pool: `pool.airlock-credit-c1108d`, code hash `38ECVv72iiyNuNW5FBBu2vDK6do46FZUEiKYskLeMyAY`
+- The pool: `pool.airlock-credit-c1108d`, code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`
 - The card: `card.airlock-credit-c1108d`, code hash `6FCZRf51teMBxkLb2V5sc5bpLXDWws9RZgT3ERaUowTg`
 - The issuer: `airlock-credit-c1108d`
 - The borrower: `borrower.airlock-credit-c1108d`
 - The agent: `agent.airlock-credit-c1108d`
 
-Code hashes: `docs/EVIDENCE.md` line 350.
+Code hashes: `docs/EVIDENCE.md` line 436.
 
 ## 1. What the card and the pool do
 
@@ -128,7 +128,7 @@ Code hashes: `docs/EVIDENCE.md` line 350.
 - Tested: `contracts/airlock-credit/src/tests.rs` 516, `a_fully_swept_line_owes_nothing`
 - Shown: a repay of 0.5 NEAR kept plus its 10 percent fee, transaction `N2344KkGfQG5e3L7p6jwDL8bonzcPoT8mvdqFNhvEi8` (`docs/EVIDENCE.md` line 379)
 
-**2.5** The issuer sets the terms of new lines. The collateral ratio of new lines changes at once in either direction, and open lines keep theirs. From the upgrade, a cut of the Passport base applies at once and a raise waits for the hold, 60 seconds on this pool. A cut does not lower the draw a repay must keep to count toward the score, and the cap counts what one borrower account holds across all its cards. *(from the upgrade)*
+**2.5** The issuer sets the terms of new lines. The collateral ratio of new lines changes at once in either direction, and open lines keep theirs. Since the pool was upgraded on 10 November 2026, a cut of the Passport base applies at once and a raise waits for the hold, 60 seconds on this pool. A cut does not lower the draw a repay must keep to count toward the score, and the cap counts what one borrower account holds across all its cards. *(in force)*
 
 - Enforced: `contracts/airlock-credit/src/lib.rs` 1137 to 1142, `set_collateral_bps`
 - Tested: `contracts/airlock-credit/src/tests.rs` 582, `the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs`
@@ -140,6 +140,9 @@ Code hashes: `docs/EVIDENCE.md` line 350.
 - Tested: `contracts/airlock-credit/src/tests.rs` 1381, `ten_dust_lines_kept_in_full_do_not_raise_the_score`
 - Tested: `contracts/airlock-credit/src/tests.rs` 1447, `a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count`
 - Tested: `contracts/airlock-credit/src/tests.rs` 1484, `the_cap_counts_what_the_borrower_holds_on_their_other_cards`
+- Shown: the upgrade that set the Passport base to 1 NEAR, transaction `AXfP2CKgY31WxbBfrisb9YfKbg3q3XYad3SA9GbazzUN` (`docs/EVIDENCE.md` line 442)
+- Shown: a line of 1.08 NEAR refused above the cap of 1 NEAR at score 500, transaction `BPFvcUAXnd4w9xZpaHTz8pcg7cqDyopNHAYebLaBoLqT` (`docs/EVIDENCE.md` line 443)
+- Shown: the same line opened after one repay on time raised the cap to 1.16 NEAR, transaction `42r73k13VE3cjmdhgk7C5vfYxKmhGzyruayNx6UoqoaR` (`docs/EVIDENCE.md` line 450)
 
 **2.6** Lenders can leave 60 seconds after a deposit on this pool, and then for as much as the pool holds idle; money lent out waits for its repayment. Collateral is 30 percent of a line, and the pool bears any loss beyond it. *(in force)*
 
@@ -151,7 +154,7 @@ Code hashes: `docs/EVIDENCE.md` line 350.
 
 - Measured: `docs/EVIDENCE.md` 350, `the accounts of the run`
 
-**2.8** The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.11 and limits 2.4 to 2.6 cite tests. *(in force)*
+**2.8** The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.11 and limits 2.4 to 2.6 and 2.10 cite tests. *(in force)*
 
 - Tested: `contracts/airlock-credit/src/tests.rs` 1056, `the pool's property test`
 
@@ -161,12 +164,23 @@ Code hashes: `docs/EVIDENCE.md` line 350.
 - Enforced: `runtime/src/economy/facts.ts` 24 to 26, `0.09 NEAR at 10 percent`
 - Shown: the loop's repay with its fee, transaction `C3ZKyFdahsiHExAertB1XSubq3LLcQQuEG9xJvKvfwpJ`
 
+**2.10** Anyone who pays the pool 0.01 NEAR can have it ask the MPC signer it names whether a Base payment is final and succeeded, and the pool keeps the signed answer. The answer binds the transaction to a block hash and names no payee and no amount. The pool does not check the signature, and no line, limit or share price depends on the answer. The payment checked on 10 November 2026 was made by an older account of the team, not by the card. *(in force)*
+
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1189, `check_base_payment`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1194 to 1198, `the fee of 0.01 NEAR`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1234, `on_base_check`
+- Tested: `contracts/airlock-credit/src/tests.rs` 2018, `base_check_asks_the_configured_signer_with_one_yocto`
+- Tested: `contracts/airlock-credit/src/tests.rs` 2066, `a_signed_answer_is_recorded_and_the_view_returns_it`
+- Tested: `contracts/airlock-credit/src/tests.rs` 2156, `a_failed_check_records_nothing_and_refunds_the_fee`
+- Tested: `contracts/airlock-credit/src/tests.rs` 2256, `the_base_check_fee_cannot_move_the_share_price`
+- Shown: the pool records the signed answer for a Base Sepolia payment, transaction `4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz` (`docs/EVIDENCE.md` line 466)
+
 ## Schedule of cited files
 
 - `bench/runs/recorded/transcripts/own-S01.A1.1.json`: 215
-- `contracts/airlock-credit/src/lib.rs`: 3 to 5, 38 to 39, 368 to 375, 383 to 386, 579 to 586, 585, 605 to 628, 620 to 622, 626 to 630, 818, 1055 to 1058, 1097 to 1134, 1137 to 1142, 1149, 1168
+- `contracts/airlock-credit/src/lib.rs`: 3 to 5, 38 to 39, 368 to 375, 383 to 386, 579 to 586, 585, 605 to 628, 620 to 622, 626 to 630, 818, 1055 to 1058, 1097 to 1134, 1137 to 1142, 1149, 1168, 1189, 1194 to 1198, 1234
 - `contracts/airlock-credit/src/math.rs`: 54 to 70, 247, 258
-- `contracts/airlock-credit/src/tests.rs`: 178, 194, 433, 484, 516, 528, 550, 582, 670, 733, 778, 1056, 1381, 1447, 1484, 1554, 1597
+- `contracts/airlock-credit/src/tests.rs`: 178, 194, 433, 484, 516, 528, 550, 582, 670, 733, 778, 1056, 1381, 1447, 1484, 1554, 1597, 2018, 2066, 2156, 2256
 - `contracts/airlock-policy/src/escalation.rs`: 447 to 451
 - `contracts/airlock-policy/src/policy.rs`: 297, 478
 - `contracts/airlock-policy/src/redteam.rs`: 519
@@ -176,6 +190,6 @@ Code hashes: `docs/EVIDENCE.md` line 350.
 - `contracts/airlock-verdict/src/proofs.rs`: 104, 117, 127, 137, 355
 - `docs/BENCH.md`: 37
 - `docs/CLAIMS.md`: 38
-- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390
+- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390, 436, 442, 443, 450, 466
 - `proofs/Verdict.lean`: 12, 96, 105, 115, 123, 192
 - `runtime/src/economy/facts.ts`: 1 to 3, 24 to 26

@@ -295,7 +295,9 @@ held and refused payments are not inputs: they are the guard working, not the bo
 `Open`, `Repaid` or `Defaulted`: `lines_opened += 1`. A `Defaulted` line is one default. A `Repaid` line is not counted as on time or
 late, because its timing is not stored. A loss cleared to 0 cannot be told apart from a write-off in the stored state, so it counts as
 neither recovered nor written off; an unrecovered loss stays a plain default. Every backfilled record has `backfilled: true` and the
-reasons say so. The live c1108d card holds one `Defaulted` line whose loss was recovered: 1 default, score 200.
+reasons say so. The live c1108d card held one `Defaulted` line whose loss was recovered when this was written: 1 default, score 200. By the
+upgrade (2026-11-10) the hourly loop had replaced it with a `Repaid` line of 0.09 NEAR, so the backfill gave 1 line opened and nothing else:
+score 500, cap 1 NEAR (docs/EVIDENCE.md, Pool upgrade and Credit Passport run).
 
 ### The record
 
@@ -386,12 +388,15 @@ is pending on the card, then the storage: the pool balance must cover `(new wasm
 must equal the committed wasm and the pool views must equal the snapshot. Then, with every number read from `get_passport`: the
 over-cap limit `L` in `(cap, 1.4 x cap]` is refused with the cap text, a line of 0.3 NEAR opens, the agent pays the booked merchant 0.1
 NEAR (Allow), the issuer sweeps the rest, the borrower repays on time with the fee, the score and cap rise, `L` opens and is closed at once
-by a sweep and a repay (an undrawn close counts as neither on time nor late). No line stays open. Expected: 200 and 0.4 NEAR before, 280
-and 0.56 NEAR after.
+by a sweep and a repay (an undrawn close counts as neither on time nor late). No line stays open. Expected when this was written: 200 and
+0.4 NEAR before, 280 and 0.56 NEAR after. The script now reads the score and both caps from the chain and picks `L` as the middle of (cap
+before, cap after one on-time repay] (a0a0da6). The actual run on 2026-11-10: 500 and 1 NEAR before, 580 and 1.16 NEAR after, `L` 1.08 NEAR
+(upgrade transaction `AXfP2CKgY31WxbBfrisb9YfKbg3q3XYad3SA9GbazzUN`, the rest in docs/EVIDENCE.md).
 
 ### What this does not do
 
-- The backfill counts only what the state proves: the live borrower starts at 200, not at a reconstructed history.
+- The backfill counts only what the state proves: the live borrower started at 500 (one `Repaid` line, timing unknown), not at a
+  reconstructed history.
 - The score is pool side only; held and refused payments are not inputs.
 - The record is keyed by borrower account: a borrower on a NEW account starts fresh at 500 (the full base). The Passport stops a reset on
   the same account, not a new identity; only the issuer registers borrowers, so onboarding is where identity is checked.
@@ -413,7 +418,8 @@ and 0.56 NEAR after.
   steps. The preflight of 2026-11-09 passed every check but one: the card is paused (the c1108d run paused it before the recovery sweep),
   and a paused card refuses the agent's payment. `UNPAUSE_CARD=1` lets the issuer unpause it as the first live step, logged as a row.
   Storage needs no top-up: the pool holds 5.45 NEAR against 4.92 NEAR needed.
-- Not live yet: the upgrade waits for the coordinator's LIVE_OK handshake. Nothing in README, CLAIMS or EVIDENCE claims the Passport.
+- Live since 2026-11-10T22:47:06Z: transaction `AXfP2CKgY31WxbBfrisb9YfKbg3q3XYad3SA9GbazzUN` deployed `res/airlock_credit_v2.wasm` on
+  `pool.airlock-credit-c1108d.testnet` and called `migrate`; the run is in docs/EVIDENCE.md (Pool upgrade and Credit Passport run) and C23.
 
 ## AIR-350: the pool asks the MPC network whether a Base payment landed, and keeps the answer
 
@@ -500,4 +506,8 @@ Mutants are listed in docs/mutation.md.
   - a check of an id that is no Base transaction, with exactly 60 Tgas, ended with `base_payment_unchecked`, reason `the signer call
     failed or timed out`, and a refund of the fee less 1 yocto (NEAR transaction `FQcfS89WaSb9eoYh4ZzzovWDy83LvM6L3b952vtENiEv`).
   So the signer's answer does reach `on_base_check` as its promise result. Not rehearsed: a signer timeout, and an answer over the read bound.
-- Not live on the pool: nothing in README, CLAIMS or EVIDENCE claims it.
+- Live on the pool since the upgrade of 2026-11-10 (`migrate` set `v1.signer-prod.testnet` and domain 3). The first check on the pool:
+  `lp1.airlock-credit-c1108d.testnet` asked about Base Sepolia transaction
+  0x943516649902f70da582a9116d6629906c41b4cdc6d41073b819fab7ea1cda63 in NEAR transaction `4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz`
+  (event `base_payment_checked`, payload hash b38ee2231f49b349ec841663233049d739fbd6b00c786b729cda8814b92021c1); docs/EVIDENCE.md (Base
+  payment checked back on NEAR by the pool) and C24.
