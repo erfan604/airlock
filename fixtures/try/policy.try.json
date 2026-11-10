@@ -1,0 +1,41 @@
+{
+  "network": "testnet",
+  "attestation_expiration_time_ms": "1209600000",
+  "assets": {
+    "near": {
+      "symbol": "NEAR",
+      "decimals": 24,
+      "hard_cap": "10000000000000000000000",
+      "daily_cap": "50000000000000000000000",
+      "max_fee_per_gas": "0",
+      "max_gas": "0",
+      "quick_task_cap": "10000000000000000000000",
+      "path": null
+    }
+  },
+  "book": [
+    {
+      "name": "shop",
+      "key": "near:{shop}",
+      "cap": null,
+      "daily_untrusted_budget": "0",
+      "daily_limit": "50000000000000000000000",
+      "label": "Shop",
+      "listed": true
+    }
+  ],
+  "flags": {
+    "max_pending_per_agent": 50,
+    "pending_ttl_ms": "60000",
+    "hourly_escalation_budget": 10000,
+    "lock_consecutive_rejects": 10000,
+    "lock_rejects_per_day": 10000,
+    "max_task_ttl_ms": "604800000",
+    "max_task_actions": 99
+  },
+  "task_public_key": null,
+  "nonce": {
+    "path": "none"
+  },
+  "_note": "AIR-356: the policy of the try it live card, a policy of its own that any visitor's browser may attack with published function-call keys. NEAR only, 0.01 NEAR a request and 0.05 NEAR a day, one booked shop with no cap for amounts read from text (strict), holds that expire after one minute, and flood flags wide enough that visitors cannot lock the agent. Applied by scripts/try-setup.ts through scripts/bootstrap-policy.sh."
+}

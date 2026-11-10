@@ -3,3 +3,7 @@
 import '../../scripts/credit-strict.test.ts';
 import '../../scripts/credit-economy.test.ts';
 import '../../scripts/agent-renew.test.ts';
+// AIR-356: the try card's setup, publish and refill tests
+import '../../scripts/try-setup.test.ts';
+import '../../scripts/try-publish.test.ts';
+import '../../scripts/try-refill.test.ts';
