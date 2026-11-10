@@ -148,7 +148,7 @@ Each line is a command, what it needs and the last line it prints. Labels: recor
 - `pnpm try --self-test`: recorded attack plans, no keys, needs Rust 1.86 for the verdict CLI, ends with `TRY SELF-TEST OK 3 cases`: a stand-in agent that pays what it reads pays the attacker in A01, B01 and X01, and the default AIRLOCK configuration holds every attacker payment [C16].
 - `pnpm demo:intents`: recorded dry quote, no keys, ends with `intents: nothing signed, no funds moved` [C14]. `pnpm demo:intents --live` asks 1Click for one fresh dry quote (read only, mainnet prices).
 - `pnpm verify-approval <tx hash>`: live read only RPC, prints `PASS (digest, approver, args, effect)` for an owner approval, for example `Fk8G1sGrJZ6wKDwH6CmpnA5gz1HJLMNaEaFjkKcDSSCk`.
-- `pnpm -C runtime exec tsx --test test/attest.test.ts`: recorded, checks the stored model report offline, prints `# fail 0` [C15]. `pnpm -C runtime attest` fetches a fresh report and needs `NEARAI_API_KEY`.
+- `pnpm -C runtime exec tsx --test test/attest.test.ts`: recorded, checks the stored model report offline, prints `# fail 0` [C15]. `pnpm -C runtime attest` fetches a fresh report and needs the NEAR AI Cloud key in the environment.
 - `pnpm -C runtime exec tsx --test test/counterparty.test.ts`: no keys, prints `# fail 0`; it covers the `counterparty_new` and `counterparty_unverified` notes on a card.
 - `pnpm proven`: see `docs/PROVEN.md` and the section Proven of `docs/VERIFY.md`; it needs Rust, Kani and Lean.
 
