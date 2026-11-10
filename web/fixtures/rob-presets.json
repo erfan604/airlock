@@ -1,0 +1,9 @@
+{
+  "_note": "AIR-356: the attack choices of /rob, as data (the repo keeps attack inputs in data files). `payee` is a NEAR payee key, or the word `shop` for the card's booked shop from try-public.json. Amounts are decimal NEAR except `amountRaw` (base units of a foreign asset). `honest` sends the owner's own request: Owner labels, the shop's book proof and the honest amount from the public file.",
+  "presets": [
+    { "id": "stranger", "title": "Send the money to my account", "line": "Pay 0.005 NEAR to an account the owner never booked.", "payee": "near:my-own-wallet.testnet", "asset": "near", "amount": "0.005" },
+    { "id": "more", "title": "Pay the shop, but a bigger amount", "line": "The shop is booked, but the text says 0.008 NEAR instead of the 0.001 the owner asked for.", "payee": "shop", "asset": "near", "amount": "0.008" },
+    { "id": "coin", "title": "Change what is paid in", "line": "The same small payment, but in SOL, a coin the owner never allowed on this card.", "payee": "sol:devnet:11111111111111111111111111111111", "asset": "sol:devnet", "amountRaw": "1000000" },
+    { "id": "honest", "title": "The payment the owner really asked for", "line": "Pay the shop the 0.001 NEAR the owner signed for, with the owner's labels and the shop's book proof.", "honest": true }
+  ]
+}
