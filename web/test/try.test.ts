@@ -196,3 +196,14 @@ test('AIR-322: a leading minus, euro and NEAR amounts give no valid amount; only
   const d = standIn('Total $180.00 due, ref 2026-11-07');
   assert.ok(d.kind === 'proposal' && d.proposal.amount.cents === 18000n);
 });
+
+// AIR-346: account ids are shown in their short form (components/account.ts accountText: no `.testnet` suffix), on the Try page as on the home
+// hero that reuses its request slip; the email text itself is the attack, so it is shown as written.
+test('try page: the first screen shows account ids without the network suffix', async () => {
+  const { createElement } = await import('react');
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const { TryPage } = await import('../src/try/TryPage.tsx');
+  const text = renderToStaticMarkup(createElement(TryPage)).replace(/<[^>]+>/g, ' ');
+  assert.ok(text.includes('kanocotton'), 'the booked account is still named');
+  assert.ok(!/testnet/i.test(text), text.match(/.{0,40}testnet.{0,40}/i)?.[0]);
+});

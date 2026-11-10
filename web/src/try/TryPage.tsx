@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Specimen } from '../components/Specimen.tsx';
 import { VERDICT_WORDS, VerdictStamp } from '../components/VerdictStamp.tsx';
 import { OneShot } from '../landing/OneShot.tsx';
+import { accountText } from '../components/account.ts';
 import { url } from '../static.ts';
 import { RequestSlip } from './RequestSlip.tsx';
 import { MAX_EMAIL, WORLDS, columnsOf, defaultKnobs, emailOf, formatDollars, parseDollars, payeeListGuard, sourceOf, stampOf, standIn, uiOf, verdictSentence } from './model.ts';
@@ -23,7 +24,8 @@ const STAND_IN = 'The agent here is a stand-in, not a model: a few lines of patt
 
 type Source = { kind: 'preset'; id: string } | { kind: 'own' };
 
-const who = (p: Proposal): string => p.payee.name ?? p.payee.account;
+/** A payee as the page prints it: its book name, or its account in the short form (no network suffix; components/account.ts). */
+const who = (p: Proposal): string => p.payee.name ?? accountText(p.payee.account);
 
 function Pays({ email, source, world }: { email: string; source: TextSource; world: World }) {
   const agent = useMemo(() => standIn(email, world, source), [email, source, world]);
@@ -96,7 +98,7 @@ function Decision({ email, source, world, knobs, mod, failed }: { email: string;
           <div className={guard === 'PAY' && v.kind !== 'allow' ? 'try-guard try-guard-pay' : 'try-guard'} data-testid="try-guard" data-guard={guard}>
             <p className="try-who">A payee-list guard would</p>
             <p className="try-guard-word">{guard === 'PAY' ? `Pay ${formatDollars(p.amount.cents)}` : 'Refuse'}</p>
-            <p className="try-guard-why">{guard === 'PAY' ? `${who(p)} is on the list and the amount is under the per-payment cap.` : p.payee.inBook ? 'The amount is over the per-payment cap.' : `${p.payee.account} is not on the list.`}</p>
+            <p className="try-guard-why">{guard === 'PAY' ? `${who(p)} is on the list and the amount is under the per-payment cap.` : p.payee.inBook ? 'The amount is over the per-payment cap.' : `${accountText(p.payee.account)} is not on the list.`}</p>
           </div>
           <p className="try-engine" data-testid="try-engine">
             {ENGINE_LINE}
@@ -266,7 +268,7 @@ export function TryPage() {
                 <tr key={b.account}>
                   <td>
                     <span className="try-book-name">{b.name}</span>
-                    <span className="try-mono try-book-account">{b.account}</span>
+                    <span className="try-mono try-book-account">{accountText(b.account)}</span>
                   </td>
                   <td className="try-mono">{`${formatDollars(parseDollars(b.usual) ?? 0n)} a ${b.every}`}</td>
                 </tr>

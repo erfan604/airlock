@@ -3,6 +3,7 @@
 // pattern); outside text itself is shown only in the email Specimen next to it.
 import type { ReactNode } from 'react';
 import { Seal } from '../components/Seal.tsx';
+import { accountText } from '../components/account.ts';
 import type { LabelKey } from '../components/Seal.tsx';
 import { WORLD, formatDollars, originWords, parseDollars, wordsOf } from './model.ts';
 import type { Proposal, World } from './model.ts';
@@ -29,8 +30,8 @@ export function RequestSlip({ proposal, world = WORLD, compact = false }: { prop
   const payeeLabel: LabelKey = payee.origin === 'owner' ? 'Book' : outsideLabel;
   return (
     <div className="slip" data-testid="request-slip">
-      <Field name="Pay" value={payee.name ?? payee.account} label={payeeLabel} source={originWords(payee.origin, payee.inBook, proposal.source, world)} outside={payee.origin !== 'owner'} testId="slip-payee">
-        {payee.name === null ? null : <span className="slip-sub">{payee.account}</span>}
+      <Field name="Pay" value={payee.name ?? accountText(payee.account)} label={payeeLabel} source={originWords(payee.origin, payee.inBook, proposal.source, world)} outside={payee.origin !== 'owner'} testId="slip-payee">
+        {payee.name === null ? null : <span className="slip-sub">{accountText(payee.account)}</span>}
       </Field>
       <Field name="Amount" value={formatDollars(amount.cents)} label={outsideLabel} source={originWords('email-amount', true, proposal.source, world)} outside testId="slip-amount">
         {usual === null || entry === undefined ? null : (
