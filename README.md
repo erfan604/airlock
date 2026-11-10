@@ -8,7 +8,7 @@ Strict mode has run on the live credit card since 2026-11-10T07:14:52Z: every am
 
 | Do this | See this |
 |:-|:-|
-| Open https://airlock-ere.pages.dev/break/ (no wallet, no chain) | The real gate beside five copies of itself, each missing one rule: pick an attack, the real gate holds it, the copy pays, and the recorded Kani failure and Lean theorem for that rule sit beside it |
+| Open https://airlock-ere.pages.dev/break/ (no wallet, no chain) | The real gate beside five copies of itself, each missing one rule: pick an attack, the real gate holds or blocks it, the copy pays, and the recorded Kani failure and Lean theorem for that rule sit beside it |
 | Open https://airlock-ere.pages.dev/replay/ | A recorded testnet run: an invoice paid, an injected correction held, a tampered approval refused, each with its transaction |
 | `pnpm i && scripts/claims-run.sh --tier node` (Node 24 and pnpm, no keys) | One PASS or SKIP line per claim, ending `CLAIMS TIER node OK <n> run, <k> skipped` |
 
@@ -28,7 +28,7 @@ An email tells your agent that your usual supplier's bill went up: the payee is 
 
 ## Keys
 
-Read from chain on 2026-11-10. `agent.airlock-credit-c1108d.testnet` holds one full-access key and one function-call key (`submit_batch` and `expire` on the card, no allowance limit). `card.airlock-credit-c1108d.testnet` and `pool.airlock-credit-c1108d.testnet` each hold one full-access key, so the deployer can redeploy them. Details and the read command: `docs/KEYS.md`.
+Read from chain on 2026-11-10. `agent.airlock-credit-c1108d.testnet` holds one full-access key and one function-call key (`submit_batch` and `expire` on the card, no allowance limit). `card.airlock-credit-c1108d.testnet` and `pool.airlock-credit-c1108d.testnet` each hold one full-access key, so the deployer can redeploy them. Details: `docs/KEYS.md`.
 
 ## What is enforced where
 
