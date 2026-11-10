@@ -129,7 +129,9 @@ async function findLeadingZero(field: 'r' | 's'): Promise<{ key: Hex; sig: MpcSi
     const key = generatePrivateKey();
     const sig = await mpcSign(key);
     const hex = field === 'r' ? sig.big_r.slice(2) : sig.s;
-    if (hex.startsWith('00')) return { key, sig };
+    // exactly one leading zero byte: with two, viem writes a 30 byte string, which is right but is not the case this test names
+    // (about 1 run in 256 hit that and failed by chance)
+    if (hex.startsWith('00') && !hex.startsWith('0000')) return { key, sig };
   }
   throw new Error('no key with a leading zero byte found');
 }
