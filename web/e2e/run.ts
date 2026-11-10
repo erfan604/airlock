@@ -5,7 +5,7 @@
 // process.env before the preview server loads the Vite config, so a stub runtime can name its own origin, and close runs at the end), then runs
 // e2e/<name>.e2e.ts, whose default export is `(ctx: { page, baseUrl }) => Promise<void>`. The built-in name `fixtures` visits
 // every registered /fixtures/* route. The last line printed is `E2E <name> OK` (`E2E fixtures OK (<n> routes)`) or nothing of
-// the kind and a nonzero exit.
+// the kind and a nonzero exit. A name starting with `live-` (AIR-351) runs against a deployed site, AIRLOCK_SMOKE_URL or the hosted copy.
 // Every context is created with a viewport and nothing else for layout: no isMobile, no hasTouch, no device descriptor. All of
 // them set isMobile, which makes window.innerWidth follow the content width and hides an overflow from the kit audit.
 import { existsSync, mkdirSync } from 'node:fs';
@@ -61,7 +61,9 @@ let setupHandle: Awaited<ReturnType<E2ESetup>> | undefined;
 try {
   // AIR-310: `static` (and AIR-311's `nojs`) serve web/dist-static as plain files, the way a static host does: no preview server, no proxy, no runtime
   const isStatic = name.startsWith('static') || name === 'nojs';
-  if (!isStatic && !existsSync(join(webRoot, 'dist', 'index.html'))) throw new Error('web/dist/index.html is missing: run `pnpm -C web build` first');
+  // AIR-351: `live-*` runs against a deployed site (AIRLOCK_SMOKE_URL, default the hosted copy): no build and no local server
+  const isRemote = name.startsWith('live-');
+  if (!isStatic && !isRemote && !existsSync(join(webRoot, 'dist', 'index.html'))) throw new Error('web/dist/index.html is missing: run `pnpm -C web build` first');
   const setup = new URL(`./${name}.setup.ts`, import.meta.url);
   if (existsSync(fileURLToPath(setup))) {
     const mod = (await import(setup.href)) as { default?: E2ESetup };
@@ -73,7 +75,10 @@ try {
   if (name !== 'fixtures' && !existsSync(fileURLToPath(e2eFile))) throw new Error(`no e2e/${name}.e2e.ts`);
 
   let baseUrl: string;
-  if (isStatic) {
+  if (isRemote) {
+    baseUrl = (process.env.AIRLOCK_SMOKE_URL ?? 'https://airlock-ere.pages.dev').replace(/\/$/, '');
+    if (!/^https?:\/\/[^/\s]+$/.test(baseUrl)) throw new Error(`AIRLOCK_SMOKE_URL must be an origin such as https://airlock-ere.pages.dev, got ${baseUrl}`);
+  } else if (isStatic) {
     const hosted = await serveStatic(join(webRoot, 'dist-static'), 0);
     server = hosted;
     baseUrl = hosted.url;

@@ -9,6 +9,7 @@
     "test": "tsx --test \"test/**/*.test.{ts,tsx}\"",
     "lint": "eslint src test e2e scripts",
     "e2e": "tsx e2e/run.ts",
+    "smoke:live": "tsx e2e/run.ts live-smoke",
     "preview": "vite preview",
     "build:static": "pnpm gen:bench && tsc -p tsconfig.json && vite build --mode static && tsx scripts/export-static.ts && tsx scripts/prerender.tsx",
     "preview:static": "tsx scripts/serve-static.ts"
