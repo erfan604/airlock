@@ -1,0 +1,41 @@
+{
+  "network": "testnet",
+  "attestation_expiration_time_ms": "1209600000",
+  "assets": {
+    "near": {
+      "symbol": "NEAR",
+      "decimals": 24,
+      "hard_cap": "5000000000000000000000000",
+      "daily_cap": "20000000000000000000000000",
+      "max_fee_per_gas": "0",
+      "max_gas": "0",
+      "quick_task_cap": "10000000000000000000000000",
+      "path": null
+    },
+    "evm:84532:native": {
+      "symbol": "ETH.base",
+      "decimals": 18,
+      "hard_cap": "5000000000000",
+      "daily_cap": "10000000000000",
+      "max_fee_per_gas": "100000000",
+      "max_gas": "21000",
+      "quick_task_cap": "10000000000000",
+      "path": "credit-card-1"
+    }
+  },
+  "book": [
+    { "name": "acme", "key": "near:{acme}", "cap": null, "daily_untrusted_budget": "0", "daily_limit": "5000000000000000000000000", "label": "Acme", "listed": true },
+    { "name": "merchant_base", "key": "evm:84532:{merchant_evm}", "cap": null, "daily_untrusted_budget": "0", "daily_limit": "5000000000000", "label": "Merchant (Base)", "listed": true }
+  ],
+  "flags": {
+    "max_pending_per_agent": 3,
+    "pending_ttl_ms": "3600000",
+    "hourly_escalation_budget": 6,
+    "lock_consecutive_rejects": 3,
+    "lock_rejects_per_day": 20,
+    "max_task_ttl_ms": "3600000",
+    "max_task_actions": 20
+  },
+  "task_public_key": null,
+  "nonce": { "path": "credit-card-1" }
+}
