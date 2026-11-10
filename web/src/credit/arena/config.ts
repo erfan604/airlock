@@ -15,6 +15,11 @@ export const ARENA_INVOICE_YOCTO = '10000000000000000000000';
  * AND the chain shows at least CADENCE_MIN_ATTEMPTS attempts.
  */
 export const ARENA_CRON_SINCE_MS: number | null = null;
+/**
+ * When the card took its strict book root (AIR-355, ms since the epoch), or null. Set by the coordinator once `credit-strict.ts --verify`
+ * answers CREDIT STRICT OK; until then the strip keeps the wording of the capped book.
+ */
+export const ARENA_STRICT_SINCE_MS: number | null = null;
 export const CADENCE_MIN_ATTEMPTS = 6;
 /** "Live" is said only while the last attempt is younger than this. */
 export const LIVE_WINDOW_MS = 3 * 3_600_000;

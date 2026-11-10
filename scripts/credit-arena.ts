@@ -10,8 +10,10 @@
 //   pnpm tsx scripts/credit-arena.ts check        read only: the preflight, the signer, the card and the stop rule that holds; sends nothing
 //   pnpm tsx scripts/credit-arena.ts snapshot     writes web/src/credit/arena/samples.json from the archive (sanitized)
 // Env: ARENA_DIR (archive folder, also where LIVE_OK is looked for), ARENA_USD_DAILY_CAP (default 0.40), ARENA_KEY_FILE (the scoped key,
-// default ~/.airlock-arena-key.json, mode 0600), ARENA_BOOK_VAULT (the card's private book; default target/arena/book.vault.json, then
-// target/credit-run/book.vault.json), ARENA_ALLOW_AGENT_KEY (1: the agent's full-access key may sign when the scoped key cannot),
+// default ~/.airlock-arena-key.json, mode 0600), ARENA_BOOK_VAULT (the card's private book; without it the strict vault
+// book.vault.strict.json and then book.vault.json, under target/arena and then target/credit-run, and the first whose root is the root the
+// card holds is used), ARENA_DRY_BOOK (capped: the dry round replays the book before strict mode), CREDIT_DIR (the folder of the lock
+// shared with scripts/credit-economy.ts, default target/credit), ARENA_ALLOW_AGENT_KEY (1: the agent's full-access key may sign when the scoped key cannot),
 // ARENA_AGENT_CREDENTIALS (that key's credentials file; default agent.json next to the book vault),
 // AIRLOCK_TASK_KEY_FILE (default ~/.airlock-task-key), MERCHANT_CREDENTIALS (default the merchant's ~/.near-credentials file), LLM_MODE and
 // NEARAI_API_KEY for the model calls.
@@ -56,7 +58,9 @@ import {
 import type { ArenaIo, ArenaVerdict, CardState, ClassifiedTx, DefenderChain, FloodState, GateObs, PendingView } from '../runtime/src/arena/index.ts';
 import { requestId } from '../runtime/src/chain/ids.ts';
 import type { BatchResult } from '../runtime/src/chain/types.ts';
-import { checkPlan, ownerTaskBorsh, taskHash } from '../runtime/src/dsl/index.ts';
+import { takeLock } from '../runtime/src/credit/lock.ts';
+import { pickVault, vaultCandidates } from '../runtime/src/credit/vaults.ts';
+import { checkPlan, isValueTrusted, ownerTaskBorsh, taskHash } from '../runtime/src/dsl/index.ts';
 import type { ActionRequest, OwnerTask } from '../runtime/src/dsl/index.ts';
 import type { Extractor } from '../runtime/src/interpreter/index.ts';
 import { ORIGIN_PATTERN, OWNER_ORIGIN } from '../runtime/src/origin.ts';
@@ -201,13 +205,32 @@ export function pendingRowsOf(page: unknown): PendingView[] {
 
 // The dry round: a scripted attacker, a fixed plan, a scripted reader, a stand-in gate that answers with recorded-shape receipts
 
-function dryChain(): { chain: DefenderChain; receipts: (tx: string) => Promise<ClassifiedTx> } {
+/** The book of the dry round: `strict` (no cap for amounts read from text, the live card after AIR-355) or `capped` (the 1 NEAR cap before it). */
+export type DryBook = 'strict' | 'capped';
+const DRY_CAP_YOCTO = 10n ** 24n;
+
+/**
+ * The stand-in for the gate in the dry round (the contract decides live): the task bound first (a payee outside the bounds is held, a
+ * payee over its bound is held), then the rule for an amount read from text: held at any size under a strict book, held above the cap
+ * under a capped one. An amount with a trusted label (the owner's own words, the book) is allowed inside the bound.
+ */
+export function dryGate(req: ActionRequest, task: OwnerTask, spent: bigint, book: DryBook): { outcome: 'allowed' | 'escalated'; reason: string | null } {
+  const bound = task.bounds.find((b) => b.payee_key === req.payee);
+  const amount = BigInt(req.amount);
+  if (bound === undefined) return { outcome: 'escalated', reason: 'OutsideTask' };
+  if (spent + amount > BigInt(bound.max_total)) return { outcome: 'escalated', reason: 'OverTaskBound' };
+  if (!isValueTrusted(req.labels.amount) && (book === 'strict' || amount > DRY_CAP_YOCTO)) return { outcome: 'escalated', reason: 'UntrustedAmount' };
+  return { outcome: 'allowed', reason: null };
+}
+
+function dryChain(book: DryBook): { chain: DefenderChain; receipts: (tx: string) => Promise<ClassifiedTx> } {
   const template = JSON.parse(readFileSync(join(RECORDED, 'recorded-held.json'), 'utf8')) as Record<string, unknown>;
   const sent = new Map<string, unknown>();
   let n = 0;
   const T0 = Date.parse('2026-11-10T12:00:00.000Z');
   const chain: DefenderChain = {
-    getBook: async () => [[MERCHANT_KEY, { cap: (10n ** 24n).toString(), daily_untrusted_budget: (2n * 10n ** 24n).toString(), daily_limit: (5n * 10n ** 24n).toString(), label: MERCHANT_LABEL }]] as never,
+    getBook: async () =>
+      [[MERCHANT_KEY, { cap: book === 'strict' ? null : DRY_CAP_YOCTO.toString(), daily_untrusted_budget: book === 'strict' ? '0' : (2n * 10n ** 24n).toString(), daily_limit: (5n * 10n ** 24n).toString(), label: MERCHANT_LABEL }]] as never,
     listAssets: async () => [['near', { symbol: 'NEAR', decimals: 24, hard_cap: (5n * 10n ** 24n).toString(), daily_cap: (20n * 10n ** 24n).toString(), max_fee_per_gas: '0', max_gas: '0', quick_task_cap: (10n * 10n ** 24n).toString(), path: null }]] as const,
     latestBlockMs: async () => T0,
     getRequest: async () => null,
@@ -215,16 +238,11 @@ function dryChain(): { chain: DefenderChain; receipts: (tx: string) => Promise<C
       throw new Error('no EVM lane in the arena');
     },
     submitBatch: async (reqs: ActionRequest[], task: OwnerTask): Promise<BatchResult> => {
-      // the stand-in for the gate's task bound only (the contract decides live): a payee outside the bounds is held, a payee over its bound is held
       let spent = 0n;
       const answers = reqs.map((r) => {
-        const bound = task.bounds.find((b) => b.payee_key === r.payee);
-        const amount = BigInt(r.amount);
-        const id = requestId(task, r.action_index);
-        if (bound === undefined) return { request_id: id, outcome: 'escalated' as const, reason: 'OutsideTask', pending_id: String(++n) };
-        if (spent + amount > BigInt(bound.max_total)) return { request_id: id, outcome: 'escalated' as const, reason: 'OverTaskBound', pending_id: String(++n) };
-        spent += amount;
-        return { request_id: id, outcome: 'allowed' as const, reason: null, pending_id: null };
+        const a = dryGate(r, task, spent, book);
+        if (a.outcome === 'allowed') spent += BigInt(r.amount);
+        return { request_id: requestId(task, r.action_index), outcome: a.outcome, reason: a.reason, pending_id: a.outcome === 'escalated' ? String(++n) : null };
       });
       const hash = `DRY${String(sent.size + 1).padStart(41, '0')}`;
       const raw = structuredClone(template) as { transaction: Record<string, unknown> & { actions: { FunctionCall: { args: string } }[] }; receipts: { execution_outcome: { outcome: { status: Record<string, string> } } }[] };
@@ -253,7 +271,8 @@ const dryExtract: Extractor = async (req) => {
 
 function dryIo(dir: string): ArenaIo {
   const path = join(dir, 'rounds.jsonl');
-  const { chain, receipts } = dryChain();
+  // strict mode is the default, as on the live card after AIR-355; ARENA_DRY_BOOK=capped replays the book before it
+  const { chain, receipts } = dryChain(env['ARENA_DRY_BOOK'] === 'capped' ? 'capped' : 'strict');
   const plan = checkPlan(JSON.parse(readFileSync(join(RECORDED, 'dry-plan.json'), 'utf8')));
   const { privateKey } = generateKeyPairSync('ed25519');
   // the live card's limits: 3 pending, lock at 3 rejects, 6 an hour for the agent and the owner; 2 pending and 4 an hour for one sender origin
@@ -321,9 +340,11 @@ async function liveIo(dir: string): Promise<ArenaIo> {
 
   const path = join(dir, 'rounds.jsonl');
   const scopedFile = env['ARENA_KEY_FILE'] ?? join(homedir(), '.airlock-arena-key.json');
-  const vaultFile = env['ARENA_BOOK_VAULT'] ?? [join(REPO, 'target', 'arena', 'book.vault.json'), join(REPO, 'target', 'credit-run', 'book.vault.json')].find((f) => existsSync(f)) ?? null;
+  // the book vault: ARENA_BOOK_VAULT alone, or the strict vault and then the old one under target/arena and target/credit-run; the
+  // preflight takes the first whose root is the root the card holds
+  const vaultFiles = vaultCandidates(REPO, env['ARENA_BOOK_VAULT']).filter((f) => existsSync(f));
   // the keychain signer is the credit run's own agent credentials file (the keychain entry plus account_id), kept next to the book vault
-  const keychainFile = env['ARENA_AGENT_CREDENTIALS'] ?? (vaultFile === null ? null : join(dirname(vaultFile), 'agent.json'));
+  const keychainFile = env['ARENA_AGENT_CREDENTIALS'] ?? (vaultFiles[0] === undefined ? null : join(dirname(vaultFiles[0]), 'agent.json'));
   const merchantFile = env['MERCHANT_CREDENTIALS'] ?? join(homedir(), '.near-credentials', 'testnet', `${ARENA_ACCOUNTS.merchant}.json`);
   const taskKeyFile = env['AIRLOCK_TASK_KEY_FILE'] ?? join(homedir(), '.airlock-task-key');
   const rpcUrl = DEFAULT_RPC_URLS[0] ?? 'https://test.rpc.fastnear.com';
@@ -425,18 +446,25 @@ async function liveIo(dir: string): Promise<ArenaIo> {
     chainClient = null;
     log(signerLine(plan.kind, pk, plan.kind === 'keychain' ? plan.why : undefined));
 
-    // the card's private book: the vault file must be the book the card holds
-    if (vaultFile === null || !existsSync(vaultFile)) return "the card's book vault is missing (set ARENA_BOOK_VAULT)";
-    let book: Vault;
-    try {
-      book = loadVault(vaultFile);
-    } catch {
-      return 'the book vault file cannot be read';
-    }
+    // the card's private book: the first vault file whose root is the root the card holds (the strict vault once the card is strict)
     const root = await view(ARENA_ACCOUNTS.card, 'get_book_root', {});
     if (typeof root !== 'string' || !/^[0-9a-f]{64}$/.test(root)) return 'get_book_root answered something unexpected';
-    if (root !== book.root()) return 'the book vault is not the book the card holds (its root differs from get_book_root)';
+    const books = new Map<string, Vault>();
+    const found = vaultFiles.map((path) => {
+      try {
+        const book = loadVault(path);
+        books.set(path, book);
+        return { path, root: book.root() };
+      } catch {
+        return { path, root: null };
+      }
+    });
+    const picked = pickVault(found, root);
+    if ('refuse' in picked) return picked.refuse;
+    const book = books.get(picked.path);
+    if (book === undefined) return 'the book vault file cannot be read';
     vault = book;
+    log(`ARENA BOOK ${picked.path} (${book.entries.every((e) => e.cap === null) ? 'strict: every amount read from text is held' : 'not strict: an amount read from text inside the cap is paid'})`);
 
     // the task key: a probe task that is never submitted, signed with the key file and checked against the key the card holds
     let sign: (task: OwnerTask) => Uint8Array;
@@ -624,11 +652,25 @@ export async function main(argv: readonly string[]): Promise<number> {
   if (dry) {
     env['LLM_MODE'] = 'replay';
     blockNetwork();
+    const out = await runRound(dryIo(dir), { dry, capUsd });
+    console.log(out.line);
+    return out.code;
   }
-  const io = dry ? dryIo(dir) : await liveIo(dir);
-  const out = await runRound(io, { dry, capUsd });
-  console.log(out.line);
-  return out.code;
+  // the lock shared with the economy loop (scripts/credit-economy.ts): the two never sign as the agent at once
+  const creditDir = env['CREDIT_DIR'] ?? join(REPO, 'target', 'credit');
+  const release = takeLock(join(creditDir, 'LOCK'), nowMs());
+  if (release === null) {
+    console.log('STOP another credit job holds the lock (target/credit/LOCK)');
+    return 0;
+  }
+  try {
+    const io = await liveIo(dir);
+    const out = await runRound(io, { dry, capUsd });
+    console.log(out.line);
+    return out.code;
+  } finally {
+    release();
+  }
 }
 
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1]) {
