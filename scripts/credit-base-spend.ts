@@ -25,7 +25,9 @@ import { shellLine, whyNotStrict } from '../runtime/src/credit/strict.ts';
 import { pickVault, vaultCandidates } from '../runtime/src/credit/vaults.ts';
 import { ActionRequest, OwnerTask, TASK_TAG, labelsToBits, sha256Hex } from '../runtime/src/dsl/index.ts';
 import { loadVault, saveVault } from '../runtime/src/vault/file.ts';
+import { proofVerifies } from '../runtime/src/vault/index.ts';
 import type { Vault } from '../runtime/src/vault/index.ts';
+import type { WasmVerdict } from '../web/src/try/verdictWasm.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const CARD = ARENA_ACCOUNTS.card;
@@ -162,6 +164,72 @@ export function preflightLive(f: LiveFacts): string | null {
   return null;
 }
 
+// ---- the offline preview ----
+
+/** The asset entry of the policy file, as the card will hold it after asset_set. */
+type AssetEntry = { hard_cap: string; daily_cap: string; max_fee_per_gas: string; max_gas: string };
+
+/**
+ * The 21 columns of `airlock_verdict::verdict` for one request, assembled the way the policy contract's `evaluate` does
+ * (`SubmitRequest::to_verdict` and `ledgers::verdict_inputs`): the request's amount, max fee and gas limit and its three masks; the asset's
+ * limits; the payee's book entry only when its proof verifies against `root` (else a new payee); the task bound for the payee only when the
+ * task names it. Ledgers are taken as empty (nothing spent today on this asset, payee or task): true before the run's first payment, which is
+ * where the preview runs. Column order: contracts/airlock-verdict-wasm/src/lib.rs.
+ */
+export function previewColumns(p: { req: ActionRequest; task: OwnerTask; asset: AssetEntry; vault: Vault; root: string; paused: boolean }): bigint[] {
+  const evm = p.req.evm;
+  const proof = p.vault.proofFor(p.req.payee);
+  const inBook = proof !== null && proofVerifies(p.root, p.req.payee, proof);
+  const entry = inBook ? p.vault.entries.find((e) => e.payee === p.req.payee) : undefined;
+  const bound = p.task.bounds.find((b) => b.payee_key === p.req.payee)?.max_total;
+  const b = (on: boolean): bigint => (on ? 1n : 0n);
+  return [
+    BigInt(p.req.amount),
+    b(evm !== null),
+    evm === null ? 0n : BigInt(evm.max_fee_per_gas),
+    b(evm !== null),
+    evm === null ? 0n : BigInt(evm.gas_limit),
+    BigInt(p.req.labels.recipient),
+    BigInt(p.req.labels.amount),
+    BigInt(p.req.labels.pc),
+    1n,
+    BigInt(p.asset.hard_cap),
+    BigInt(p.asset.daily_cap),
+    BigInt(p.asset.max_fee_per_gas),
+    BigInt(p.asset.max_gas),
+    b(entry !== undefined),
+    b(entry !== undefined && entry.cap !== null),
+    entry === undefined || entry.cap === null ? 0n : BigInt(entry.cap),
+    entry === undefined ? 0n : BigInt(entry.daily_untrusted_budget),
+    entry === undefined ? 0n : BigInt(entry.daily_limit),
+    b(bound !== undefined),
+    bound === undefined ? 0n : BigInt(bound),
+    b(p.paused),
+  ];
+}
+
+const said = (v: WasmVerdict): string => (v.kind === 'allow' || v.kind === 'malformed' ? `${v.kind} -` : `${v.kind} ${v.reason}`);
+
+/**
+ * Both requests of the run through the shipped verdict (web/public/verdict.wasm, `airlock_verdict::verdict` built for wasm32), against the
+ * new book. The merchant payment must Allow and the injected one must Escalate; anything else is a stop, before anything is sent.
+ */
+export async function previewRun(io: BaseSpendIo, p: { vault: Vault; merchantEvm: string; injected: string; paused: boolean; nowMs: number }): Promise<string | null> {
+  const asset = (JSON.parse(readFileSync(POLICY_FILE, 'utf8')) as { assets: Record<string, AssetEntry> }).assets[ASSET];
+  if (asset === undefined) return 'the policy file has no Base asset';
+  const root = p.vault.root();
+  const pay = paymentPair({ id: 'pay', payee: payeeKey(p.merchantEvm), recipient: ['Book'], nowMs: p.nowMs });
+  const inj = paymentPair({ id: 'inject', payee: payeeKey(p.injected), recipient: ['Untrusted:email'], nowMs: p.nowMs });
+  const merchant = await io.decide(previewColumns({ ...pay, asset, vault: p.vault, root, paused: p.paused }));
+  const injected = await io.decide(previewColumns({ ...inj, asset, vault: p.vault, root, paused: p.paused }));
+  io.log(`PREVIEW merchant ${said(merchant)}`);
+  io.log(`PREVIEW injected ${said(injected)}`);
+  io.log('PREVIEW covers: the verdict function the card runs, on the request as it will be sent (amount, max fee, gas, labels), the Base asset limits of the policy file, the book entry proven against the new root, the task bound, paused. It does not cover: the task key signature, the agent allow list and attestation, the request shape checks of the gate (min gas, priority fee), the replay table, the day ledgers (taken as empty), the flood gate in front of a hold; the live run reads the card\'s own preview view for those after the owner calls');
+  if (merchant.kind !== 'allow') return `the verdict answers ${said(merchant)} to the merchant payment, not allow`;
+  if (injected.kind !== 'escalate') return `the verdict answers ${said(injected)} to the injected address, not escalate`;
+  return null;
+}
+
 // ---- io ----
 
 export type NearCall = { signer: string; method: string; args: Record<string, unknown>; deposit: string; gas: string };
@@ -192,6 +260,8 @@ export type BaseSpendIo = {
   broadcast(raw: Hex): Promise<{ hash: string; status: 'success' | 'reverted' }>;
   sweep(p: { to: string; keep: string; dry: boolean }): Promise<{ code: number; out: string }>;
   agent(vault: Vault): Promise<AgentClient>;
+  /** the shipped verdict on 21 columns (web/public/verdict.wasm) */
+  decide(columns: readonly bigint[]): Promise<WasmVerdict>;
   log(line: string): void;
 };
 
@@ -296,6 +366,11 @@ export function liveIo(print: (line: string) => void): BaseSpendIo {
         getRequest: (id) => client.getRequest(id),
         latestBlockMs: () => client.latestBlockMs(),
       };
+    },
+    decide: async (columns) => {
+      const { instantiateVerdict } = await import('../web/src/try/verdictWasm.ts');
+      const bytes = readFileSync(join(REPO, 'web', 'public', 'verdict.wasm'));
+      return (await instantiateVerdict(bytes)).decide(columns);
     },
     log: print,
   };
@@ -503,7 +578,26 @@ export async function main(argv: readonly string[], deps?: Partial<Deps>): Promi
     const why = whyNotStrict(cur.vault);
     io.log(`BOOK current vault ${cur.path}: ${String(cur.vault.entries.length)} entries, root equals the card's, ${why === null ? 'strict' : `not strict (${why})`}`);
     newVault = baseVaultOf(cur.vault, policy, s.merchantEvm);
+    // a rerun of --live keeps the vault it wrote before (same entries, its own salt): preview the book that will be sent
+    if (mode === 'live' && existsSync(vaultOut)) {
+      const kept = loadVault(vaultOut);
+      if (!kept.has(payeeKey(s.merchantEvm)) || whyNotStrict(kept) !== null) {
+        io.log(`BASE SPEND NOT SENT ${vaultOut} exists and is not the new book: move it away`);
+        return 1;
+      }
+      newVault = kept;
+    }
     io.log(`BOOK new vault: ${String(newVault.entries.length)} entries, ${whyNotStrict(newVault) === null ? 'strict' : 'NOT strict'}, root ${mode === 'dry' ? '(a fresh salt is drawn at live time; this dry root is an example) ' : ''}${newVault.root()}`);
+  }
+
+  // the offline preview, before any step: a stop here ends the run in both modes
+  if (newVault === null) io.log('PREVIEW skipped: the current book vault was not found');
+  else {
+    const stopWhy = await previewRun(io, { vault: newVault, merchantEvm: s.merchantEvm, injected: s.injected, paused: s.paused, nowMs: Date.now() });
+    if (stopWhy !== null) {
+      io.log(mode === 'dry' ? `DRY RUN found a stop, nothing sent: ${stopWhy}` : `BASE SPEND NOT SENT ${stopWhy}`);
+      return 1;
+    }
   }
 
   const steps = planSteps(s, newVault?.root() ?? '<new root>', vaultOut, accountsFile, funding.state);
@@ -607,6 +701,19 @@ async function live(io: BaseSpendIo, s0: State, newVault: Vault, vaultOut: strin
   const boot = await io.bootstrapVerify({ policyFile: POLICY_FILE, accountsFile, vaultFile: vaultOut, taskPublicKey: s0.taskKey });
   for (const l of boot.out.split('\n')) if (/^(DRIFT|POLICY )/.test(l)) io.log(`BOOTSTRAP ${l}`);
   if (boot.code !== 0 || !boot.out.includes('POLICY MATCHES')) return stop('the bootstrap verify did not end POLICY MATCHES');
+  // the card's own preview view (read only) now that it holds the asset and the root: it adds the shape checks, the ledgers and the flood gate
+  if (!has('payment')) {
+    const nowMs = Date.now();
+    for (const [name, pair, want] of [
+      ['merchant', paymentPair({ id: 'pay', payee: payeeKey(s0.merchantEvm), recipient: ['Book'], nowMs }), 'allowed'],
+      ['injected', paymentPair({ id: 'inject', payee: payeeKey(s0.injected), recipient: ['Untrusted:email'], nowMs }), 'escalated'],
+    ] as const) {
+      const a = await io.view(CARD, 'preview', { req: { ...pair.req, book: vault.proofFor(pair.req.payee) }, task: pair.task });
+      const outcome = isObj(a) ? String(a['outcome']) : 'unreadable';
+      io.log(`CARD PREVIEW ${name} ${outcome} ${isObj(a) && typeof a['reason'] === 'string' ? a['reason'] : '-'}`);
+      if (outcome !== want) return stop(`the card's preview answers ${outcome} to the ${name} request, not ${want}`);
+    }
+  }
 
   // d. weather, then the payment
   const s = await readState(io);

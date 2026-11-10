@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { whyNotStrict } from '../runtime/src/credit/strict.ts';
 import { ActionRequest, bitsToLabels } from '../runtime/src/dsl/index.ts';
 import { Vault } from '../runtime/src/vault/index.ts';
+import { instantiateVerdict } from '../web/src/try/verdictWasm.ts';
+import type { WasmVerdict } from '../web/src/try/verdictWasm.ts';
 import type { BaseSpendIo } from './credit-base-spend.ts';
 import {
   AMOUNT_WEI,
@@ -26,6 +28,7 @@ import {
   paymentPair,
   payeeKey,
   preflightLive,
+  previewColumns,
   worstCaseWei,
 } from './credit-base-spend.ts';
 
@@ -34,6 +37,8 @@ const NEAR = 10n ** 24n;
 const MERCHANT_NEAR = 'near:merchant.airlock-credit-c1108d.testnet';
 const DERIVED = '0x913d3f6c2afe03fcb03a5721484042c8c5a2e14a';
 const readJson = (rel: string): Record<string, unknown> => JSON.parse(readFileSync(join(REPO, rel), 'utf8')) as Record<string, unknown>;
+/** The shipped verdict: web/public/verdict.wasm, the build of contracts/airlock-verdict-wasm (a web test pins it to a fresh build). */
+const shipped = async (columns: readonly bigint[]): Promise<WasmVerdict> => (await instantiateVerdict(readFileSync(join(REPO, 'web', 'public', 'verdict.wasm')))).decide(columns);
 const strictVault = (): Vault => Vault.empty().add({ payee: MERCHANT_NEAR, cap: null, dailyUntrustedBudget: 0n, dailyLimit: 5n * NEAR, label: 'Acme', listed: true });
 
 test('the policy file differs from the strict card policy by exactly the Base asset, the Base merchant entry and the nonce path', () => {
@@ -138,7 +143,7 @@ test('the new book vault is the strict vault plus the Base merchant, still stric
 });
 
 type Counts = { send: number; broadcast: number; sweep: number; agent: number };
-function fakeIo(over: Partial<{ switches: string[]; derivedWei: bigint }> = {}): { io: BaseSpendIo; counts: Counts; lines: string[] } {
+function fakeIo(over: Partial<{ switches: string[]; derivedWei: bigint; decide: (c: readonly bigint[]) => Promise<WasmVerdict> }> = {}): { io: BaseSpendIo; counts: Counts; lines: string[] } {
   const counts: Counts = { send: 0, broadcast: 0, sweep: 0, agent: 0 };
   const lines: string[] = [];
   const root = strictVault().root();
@@ -187,6 +192,7 @@ function fakeIo(over: Partial<{ switches: string[]; derivedWei: bigint }> = {}):
       counts.agent += 1;
       throw new Error('the fake has no agent');
     },
+    decide: over.decide ?? shipped,
     log: (l) => lines.push(l),
   };
   return { io, counts, lines };
@@ -202,6 +208,8 @@ test('dry mode (the default) reads, prints every planned step, calls send, broad
   for (const m of ['asset_set', 'book_set_root', 'set_nonce', 'submit_batch', 'approve', 'reject', 'sweep', 'LIVE_OK', 'eth_sendRawTransaction']) assert.ok(text.includes(m), `the plan names ${m}`);
   assert.match(text, /FUNDING (READY|FUND|BLOCKED)/);
   assert.match(text, /CARD VIEWS UNCHANGED/);
+  assert.ok(f.lines.includes('PREVIEW merchant allow -'), text);
+  assert.ok(f.lines.some((l) => /^PREVIEW injected escalate [A-Za-z]+$/.test(l)), text);
   assert.match(text, /BASE NONCES UNCHANGED/);
 });
 
@@ -233,4 +241,44 @@ test('--verify fails clearly while the live rows do not exist', async () => {
   assert.equal(code, 1);
   assert.match(f.lines.at(-1) ?? '', /^BASE SPEND VERIFY NO /);
   assert.deepEqual(f.counts, { send: 0, broadcast: 0, sweep: 0, agent: 0 });
+});
+
+test('the shipped verdict allows the merchant payment and holds the injected address, on the columns the card would build', async () => {
+  const policy = readJson('fixtures/credit/card-base.policy.json');
+  const asset = (policy['assets'] as Record<string, { hard_cap: string; daily_cap: string; max_fee_per_gas: string; max_gas: string }>)['evm:84532:native'];
+  assert.ok(asset !== undefined);
+  const vault = baseVaultOf(strictVault(), policy, MERCHANT_EVM);
+  const root = vault.root();
+  const pay = paymentPair({ id: 'pay', payee: payeeKey(MERCHANT_EVM), recipient: ['Book'], nowMs: 1_800_000_000_000 });
+  const cols = previewColumns({ ...pay, asset, vault, root, paused: false });
+  assert.equal(cols.length, 21);
+  assert.deepEqual(cols.slice(0, 5), [1_000_000_000_000n, 1n, 100_000_000n, 1n, 21_000n]);
+  assert.deepEqual(await shipped(cols), { kind: 'allow' });
+  // the same payment against the book the card holds today (no Base merchant): a Book label on a payee outside the book is blocked
+  const old = await shipped(previewColumns({ ...pay, asset, vault: strictVault(), root: strictVault().root(), paused: false }));
+  assert.deepEqual(old, { kind: 'block', reason: 'BookLabelNotInBook' });
+  // paused: blocked
+  assert.equal((await shipped(previewColumns({ ...pay, asset, vault, root, paused: true }))).kind, 'block');
+  const email = readJson('fixtures/credit/base-spend-email.json');
+  const inj = paymentPair({ id: 'inject', payee: payeeKey(String(email['injected_address'])), recipient: ['Untrusted:email'], nowMs: 1_800_000_000_000 });
+  assert.equal((await shipped(previewColumns({ ...inj, asset, vault, root, paused: false }))).kind, 'escalate');
+});
+
+test('a preview that does not allow the merchant payment stops the run with exit 1 before anything is sent, in dry mode and in live mode', async () => {
+  const held = async (): Promise<WasmVerdict> => ({ kind: 'escalate', reason: 'NewRecipient' });
+  const dry = fakeIo({ decide: held });
+  assert.equal(await main([], { io: dry.io, env: {} }), 1);
+  assert.deepEqual(dry.counts, { send: 0, broadcast: 0, sweep: 0, agent: 0 });
+  assert.ok(dry.lines.includes('PREVIEW merchant escalate NewRecipient'));
+  assert.match(dry.lines.at(-1) ?? '', /^DRY RUN found a stop, nothing sent: /);
+  assert.ok(!dry.lines.includes('DRY RUN nothing sent'));
+  const live = fakeIo({ decide: held, derivedWei: MIN_DERIVED_WEI });
+  assert.equal(await main(['--live'], { io: live.io, env: { [LIVE_FLAG]: '1' } }), 1);
+  assert.deepEqual(live.counts, { send: 0, broadcast: 0, sweep: 0, agent: 0 });
+  assert.match(live.lines.at(-1) ?? '', /^BASE SPEND NOT SENT the verdict answers escalate NewRecipient to the merchant payment/);
+  // an injected address that the verdict would allow is a stop too
+  const both = fakeIo({ decide: async () => ({ kind: 'allow' }) });
+  assert.equal(await main([], { io: both.io, env: {} }), 1);
+  assert.equal(both.counts.send, 0);
+  assert.match(both.lines.at(-1) ?? '', /not escalate$/);
 });
