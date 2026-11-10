@@ -9,6 +9,7 @@ export const NAV: { path: string; label: string; match: string[] }[] = [
   { path: 'use', label: 'Use it', match: ['/use'] },
   { path: 'replay', label: 'Replay', match: ['/replay', '/task'] },
   { path: 'credit', label: 'Credit', match: ['/credit'] },
+  { path: 'break', label: 'Break the proof', match: ['/break'] },
   { path: 'approvals', label: 'Approvals', match: ['/approvals'] },
   { path: 'challenge', label: 'Challenge', match: ['/challenge'] },
   { path: 'bench', label: 'Bench', match: ['/bench'] },
