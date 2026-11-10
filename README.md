@@ -101,7 +101,7 @@ Comparison: `docs/PRIOR_ART.md`. Libraries and adapted code: `docs/THIRD_PARTY.m
 
 ## Hackathon window
 
-Code written since the 2026-10-19 announcement counts (rules, Q-001). The repo starts on 2026-10-28 with `9a00336`, our prep-kit scaffold (`docs/PRIOR_WORK.md`), tagged `pre-hackathon`, the submitted one `hackathon-submission`: https://github.com/erfan604/airlock/compare/pre-hackathon...hackathon-submission. From 2026-11-01T00:00Z: `a14f32a`, the last 2026-10-28 commit: https://github.com/erfan604/airlock/compare/a14f32a...hackathon-submission.
+Code written since the 2026-10-19 announcement counts (rules, Q-001). The repo starts on 2026-10-28 with `9a00336`, our prep scaffold (`docs/PRIOR_WORK.md`). At submission: tag `pre-hackathon` there, `hackathon-submission` on the submitted commit: https://github.com/erfan604/airlock/compare/pre-hackathon...hackathon-submission. From Nov 1: `a14f32a`, the last Oct 28 commit: https://github.com/erfan604/airlock/compare/a14f32a...hackathon-submission.
 
 ## More
 
