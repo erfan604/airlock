@@ -6,7 +6,7 @@
 //   2. ONE transaction deploys res/airlock_credit_v2.wasm and calls migrate(passport_base = 1 NEAR); the code hash must equal the committed
 //      wasm and every snapshotted view must read the same;
 //   3. get_passport before; a limit L in (cap, 1.4 x cap] is refused with the cap text; a line of 0.3 NEAR opens inside the cap; the agent
-//      pays the booked merchant 0.05 NEAR through the verdict (Allow); the issuer sweeps the rest; the borrower repays on time with the fee;
+//      pays the booked merchant 0.1 NEAR through the verdict (Allow); the issuer sweeps the rest; the borrower repays on time with the fee;
 //   4. get_passport after; L now opens and is closed at once (a sweep of all of it and a repay of 0), so no line stays open.
 // Each step prints `ROW <what> | <account> | <tx link>`; the rows go to target/credit-passport/rows.json. The near CLI signs from its
 // keychain; the only key file read is the agent's, written for the chain client like scripts/credit-testnet.ts does (mode 0600).
@@ -38,7 +38,7 @@ const OLD_WASM = join(REPO, 'contracts', 'airlock-credit', 'res', 'airlock_credi
 const NEW_WASM = join(REPO, 'contracts', 'airlock-credit', 'res', 'airlock_credit_v2.wasm');
 const BASE = ONE; // migrate(passport_base): a borrower at score 500 may take 1 NEAR
 const FIRST = (3n * ONE) / 10n; // the line inside the cap
-const PAY = ONE / 20n; // the agent's payment: at least 10 percent of FIRST, so the repay qualifies
+const PAY = ONE / 10n; // the agent's payment: at least 10 percent of FIRST and at least a tenth of BASE (the absolute floor), so the repay counts
 const MARGIN = ONE / 5n; // the storage preflight margin
 const dir = join(REPO, 'target', 'credit-passport');
 mkdirSync(dir, { recursive: true });
@@ -318,6 +318,8 @@ async function main(): Promise<void> {
     const outstanding = BigInt(first.limit) - BigInt(first.returned);
     const fee = (outstanding * BigInt(first.fee_bps) + 9_999n) / 10_000n;
     if (outstanding * 10n < BigInt(first.limit)) stop(`the card kept ${near(outstanding)}, under 10 percent of the limit: the repay would not count`);
+    if (outstanding < BASE / 10n) stop(`the card kept ${near(outstanding)}, under a tenth of the cap base: the repay would not count`);
+    if (first.fee_bps < 100) stop('the line charges under 1 percent: the repay would not count');
     if (BigInt(await blockMs()) > BigInt(first.due_ms)) stop('the line is past due: the repay would be late');
     must(`the borrower repays ${near(outstanding + fee)} on time (${near(outstanding)} kept plus the 10 percent fee)`, A.pool, () => call(A.pool, 'repay', { card: A.card }, A.borrower, yocto(outstanding + fee)));
   }

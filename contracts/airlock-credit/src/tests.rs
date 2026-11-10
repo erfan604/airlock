@@ -1258,8 +1258,7 @@ fn the_record_counts_each_pool_event() {
     funded(&mut p, CARD, 10 * NEAR, NOW + 5);
     let r = passport(&p, CARD).record;
     assert_eq!((r.lines_opened, r.last_event_ms.0), (1, NOW + 5));
-    // a qualifying repay on time: 2 of 10 kept, fee 5 percent
-    sweep_back(&mut p, CARD, 8 * NEAR, NOW + DAY);
+    // a qualifying repay on time: all 10 NEAR kept (the absolute floor at the default base of 100 NEAR), fee 5 percent
     repay_at(&mut p, CARD, BORROWER, NOW + 2 * DAY);
     let r = passport(&p, CARD).record;
     assert_eq!(
@@ -1269,7 +1268,7 @@ fn the_record_counts_each_pool_event() {
             r.volume_repaid.0,
             r.fees_paid.0
         ),
-        (1, 0, 2 * NEAR, NEAR / 10)
+        (1, 0, 10 * NEAR, NEAR / 2)
     );
     assert_eq!(r.last_event_ms.0, NOW + 2 * DAY);
     // a qualifying repay after the due date (before anyone defaulted it) is late
@@ -1303,6 +1302,9 @@ fn the_record_counts_each_pool_event() {
 #[test]
 fn dust_and_zero_fee_repays_do_not_count() {
     let mut p = funded_pool();
+    // a cap base of 10 NEAR, so the absolute floor (1 NEAR) equals the relative one on these 10 NEAR lines; the absolute floor alone
+    // is `ten_dust_lines_kept_in_full_do_not_raise_the_score`
+    set_base(&mut p, 10 * NEAR, NOW);
     // 5 percent kept: below the 10 percent floor
     open_on(&mut p, CARD, BORROWER, 10 * NEAR, 500, NOW);
     sweep_back(&mut p, CARD, 9_500 * NEAR / 1_000, NOW);
@@ -1333,6 +1335,72 @@ fn dust_and_zero_fee_repays_do_not_count() {
     sweep_back(&mut p, CARD, 9_950 * NEAR / 1_000, NOW + 3 * DAY);
     repay_at(&mut p, CARD, BORROWER, NOW + 40 * DAY);
     assert_eq!(passport(&p, CARD).record.repaid_late, 0);
+}
+
+/// MERGE_GATE 2026-11-09: a relative floor alone lets the issuer and a borrower farm the score with lines of a few yocto that the card
+/// keeps in full. The draw must also reach a tenth of the cap base, and the line must charge at least 1 percent.
+#[test]
+fn ten_dust_lines_kept_in_full_do_not_raise_the_score() {
+    let mut p = funded_pool();
+    let floor = DEFAULT_PASSPORT_BASE / crate::MIN_QUALIFYING_DRAW_DIV;
+    // ten lines of a thousandth of the base, never swept (100 percent kept), fee 5 percent, each repaid on time
+    for i in 0..10u64 {
+        open_on(
+            &mut p,
+            CARD,
+            BORROWER,
+            DEFAULT_PASSPORT_BASE / 1_000,
+            500,
+            NOW + i * DAY,
+        );
+        repay_at(&mut p, CARD, BORROWER, NOW + i * DAY);
+    }
+    // one yocto under the absolute floor, kept in full
+    open_on(&mut p, CARD, BORROWER, floor - 1, 500, NOW + 10 * DAY);
+    repay_at(&mut p, CARD, BORROWER, NOW + 10 * DAY);
+    // at the floor but the fee is under 1 percent (99 bps)
+    open_on(
+        &mut p,
+        CARD,
+        BORROWER,
+        floor,
+        crate::MIN_QUALIFYING_FEE_BPS - 1,
+        NOW + 11 * DAY,
+    );
+    repay_at(&mut p, CARD, BORROWER, NOW + 11 * DAY);
+    // a dust line repaid after the due date is not late either
+    open_on(
+        &mut p,
+        CARD,
+        BORROWER,
+        DEFAULT_PASSPORT_BASE / 1_000,
+        500,
+        NOW + 12 * DAY,
+    );
+    repay_at(&mut p, CARD, BORROWER, NOW + 60 * DAY);
+    let pp = passport(&p, CARD);
+    assert_eq!(
+        (
+            pp.record.repaid_on_time,
+            pp.record.repaid_late,
+            pp.score,
+            pp.limit_cap.0
+        ),
+        (0, 0, 500, DEFAULT_PASSPORT_BASE),
+        "thirteen repays under the absolute floors move neither the score nor the cap"
+    );
+    // exactly at both floors: a tenth of the base kept, fee 1 percent
+    open_on(
+        &mut p,
+        CARD,
+        BORROWER,
+        floor,
+        crate::MIN_QUALIFYING_FEE_BPS,
+        NOW + 61 * DAY,
+    );
+    repay_at(&mut p, CARD, BORROWER, NOW + 61 * DAY);
+    let pp = passport(&p, CARD);
+    assert_eq!((pp.record.repaid_on_time, pp.score), (1, 580));
 }
 
 #[test]

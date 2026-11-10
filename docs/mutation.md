@@ -42,6 +42,8 @@ row of this file as a verdict survivor.
 
 - the cap not enforced (`open_line` without the Passport check): killed by `open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay`, `the_record_follows_the_borrower_not_the_card`
 - a dust repay counted (the 10 percent draw floor removed): killed by `dust_and_zero_fee_repays_do_not_count`
+- a tiny line kept in full counted (the absolute floor `passport_base / 10` removed): killed by `ten_dust_lines_kept_in_full_do_not_raise_the_score`
+- a line under 1 percent counted (the fee floor removed): killed by `ten_dust_lines_kept_in_full_do_not_raise_the_score`
 - migrate drops a field (`staked` set to 0): killed by `migrate_moves_every_field_and_backfills_only_what_the_state_proves`
 - the record keyed by card instead of borrower: killed by `the_record_follows_the_borrower_not_the_card`, `migrate_moves_every_field_and_backfills_only_what_the_state_proves`, `migrate_of_the_live_shape_gives_one_default_and_score_200`
 - a raise of the cap base applied at once: killed by `a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms`, `open_line_needs_collateral_liquidity_and_sane_terms`

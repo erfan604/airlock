@@ -20,6 +20,12 @@ pub const STATE_VERSION: u32 = 2;
 /// The Passport cap base of a pool made by `new` without one: 100 NEAR (a fresh borrower at score 500 may take a line of this size).
 pub const DEFAULT_PASSPORT_BASE: u128 = 100 * 1_000_000_000_000_000_000_000_000;
 
+/// A repay moves the Passport counters only when the card kept at least `passport_base / 10` of the line (an absolute floor, so lines
+/// of a few yocto kept in full cannot farm the score) ...
+pub const MIN_QUALIFYING_DRAW_DIV: u128 = 10;
+/// ... and the line charged at least 1 percent, so every counted repay paid the LPs a real fee.
+pub const MIN_QUALIFYING_FEE_BPS: u32 = 100;
+
 /// The smallest deposit: 0.001 NEAR (it blunts rounding games on a tiny pool).
 pub const MIN_DEPOSIT: u128 = 1_000_000_000_000_000_000_000;
 /// The most a line may charge: 50 percent of what the card kept.
@@ -916,8 +922,13 @@ impl Pool {
             &format!("repay needs at least {owed} yocto")
         );
         let collateral = line.collateral;
-        // AIR-333: only a repay of a line the card really drew (at least 10 percent of the limit kept) with a fee counts, on time or late
-        let qualifies = outstanding.saturating_mul(10) >= line.limit && fee > 0;
+        // AIR-333: only a repay of a line the card really drew counts, on time or late. Three floors: the card kept at least 10 percent
+        // of the limit, at least a tenth of the cap base (absolute, so dust lines kept in full do not count), and the line charged
+        // at least 1 percent.
+        let qualifies = outstanding.saturating_mul(10) >= line.limit
+            && outstanding >= self.passport_base / MIN_QUALIFYING_DRAW_DIV
+            && line.fee_bps >= MIN_QUALIFYING_FEE_BPS
+            && fee > 0;
         let on_time = ms() <= line.due_ms;
         line.returned += outstanding;
         line.collateral = 0;

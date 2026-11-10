@@ -304,7 +304,7 @@ the same borrower reads and writes the same record.
 | Event | Update |
 | --- | --- |
 | `on_line_funded`, transfer succeeded | `lines_opened += 1` (a failed funding counts nothing) |
-| `repay` | `volume_repaid += outstanding`, `fees_paid += fee`; the repay QUALIFIES when `outstanding * 10 >= limit` (the card kept at least 10 percent of the limit) and `fee > 0`; a qualifying repay at or before `due_ms` is `repaid_on_time += 1`, after it `repaid_late += 1`; a dust or zero fee repay counts as neither, so empty lines cannot farm the score |
+| `repay` | `volume_repaid += outstanding`, `fees_paid += fee`; the repay QUALIFIES when `outstanding * 10 >= limit` (the card kept at least 10 percent of the limit), `outstanding >= passport_base / 10` (an absolute floor: lines of a few yocto kept in full do not count), `fee_bps >= 100` (the line charged at least 1 percent) and `fee > 0`; a qualifying repay at or before `due_ms` is `repaid_on_time += 1`, after it `repaid_late += 1`; a dust, low fee or zero fee repay counts as neither, so neither empty lines nor tiny ones can farm the score. The floor follows the cap base: lowering the base lowers the floor and the cap together, and a raise of the base waits `min_hold_ms` |
 | `default` | `defaults += 1` |
 | `on_card_return` after a default | `recovered += 1` when this return clears the card's loss to 0 (once: a card with no loss refuses later returns) |
 | `write_off` | `written_off += 1` |
@@ -352,6 +352,7 @@ only shrink the next line, so it needs no notice.
 | `passport_score_properties` (math, random records) | one more qualifying on-time repay never lowers the score; a default never raises it and lowers it while fewer than 2 are counted and the score is above 0; the score stays in 0..=1000; recovered never counts above defaults |
 | `passport_vectors_match` (vectors/passport.json) | records to score, reasons and cap; the same file feeds the web later |
 | `dust_and_zero_fee_repays_do_not_count` | a repay with under 10 percent drawn or a zero fee moves neither counter |
+| `ten_dust_lines_kept_in_full_do_not_raise_the_score` | ten lines of a thousandth of the base kept in full, a line one yocto under `passport_base / 10`, a line at 99 bps and a late dust line move neither counter nor the cap; a line exactly at both floors counts |
 | `the_record_follows_the_borrower_not_the_card` | a new card for a borrower with a default starts at that borrower's score, not 500 |
 | `a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms` | lower at once and clears a pending raise; a raise not in force 1 ms before `now + min_hold_ms`, applied at it; an LP who deposited before the announcement withdraws before it binds |
 | `set_passport_base_is_owner_only_with_one_yocto` | a non owner refused, no deposit refused |
@@ -371,7 +372,7 @@ After the coordinator removes `target/arena/LIVE_OK` and 65 minutes have passed 
 is pending on the card, then the storage: the pool balance must cover `(new wasm bytes + new state bytes) x 1e19 + LP assets + unclaimed
 + 0.2 NEAR`, else the issuer tops it up first. One transaction deploys the wasm and calls `migrate(passport_base = 1 NEAR)`; the code hash
 must equal the committed wasm and the pool views must equal the snapshot. Then, with every number read from `get_passport`: the
-over-cap limit `L` in `(cap, 1.4 x cap]` is refused with the cap text, a line of 0.3 NEAR opens, the agent pays the booked merchant 0.05
+over-cap limit `L` in `(cap, 1.4 x cap]` is refused with the cap text, a line of 0.3 NEAR opens, the agent pays the booked merchant 0.1
 NEAR (Allow), the issuer sweeps the rest, the borrower repays on time with the fee, the score and cap rise, `L` opens and is closed at once
 by a sweep and a repay (an undrawn close counts as neither on time nor late). No line stays open. Expected: 200 and 0.4 NEAR before, 280
 and 0.56 NEAR after.
@@ -391,9 +392,9 @@ and 0.56 NEAR after.
 - `res/airlock_credit.wasm` stays the c1108d bytes (sha256 `1f915ce2...`, the hash docs/EVIDENCE.md and
   `scripts/credit-evidence-check.sh` read); `res/airlock_credit_c1108d.wasm` is the same bytes pinned by `the_c1108d_wasm_is_pinned` for
   the rehearsal; `res/airlock_credit_v2.wasm` is the upgrade the live run deploys (sha256
-  `842a093147f81f5532e2159d2e333013bc52a3e06afc17df3dd610bf7b2f774b`, code hash `9tuzb2npsiJ3pBZsc4rh49xKSeF1D7TNsNjJEyaaC9Ue`). Its
+  `faad9eeec675b6e87677daee95c4848ea241de5a98be3d5949ae7abdb128ae45`, code hash `HsYUas1qPaMgCvZ3YU9iAbZGjpY5QvjqDWD2yvgkUMJL`). Its
   preflight refuses to run unless the v2 file equals the wasm the sandbox rehearsal ran.
-- Tests: 59 unit tests (14 new ones failed against stubs of the rules before the rules were written: score, cap, near string,
+- Tests: 60 unit tests (15 new ones failed against stubs of the rules before the rules were written: score, cap, near string,
   record writes, backfill, cap base) and 5 sandbox tests. The rehearsal passed on its first run; it is the gate, and every rule it walks
   through is pinned by a unit test that failed first.
 - `scripts/credit-passport-run.ts`: preflight only by default (reads the chain, sends nothing); `--live` runs the upgrade and the Passport

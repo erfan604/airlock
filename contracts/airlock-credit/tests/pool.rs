@@ -914,19 +914,20 @@ async fn upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works() {
         json!(2),
         "on_line_funded counts the line"
     );
-    // the agent pays the booked merchant 0.05 NEAR through the verdict, the issuer sweeps the rest, the borrower repays on time
+    // the agent pays the booked merchant 0.1 NEAR through the verdict (a tenth of the 1 NEAR cap base, the absolute floor of a counted
+    // repay), the issuer sweeps the rest, the borrower repays on time
     ok(&card_call("pause", json!({ "paused": false }), 1).await);
     let o = submit(
         w,
         &format!("near:{}", w.payee_near),
-        ONE_NEAR / 20,
+        ONE_NEAR / 10,
         (BOOK_MASK, OWNER_MASK, OWNER_MASK),
     )
     .await;
     assert_eq!(o["outcome"], "allowed", "{o}");
-    ok(&card_call("sweep", json!({ "amount": (ONE_NEAR / 4).to_string() }), 1).await);
+    ok(&card_call("sweep", json!({ "amount": (ONE_NEAR / 5).to_string() }), 1).await);
     sum_rules(&fx).await;
-    ok(&borrower_call("repay", ONE_NEAR / 20 + ONE_NEAR / 200).await);
+    ok(&borrower_call("repay", ONE_NEAR / 10 + ONE_NEAR / 100).await);
     sum_rules(&fx).await;
     let pp = passport(&fx).await;
     assert_eq!(
