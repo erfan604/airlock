@@ -4,7 +4,7 @@ import { DoorSprite } from './components/Door.tsx';
 import { getFixture } from './fixtures/index.ts';
 import { ROUTES } from './routes.ts';
 import { routePath, url } from './static.ts';
-import { SiteNav } from './shell/SiteNav.tsx';
+import { MoreNav, SiteNav } from './shell/SiteNav.tsx';
 
 /** The one fact every page states in its footer (owner rule): where the site runs, in plain words. */
 export const FOOT_LINE = "Runs on NEAR's test network. Nothing here moves real money.";
@@ -43,6 +43,7 @@ export function App({ pathname: rawPathname, page }: { pathname: string; page?: 
       <div id="main" className="shell-main" tabIndex={-1}>
         {page ?? (fixture ? fixture.render() : m ? <Placeholder line="No such fixture." /> : route ? route() : <Placeholder line="There is no page at this address." />)}
       </div>
+      <MoreNav path={path} />
       <footer className="site-foot" data-testid="site-foot">
         <p>{FOOT_LINE}</p>
       </footer>

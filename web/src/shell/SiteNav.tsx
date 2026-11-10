@@ -3,13 +3,20 @@
 import { useEffect, useRef } from 'react';
 import { url } from '../static.ts';
 
-export const NAV: { path: string; label: string; match: string[] }[] = [
+type NavItem = { path: string; label: string; match: string[] };
+
+/** The header: the pages a stranger should touch, in this order (a blind read of the entry asked for fewer things). */
+export const PRIMARY: NavItem[] = [
   { path: '', label: 'Overview', match: ['/'] },
-  { path: 'credit', label: 'Credit', match: ['/credit'] },
   { path: 'lend', label: 'Lend', match: ['/lend'] },
   { path: 'rob', label: 'Rob it', match: ['/rob'] },
   { path: 'break', label: 'Break the proof', match: ['/break'] },
   { path: 'terms', label: 'Terms', match: ['/terms'] },
+  { path: 'credit', label: 'Credit', match: ['/credit'] },
+];
+
+/** The second group: every other page, one click away from every page in the block above the footer (MoreNav). */
+export const MORE: NavItem[] = [
   { path: 'try', label: 'Try it', match: ['/try'] },
   { path: 'use', label: 'Use it', match: ['/use'] },
   { path: 'replay', label: 'Replay', match: ['/replay', '/task'] },
@@ -18,6 +25,9 @@ export const NAV: { path: string; label: string; match: string[] }[] = [
   { path: 'bench', label: 'Bench', match: ['/bench'] },
   { path: 'proven', label: 'Proven', match: ['/proven'] },
 ];
+
+/** Every page of the site, header first. */
+export const NAV: NavItem[] = [...PRIMARY, ...MORE];
 
 /** The fade under 1 px of scroll is noise: a strip scrolled to its end can stop a fraction of a pixel short. */
 const SLACK = 1;
@@ -67,7 +77,7 @@ export function SiteNav({ path }: { path: string }) {
   return (
     <nav className="site-nav" data-testid="site-nav" aria-label="Pages">
       <ul className="site-tabs" ref={strip} data-edge="end">
-        {NAV.map((n) => {
+        {[...PRIMARY, ...MORE.filter((n) => n.match.includes(path))].map((n) => {
           const current = n.match.includes(path);
           return (
             <li key={n.path}>
@@ -77,6 +87,29 @@ export function SiteNav({ path }: { path: string }) {
             </li>
           );
         })}
+        <li>
+          <a className="site-tab site-tab-more" href="#more" data-testid="nav-more">
+            More
+          </a>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
+/** The second group, above every page's footer: the pages a judge may want after the first six, as one quiet line of plain links. */
+export function MoreNav({ path }: { path: string }) {
+  return (
+    <nav className="site-more" id="more" aria-label="More pages" data-testid="site-more">
+      <h2 className="site-more-title">More of the entry</h2>
+      <ul className="site-more-list">
+        {MORE.map((n) => (
+          <li key={n.path}>
+            <a className="site-more-link" href={url(n.path)} aria-current={n.match.includes(path) ? 'page' : undefined} data-testid={`more-${n.path}`}>
+              {n.label}
+            </a>
+          </li>
+        ))}
       </ul>
     </nav>
   );

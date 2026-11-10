@@ -160,14 +160,18 @@ async function replayPage(page: Page, baseUrl: string, width: number): Promise<v
 
 /** AIR-323: every page loads with no CSP violation (zod's eval probe was reported on every page), the nav lists the pages and marks the current one. */
 async function cspAndNav(page: Page, baseUrl: string): Promise<void> {
-  const NAV = ['overview', 'credit', 'lend', 'rob', 'break', 'terms', 'try', 'use', 'replay', 'approvals', 'challenge', 'bench', 'proven'];
+  // the header holds six; a page of the second group is added, marked, after them; every page also lists the second group above its footer
+  const NAV = ['overview', 'lend', 'rob', 'break', 'terms', 'credit'];
+  const MORE_PAGES = ['try', 'use', 'replay', 'approvals', 'challenge', 'bench', 'proven'];
   for (const p of PAGES.filter((x) => x.alias === undefined)) {
     await page.goto(`${baseUrl}${p.path === '/' ? '/' : `${p.path}/`}`);
     await page.locator('main').first().waitFor();
     await page.waitForTimeout(600);
     const violations = await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
     assert.deepEqual(violations, [], `${p.path}: securitypolicyviolation`);
-    assert.deepEqual(await page.locator('[data-testid^="tab-"]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.testid?.slice(4) ?? '')), NAV, `${p.path}: nav tabs`);
+    const here = p.path.slice(1);
+    assert.deepEqual(await page.locator('[data-testid^="tab-"]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.testid?.slice(4) ?? '')), MORE_PAGES.includes(here) ? [...NAV, here] : NAV, `${p.path}: nav tabs`);
+    assert.deepEqual(await page.locator('[data-testid^="more-"]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.testid?.slice(5) ?? '')), MORE_PAGES, `${p.path}: the second group`);
     const current = await page.locator('[data-testid^="tab-"][aria-current="page"]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.testid?.slice(4) ?? ''));
     const want = p.path === '/' ? 'overview' : p.path === '/live' ? null : p.path.slice(1);
     assert.deepEqual(current, want === null ? [] : [want], `${p.path}: current tab`);
