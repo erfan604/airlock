@@ -307,6 +307,12 @@ test('live records an answer that differs from the card preview and goes on; fiv
   assert.equal(await runPart(odd, { plan, predicted, pub, maxPending: 30, totalBudget: TOTAL_BUDGET }), 0);
   assert.ok(odd.lines.some((l) => /MISMATCH predicted escalated UntrustedTrigger/.test(l)));
   assert.ok(countsOf(odd.written).mismatches > 0);
+  // a preview view that throws is recorded as the card's answer and the request is still sent
+  const refused = mockIo(asPredicted(plan, predicted));
+  refused.preview = () => Promise.reject(new Error('Smart contract panicked: invalid asset id'));
+  assert.equal(await runPart(refused, { plan: plan.slice(0, 2), predicted, pub, maxPending: 30, totalBudget: TOTAL_BUDGET }), 0);
+  assert.equal(refused.sent.length, 2);
+  assert.match(String(refused.written[0]!.card?.reason), /^the preview view refused it: Smart contract panicked/);
   const broken = mockIo(() => ({ outcome: 'failed', reason: 'Smart contract panicked' }));
   broken.preview = () => Promise.resolve({ outcome: 'escalated', reason: 'OutsideTask' });
   assert.equal(await runPart(broken, { plan, predicted, pub, maxPending: 30, totalBudget: TOTAL_BUDGET }), 1);

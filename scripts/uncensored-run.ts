@@ -345,7 +345,8 @@ export async function runPart(io: RunIo, p: { plan: readonly Planned[]; predicte
     const offline = p.predicted[k] ?? { outcome: 'failed', reason: 'no prediction' };
     const args = batchArgs({ payee: x.payee, asset: x.asset, amount: x.amount, honest: false }, p.pub, task, index, x.bits);
     const req = (args['reqs'] as Record<string, unknown>[])[0] as Record<string, unknown>;
-    const card = offline.outcome === 'failed' ? null : await io.preview(req, task.task);
+    // a view that refuses the request (a shape the contract does not parse) is recorded as the card's answer, and the request is still sent
+    const card = offline.outcome === 'failed' ? null : await io.preview(req, task.task).catch((e: unknown): Prediction => ({ outcome: 'failed', reason: `the preview view refused it: ${e instanceof Error ? e.message.slice(0, 160) : 'unknown'}` }));
     const r = await io.send(args);
     const got: Prediction = r.failure !== null || r.answer === null ? { outcome: 'failed', reason: (r.failure ?? 'an unreadable answer').slice(0, 200) } : { outcome: kindOutcome[r.answer.kind], reason: r.answer.reason };
     const cls = classOf(got, x.payee, p.pub.book);
