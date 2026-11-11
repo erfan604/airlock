@@ -17,6 +17,8 @@ import { connectWallet } from '../wallet/connector.ts';
 import { DEFAULT_POOL, poolFromSearch, useCredit } from './useCredit.ts';
 import type { CreditState } from './useCredit.ts';
 import { accountText } from '../components/account.ts';
+import { foreignText } from '../components/chainText.ts';
+import { isTeam } from '../lender/lenders.ts';
 import { LP_STORAGE, assetsFor, derive, explorerAccount, shownAccount, formatNear, parseNear, percent, refusedSum, shortId, sharesFor } from './model.ts';
 import type { CreditEvent, EventKind, Line, PoolView } from './model.ts';
 import { depositCall, sendPoolCall, withdrawCall } from './wallet.ts';
@@ -56,7 +58,8 @@ const TONE: Record<EventKind, 'ok' | 'held' | 'bad' | 'plain' | 'fee'> = {
  * name without its `.testnet` suffix for any other (the full id is in the link target only).
  */
 function Account({ id, max, what = 'demo account' }: { id: string; max: number; what?: string }) {
-  const text = /erfan/i.test(id) ? what : shortId(accountText(id), max);
+  // an account the team does not run (an outside lender) follows the display rule of components/chainText.ts: cut in the middle when long
+  const text = /erfan/i.test(id) ? what : isTeam(id) ? shortId(accountText(id), max) : foreignText(id).replace(/\.testnet$/, '');
   const link = explorerAccount(id);
   if (link === null) return <>{text}</>;
   return (

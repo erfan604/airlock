@@ -6,6 +6,7 @@
 import { RpcError, rpcView } from '../chain/rpc.ts';
 import type { RpcConfig } from '../chain/rpc.ts';
 import { functionCall, keyFromSecret, successValue } from '../chain/tx.ts';
+import { unshownText } from '../components/chainText.ts';
 import { parseNear } from '../credit/model.ts';
 import presets from '../../fixtures/rob-presets.json' with { type: 'json' };
 import type { TryPublic, TryTask } from './tryPublic.ts';
@@ -203,7 +204,7 @@ export const REASON_SHORT: Record<string, string> = {
   Paused: 'card paused',
 };
 
-const lookup = (m: Record<string, string>, code: string | null): string => (code === null ? '' : (Object.hasOwn(m, code) ? m[code] : undefined) ?? code);
+const lookup = (m: Record<string, string>, code: string | null): string => (code === null ? '' : (Object.hasOwn(m, code) ? m[code] : undefined) ?? unshownText(code) ?? code);
 export const reasonWords = (code: string | null): string => lookup(REASON_WORDS, code);
 export const reasonShort = (code: string | null): string => lookup(REASON_SHORT, code);
 

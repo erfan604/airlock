@@ -16,6 +16,8 @@ import { rpcView } from '../chain/rpc.ts';
 import type { Actions, ApprovalsData } from './ApprovalsRoute.tsx';
 import type { ApproveResult } from './Card.tsx';
 import { accountText, demoLabel, explorerAccount } from '../components/account.ts';
+import { unshownText } from '../components/chainText.ts';
+import { isTeam } from '../lender/lenders.ts';
 import example from '../../fixtures/card-correction.json' with { type: 'json' };
 import { REASON } from '../replay/outcome.ts';
 import { DEFAULT_POLICY, accessOf, explorerTx, isExpired, policyFromSearch, readHistory, readStaticChain } from './staticChain.ts';
@@ -60,12 +62,21 @@ const STATE_WORD: Record<string, string> = {
  * about the owner's name, because an approver must be able to tell any two payees apart (security review of bb85634).
  */
 export function shortPayee(key: string): string {
+  const hidden = unshownText(key);
+  if (hidden !== null) return hidden;
   const m = /^near:([^:]+)\.testnet$/.exec(key);
   return m === null ? key : (m[1] as string);
 }
 
+/** Whether this site runs the policy: the credit line's card, an account of the team (lender/team.json) or a practice card it published. */
+export function runsHere(policy: string): boolean {
+  return policy === DEFAULT_POLICY || isTeam(policy) || /^try\.airlock-try-[a-z0-9]{3,12}\.testnet$/.test(policy);
+}
+
 /** The payee of an earlier request: a plain name linked to the explorer (the owner's own names get a label), the full id in the link target only. */
 function Payee({ payee }: { payee: string }) {
+  const hidden = unshownText(payee);
+  if (hidden !== null) return <>{hidden}</>;
   const id = payee.replace(/^near:/, '');
   const link = explorerAccount(id);
   const text = accountText(id);
@@ -90,7 +101,7 @@ function History({ history }: { history: readonly RequestView[] }) {
           <li key={v.request_id} data-testid="history-row" data-state={v.state}>
             <span className="approvals-history-state">{STATE_WORD[v.state] ?? v.state}</span>{' '}
             {v.display === null ? 'a payment' : `${v.display.amount_decimal} ${v.display.asset_symbol}`} to <Payee payee={v.payee} />
-            {v.reason === null ? '' : `. ${REASON[v.reason] ?? v.reason}`}
+            {v.reason === null ? '' : `. ${REASON[v.reason] ?? unshownText(v.reason) ?? v.reason}`}
           </li>
         ))}
       </ol>
@@ -148,6 +159,11 @@ export function StaticApprovalsView({ policy, ownerId, data, access, actions, no
         Held requests on <PolicyName policy={policy} />
       </h1>
       <p className="approvals-more">Read from the policy contract on NEAR through a public RPC node, with no server in between. Only the policy owner can approve or reject.</p>
+      {runsHere(policy) ? null : (
+        <p className="approvals-more" data-testid="approvals-foreign">
+          The link named this contract, and this site does not run it. Every payee, amount and reason below is what that contract answers, not text from this site.
+        </p>
+      )}
       <AccessLine access={access} ownerId={ownerId} onConnect={onConnect} connecting={connecting} connectError={connectError} />
       {data.privateBook ? <VaultDrop onLoaded={onReload} /> : null}
       {access.kind === 'owner' && reveal !== '' && data.cards.length > 0 ? (

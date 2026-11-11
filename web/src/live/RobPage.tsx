@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { NEAR_RPC } from '../../csp.ts';
+import { foreignText, unshownText } from '../components/chainText.ts';
 import { TxLink } from '../credit/CreditPage.tsx';
 import { PRERENDER, url } from '../static.ts';
 import { PRESETS, failureWords, reasonShort, reasonWords, send, wishOf } from './rob.ts';
@@ -55,12 +56,17 @@ export function nearOf(yocto: string): string {
   return `${(v / YOCTO).toString()}${frac === '' ? '' : `.${frac}`} NEAR`;
 }
 
-/** A payee as the page prints it: the booked shop by name, a SOL address as such, a NEAR account without its suffix, cut when long. */
+/**
+ * A payee as the page prints it: the booked shop by name, a SOL address as such, a value outside the payee grammar as a placeholder with its length,
+ * and any other NEAR account (a name a visitor chose) cut in the middle when long (components/chainText.ts), then without its suffix.
+ */
 export function payeeText(payee: string, shop: string | null): string {
   if (shop !== null && payee === shop) return 'the booked shop';
+  const hidden = unshownText(payee);
+  if (hidden !== null) return hidden;
   if (payee.startsWith('sol:')) return 'a SOL address';
-  const bare = payee.replace(/^near:/, '').replace(/\.testnet$/, '');
-  return bare.length > 18 ? `${bare.slice(0, 15)}…` : bare;
+  if (!payee.startsWith('near:')) return 'an address on another chain';
+  return foreignText(payee.slice(5)).replace(/\.testnet$/, '');
 }
 
 const agoText = (ms: number, now: number): string => {
@@ -246,7 +252,7 @@ function Rows({ board, mineIds, shop, nowMs, replay, shown, onMore }: { board: B
               {r.reason === null ? null : (
                 <>
                   {`: ${reasonShort(r.reason)} `}
-                  <span className="brk-mono rob-row-code">{r.reason}</span>
+                  <span className="brk-mono rob-row-code">{unshownText(r.reason) ?? r.reason}</span>
                 </>
               )}
             </span>

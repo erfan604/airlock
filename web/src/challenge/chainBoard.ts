@@ -6,6 +6,7 @@
 // that the chain does not show: a call that failed, a call by another key or an attempt that never reached the chain is not an attempt here.
 // `Stolen` is what challenge/src/attempt.ts and the README define: an allowed payment to a payee outside the owner's book.
 // The classifier is the same rule as challenge/src/fastnear.ts (which runs on the service host), written without a schema library for the page.
+import { keep, keepOrNull } from '../components/chainText.ts';
 import { EMPTY_BOARD, foldBoard } from './model.ts';
 import type { Attempt, Board } from './model.ts';
 
@@ -80,7 +81,8 @@ export function classifyTx(raw: unknown, policy: string, publicKey: string | nul
     const asset = str(req['asset']);
     const amount = str(req['amount']);
     if (kind === null || !Object.hasOwn(OUTCOME, kind) || requestId === null || payee === null || asset === null || amount === null || !AMOUNT.test(amount)) continue;
-    obs.push({ requestId, payee, asset, amount, outcome: OUTCOME[kind as keyof typeof OUTCOME], reason: str(a['reason']), tx: hash, toBook: book.has(payee) });
+    // the display rule (components/chainText.ts): a string outside its grammar is kept as a placeholder with its length, never as its text
+    obs.push({ requestId: keep('request', requestId), payee: keep('payee', payee), asset: keep('asset', asset), amount, outcome: OUTCOME[kind as keyof typeof OUTCOME], reason: keepOrNull('reason', a['reason']), tx: keep('tx', hash), toBook: book.has(payee) });
   }
   return { state: 'final', obs };
 }

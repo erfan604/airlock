@@ -2,6 +2,8 @@
 // are the ones the ticket fixes, and a parser refuses anything else instead of guessing, so a contract that drifts shows as "unreadable", never as
 // zeros. Amounts are decimal strings of the smallest unit (yoctoNEAR) and BigInt math only: no Number, parseInt or parseFloat anywhere here.
 
+import { fits } from '../components/chainText.ts';
+
 export const CHAINS = ['near', 'base', 'solana'] as const;
 export type Chain = (typeof CHAINS)[number];
 
@@ -139,7 +141,7 @@ const EVENT_PREFIX = 'EVENT_JSON:';
  * held payment, `blocked` and `rejected` (the borrower turned a held payment down) a refused one, with the card as `who`; the held and blocked events carry no amount, so theirs is 0. A line naming an unknown
  * event is skipped, never guessed.
  */
-export function parseEventLog(line: string, atMs: number, tx: string | null, index: number, executor: string | null = null): CreditEvent | null {
+export function parseEventLog(line: string, atMs: number, txRaw: string | null, index: number, executor: string | null = null): CreditEvent | null {
   if (!line.startsWith(EVENT_PREFIX)) return null;
   let body: unknown;
   try {
@@ -150,8 +152,10 @@ export function parseEventLog(line: string, atMs: number, tx: string | null, ind
   if (!isObj(body)) return null;
   const data = Array.isArray(body['data']) ? body['data'][0] : undefined;
   if (!isObj(data)) return null;
+  // the display rule (components/chainText.ts): a request id or a transaction hash outside its grammar is dropped, never shown
+  const tx = txRaw !== null && fits('tx', txRaw) ? txRaw : null;
   const id = `${tx ?? 'nx'}:${String(index)}`;
-  const requestId = typeof data['request_id'] === 'string' && data['request_id'].length <= 100 ? data['request_id'] : null;
+  const requestId = fits('request', data['request_id']) ? data['request_id'] : null;
   if (body['standard'] === POLICY_STANDARD) {
     const kind = ({ allowed: 'card_paid', escalated: 'card_held', blocked: 'card_refused', rejected: 'card_refused' } as Record<string, EventKind | undefined>)[String(body['event'])];
     if (kind === undefined || executor === null || !ACCOUNT.test(executor)) return null;

@@ -133,9 +133,11 @@ const state: SiteState = {
   arena: { attempts: arena.attempts.filter((a) => a.atMs <= cut), truncated: arena.truncated },
   challenge,
 };
-if (parseSiteState(JSON.parse(JSON.stringify(state)) as unknown) === null) throw new Error('the state does not parse back');
+// the file is written as the page's own parser reads it: every chain string in its grammar or a placeholder, foreign names cut (chainText.ts)
+const shaped = parseSiteState(JSON.parse(JSON.stringify(state)) as unknown);
+if (shaped === null) throw new Error('the state does not parse back');
 
-const text = `${JSON.stringify(state)}\n`;
+const text = `${JSON.stringify(shaped)}\n`;
 const out = arg('--out');
 const s = history.stats();
 const lines = [

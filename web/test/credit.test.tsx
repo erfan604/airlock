@@ -42,8 +42,8 @@ test('parsePool reads the ticket shape and refuses anything else', () => {
 
 test('parseEventLog accepts only airlock-credit events of the closed list', () => {
   const line = (o: object): string => `EVENT_JSON:${JSON.stringify(o)}`;
-  const ok = parseEventLog(line({ standard: 'airlock-credit', version: '1.0.0', event: 'card_paid', data: [{ card: 'card-a.testnet', chain: 'base', amount: '5', request_id: 'r1' }] }), 1000, 'TXHASH', 0);
-  assert.deepEqual(ok, { id: 'TXHASH:0', kind: 'card_paid', atMs: 1000, who: 'card-a.testnet', amount: '5', chain: 'base', requestId: 'r1', tx: 'TXHASH', fixture: false });
+  const ok = parseEventLog(line({ standard: 'airlock-credit', version: '1.0.0', event: 'card_paid', data: [{ card: 'card-a.testnet', chain: 'base', amount: '5', request_id: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1' }] }), 1000, 'H4TCupRbnrqkWe3oxip6oRuB9Tn3aL8YuuiPpDSuNSuf', 0);
+  assert.deepEqual(ok, { id: 'H4TCupRbnrqkWe3oxip6oRuB9Tn3aL8YuuiPpDSuNSuf:0', kind: 'card_paid', atMs: 1000, who: 'card-a.testnet', amount: '5', chain: 'base', requestId: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1', tx: 'H4TCupRbnrqkWe3oxip6oRuB9Tn3aL8YuuiPpDSuNSuf', fixture: false });
   assert.equal(parseEventLog(line({ standard: 'airlock', event: 'card_paid', data: [{ card: 'a.testnet', amount: '1' }] }), 1, null, 0), null);
   assert.equal(parseEventLog(line({ standard: 'airlock-credit', event: 'mint', data: [{ card: 'a.testnet', amount: '1' }] }), 1, null, 0), null);
   assert.equal(parseEventLog(line({ standard: 'airlock-credit', event: 'deposit', data: [{ account: 'lp.testnet', amount: '1.5' }] }), 1, null, 0), null);
@@ -340,10 +340,10 @@ test('AIR-330: the pool events and the card policy events map to the page events
   assert.equal(parseEventLog(log('airlock-credit', 'defaulted', { card, seized: '3', loss: '4' }), 1, 'T', 0, pool)?.amount, '4');
   assert.equal(parseEventLog(log('airlock-credit', 'swept', { card, amount: '9' }), 1, 'T', 0, pool)?.kind, 'swept');
   assert.equal(parseEventLog(log('airlock-credit', 'card_registered', { card, borrower: 'b.testnet' }), 1, 'T', 0, pool), null, 'an event the page does not show is skipped');
-  const paid = parseEventLog(log('airlock', 'allowed', { request_id: 'r:0', asset: 'near', payee: 'near:m.testnet', amount: '5' }), 1, 'T', 0, card);
-  assert.deepEqual([paid?.kind, paid?.who, paid?.amount, paid?.chain, paid?.requestId], ['card_paid', card, '5', 'near', 'r:0']);
-  const held = parseEventLog(log('airlock', 'escalated', { request_id: 'r:1', id: '1', reason: 'UntrustedRecipient' }), 1, 'T', 1, card);
-  assert.deepEqual([held?.kind, held?.amount, held?.requestId], ['card_held', '0', 'r:1']);
+  const paid = parseEventLog(log('airlock', 'allowed', { request_id: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:0', asset: 'near', payee: 'near:m.testnet', amount: '5' }), 1, 'T', 0, card);
+  assert.deepEqual([paid?.kind, paid?.who, paid?.amount, paid?.chain, paid?.requestId], ['card_paid', card, '5', 'near', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:0']);
+  const held = parseEventLog(log('airlock', 'escalated', { request_id: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc:1', id: '1', reason: 'UntrustedRecipient' }), 1, 'T', 1, card);
+  assert.deepEqual([held?.kind, held?.amount, held?.requestId], ['card_held', '0', 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc:1']);
   assert.equal(parseEventLog(log('airlock', 'rejected', { request_id: 'r:1', id: '1' }), 1, 'T', 2, card)?.kind, 'card_refused');
   assert.equal(parseEventLog(log('airlock', 'blocked', { request_id: 'r:2', reason: 'X' }), 1, 'T', 3, card)?.kind, 'card_refused');
   assert.equal(parseEventLog(log('airlock', 'allowed', { request_id: 'r:0', asset: 'near', payee: 'p', amount: '5' }), 1, 'T', 0), null, 'a policy event needs the account that logged it');

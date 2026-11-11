@@ -1,6 +1,7 @@
 // The challenge page's data and the few pure rules it draws from (AIR-301). The wire types mirror challenge/src/types.ts: the console does not
 // import the service, it reads the same JSON through its own origin. Amounts are decimal strings of base units and are formatted with BigInt only.
 import { formatBaseUnits } from '@airlock/runtime/money';
+import { unshownText } from '../components/chainText.ts';
 import { wrapUntrusted } from '../components/untrusted.ts';
 import type { Untrusted } from '../components/untrusted.ts';
 import type { VerdictState } from '../components/verdict.ts';
@@ -105,7 +106,7 @@ const REASONS: Record<string, string> = {
   RunFailed: 'The run failed before it submitted anything.',
 };
 
-export const reasonWords = (reason: string | null): string => (reason === null ? '' : (Object.hasOwn(REASONS, reason) ? REASONS[reason] : undefined) ?? reason);
+export const reasonWords = (reason: string | null): string => (reason === null ? '' : (Object.hasOwn(REASONS, reason) ? REASONS[reason] : undefined) ?? unshownText(reason) ?? reason);
 
 /** The sentence under a verdict word. Closed templates built from typed values. */
 export function sentenceOf(a: Attempt): string {

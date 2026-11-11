@@ -6,8 +6,11 @@
 // every page reads the chain as it did before the file existed.
 import type { ArenaAttempt } from '../credit/arena/model.ts';
 import type { CreditEvent } from '../credit/model.ts';
-import type { Attempt, Board } from '../challenge/model.ts';
+import type { Attempt, Board, PaymentRow } from '../challenge/model.ts';
 import type { TryAttempt } from '../live/tryChain.ts';
+import { EVENT_KINDS } from '../credit/model.ts';
+import { foreignPayee, foreignShort, isUnshown, keep, keepOrNull, keepStoredAccount, keepStoredPayee } from '../components/chainText.ts';
+import team from '../lender/team.json' with { type: 'json' };
 import { preload } from '../preload.ts';
 import { url } from '../static.ts';
 
@@ -77,7 +80,89 @@ export function parseSiteState(raw: unknown): SiteState | null {
   if (!isObj(credit) || !Array.isArray(credit['events']) || !isObj(arena) || !Array.isArray(arena['attempts'])) return null;
   const ch = raw['challenge'];
   if (!(ch === null || (isObj(ch) && isObj(ch['board']) && Array.isArray(ch['attempts'])))) return null;
-  return raw as unknown as SiteState;
+  return clean(raw as unknown as SiteState);
+}
+
+// The display rule (components/chainText.ts) over the whole file: every chain string is kept only in its grammar (else a placeholder with its
+// length), a row whose amount, time or verdict is out of shape is dropped, and an account the team does not run is cut in the middle when long.
+// The script writes the file through this parser and the prerender bakes the parsed state, so the file, the baked HTML and the pages agree.
+
+const TRY_VERDICTS = new Set(['blocked', 'held', 'expired', 'paid_shop', 'paid_outside']);
+const TRY_KINDS = new Set(['blocked', 'held', 'paid_shop', 'paid_outside']);
+const ARENA_VERDICTS = new Set(['none', 'blocked', 'held', 'paid_at', 'paid_under', 'paid_over', 'paid_unbooked']);
+const OUTCOMES = new Set(['ALLOW', 'ESCALATE', 'BLOCK']);
+const VERDICTS = new Set(['Allow', 'Escalate', 'Block', 'NoAction']);
+const AMOUNT = /^(0|[1-9][0-9]{0,38})$/;
+const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
+const isAmount = (v: unknown): v is string => typeof v === 'string' && AMOUNT.test(v);
+const isStr = (v: unknown): v is string => typeof v === 'string';
+
+/** Accounts the team runs: the list of lender/team.json, plus the parents of the practice and challenge policies the file names. */
+function teamOf(s: SiteState): (account: string) => boolean {
+  const parentOf = (id: string): string | null => (id.includes('.') ? id.slice(id.indexOf('.') + 1) : null);
+  const parents = [...team.parents, ...[s.rob.policy, s.challenge?.policy ?? ''].map(parentOf).filter((p): p is string => p !== null && p.includes('.'))];
+  return (a) => team.accounts.includes(a) || parents.some((p) => a === p || a.endsWith(`.${p}`));
+}
+
+/** A stored account: the team's whole, anyone else's cut when long. */
+const shownId = (raw: unknown, ours: (a: string) => boolean): string => {
+  const a = keepStoredAccount(raw);
+  return ours(a) ? a : foreignShort(a);
+};
+
+/** A stored payee key: the team's whole, anyone else's `near:` key cut when long. */
+const shownKey = (raw: unknown, ours: (a: string) => boolean): string => {
+  const k = keepStoredPayee(raw);
+  return k.startsWith('near:') && ours(k.slice(5)) ? k : foreignPayee(k);
+};
+
+function cleanTry(r: unknown, ours: (a: string) => boolean): TryAttempt | null {
+  if (!isObj(r) || !isAmount(r['amount']) || !isNum(r['atMs']) || !isStr(r['kind']) || !TRY_KINDS.has(r['kind']) || !isStr(r['verdict']) || !TRY_VERDICTS.has(r['verdict'])) return null;
+  return { tx: keep('tx', r['tx']), atMs: r['atMs'], requestId: keep('request', r['requestId']), payee: shownKey(r['payee'], ours), amount: r['amount'], reason: keepOrNull('reason', r['reason']), kind: r['kind'] as TryAttempt['kind'], verdict: r['verdict'] as TryAttempt['verdict'] };
+}
+
+function cleanEvent(e: unknown, ours: (a: string) => boolean): CreditEvent | null {
+  if (!isObj(e) || !isStr(e['kind']) || !(EVENT_KINDS as readonly string[]).includes(e['kind']) || !isNum(e['atMs']) || !isAmount(e['amount']) || !isStr(e['id'])) return null;
+  const tx = keepOrNull('tx', e['tx']);
+  const id = /^(?:[1-9A-HJ-NP-Za-km-z]{43,44}|nx):[0-9]{1,4}$/.test(e['id']) ? e['id'] : `${tx !== null && !isUnshown(tx) ? tx : 'nx'}:0`;
+  const chain = e['chain'] === 'near' || e['chain'] === 'base' || e['chain'] === 'solana' ? e['chain'] : null;
+  const requestId = keepOrNull('request', e['requestId']);
+  return { id, kind: e['kind'] as CreditEvent['kind'], atMs: e['atMs'], who: shownId(e['who'], ours), amount: e['amount'], chain, requestId: requestId !== null && isUnshown(requestId) ? null : requestId, tx: tx !== null && isUnshown(tx) ? null : tx, fixture: false };
+}
+
+function cleanArena(a: unknown): ArenaAttempt | null {
+  if (!isObj(a) || !isNum(a['atMs']) || !isStr(a['verdict']) || !ARENA_VERDICTS.has(a['verdict'])) return null;
+  return { tx: keep('tx', a['tx']), atMs: a['atMs'], verdict: a['verdict'] as ArenaAttempt['verdict'], reason: keepOrNull('reason', a['reason']), amount: isAmount(a['amount']) ? a['amount'] : null, flood: a['flood'] === true };
+}
+
+function cleanAttempt(a: unknown, ours: (a: string) => boolean): Attempt | null {
+  if (!isObj(a) || !isCount(a['seq']) || !isStr(a['at']) || !ISO.test(a['at']) || !isStr(a['verdict']) || !VERDICTS.has(a['verdict']) || !Array.isArray(a['payments'])) return null;
+  if (!isAmount(a['stolenYocto']) || !isAmount(a['paidToBookYocto'])) return null;
+  const payments: PaymentRow[] = [];
+  for (const p of a['payments'] as unknown[]) {
+    if (!isObj(p) || !isAmount(p['amount']) || !isStr(p['outcome']) || !OUTCOMES.has(p['outcome'])) return null;
+    const toBook = p['toBook'] === true;
+    payments.push({ payee: toBook ? keepStoredPayee(p['payee']) : shownKey(p['payee'], ours), asset: keep('asset', p['asset']), amount: p['amount'], outcome: p['outcome'] as PaymentRow['outcome'], reason: keepOrNull('reason', p['reason']), toBook });
+  }
+  const id = keep('request', a['id']);
+  // the hosted board reads published-key attempts from the chain: no pasted text, no label, no preview
+  return { seq: a['seq'], id, at: a['at'], door: 'key', mode: 'live', source: keep('request', a['source']), label: null, inputChars: 0, preview: null, verdict: a['verdict'] as Attempt['verdict'], reason: keepOrNull('reason', a['reason']), payments, tx: keepOrNull('tx', a['tx']), stolenYocto: a['stolenYocto'], paidToBookYocto: a['paidToBookYocto'] };
+}
+
+function clean(s: SiteState): SiteState {
+  const ours = teamOf(s);
+  const keepList = <T,>(xs: readonly unknown[], f: (x: unknown) => T | null): T[] => xs.map(f).filter((x): x is T => x !== null);
+  const lastTx = keepOrNull('tx', s.loop.last_tx);
+  return {
+    ...s,
+    pool: { ...s.pool, id: keepStoredAccount(s.pool.id) },
+    lenders: { ...s.lenders, outside: s.lenders.outside.map((a) => shownId(a, ours)) },
+    loop: { ...s.loop, last_tx: lastTx !== null && isUnshown(lastTx) ? null : lastTx },
+    rob: { ...s.rob, policy: keepStoredAccount(s.rob.policy), rows: keepList(s.rob.rows, (r) => cleanTry(r, ours)) },
+    credit: { events: keepList(s.credit.events, (e) => cleanEvent(e, ours)) },
+    arena: { ...s.arena, attempts: keepList(s.arena.attempts, cleanArena) },
+    challenge: s.challenge === null ? null : { ...s.challenge, policy: keepStoredAccount(s.challenge.policy), attempts: keepList(s.challenge.attempts, (a) => cleanAttempt(a, ours)) },
+  };
 }
 
 let loaded: Promise<SiteState | null> | null = null;

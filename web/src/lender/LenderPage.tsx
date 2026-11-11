@@ -3,6 +3,7 @@
 // back, and the share value since the deposit as one drawn line. Every number on the page is read from the chain (the pool's views and its own
 // event logs) or from schedule.json; when there is nothing to read the page says so instead of showing a number. The key never leaves the
 // browser except in the restore link the visitor keeps.
+import { isShortened, isUnshown } from '../components/chainText.ts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import { NEAR_RPC } from '../../csp.ts';
@@ -544,7 +545,8 @@ export default function LenderPage(): ReactElement {
       const s = await loadSiteState();
       if (!live) return;
       setSite(s);
-      const full = s === null || savedId !== null || loadSaved(storage()) !== null;
+      // a lender the state file shows cut or hidden (components/chainText.ts) cannot be read by name: the history is then read in full
+      const full = s === null || savedId !== null || loadSaved(storage()) !== null || s.lenders.outside.some((a) => isShortened(a) || isUnshown(a));
       try {
         const [pool, read] = await Promise.all([readPool({ pool: CREDIT_POOL, rpcUrls: NEAR_RPC }), readAccountTxs(historyFetch, CREDIT_POOL, full ? {} : { sinceMs: s.cut_ms })]);
         const events = poolEvents(read.txs, CREDIT_POOL);
