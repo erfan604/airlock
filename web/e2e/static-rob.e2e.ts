@@ -76,6 +76,11 @@ async function routes(page: Page, w: World): Promise<void> {
       return ok({ status: { SuccessValue: b64(answers) }, transaction: { hash } });
     }
     if (req.params['request_type'] === 'view_access_key') return ok({ nonce: 5, block_hash: BLOCK });
+    // the card's limits, as the live card's contract states them (get_asset("near"), get_policy, read 2026-11-11)
+    const view = (v: unknown) => ok({ result: Array.from(new TextEncoder().encode(JSON.stringify(v))) });
+    const args = req.params['args_base64'] === undefined ? {} : (JSON.parse(Buffer.from(req.params['args_base64'], 'base64').toString('utf8')) as { asset?: string });
+    if (req.params['method_name'] === 'get_asset') return view(args.asset === 'near' ? { symbol: 'NEAR', decimals: 24, hard_cap: '10000000000000000000000', daily_cap: '50000000000000000000000', max_fee_per_gas: '0', max_gas: '0', quick_task_cap: '10000000000000000000000', path: null } : null);
+    if (req.params['method_name'] === 'get_policy') return view({ owner_id: 'owner.testnet', paused: false, flags: { max_pending_per_agent: 50, pending_ttl_ms: '60000' } });
     return ok({ result: Array.from(new TextEncoder().encode('null')) });
   });
   await page.route('https://tx.test.fastnear.com/**', async (r: Route) => {
@@ -161,7 +166,14 @@ const run: E2E = async ({ page, baseUrl }) => {
   await id('rob-pick-stranger', page).click();
   await id('rob-go', page).click();
   await page.locator('[data-testid="rob-code"]', { hasText: 'PendingFull' }).waitFor({ timeout: 10_000 });
-  assert.ok((await id('rob-why', page).innerText()).includes('Fifty requests are already waiting for the owner'));
+  assert.ok((await id('rob-why', page).innerText()).includes('The queue of 50 requests waiting for the owner is full'));
+  // the griefing note: what happened, the card is fine, and the same request checked in the browser by the shipped gate, never as a transaction
+  assert.ok((await id('rob-grief-why', page).innerText()).includes('The card itself is fine'));
+  const before = w.sent.length;
+  await id('rob-check', page).click();
+  await page.locator('[data-testid="rob-check-result"]', { hasText: 'Computed in your browser by the same gate code the contract runs.' }).waitFor({ timeout: 10_000 });
+  assert.ok((await id('rob-check-result', page).innerText()).includes('Held'));
+  assert.equal(w.sent.length, before, 'the browser check sends nothing');
   await shot(page, 'queue');
   // a change to the request clears the answer, so a stale verdict never sits beside new fields
   await id('rob-own-amount', page).fill('0.002');
