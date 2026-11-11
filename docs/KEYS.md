@@ -2,17 +2,19 @@
 
 What each account of the entry holds, read from NEAR testnet with the RPC call `view_access_key_list` (or `near account list-keys <account> network-config testnet now`). Re-read it yourself; the chain is the source, this page is a copy.
 
-## The credit pool and card (read 2026-11-10, block 277036844)
+## The credit pool and card (read 2026-11-11, blocks 277254302 to 277254305)
 
-| Account | Keys | What that means |
+| Account | Keys | What a key holder can do |
 | --- | --- | --- |
-| `agent.airlock-credit-c1108d.testnet` (the credit agent) | one full-access key and one function-call key: receiver `card.airlock-credit-c1108d.testnet`, methods `submit_batch` and `expire`, no allowance limit | the function-call key can send requests to the card and expire held ones; it cannot attach a deposit, add keys, deploy code or call an owner method. The full-access key is held by the team and can do anything the account can, including moving the agent account's own NEAR. |
-| `card.airlock-credit-c1108d.testnet` (the card policy) | one full-access key | the deployer can redeploy the card's code. |
-| `pool.airlock-credit-c1108d.testnet` (the pool) | one full-access key | the deployer can redeploy the pool's code, which could change its rules for the lenders' money. |
+| `pool.airlock-credit-c1108d.testnet` (the pool) | one full-access key, held by the team | deploy new code to the pool, which can change any rule for the lenders' money, and move the pool account's balance. |
+| `card.airlock-credit-c1108d.testnet` (the card policy) | one full-access key, held by the team | deploy new code to the card and move the card account's balance. |
+| `agent.airlock-credit-c1108d.testnet` (the credit agent) | one full-access key, held by the team, and one function-call key on the agent account: receiver `card.airlock-credit-c1108d.testnet`, methods `submit_batch` and `expire`, no allowance limit | the function-call key sends requests to the card and expires held ones; it cannot attach a deposit, add keys, deploy code or call an owner method. The full-access key can do anything the agent account can, including moving its own NEAR. |
+| `airlock-credit-c1108d.testnet` (the issuer) | one full-access key, held by the team | act as `owner_id`, which it is in the state of the pool and of the card: on the pool register cards, open lines, set the collateral ratio and the Passport base, write off a loss; on the card book payees, set limits and tasks, pause, approve or reject a held payment and sweep the card's money to the pool. docs/TERMS.md limits 2.11 to 2.14 and docs/KNOWN_LIMITATIONS.md (credit pool owner powers) say what these powers allow. |
+| `borrower.airlock-credit-c1108d.testnet` (the borrower) | one full-access key, held by the team | act as the card's approver (approve a held payment to a booked payee, or reject one) and as the pool's borrower (post and withdraw collateral, repay). |
 
-The function-call key does not limit what the agent submits: the agent can send any request, and the card's verdict decides each one (allow, hold for the owner, or block). The issuer `airlock-credit-c1108d.testnet` owns the card and the pool (it books payees, sets the limits and can approve a held payment); its keys are the team's. Removing the full-access keys of the agent, the card and the pool is not done: a redeploy stays possible, and a lender trusts the team not to use it.
+The function-call key does not limit what the agent submits: the agent can send any request, and the card's verdict decides each one (allow, hold for the owner, or block). Every key above is the team's. The pool's and the card's own full-access keys are not removed: while they exist a redeploy of either contract stays possible, and a lender trusts the team not to use it. Removing them would leave the issuer's powers, which go through the contracts' owner methods.
 
-Check: `near account list-keys agent.airlock-credit-c1108d.testnet network-config testnet now`, and the same for `card.` and `pool.`.
+Check: `near account list-keys pool.airlock-credit-c1108d.testnet network-config testnet now`, and the same for `card.`, `agent.`, `borrower.` and `airlock-credit-c1108d.testnet`. `get_roles` of the card names its owner; the pool has no owner view, and its owner is the first field of the value under the key `STATE` in its raw state (`view_state`, a Borsh string: 4 bytes of length, then the account id).
 
 ## The demo agent `erfan-agent.testnet` (read 2026-11-05)
 
