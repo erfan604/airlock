@@ -113,6 +113,19 @@ async function startLossyProxy(target: string): Promise<LossyProxy> {
   };
 }
 
+// neard 2.11.0 can deadlock in its own shutdown after SIGTERM (seen 2026-11-11: the main thread waits on a mutex, blocks are still
+// produced, the process never exits), and `Sandbox.tearDown` waits for the exit with no time limit, which froze a full gate for six
+// hours. A SIGKILL follows after 5 s; the home directory is removed by `tearDown` either way.
+async function tearDownHard(sandbox: Sandbox): Promise<void> {
+  const child = (sandbox as unknown as { childProcess: { kill(signal: string): boolean } }).childProcess;
+  const timer = setTimeout(() => child.kill('SIGKILL'), 5000);
+  try {
+    await sandbox.tearDown();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function startWorld(opts: { dropSendTxReplies?: boolean } = {}): Promise<SandboxWorld> {
   const sandbox = await Sandbox.start({});
   let proxy: LossyProxy | null = null;
@@ -218,12 +231,12 @@ export async function startWorld(opts: { dropSendTxReplies?: boolean } = {}): Pr
       sentTxs: lossy === null ? [] : lossy.sentTxs,
       stop: async () => {
         if (lossy !== null) await lossy.close();
-        await sandbox.tearDown();
+        await tearDownHard(sandbox);
       },
     };
   } catch (error) {
     if (proxy !== null) await proxy.close();
-    await sandbox.tearDown();
+    await tearDownHard(sandbox);
     throw error;
   }
 }
