@@ -181,6 +181,13 @@ function CreditTeaser() {
         <p className="land-p">
           What it does not stop: the issuer books the merchants, so a merchant who works with the borrower can still walk off with the money. And in default mode an amount read from outside text is paid when it stays inside the booked merchant&apos;s cap.
         </p>
+        <p className="land-p">
+          The card pays on other chains too. It paid a booked merchant on Base through NEAR&apos;s chain signatures, and the pool then asked NEAR&apos;s signer network whether that payment landed and keeps the signed answer.{' '}
+          <a href={url('credit')} data-testid="cta-credit-base">
+            See the payment and the pool&apos;s check on the credit page
+          </a>
+          .
+        </p>
       </div>
       <p className="case-more">
         <a href={url('credit')} data-testid="cta-credit">

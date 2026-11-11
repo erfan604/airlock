@@ -489,13 +489,14 @@ export function BaseChecks({ rows, nowMs }: { rows: readonly BaseCheckRow[]; now
       <h2 id="cr-base-h" className="cr-h2">
         Paid on Base, checked back on NEAR
       </h2>
-      <p className="cr-note">The pool asked NEAR's MPC network about each Base payment below and keeps the signed answer. The answer says the transaction is final and succeeded. It does not name the payee or the amount, and nothing about a credit line depends on it.</p>
+      <p className="cr-note">The pool asked NEAR's MPC network about each Base payment below and keeps the signed answer. The answer says the transaction is final and succeeded. It does not name the payee or the amount, and nothing about a credit line depends on it. For the top row the three links are one payment: the card's request, the payment on Base, and the pool's check.</p>
       <div className="cr-scroll" tabIndex={0} role="region" aria-label="Base payment checks table">
         <table className="cr-table">
           <thead>
             <tr>
-              <th scope="col">Base transaction</th>
-              <th scope="col">Recorded on NEAR</th>
+              <th scope="col">Requested on NEAR</th>
+              <th scope="col">Paid on Base</th>
+              <th scope="col">Checked on NEAR</th>
               <th scope="col">Asked by</th>
               <th scope="col">When</th>
               <th scope="col">Payload hash</th>
@@ -506,6 +507,7 @@ export function BaseChecks({ rows, nowMs }: { rows: readonly BaseCheckRow[]; now
               const link = explorerBaseTx(r.txId);
               return (
                 <tr key={r.txId} data-testid="base-check-row">
+                  <td>{r.requestTx === undefined ? 'by an older account, not the card' : <TxLink tx={r.requestTx} what="card request" label="tx" />}</td>
                   <th scope="row">
                     {link === null ? (
                       shortHex(r.txId)

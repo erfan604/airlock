@@ -91,3 +91,12 @@ test('doors: each door links its page, shows its one number, and says recorded u
   const failed = text(renderToStaticMarkup(createElement(DoorsView, { lend: recordedLend(true), rob: recordedRob(), brk: recordedBreak(), pool: { kind: 'recorded' } })));
   assert.ok(failed.includes(`Recorded ${RECORDED.atText}; it could not be read just now.`));
 });
+
+test('landing: the credit section says the card pays on other chains too and links the credit page, with no network word or personal name', () => {
+  const html = renderToStaticMarkup(createElement(Landing));
+  const sec = html.slice(html.indexOf('data-testid="landing-credit"'), html.indexOf('data-testid="landing-case"'));
+  const t = sec.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/\s+/g, ' ');
+  assert.ok(t.includes("The card pays on other chains too. It paid a booked merchant on Base through NEAR's chain signatures, and the pool then asked NEAR's signer network whether that payment landed and keeps the signed answer."));
+  assert.ok(sec.includes('data-testid="cta-credit-base"') && sec.includes('href="/credit"'));
+  assert.ok(!/testnet|erfan/i.test(t));
+});

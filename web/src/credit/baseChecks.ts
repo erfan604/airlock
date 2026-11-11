@@ -1,12 +1,12 @@
-// AIR-350: the Base payments the pool has asked NEAR's MPC network about. `base-checks.json` only says where to look (a Base tx id and the NEAR
-// transaction of its check); every value shown is read from the pool's own `get_base_check` view. A null answer, a failed read or a malformed answer
+// AIR-350: the Base payments the pool has asked NEAR's MPC network about. `base-checks.json` only says where to look (a Base tx id, the NEAR
+// transaction of its check and, when the card made the payment, the NEAR transaction of its request); every value shown is read from the pool's own `get_base_check` view. A null answer, a failed read or a malformed answer
 // drops the entry. With an empty list no request is made.
 import { rpcView } from '../chain/rpc.ts';
 import { explorerTx } from '../approvals/staticChain.ts';
 import list from './base-checks.json' with { type: 'json' };
 
-export type BaseCheckEntry = { txId: string; nearTx: string };
-export type BaseCheckRow = { txId: string; payloadHash: string; askedBy: string; recordedMs: number; nearTx: string };
+export type BaseCheckEntry = { txId: string; nearTx: string; requestTx?: string };
+export type BaseCheckRow = { txId: string; payloadHash: string; askedBy: string; recordedMs: number; nearTx: string; requestTx?: string };
 
 const HEX64 = /^[0-9a-f]{64}$/;
 const HEX64_ANY = /^[0-9a-fA-F]{64}$/;
@@ -29,7 +29,8 @@ export function parseBaseCheckList(raw: unknown): BaseCheckEntry[] {
     const txId = c['tx_id'];
     const nearTx = c['near_tx'];
     if (typeof txId !== 'string' || !HEX64.test(txId) || typeof nearTx !== 'string' || explorerTx(nearTx) === null || out.has(txId)) continue;
-    out.set(txId, { txId, nearTx });
+    const req = c['request_tx'];
+    out.set(txId, typeof req === 'string' && explorerTx(req) !== null ? { txId, nearTx, requestTx: req } : { txId, nearTx });
   }
   return [...out.values()];
 }
@@ -40,7 +41,7 @@ export function baseCheckRowOf(entry: BaseCheckEntry, raw: unknown): BaseCheckRo
   const { tx_id: txId, payload_hash: payloadHash, asked_by: askedBy, recorded_ms: recorded } = raw;
   if (txId !== entry.txId || typeof payloadHash !== 'string' || !HEX64_ANY.test(payloadHash) || typeof askedBy !== 'string' || askedBy === '') return null;
   if (typeof recorded !== 'string' || !/^[0-9]{1,15}$/.test(recorded)) return null;
-  return { txId: entry.txId, payloadHash, askedBy, recordedMs: Number(recorded), nearTx: entry.nearTx };
+  return { txId: entry.txId, payloadHash, askedBy, recordedMs: Number(recorded), nearTx: entry.nearTx, ...(entry.requestTx === undefined ? {} : { requestTx: entry.requestTx }) };
 }
 
 /** Reads every listed check from the pool's view; entries that fail or answer null are left out. Newest first by recorded_ms. */

@@ -28,6 +28,40 @@ test('parseBaseCheckList keeps good entries, drops bad ones and duplicates', () 
   assert.deepEqual(parseBaseCheckList({ checks: 'x' }), []);
 });
 
+test('parseBaseCheckList keeps a valid request_tx and drops only that field when it is malformed', () => {
+  const REQ = '3ct2km2ATjgboyEHaWuVJWDSxwHHPbhuvLY6QGyA4s8g';
+  assert.deepEqual(parseBaseCheckList({ checks: [{ tx_id: TX, near_tx: NEAR_TX, request_tx: REQ }] }), [{ txId: TX, nearTx: NEAR_TX, requestTx: REQ }]);
+  for (const bad of ['not a hash/../', 5, null, '', `${REQ}/x`]) assert.deepEqual(parseBaseCheckList({ checks: [{ tx_id: TX, near_tx: NEAR_TX, request_tx: bad }] }), [entry]);
+});
+
+test('the committed list carries the card request on the ab2b entry and none on the older one', () => {
+  const ab = BASE_CHECK_LIST.find((e) => e.txId.startsWith('ab2b'));
+  assert.equal(ab?.requestTx, '3ct2km2ATjgboyEHaWuVJWDSxwHHPbhuvLY6QGyA4s8g');
+  assert.equal(ab?.nearTx, '8KReKRKbYWAdmRz1dcRmw5rqR41tzhkzz75N31mLzGbQ');
+  assert.equal(BASE_CHECK_LIST.find((e) => e.txId.startsWith('9435'))?.requestTx, undefined);
+});
+
+test('baseCheckRowOf carries the request_tx through', () => {
+  const REQ = '3ct2km2ATjgboyEHaWuVJWDSxwHHPbhuvLY6QGyA4s8g';
+  assert.equal(baseCheckRowOf({ ...entry, requestTx: REQ }, answer())?.requestTx, REQ);
+  assert.equal(baseCheckRowOf(entry, answer())?.requestTx, undefined);
+});
+
+test('the table shows the request link when the row has one and plain text when it has none', () => {
+  const REQ = '3ct2km2ATjgboyEHaWuVJWDSxwHHPbhuvLY6QGyA4s8g';
+  const other = 'a'.repeat(64);
+  const withReq = baseCheckRowOf({ ...entry, requestTx: REQ }, answer());
+  const without = baseCheckRowOf({ txId: other, nearTx: NEAR_TX }, answer({ tx_id: other, recorded_ms: '1794340215000' }));
+  assert.ok(withReq !== null && without !== null);
+  const html = renderToStaticMarkup(<BaseChecks rows={[withReq, without]} nowMs={1794340215416 + 120_000} />);
+  assert.ok(html.includes(`href="https://testnet.nearblocks.io/txns/${REQ}"`));
+  assert.equal(html.split('by an older account, not the card').length, 2, 'plain text once, for the row without a request');
+  assert.ok(html.includes('Requested on NEAR') && html.includes('Paid on Base') && html.includes('Checked on NEAR'));
+  const at = (h: string): number => html.indexOf(`>${h}</th>`);
+  assert.ok(at('Requested on NEAR') > 0 && at('Requested on NEAR') < at('Paid on Base') && at('Paid on Base') < at('Checked on NEAR') && at('Checked on NEAR') < at('Asked by'));
+  assert.ok(html.includes('For the top row the three links are one payment: the card&#x27;s request, the payment on Base, and the pool&#x27;s check.'));
+});
+
 test('baseCheckRowOf reads a good answer', () => {
   assert.deepEqual(baseCheckRowOf(entry, answer()), { txId: TX, payloadHash: HASH, askedBy: ASKER, recordedMs: 1794340215416, nearTx: NEAR_TX });
 });
