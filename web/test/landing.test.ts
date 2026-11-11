@@ -12,6 +12,7 @@ import { RECORDED_POOL, factsOf, poolLine } from '../src/landing/facts.ts';
 import { Landing } from '../src/landing/Landing.tsx';
 import { DoorsView } from '../src/landing/Doors.tsx';
 import { RECORDED, recordedBreak, recordedLend, recordedRob } from '../src/landing/doors.ts';
+import { countText } from '../src/live/tryChain.ts';
 import { stepAt } from '../src/landing/TubeBand.tsx';
 
 const bench = parseBench(JSON.parse(readFileSync(new URL('../public/bench.json', import.meta.url), 'utf8')) as unknown);
@@ -76,7 +77,7 @@ test('doors: each door links its page, shows its one number, and says recorded u
   assert.ok(rec.includes('href="/lend"') && rec.includes('href="/rob"') && rec.includes('href="/break"') && rec.includes('href="/terms"'));
   const t = text(rec);
   assert.ok(t.includes(`${String(RECORDED.lenders)} lender accounts not on the team's list so far.`));
-  assert.ok(t.includes(`${String(RECORDED.robPaidOutside)} paid to anyone but the booked shop, in ${String(RECORDED.robAttempts)} attempts.`));
+  assert.ok(t.includes(`${String(RECORDED.robPaidOutside)} paid to anyone but the booked shop, in ${countText(RECORDED.robAttempts)} attempts.`));
   assert.ok(t.includes(`${String(RECORDED.copies)} broken copies of the gate; Kani fails on each one.`));
   assert.equal(t.split(`Recorded ${RECORDED.atText}.`).length, 4, 'all three doors say recorded');
   assert.ok(t.includes('Runs on the NEAR test network, where NEAR has no value.') && t.includes('the issuer books the payees'));
@@ -84,6 +85,9 @@ test('doors: each door links its page, shows its one number, and says recorded u
   const live = text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 3, source: 'live' }, rob: { attempts: 1, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 4, source: 'live' }, pool: { kind: 'live', assets: '3201000000000000000000000', losses: '0' } })));
   assert.ok(live.includes("3.2 NEAR in the pool now. 3 lender accounts not on the team's list so far."));
   assert.ok(live.includes('in 1 attempt.') && live.includes('Kani fails on 4 of them.'));
+  // AIR-360: a large count reads with its thousands grouped
+  const big = text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 3, source: 'live' }, rob: { attempts: 12345, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 5, source: 'live' }, pool: { kind: 'failed' } })));
+  assert.ok(big.includes('0 paid to anyone but the booked shop, in 12,345 attempts.'));
   assert.ok(live.includes('Read from the pool contract and its own deposit records.') && !live.includes('Recorded'));
   // the Lend door shows two reads: one live and one recorded is not live
   const half = text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 3, source: 'live' }, rob: { attempts: 1, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 5, source: 'live' }, pool: { kind: 'failed' } })));

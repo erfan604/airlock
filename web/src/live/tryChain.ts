@@ -42,6 +42,9 @@ export function withExpiry(list: readonly TryAttempt[], nowMs: number, ttlMs: nu
   return list.map((a) => ({ ...a, verdict: a.kind === 'held' && nowMs - a.atMs >= ttlMs ? 'expired' : a.kind }));
 }
 
+/** A count with thousands grouped: 1980 as 1,980 (the board and the home page's Rob door). */
+export const countText = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
 export type TryCounts = { attempts: number; blocked: number; held: number; expired: number; paidShop: number; paidOutside: number; lastMs: number | null };
 
 export function countsOfTry(list: readonly TryAttempt[]): TryCounts {

@@ -101,3 +101,9 @@ Kernel replay and axiom check: scripts/lean-axioms.sh (lake check and lake compa
 - p21_allowed_in_task_bound
 - p22_allowed_in_payee_limit
 <!-- theorem-list:end -->
+
+## Claims added after the tables above
+
+| # | Claim | Evidence (file:line) | Command | Expected output | Needs | Source ticket |
+| --- | --- | --- | --- | --- | --- | --- |
+| C26 | The 144 payment requests our bench recorded in strict mode were replayed as real transactions on a practice card: 134 held, 10 (the legitimate payment) paid to the booked shop, 0 paid elsewhere. Scope: testnet; sent by the team with the published key; the labels are the ones the bench runtime attached, so this shows what the contract does with those requests, not that a live model produced them tonight; 106 of the 250 bench runs produced no request and are not transactions. | docs/EVIDENCE.md (Bench requests replayed on the practice card), docs/evidence/try-replay-rows.json, scripts/try-replay.ts | `pnpm tsx scripts/try-replay.ts --verify` | `TRY REPLAY VERIFY OK 144 requests: 134 held, 10 paid to the booked shop, 0 paid elsewhere` | network | AIR-360 |

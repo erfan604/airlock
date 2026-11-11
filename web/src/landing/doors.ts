@@ -8,8 +8,12 @@ import { countsOfTry, readTryAttempts } from '../live/tryChain.ts';
 import { parseTryPublic } from '../live/tryPublic.ts';
 import { url } from '../static.ts';
 
-/** Read 2026-11-10 09:34 MST: scripts/lender-count.ts, the try card's attempts, and public/mutants (5 copies, 5 Kani transcripts FAILED). */
-export const RECORDED = { atText: 'Nov 10, 2026', lenders: 0, robAttempts: 2, robPaidOutside: 0, copies: 5, kaniFails: 5 } as const;
+/**
+ * Read 2026-11-11 02:30 MST, after the bench replay on the practice card (AIR-360): the pool's lender accounts outside the team's list
+ * (readLendDoor: 2), the practice card's attempts (153, of which 144 are the replay; 0 paid outside the book), and public/mutants
+ * (5 copies, 5 Kani transcripts FAILED).
+ */
+export const RECORDED = { atText: 'Nov 11, 2026', lenders: 2, robAttempts: 153, robPaidOutside: 0, copies: 5, kaniFails: 5 } as const;
 
 export type Source = 'live' | 'recorded' | 'failed';
 export type LendDoor = { lenders: number; source: Source };

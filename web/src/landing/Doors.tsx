@@ -7,6 +7,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { NEAR_RPC } from '../../csp.ts';
 import { readPool } from '../credit/chain.ts';
 import { CREDIT_POOL } from '../credit/net.ts';
+import { countText } from '../live/tryChain.ts';
 import { STATIC, url } from '../static.ts';
 import { readBreakDoor, readLendDoor, readRobDoor, recordedBreak, recordedLend, recordedRob, sourceNote } from './doors.ts';
 import type { BreakDoor, LendDoor, RobDoor } from './doors.ts';
@@ -70,7 +71,7 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
               title="Send a real attack"
               what="Your browser signs what a hijacked agent would send to a practice card, and the card's contract answers."
               number={String(rob.paidOutside)}
-              caption={`paid to anyone but the booked shop, in ${String(rob.attempts)} ${rob.attempts === 1 ? 'attempt' : 'attempts'}.`}
+              caption={`paid to anyone but the booked shop, in ${countText(rob.attempts)} ${rob.attempts === 1 ? 'attempt' : 'attempts'}.`}
               note={sourceNote(rob.source, 'Read from the chain.')}
               testId="door-rob"
             />

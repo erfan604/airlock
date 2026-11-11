@@ -10,12 +10,40 @@ import { TxLink } from '../credit/CreditPage.tsx';
 import { PRERENDER, url } from '../static.ts';
 import { PRESETS, reasonWords, send, wishOf } from './rob.ts';
 import type { Choice, Sent } from './rob.ts';
-import { countsOfTry, newTryCache, readTryAttempts } from './tryChain.ts';
+import { countText, countsOfTry, newTryCache, readTryAttempts } from './tryChain.ts';
 import type { TryAttempt, TryCounts } from './tryChain.ts';
 import { parseTryPublic } from './tryPublic.ts';
 import type { TryPublic } from './tryPublic.ts';
+import replayData from './try-replay.json' with { type: 'json' };
 
 const YOCTO = 10n ** 24n;
+
+/**
+ * AIR-360: the bench replay. The team sent the payment requests its bench recorded in strict mode to this card with the published key
+ * (scripts/try-replay.ts); this file holds their transactions and counts, written from the replay's rows, so the page can say who sent
+ * what and count the browsers' attempts apart. Nothing in it is typed by hand.
+ */
+export type Replay = { date: string; requests: number; held: number; paidShop: number; paidElsewhere: number; firstTx: string; lastTx: string; ids: Record<string, number[]> };
+export const REPLAY: Replay = replayData;
+
+/** The replayed request ids, `<task hash>:<index>`, the way an attempt names its request. */
+export const replayIds = (r: Replay): Set<string> => new Set(Object.entries(r.ids).flatMap(([hash, xs]) => xs.map((i) => `${hash}:${String(i)}`)));
+/** How many rows the board shows at first, and adds per "Show more". */
+export const ROWS_STEP = 12;
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** `2026-11-11` as `Nov 11, 2026`. */
+export function dateText(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (m === null) return iso;
+  return `${MONTHS[+(m[2] ?? '1') - 1] ?? ''} ${String(+(m[3] ?? '1'))}, ${m[1] ?? ''}`;
+}
+
+
+/** The one sentence that says who sent what, from the replay's own counts. */
+export function replaySentence(r: Replay): string {
+  return `The team replayed the ${countText(r.requests)} payment requests its bench recorded in strict mode on ${dateText(r.date)}: ${countText(r.held)} were held and ${countText(r.paidShop)}, the legitimate payment, were paid to the booked shop. Every other attempt here was sent from a browser like yours.`;
+}
 
 /** Yocto as NEAR with no trailing zeros (BigInt only). */
 export function nearOf(yocto: string): string {
@@ -46,6 +74,11 @@ export type Mine = { sent: Sent; startedMs: number } | { busy: true; startedMs: 
 export type RobViewProps = {
   pub: TryPublic | { refuse: string } | 'unreadable' | null;
   board: Board;
+  /** the bench replay (default: the committed file) */
+  replay?: Replay;
+  /** how many rows of the board are shown (default ROWS_STEP) */
+  shown?: number;
+  onMore?(): void;
   choice: Choice;
   mine: Mine;
   mineIds: readonly string[];
@@ -128,34 +161,45 @@ function Window({ mine, nowMs, shop, expired }: { mine: Mine; nowMs: number; sho
   );
 }
 
-function Counter({ board, nowMs }: { board: Board; nowMs: number }): ReactElement {
+function Counter({ board, nowMs, replay }: { board: Board; nowMs: number; replay: Replay }): ReactElement {
   if (board === null) return <p className="brk-status" data-testid="rob-count">Reading every attempt from the chain.</p>;
   if (board === 'unreadable') return <p className="brk-status" data-testid="rob-count">The chain could not be read just now, so no count is shown.</p>;
   const c = board.counts;
+  const sent = replayIds(replay);
+  const v = countsOfTry(board.rows.filter((r) => !sent.has(r.requestId)));
   return (
     <div className="rob-count" data-testid="rob-count">
       <p className="rob-count-line">
-        <span className="rob-num" data-testid="rob-outside">{c.paidOutside}</span>
-        {` paid to anyone but the booked shop, in ${String(c.attempts)} ${c.attempts === 1 ? 'attempt' : 'attempts'}.`}
+        <span className="rob-num" data-testid="rob-outside">{countText(c.paidOutside)}</span>
+        {` paid to anyone but the booked shop, in ${countText(c.attempts)} ${c.attempts === 1 ? 'attempt' : 'attempts'}.`}
       </p>
       <p className="rob-count-detail" data-testid="rob-detail">
-        {`Held for the owner: ${String(c.held + c.expired)} (${String(c.expired)} expired unpaid). Blocked: ${String(c.blocked)}. Paid to the booked shop: ${String(c.paidShop)}.${c.lastMs === null ? '' : ` Last attempt ${agoText(c.lastMs, nowMs)}.`}${board.truncated ? ' The listing was long, so this counts its newest part.' : ''}`}
+        {`Held for the owner: ${countText(c.held + c.expired)} (${countText(c.expired)} expired unpaid). Blocked: ${countText(c.blocked)}. Paid to the booked shop: ${countText(c.paidShop)}.${c.lastMs === null ? '' : ` Last attempt ${agoText(c.lastMs, nowMs)}.`}${board.truncated ? ' The listing was long, so this counts its newest part.' : ''}`}
       </p>
+      {replay.requests === 0 ? null : (
+        <p className="rob-count-detail" data-testid="rob-replay">
+          {`${replaySentence(replay)} From browsers so far: ${countText(v.attempts)} ${v.attempts === 1 ? 'attempt' : 'attempts'}, ${countText(v.paidOutside)} paid to anyone but the booked shop.`}
+        </p>
+      )}
     </div>
   );
 }
 
 const VERDICT_WORD: Record<TryAttempt['verdict'], string> = { blocked: 'Blocked', held: 'Held', expired: 'Expired unpaid', paid_shop: 'Paid the shop', paid_outside: 'Paid outside the book' };
 
-function Rows({ board, mineIds, shop, nowMs }: { board: Board; mineIds: readonly string[]; shop: string | null; nowMs: number }): ReactElement | null {
+function Rows({ board, mineIds, shop, nowMs, replay, shown, onMore }: { board: Board; mineIds: readonly string[]; shop: string | null; nowMs: number; replay: Replay; shown: number; onMore?: () => void }): ReactElement | null {
   if (board === null || board === 'unreadable' || board.rows.length === 0) return null;
-  const rows = [...board.rows].sort((a, b) => b.atMs - a.atMs || b.requestId.localeCompare(a.requestId)).slice(0, 12);
+  const all = [...board.rows].sort((a, b) => b.atMs - a.atMs || b.requestId.localeCompare(a.requestId));
+  const rows = all.slice(0, shown);
+  const sent = replayIds(replay);
   return (
+    <>
     <ol className="rob-rows" data-testid="rob-rows">
       {rows.map((r) => {
         const mine = mineIds.includes(r.requestId);
+        const bench = sent.has(r.requestId);
         return (
-          <li key={r.requestId} className="rob-row" data-verdict={r.verdict} data-mine={mine ? 'true' : undefined} data-testid="rob-row">
+          <li key={r.requestId} className="rob-row" data-verdict={r.verdict} data-mine={mine ? 'true' : undefined} data-replay={bench ? 'true' : undefined} data-testid="rob-row">
             <span className="rob-row-word">{VERDICT_WORD[r.verdict]}</span>
             <span className="rob-row-what">
               {`${r.payee.startsWith('sol:') ? 'a SOL amount' : nearOf(r.amount)} to ${payeeText(r.payee, shop)}`}
@@ -163,6 +207,7 @@ function Rows({ board, mineIds, shop, nowMs }: { board: Board; mineIds: readonly
             </span>
             <span className="rob-row-meta">
               {mine ? <span className="rob-row-mine">yours, </span> : null}
+              {bench ? 'bench replay, ' : null}
               {`${agoText(r.atMs, nowMs)} `}
               <TxLink tx={r.tx} what="attempt" label="see the transaction" />
             </span>
@@ -170,6 +215,15 @@ function Rows({ board, mineIds, shop, nowMs }: { board: Board; mineIds: readonly
         );
       })}
     </ol>
+    <div className="rob-go-row">
+      <p className="brk-status" data-testid="rob-shown">{`Newest at the top, showing ${countText(rows.length)} of ${countText(all.length)}.`}</p>
+      {rows.length < all.length && onMore !== undefined ? (
+        <button type="button" className="act" data-testid="rob-more" onClick={onMore}>
+          {`Show ${String(Math.min(ROWS_STEP, all.length - rows.length))} more`}
+        </button>
+      ) : null}
+    </div>
+    </>
   );
 }
 
@@ -235,8 +289,8 @@ export function RobView(p: RobViewProps): ReactElement {
         <h2 id="rob-board-title" className="brk-h2">
           Every attempt so far
         </h2>
-        <Counter board={p.board} nowMs={p.nowMs} />
-        <Rows board={p.board} mineIds={p.mineIds} shop={shop} nowMs={p.nowMs} />
+        <Counter board={p.board} nowMs={p.nowMs} replay={p.replay ?? REPLAY} />
+        <Rows board={p.board} mineIds={p.mineIds} shop={shop} nowMs={p.nowMs} replay={p.replay ?? REPLAY} shown={p.shown ?? ROWS_STEP} {...(p.onMore === undefined ? {} : { onMore: p.onMore })} />
       </section>
 
       <section className="rob-fine" aria-label="Limits">
@@ -266,6 +320,7 @@ export default function RobPage(): ReactElement {
   const [ownPayee, setOwnPayee] = useState('');
   const [ownAmount, setOwnAmount] = useState('');
   const [tick, setTick] = useState(0);
+  const [shown, setShown] = useState(ROWS_STEP);
   const cache = useRef(newTryCache());
 
   useEffect(() => {
@@ -331,7 +386,9 @@ export default function RobPage(): ReactElement {
     setChoice({ kind: 'own', payee, amount });
   }, []);
 
-  return <RobView pub={pub} board={board} choice={choice} mine={mine} mineIds={mineIds} nowMs={nowMs} ownPayee={ownPayee} ownAmount={ownAmount} onChoose={setChoice} onOwn={onOwn} onSend={onSend} />;
+  const onMore = useCallback(() => setShown((n) => n + ROWS_STEP), []);
+
+  return <RobView pub={pub} board={board} shown={shown} onMore={onMore} choice={choice} mine={mine} mineIds={mineIds} nowMs={nowMs} ownPayee={ownPayee} ownAmount={ownAmount} onChoose={setChoice} onOwn={onOwn} onSend={onSend} />;
 }
 
 export { RobPage };

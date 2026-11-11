@@ -114,3 +114,33 @@ test('rob: amounts and payees print in the short form', () => {
   assert.equal(payeeText('sol:devnet:111', null), 'a SOL address');
   assert.equal(payeeText('near:bob.testnet', null), 'bob');
 });
+
+// AIR-360: the bench replay on the board
+const REPLAY = { date: '2026-11-11', requests: 3, held: 2, paidShop: 1, paidElsewhere: 0, firstTx: ROWS[0]!.tx, lastTx: ROWS[2]!.tx, ids: { ['a'.repeat(64)]: [1, 3] } };
+
+test('rob: the board says who sent what, from the replay file, marks replayed rows and counts the browsers apart', () => {
+  const html = view({ replay: REPLAY });
+  const t = text(html);
+  assert.ok(t.includes('The team replayed the 3 payment requests its bench recorded in strict mode on Nov 11, 2026: 2 were held and 1, the legitimate payment, were paid to the booked shop. Every other attempt here was sent from a browser like yours.'));
+  assert.ok(t.includes('From browsers so far: 1 attempt, 0 paid to anyone but the booked shop.'));
+  assert.equal((html.match(/data-replay="true"/g) ?? []).length, 2);
+  assert.equal((t.match(/bench replay, /g) ?? []).length, 2);
+  assert.deepEqual(copyProblems(t), []);
+  // no replay yet: no sentence
+  assert.ok(!text(view({ replay: { ...REPLAY, requests: 0, held: 0, paidShop: 0, ids: {} } })).includes('The team replayed'));
+});
+
+test('rob: a long board shows its newest rows with a visible count and a "Show more" in the page style', () => {
+  const many = Array.from({ length: 30 }, (_, i) => row(i + 1, 'expired'));
+  const board = { counts: countsOfTry(many), rows: many, truncated: false };
+  const first = view({ board, onMore: () => undefined });
+  assert.equal((first.match(/data-testid="rob-row"/g) ?? []).length, 12);
+  assert.ok(text(first).includes('Newest at the top, showing 12 of 30.'));
+  assert.ok(/<button type="button" class="act" data-testid="rob-more">Show 12 more<\/button>/.test(first));
+  assert.ok(text(first).includes('in 30 attempts.'));
+  const last = view({ board, shown: 24, onMore: () => undefined });
+  assert.ok(text(last).includes('Show 6 more'));
+  assert.ok(!view({ board, shown: 36, onMore: () => undefined }).includes('rob-more'));
+  const big = Array.from({ length: 1234 }, (_, i) => row(i + 1, 'expired'));
+  assert.ok(text(view({ board: { counts: countsOfTry(big), rows: big, truncated: false } })).includes('0 paid to anyone but the booked shop, in 1,234 attempts.'));
+});

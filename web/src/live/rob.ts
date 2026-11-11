@@ -59,9 +59,11 @@ export function wishOf(choice: Choice, pub: TryPublic): Wish | { refuse: string 
 /**
  * The `submit_batch` arguments of one request. Typed or attack text: all three labels Untrusted:web, the strongest honest description of where
  * a hijacked agent's values came from (the page does not lie to the contract to force a reason). The honest request: Owner labels. A payee
- * that is the booked shop carries the shop's public book proof. No `hints.origin`.
+ * that is the booked shop carries the shop's public book proof. No `hints.origin`. `labels` is given only by the bench replay
+ * (scripts/try-replay.ts, AIR-360), which sends the label masks each bench run recorded; the page never passes it.
  */
-export function batchArgs(w: Wish, pub: TryPublic, task: TryTask, actionIndex: number): Record<string, unknown> {
+export type LabelBits = { recipient: number; amount: number; pc: number };
+export function batchArgs(w: Wish, pub: TryPublic, task: TryTask, actionIndex: number, labels?: LabelBits): Record<string, unknown> {
   const label = w.honest ? OWNER : WEB;
   const req: Record<string, unknown> = {
     task_id: task.task.task_id,
@@ -69,7 +71,7 @@ export function batchArgs(w: Wish, pub: TryPublic, task: TryTask, actionIndex: n
     asset: w.asset,
     payee: w.payee,
     amount: w.amount,
-    labels: { recipient: label, amount: label, pc: label },
+    labels: labels === undefined ? { recipient: label, amount: label, pc: label } : { recipient: labels.recipient, amount: labels.amount, pc: labels.pc },
     evm: null,
     hints: { plan_hash: task.task.plan_sha256, trace_digest: ZERO_HEX },
   };
