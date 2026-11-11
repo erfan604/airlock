@@ -102,7 +102,8 @@ export async function checkHired(page: Page, baseUrl: string): Promise<void> {
   assert.equal(await id('try', page).getAttribute('data-world'), 'hired');
   assert.equal(await id('try-set-hired', page).getAttribute('aria-pressed'), 'true');
   assert.equal(await id('try-preset-hired-inflate', page).getAttribute('aria-pressed'), 'true');
-  assert.ok(page.url().endsWith('/try?s=hired'), page.url());
+  // the host answers /try with a 308 to /try/, query kept; the local server does the same (serve-static.ts)
+  assert.ok(/\/try\/?\?s=hired$/.test(page.url()), page.url());
   assert.ok((await id('try-setup-toggle', page).innerText()).includes('$40.00 budget'));
   for (const p of HIRED.presets) {
     await id(`try-preset-${p.id}`, page).click();
@@ -123,5 +124,5 @@ export async function checkHired(page: Page, baseUrl: string): Promise<void> {
   // and back to the bills
   await id('try-set-bills', page).click();
   assert.equal(await id('try-preset-doctored', page).getAttribute('aria-pressed'), 'true');
-  assert.ok(page.url().endsWith('/try'), page.url());
+  assert.ok(/\/try\/?$/.test(page.url()), page.url());
 }

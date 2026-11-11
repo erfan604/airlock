@@ -6,10 +6,16 @@
 // in the visible text of any page, case-insensitive, at 1440 and at 375. Link targets and attributes are not text. A paste-ready command
 // (a visible <code> or <pre>) must stay exact, so the word "testnet" (the network argument of the near CLI) may appear there; the owner's name
 // may not, except in the repository address github.com/erfan604/airlock. Text inside a closed fold is not visible until opened.
-// On /challenge it also checks that the printed task has not expired, so a command a judge pastes is not refused before it runs.
+// On /challenge it also checks that the printed task has not expired, so a command pasted from the page is not refused before it runs.
+// The site state file (/site-state.json, web/src/state/siteState.ts) must be served and parse, and the home page must make no request to the
+// public history API (tx.test.fastnear.com): its history numbers come from the file. A throttled history API (a 429 with no CORS header, which
+// the browser logs as a console error) does not fail the run on a site with the file: the pages keep the file's numbers. It is printed instead.
+// Against a local build: pnpm site-state --out web/public/site-state.json && pnpm -C web build:static && pnpm -C web preview:static 4180
+// (with try-public.json and challenge-public.json copied into web/dist-static), then AIRLOCK_SMOKE_URL=http://127.0.0.1:4180 pnpm -C web smoke:live
 import assert from 'node:assert/strict';
 import type { Page } from 'playwright';
 import { PAGES } from '../src/pages.ts';
+import { parseSiteState } from '../src/state/siteState.ts';
 import type { E2E } from './types.ts';
 
 const slashForm = (path: string): string => (path === '/' ? '/' : `${path}/`);
@@ -52,7 +58,7 @@ async function readVisible(page: Page): Promise<{ prose: string; code: string[];
   });
 }
 
-const run: E2E = async ({ page, baseUrl }) => {
+const run: E2E = async ({ page, baseUrl, historyErrors = [] }) => {
   // the detector itself, before it is trusted with the site
   assert.ok(visibleProblems('Runs on NEAR testnet.', []).length > 0);
   assert.ok(visibleProblems('Pay kanocotton.testnet', []).length > 0, 'an account id in text is not exempt');
@@ -66,6 +72,19 @@ const run: E2E = async ({ page, baseUrl }) => {
 
   const found: string[] = [];
   const paths = PAGES.map((p) => p.path);
+
+  // the site state file: served from the site's own origin, in its format
+  const stateRes = await page.request.get(`${baseUrl}/site-state.json`);
+  const state = stateRes.status() === 200 ? parseSiteState((await stateRes.json().catch(() => null)) as unknown) : null;
+  if (state === null) found.push(`/site-state.json answered ${String(stateRes.status())} or does not parse: the pages fall back to reading the history API`);
+  else console.log(`live-smoke: site state as of ${new Date(state.as_of_ms).toISOString()}, ${String(Math.round((Date.now() - state.as_of_ms) / 60_000))} min old`);
+
+  // the home page asks the history API for nothing
+  let homeHistory = 0;
+  let onHome = false;
+  page.on('request', (r) => {
+    if (onHome && new URL(r.url()).host === 'tx.test.fastnear.com') homeHistory += 1;
+  });
 
   // status codes, read without following redirects
   for (const path of paths) {
@@ -85,6 +104,7 @@ const run: E2E = async ({ page, baseUrl }) => {
   for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
     await page.setViewportSize(viewport);
     for (const path of paths) {
+      onHome = path === '/';
       const res = await page.goto(`${baseUrl}${slashForm(path)}`, { waitUntil: 'load' });
       if (res?.status() !== 200) found.push(`${path} @${String(viewport.width)}: the browser got ${String(res?.status())}`);
       await page.locator('main').first().waitFor();
@@ -93,7 +113,13 @@ const run: E2E = async ({ page, baseUrl }) => {
       await page.waitForTimeout(1_000);
       const { prose, code, payees } = await readVisible(page);
       for (const p of visibleProblems(prose, code, payees)) found.push(`${path} @${String(viewport.width)} ${p}`);
+      onHome = false;
     }
+  }
+  if (homeHistory > 0) found.push(`/ made ${String(homeHistory)} requests to the history API; it must make none (its numbers come from /site-state.json)`);
+  if (historyErrors.length > 0) {
+    if (state === null) found.push(...historyErrors);
+    else console.log(`live-smoke: the history API refused ${String(historyErrors.length)} requests (throttled); the pages kept the state file's numbers`);
   }
 
   // the challenge: the task the printed command carries is still inside its validity

@@ -94,8 +94,12 @@ try {
   browser = await chromium.launch(process.env.E2E_BUNDLED_CHROMIUM === '1' ? { chromiumSandbox: true } : { channel: 'chrome', chromiumSandbox: true });
   const context = await browser.newContext({ viewport: { width: 375, height: AUDIT_HEIGHT } });
   const page = await context.newPage();
+  const historyErrors: string[] = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error') problems.push(`console error: ${msg.text()} (${msg.location().url})`);
+    if (msg.type() !== 'error') return;
+    const line = `console error: ${msg.text()} (${msg.location().url})`;
+    if (isRemote && line.includes('tx.test.fastnear.com')) historyErrors.push(line);
+    else problems.push(line);
   });
   page.on('pageerror', (err) => problems.push(`page error: ${err.message}`));
 
@@ -105,7 +109,7 @@ try {
   } else {
     const mod = (await import(e2eFile.href)) as { default?: E2E };
     if (typeof mod.default !== 'function') throw new Error(`e2e/${name}.e2e.ts has no default export function`);
-    await mod.default({ page, baseUrl });
+    await mod.default({ page, baseUrl, historyErrors });
     okLine = `E2E ${name} OK`;
   }
 } catch (e) {

@@ -1,5 +1,5 @@
 // AIR-310: a small static file server that behaves like the hosts of docs/HOSTED_DEMO.md: it serves web/dist-static as files, a directory gets its
-// index.html, an unknown path gets 404.html with status 404, and the headers of the `/*` block of `_headers` go on every response (so the
+// index.html (a path without its slash is sent there with a 308), an unknown path gets 404.html with status 404, and the headers of the `/*` block of `_headers` go on every response (so the
 // Content-Security-Policy that Cloudflare Pages would send is the one the browser enforces here). Used by `pnpm -C web e2e static` and by
 // `pnpm -C web preview:static [port]` for a look by hand. It serves from the directory only: a path that leaves it is a 404.
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -53,7 +53,19 @@ export function serveStatic(dir: string, port: number): Promise<{ url: string; s
     }
     let file = resolve(root, `.${path}`);
     if (file !== root && !file.startsWith(root + sep)) file = join(root, '404.html');
-    if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');
+    if (existsSync(file) && statSync(file).isDirectory()) {
+      // Cloudflare Pages answers a page without its slash with a 308 to the slash form, query kept (AIR-323): so does this server, which lets
+      // the live smoke test (e2e/live-smoke.e2e.ts) run against a local build
+      if (!raw.endsWith('/')) {
+        const q = (req.url ?? '').indexOf('?');
+        for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
+        res.statusCode = 308;
+        res.setHeader('Location', `${raw}/${q < 0 ? '' : (req.url ?? '').slice(q)}`);
+        res.end();
+        return;
+      }
+      file = join(file, 'index.html');
+    }
     const found = existsSync(file) && statSync(file).isFile();
     if (!found) file = join(root, '404.html');
     for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);

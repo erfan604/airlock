@@ -1,6 +1,6 @@
 // AIR-359: /lend in a real browser on the static build, with the faucet, the RPC and FastNEAR all mocked (a real faucet call spends one of the
 // 10 accounts an internet address gets per 12 hours; no test makes one). Before the click, during it (the send held open), with a position, and
-// the faucet fallback; the posted transaction is decoded far enough to check it is one `deposit` call to the pool with 1 NEAR. The clip audit
+// the faucet fallback; the posted transaction is decoded far enough to check it is one `deposit` call to the pool with 1 NEAR plus the 0.0025 NEAR storage charge. The clip audit
 // and screenshots at 375 and 1440 in each state. Run: pnpm build:static && pnpm -C web e2e static-lend
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -18,6 +18,8 @@ const auditDir = join(fileURLToPath(new URL('../', import.meta.url)), 'audit');
 const id = (testId: string, page: Page) => page.locator(`[data-testid="${testId}"]`);
 const CORS = { 'access-control-allow-origin': '*' };
 const NEAR = 10n ** 24n;
+/** the pool's one-time charge for a new lender's storage entry, taken from the attached amount (the redeploy of 2026-11-11) */
+const STORAGE = 25n * 10n ** 20n;
 const BLOCK = 'Bp3BbhbyBNoTt3LgewDgCezdiUAWKxiWq18vdj3PVUiS';
 const DEPOSIT_TX = 'DepositTxHash1111111111111111111111111111111';
 
@@ -51,7 +53,7 @@ async function routes(page: Page, w: World): Promise<void> {
       w.sent.push(req.params['signed_tx_base64'] ?? '');
       if (w.held !== null) await w.held;
       w.deposited = true;
-      return r.fulfill({ status: 200, headers: CORS, contentType: 'application/json', body: rpc({ status: { SuccessValue: '' }, transaction: { hash: DEPOSIT_TX }, receipts_outcome: [{ outcome: { executor_id: CREDIT_POOL, logs: [ev('deposit', { account: w.account, amount: NEAR.toString(), shares: NEAR.toString() })], status: { SuccessValue: '' } } }] }) });
+      return r.fulfill({ status: 200, headers: CORS, contentType: 'application/json', body: rpc({ status: { SuccessValue: '' }, transaction: { hash: DEPOSIT_TX }, receipts_outcome: [{ outcome: { executor_id: CREDIT_POOL, logs: [ev('deposit', { account: w.account, amount: NEAR.toString(), shares: NEAR.toString(), storage: STORAGE.toString() })], status: { SuccessValue: '' } } }] }) });
     }
     const p = req.params;
     if (p['request_type'] === 'view_access_key') return r.fulfill({ status: 200, headers: CORS, contentType: 'application/json', body: rpc({ nonce: 5, block_hash: BLOCK }) });
@@ -69,7 +71,7 @@ async function routes(page: Page, w: World): Promise<void> {
       return r.fulfill({ status: 200, headers: CORS, contentType: 'application/json', body: JSON.stringify({ account_txs: txs, resume_token: null }) });
     }
     const hashes = (JSON.parse(r.request().postData() ?? '{}') as { tx_hashes: string[] }).tx_hashes;
-    const tx = (hash: string, account: string): object => ({ transaction: { hash, signer_id: account, receiver_id: CREDIT_POOL, public_key: 'ed25519:x', actions: [] }, receipts: [{ receipt: { predecessor_id: account }, execution_outcome: { outcome: { executor_id: CREDIT_POOL, status: { SuccessValue: '' }, logs: [ev('deposit', { account, amount: (hash === DEPOSIT_TX ? NEAR : 2n * NEAR).toString(), shares: (hash === DEPOSIT_TX ? NEAR : 2n * NEAR).toString() })] } } }] });
+    const tx = (hash: string, account: string): object => ({ transaction: { hash, signer_id: account, receiver_id: CREDIT_POOL, public_key: 'ed25519:x', actions: [] }, receipts: [{ receipt: { predecessor_id: account }, execution_outcome: { outcome: { executor_id: CREDIT_POOL, status: { SuccessValue: '' }, logs: [ev('deposit', { account, amount: (hash === DEPOSIT_TX ? NEAR : 2n * NEAR).toString(), shares: (hash === DEPOSIT_TX ? NEAR : 2n * NEAR).toString(), storage: STORAGE.toString() })] } } }] });
     return r.fulfill({ status: 200, headers: CORS, contentType: 'application/json', body: JSON.stringify({ transactions: hashes.map((h) => (h === DEPOSIT_TX ? tx(h, w.account ?? 'x') : tx(h, 'lp1.airlock-credit-c1108d.testnet'))) }) });
   });
 }
@@ -116,6 +118,7 @@ const run: E2E = async ({ page, baseUrl }) => {
   await page.locator('[data-testid="lend-lenders"]', { hasText: 'outside the team' }).waitFor();
   assert.ok((await id('lend-lenders', page).innerText()).startsWith('No lender from outside the team yet'));
   assert.ok((await id('lend-loop', page).innerText()).includes('has not started'));
+  assert.equal(await id('lend-storage', page).innerText(), 'It sends 1.0025 NEAR: 1 NEAR into the pool, and 0.0025 NEAR once for your storage entry, charged by the contract.');
   await shot(page, 'before');
 
   // during: the send is held open while the page shows its steps
@@ -140,7 +143,8 @@ const run: E2E = async ({ page, baseUrl }) => {
   const txHash = base58(createHash('sha256').update(signedBytes.subarray(0, signedBytes.length - 65)).digest());
   assert.equal(await page.locator('[data-testid="lend-deposit-link"] a').getAttribute('href'), `https://testnet.nearblocks.io/txns/${txHash}`);
   const tx = decoded(w.sent[0] ?? '');
-  assert.deepEqual(tx, { signer: w.account, receiver: CREDIT_POOL, method: 'deposit', deposit: NEAR });
+  // 1 NEAR is credited: the page attaches it plus the storage charge of a new lender
+  assert.deepEqual(tx, { signer: w.account, receiver: CREDIT_POOL, method: 'deposit', deposit: NEAR + STORAGE });
   await page.locator('[data-testid="lend-attacks"]', { hasText: 'since you joined:' }).waitFor();
   assert.equal(await id('lend-since', page).count(), 0, 'no borrow line while the loop has not run');
   const stored = await page.evaluate(() => localStorage.getItem('airlock.lender.v1'));
