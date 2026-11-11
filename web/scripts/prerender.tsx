@@ -48,6 +48,8 @@ const request = held === null || held === undefined ? null : (readJson(`data/rep
 const registry = request === null ? null : registryFromRows([[request.view.asset, request.asset]] as Parameters<typeof registryFromRows>[0]);
 const replay = summarize(acts, streams, readJson('data/replay/tamper.json') as { tx: string; url: string; failure: string }, registry);
 
+// the picture a shared link shows (1200 by 630): the agent credit card in front of the gold, cut from the vault plate of the credit film
+const SHARE_ALT = 'A black card marked AIRLOCK agent credit stands in front of shelves of gold bars.';
 const template = readFileSync(join(out, 'index.html'), 'utf8');
 if (!template.includes('<div id="root"></div>') || !template.includes('<title>AIRLOCK</title>')) throw new Error('dist-static/index.html is not the built template (run vite build --mode static first)');
 
@@ -87,7 +89,7 @@ async function write(route: string, file: string, mode: 'hydrate' | 'replace', p
     `<title>${esc(title)}</title>`,
     meta === undefined ? '<meta name="robots" content="noindex" />' : `<meta name="description" content="${esc(meta.description)}" />`,
     meta === undefined ? '' : `<link rel="canonical" href="${esc(pageUrl(SITE_ORIGIN, base, meta.alias ?? meta.path))}" />`,
-    meta === undefined ? '' : `<meta property="og:title" content="${esc(title)}" /><meta property="og:description" content="${esc(meta.description)}" /><meta property="og:type" content="website" /><meta property="og:url" content="${esc(pageUrl(SITE_ORIGIN, base, meta.path))}" /><meta property="og:image" content="${esc(abs('/media/hero-poster.jpg'))}" />`,
+    meta === undefined ? '' : `<meta property="og:title" content="${esc(title)}" /><meta property="og:description" content="${esc(meta.description)}" /><meta property="og:type" content="website" /><meta property="og:url" content="${esc(pageUrl(SITE_ORIGIN, base, meta.path))}" /><meta property="og:image" content="${esc(abs('/media/share-card.jpg'))}" /><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /><meta property="og:image:alt" content="${esc(SHARE_ALT)}" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="${esc(title)}" /><meta name="twitter:description" content="${esc(meta.description)}" /><meta name="twitter:image" content="${esc(abs('/media/share-card.jpg'))}" /><meta name="twitter:image:alt" content="${esc(SHARE_ALT)}" />`,
     `<link rel="alternate" type="text/plain" title="llms.txt" href="${esc(`${base}llms.txt`)}" />`,
     route === '/' ? jsonLd() : '',
   ]
