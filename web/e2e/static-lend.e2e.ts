@@ -109,8 +109,8 @@ const run: E2E = async ({ page, baseUrl }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${baseUrl}/lend/`);
   await id('lend-go', page).waitFor();
-  await page.locator('[data-testid="lend-lenders"]', { hasText: "not on the team's list" }).waitFor();
-  assert.ok((await id('lend-lenders', page).innerText()).startsWith("0 lender accounts are not on the team's list"));
+  await page.locator('[data-testid="lend-lenders"]', { hasText: 'outside the team' }).waitFor();
+  assert.ok((await id('lend-lenders', page).innerText()).startsWith('No lender from outside the team yet'));
   assert.ok((await id('lend-loop', page).innerText()).includes('has not started'));
   await shot(page, 'before');
 

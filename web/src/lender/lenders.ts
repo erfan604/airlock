@@ -20,21 +20,50 @@ export type TxRead = { txs: PoolTx[]; truncated: boolean };
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-async function postJson(fetchFn: typeof fetch, url: string, body: unknown): Promise<unknown> {
-  const res = await fetchFn(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(`${new URL(url).host} answered ${String(res.status)}`);
-  return (await res.json()) as unknown;
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * One POST to the public transaction index. Its rate limit answers 429 with no access-control-allow-origin header, so in a browser the
+ * request fails as a cross-origin error (fetch rejects with a TypeError) and the status cannot be read (measured 2026-11-11). Both a
+ * rejected fetch and a 429 are asked again after each pause of `retryMs`; any other status is an answer and is not retried.
+ */
+async function postJson(fetchFn: typeof fetch, url: string, body: unknown, retryMs: readonly number[]): Promise<unknown> {
+  for (let i = 0; ; i++) {
+    let res: Response | null = null;
+    try {
+      res = await fetchFn(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    } catch (e) {
+      if (i >= retryMs.length) throw e;
+    }
+    if (res !== null && res.status !== 429) {
+      if (!res.ok) throw new Error(`${new URL(url).host} answered ${String(res.status)}`);
+      return (await res.json()) as unknown;
+    }
+    if (i >= retryMs.length) throw new Error(`${new URL(url).host} is rate limited`);
+    await sleep(retryMs[i] ?? 0);
+  }
 }
 
+/** Transactions already read and settled (older than SETTLED_MS), by index URL and hash: a second read of the page asks only for newer ones. */
+const SETTLED = new Map<string, unknown>();
+const SETTLED_MS = 5 * 60_000;
+
 /** The function-call transactions of `account`, oldest first, each with its block time. `truncated` when the page limit cut the older part. */
-export async function readAccountTxs(fetchFn: typeof fetch, account: string, opts: { pageLimit?: number; maxPages?: number; base?: string } = {}): Promise<TxRead> {
+export async function readAccountTxs(
+  fetchFn: typeof fetch,
+  account: string,
+  opts: { pageLimit?: number; maxPages?: number; base?: string; retryMs?: readonly number[]; cache?: Map<string, unknown>; nowMs?: number } = {},
+): Promise<TxRead> {
   const base = opts.base ?? FASTNEAR_TX;
+  const retryMs = opts.retryMs ?? [1_500, 3_000];
+  const cache = opts.cache ?? SETTLED;
+  const nowMs = opts.nowMs ?? Date.now();
   const listed: { hash: string; atMs: number }[] = [];
   let resume: string | null = null;
   let pages = 0;
   let truncated = false;
   do {
-    const page = listedOf(await postJson(fetchFn, `${base}/v0/account`, { account_id: account, is_function_call: true, limit: opts.pageLimit ?? 100, ...(resume === null ? {} : { resume_token: resume }) }));
+    const page = listedOf(await postJson(fetchFn, `${base}/v0/account`, { account_id: account, is_function_call: true, limit: opts.pageLimit ?? 100, ...(resume === null ? {} : { resume_token: resume }) }, retryMs));
     listed.push(...page.txs);
     resume = page.resume;
     pages += 1;
@@ -44,15 +73,24 @@ export async function readAccountTxs(fetchFn: typeof fetch, account: string, opt
     }
   } while (resume !== null);
   const at = new Map(listed.map((t) => [t.hash, t.atMs]));
-  const hashes = [...at.keys()];
   const txs: PoolTx[] = [];
+  const key = (h: string): string => `${base} ${h}`;
+  for (const [hash, atMs] of at) {
+    const known = cache.get(key(hash));
+    if (known !== undefined) txs.push({ body: known, atMs, hash });
+  }
+  const hashes = [...at.keys()].filter((h) => !cache.has(key(h)));
   for (let i = 0; i < hashes.length; i += 20) {
-    const res = await postJson(fetchFn, `${base}/v0/transactions`, { tx_hashes: hashes.slice(i, i + 20) });
+    const res = await postJson(fetchFn, `${base}/v0/transactions`, { tx_hashes: hashes.slice(i, i + 20) }, retryMs);
     if (!isObj(res) || !Array.isArray(res['transactions'])) throw new Error('the transaction read answered something unexpected');
     for (const raw of res['transactions'] as unknown[]) {
       const hash = isObj(raw) && isObj(raw['transaction']) ? raw['transaction']['hash'] : undefined;
       const atMs = typeof hash === 'string' ? at.get(hash) : undefined;
-      if (typeof hash === 'string' && atMs !== undefined) txs.push({ body: raw, atMs, hash });
+      if (typeof hash === 'string' && atMs !== undefined) {
+        txs.push({ body: raw, atMs, hash });
+        // a transaction can still be running its receipts for a while: only an old one is kept for the next read
+        if (nowMs - atMs > SETTLED_MS) cache.set(key(hash), raw);
+      }
     }
   }
   txs.sort((a, b) => a.atMs - b.atMs || a.hash.localeCompare(b.hash));

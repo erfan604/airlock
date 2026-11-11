@@ -8,7 +8,7 @@ import { App } from '../src/App.tsx';
 import { PAGES } from '../src/pages.ts';
 import { ROUTES } from '../src/routes.ts';
 import { NAV } from '../src/shell/SiteNav.tsx';
-import LenderPage, { LenderView, near4, shortAccount } from '../src/lender/LenderPage.tsx';
+import LenderPage, { GIVE_UP_MS, LenderView, near4, shortAccount, withdrawnAmount } from '../src/lender/LenderPage.tsx';
 import type { ChainView, LenderViewProps } from '../src/lender/LenderPage.tsx';
 import type { Schedule } from '../src/lender/history.ts';
 import type { PoolEvent } from '../src/lender/lenders.ts';
@@ -69,16 +69,20 @@ test('lend: the prerendered page carries the copy, the button and no number', ()
   assert.ok(t.includes('Lend to an agent'));
   assert.ok(t.includes('Make my account and lend 1 NEAR'));
   assert.ok(t.includes('Your key stays in this browser.'));
-  assert.ok(t.includes("Counting lender accounts from the pool's deposit records."));
+  assert.ok(t.includes("Counting lender accounts: reading the pool's deposit records from a public transaction index."));
+  assert.ok(t.includes("Reading the loop's last cycle from the pool's transaction history."));
   assert.ok(t.includes('Runs on the NEAR test network, where NEAR has no value.'));
   assert.deepEqual(copyProblems(t), []);
-  assert.ok(!/\d+ lender accounts? (is|are) not on/.test(t), 'no lender count before the chain is read');
+  assert.ok(!/\d+ lender accounts? from outside/.test(t) && !t.includes('No lender from outside'), 'no lender count before the chain is read');
 });
 
 test('lend: with the chain read and no loop yet, it says plainly that the loop has not started', () => {
   const t = text(base({ chain: CHAIN, schedule: SCHEDULE }));
   assert.ok(t.includes('The hourly loop has not started yet'));
-  assert.ok(t.includes("1 lender account is not on the team's list, 1 of them lending now"));
+  assert.ok(t.includes('1 lender account from outside the team so far, 1 of them lending now'));
+  const none = text(base({ chain: { ...CHAIN, lenders: { soFar: [], now: 0, truncated: false } }, schedule: SCHEDULE }));
+  assert.ok(none.includes("No lender from outside the team yet (counted from the pool's own deposit records; the team's accounts are listed in the code)."));
+  assert.ok(text(base({ chain: CHAIN, schedule: SCHEDULE })).includes('You can take your money back 1 minute after lending, as long as the pool has money that is not lent out.'));
   assert.deepEqual(copyProblems(t), []);
 });
 
@@ -93,13 +97,14 @@ test('lend: a position is a deposit slip with the short account, the shares, the
   assert.ok(t.includes('Deposit slip'));
   assert.ok(t.includes('lender-7k2q…'), 'the account, shortened');
   assert.ok(t.includes('Shares 1.0000') && t.includes('Worth now 1.0000 NEAR'));
-  assert.match(t, /You can take it back after \d\d:\d\d:\d\d MST\./);
+  assert.match(t, /You can take your money back in 30 s \(at \d\d:\d\d:\d\d [A-Z][A-Za-z0-9+:-]*\)\./);
+  assert.ok(!t.includes('MST'), 'times are in the visitor\'s zone, not the team\'s');
   assert.ok(html.includes('href="https://testnet.nearblocks.io/txns/DepositTxHash1111111111111111111111111111111"'));
   assert.ok(t.includes('Your deposit: see the transaction'));
   assert.ok(!t.includes('Since you joined'), 'with no loop cycle yet the loop line alone says so, once');
   assert.equal(t.split('has not started').length, 2);
   assert.ok(t.includes('Attacks refused on the card this pool lends to since you joined: 7. Paid to an attacker: 0 NEAR.'));
-  assert.ok(t.includes('Keep this link: it holds your key, so anyone with it can take your position out.'));
+  assert.ok(t.includes('This link is your login. Save it to come back from another device. Anyone who has it can take your position.'));
   assert.ok(/data-testid="lend-withdraw"[^>]*disabled/.test(html), 'withdraw waits for the lock');
   assert.ok(!html.includes('data-testid="lend-go"'), 'no second deposit button once there is a position');
   assert.deepEqual(copyProblems(t), []);
@@ -162,4 +167,47 @@ test('lend: a refused link says why and changes nothing; a backup can be switche
   assert.ok(text(html).includes('Also kept in this browser: lender-bbbb…'));
   assert.ok(!text(html).includes('lender-bbbb….'), 'no full stop after the ellipsis');
   assert.ok(html.includes('data-testid="lend-switch-back"'));
+});
+
+// visitor test 2026-11-11: "Done: you are a lender" sat beside "Shares 0.0000 / You hold no shares now" for about 3 s until the view caught up.
+test('lend: right after a deposit the slip says confirming on chain, never a zero, until the shares are read', () => {
+  const saved = { accountId: ME, secretKey: 'ed25519:x', createdMs: NOW, depositTx: 'DepositTxHash1111111111111111111111111111111' };
+  for (const lp of [null, { shares: 0n, value: 0n, lockedUntilMs: 0 }]) {
+    const html = base({ chain: CHAIN, schedule: SCHEDULE, steps: { step: 'done', accountId: ME }, confirming: true, position: { saved, lp, attacks: null } });
+    const t = text(html);
+    assert.ok(t.includes('Shares confirming on chain') && t.includes('Worth now confirming on chain'), String(lp === null));
+    assert.ok(t.includes('Your deposit went through.'));
+    assert.ok(!t.includes('0.0000') && !t.includes('no shares'), 'no zero state after a deposit');
+    assert.ok(!html.includes('data-testid="lend-retry"') && !html.includes('data-testid="lend-withdraw"'));
+  }
+  const read = text(base({ chain: CHAIN, schedule: SCHEDULE, confirming: false, position: { saved, lp: { shares: NEAR, value: NEAR, lockedUntilMs: NOW + 42_000 }, attacks: null } }));
+  assert.ok(read.includes('Shares 1.0000') && read.includes('You can take your money back in 42 s'));
+});
+
+test('lend: after "Take my money back" the page shows a receipt: the amount, the account and the transaction', () => {
+  const html = base({
+    chain: CHAIN,
+    schedule: SCHEDULE,
+    receipt: { amount: NEAR, accountId: ME, tx: 'WithdrawTxHash111111111111111111111111111111' },
+    position: { saved: { accountId: ME, secretKey: 'ed25519:x', createdMs: NOW, depositTx: 'DepositTxHash1111111111111111111111111111111' }, lp: { shares: 0n, value: 0n, lockedUntilMs: 0 }, attacks: null },
+  });
+  const t = text(html);
+  assert.ok(t.includes('Your money came back: 1.0000 NEAR to lender-7k2q….') && t.includes('See the transaction'));
+  assert.ok(html.includes('href="https://testnet.nearblocks.io/txns/WithdrawTxHash111111111111111111111111111111"'));
+  assert.deepEqual(copyProblems(t), []);
+  assert.equal(withdrawnAmount('EVENT_JSON:{"standard":"airlock-credit","version":"1.0.0","event":"withdraw","data":[{"account":"a.testnet","amount":"1000000000000000000000000","shares":"1"}]}'), NEAR);
+  assert.equal(withdrawnAmount('EVENT_JSON:{"event":"withdraw","data":[{"amount":"-1"}]}'), null);
+});
+
+test('lend: a read that does not arrive gives up with a plain sentence instead of reading forever', () => {
+  const slow = { chain: true, lp: true, attacks: true };
+  const t = text(base({ slow, position: { saved: { accountId: ME, secretKey: 'ed25519:x', createdMs: NOW, depositTx: null }, lp: null, attacks: null } }));
+  assert.ok(t.includes(`The lender count did not arrive within ${String(GIVE_UP_MS / 1000)} seconds`));
+  assert.ok(t.includes("The loop's last cycle could not be read just now, so it is not shown."));
+  assert.ok(t.includes('Shares not read yet'));
+  assert.ok(!t.includes('Counting lender accounts:') && !t.includes('Reading the loop'));
+  assert.ok(text(base({ chainFailed: true })).includes("The loop's last cycle could not be read just now"), 'a failed read never leaves the loop line reading');
+  const att = text(base({ slow, chain: CHAIN, schedule: SCHEDULE, position: { saved: { accountId: ME, secretKey: 'ed25519:x', createdMs: NOW, depositTx: null }, lp: { shares: NEAR, value: NEAR, lockedUntilMs: 0 }, attacks: null } }));
+  assert.ok(att.includes('could not be counted just now'));
+  assert.deepEqual(copyProblems(att), []);
 });

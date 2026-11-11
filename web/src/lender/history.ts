@@ -143,11 +143,31 @@ export function loopRepays(events: readonly PoolEvent[], s: Schedule): PoolEvent
   return events.filter((e) => e.event === 'repaid' && e.data['card'] === s.loopCard && e.atMs >= since);
 }
 
-const MST = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Phoenix', hour: '2-digit', minute: '2-digit', hour12: false });
-const MST_SECONDS = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Phoenix', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-/** A time as the page says it: HH:MM MST (Arizona keeps MST all year, the zone the team writes in). */
-export const mst = (ms: number): string => `${MST.format(ms)} MST`;
-export const mstSeconds = (ms: number): string => `${MST_SECONDS.format(ms)} MST`;
+/** A time as the page says it: HH:MM in the visitor's own time zone, with the zone's short name (visitor test 2026-11-11: MST meant nothing to
+ *  a reader elsewhere). `zone` is for tests; a browser uses its own. */
+function clockFormat(seconds: boolean, zone?: string): (ms: number) => string {
+  const f = new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: '2-digit', minute: '2-digit', ...(seconds ? { second: '2-digit' } : {}), hourCycle: 'h23', timeZoneName: 'short' });
+  return (ms) => {
+    const parts = f.formatToParts(ms);
+    const tz = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    const time = parts
+      .filter((p) => p.type === 'hour' || p.type === 'minute' || p.type === 'second' || (p.type === 'literal' && p.value === ':'))
+      .map((p) => p.value)
+      .join('');
+    return tz === '' ? time : `${time} ${tz}`;
+  };
+}
+export const clock = (ms: number, zone?: string): string => clockFormat(false, zone)(ms);
+export const clockSeconds = (ms: number, zone?: string): string => clockFormat(true, zone)(ms);
+
+/** The wait until `untilMs`, as the page counts it down: "42 s", "1 min 5 s"; null once it has passed. */
+export function countdown(untilMs: number, nowMs: number): string | null {
+  const s = Math.ceil((untilMs - nowMs) / 1000);
+  if (s <= 0) return null;
+  if (s < 60) return `${String(s)} s`;
+  const m = Math.floor(s / 60);
+  return s % 60 === 0 ? `${String(m)} min` : `${String(m)} min ${String(s % 60)} s`;
+}
 
 export type LoopLine = { kind: 'not-started' } | { kind: 'paused'; until: number; why: string } | { kind: 'stale'; last: number } | { kind: 'running'; last: number };
 
@@ -162,9 +182,9 @@ export function loopStatus(events: readonly PoolEvent[], s: Schedule, nowMs: num
 
 export function loopSentence(l: LoopLine): string {
   if (l.kind === 'not-started') return 'The hourly loop has not started yet, so nothing has been borrowed from the pool by the loop so far.';
-  if (l.kind === 'paused') return `The loop is paused until ${mst(l.until)}: ${l.why}.`;
-  if (l.kind === 'stale') return `The hourly loop has not run since ${mst(l.last)}. It runs on the team's computer, which may be off.`;
-  return `Last cycle ${mst(l.last)}. The loop runs every hour on the team's computer.`;
+  if (l.kind === 'paused') return `The loop is paused until ${clock(l.until)}: ${l.why}.`;
+  if (l.kind === 'stale') return `The hourly loop has not run since ${clock(l.last)}. It runs on the team's computer, which may be off.`;
+  return `Last cycle ${clock(l.last)}. The loop runs every hour on the team's computer.`;
 }
 
 export type SinceJoined = { borrowed: number; repaid: number; feeBps: bigint | null };

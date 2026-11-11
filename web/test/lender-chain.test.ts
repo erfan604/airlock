@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { attacksIn, attacksOnCards } from '../src/lender/attacks.ts';
-import { checkedHistory, foldPrices, joinOf, loopSentence, loopStatus, parseSchedule, sinceJoined, valueLine } from '../src/lender/history.ts';
+import { checkedHistory, clock, clockSeconds, countdown, foldPrices, joinOf, loopSentence, loopStatus, parseSchedule, sinceJoined, valueLine } from '../src/lender/history.ts';
 import type { Schedule } from '../src/lender/history.ts';
 import { countLenders, isTeam, poolEvents, readAccountTxs } from '../src/lender/lenders.ts';
 import type { PoolTx } from '../src/lender/lenders.ts';
@@ -131,7 +131,7 @@ test('loop: a recent cycle is running, an old one is stale, a planned pause wins
   const events = poolEvents([poolTx(at - 60 * 60_000, 'i', 'line_opened', { card: CARD, borrower: 'b', limit: N(0.09), fee_bps: 1000, due_ms: '9' }), poolTx(at - 59 * 60_000, 'b', 'repaid', { card: CARD, amount: N(0.099), fee: N(0.009) })], POOL);
   assert.equal(loopStatus(events, SCHEDULE, at).kind, 'running');
   assert.equal(loopStatus(events, SCHEDULE, at + 20 * 60_000).kind, 'stale');
-  assert.match(loopSentence({ kind: 'stale', last: at }), /^The hourly loop has not run since \d\d:\d\d MST\. It runs on the team's computer, which may be off\.$/);
+  assert.match(loopSentence({ kind: 'stale', last: at }), /^The hourly loop has not run since \d\d:\d\d [A-Z][A-Za-z0-9+:-]*\. It runs on the team's computer, which may be off\.$/);
   assert.equal(loopStatus(events, SCHEDULE, T('2026-11-11T16:00:00Z')).kind, 'paused');
   assert.deepEqual(sinceJoined(events, SCHEDULE, at - 2 * 60 * 60_000), { borrowed: 1, repaid: 1, feeBps: 1000n });
   assert.deepEqual(sinceJoined(events, SCHEDULE, at), { borrowed: 0, repaid: 0, feeBps: null });
@@ -174,4 +174,48 @@ test('attacks: only refusals on the listed cards after the deposit count; a paym
   assert.equal(attacksOnCards(byCard, [CARD], 4000, 10_000).refused, 2, 'a card the pool does not list is not counted');
   // a private book (no get_book view on the live card): refusals still count, the paid-out amount is unknown, not 0
   assert.deepEqual(attacksIn(txs, CARD, null, 4000, 10_000), { refused: 2, paidToAttacker: null });
+});
+
+// visitor test 2026-11-11: times were printed in MST; they are now in the visitor's own zone, named
+test('clock: a time in the given zone with its short name, and a countdown for the hold', () => {
+  const at = Date.parse('2026-11-11T05:00:07Z');
+  assert.equal(clock(at, 'UTC'), '05:00 UTC');
+  assert.equal(clockSeconds(at, 'UTC'), '05:00:07 UTC');
+  assert.equal(clock(at, 'America/Phoenix'), '22:00 MST');
+  assert.equal(countdown(at + 42_000, at), '42 s');
+  assert.equal(countdown(at + 41_500, at), '42 s', 'a part second counts as a whole one');
+  assert.equal(countdown(at + 65_000, at), '1 min 5 s');
+  assert.equal(countdown(at, at), null);
+});
+
+// The visitor test saw cross-origin errors on tx.test.fastnear.com during lend and withdraw. Measured 2026-11-11: when its public rate limit
+// trips, FastNEAR answers 429 with no access-control-allow-origin header, so the browser reports a CORS error and fetch rejects with a
+// TypeError the page cannot tell from a refusal. The read now waits and asks again, and does not fetch a settled transaction twice.
+test('lenders: a rate-limited read (a rejected fetch or a 429) is asked again after a pause, and a settled transaction is fetched once', async () => {
+  let accountCalls = 0;
+  let txCalls = 0;
+  const old = String(BigInt(1_000_000_000_000) * 1_000_000n);
+  const fetchFn = (async (url: string, init: RequestInit) => {
+    const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+    if (url.endsWith('/v0/account')) {
+      accountCalls += 1;
+      if (accountCalls === 1) throw new TypeError('Failed to fetch');
+      return Response.json({ account_txs: [{ transaction_hash: 'SettledHash000000000001', tx_block_height: 1, tx_block_timestamp: old, is_success: true }], resume_token: null });
+    }
+    txCalls += 1;
+    if (txCalls === 1) return new Response('{"error":{"code":-429}}', { status: 429 });
+    return Response.json({ transactions: (body['tx_hashes'] as string[]).map((h) => ({ transaction: { hash: h }, receipts: [] })) });
+  }) as unknown as typeof fetch;
+  const cache = new Map<string, unknown>();
+  const r = await readAccountTxs(fetchFn, POOL, { retryMs: [1, 1], cache });
+  assert.equal(r.txs.length, 1);
+  assert.equal(accountCalls, 2);
+  assert.equal(txCalls, 2);
+  const again = await readAccountTxs(fetchFn, POOL, { retryMs: [1, 1], cache });
+  assert.equal(again.txs.length, 1);
+  assert.equal(txCalls, 2, 'a settled transaction is not fetched again');
+  const never = (async () => {
+    throw new TypeError('Failed to fetch');
+  }) as unknown as typeof fetch;
+  await assert.rejects(readAccountTxs(never, POOL, { retryMs: [1, 1], cache: new Map() }));
 });
