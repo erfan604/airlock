@@ -68,9 +68,10 @@ export function shortPayee(key: string): string {
   return m === null ? key : (m[1] as string);
 }
 
-/** Whether this site runs the policy: the credit line's card, an account of the team (lender/team.json) or a practice card it published. */
+/** Whether this site runs the policy: the credit line's card or an account of the team (lender/team.json, which names the practice
+ * card's parent account). Accounts are named, never matched by a pattern: anyone can register a name that looks like one of ours. */
 export function runsHere(policy: string): boolean {
-  return policy === DEFAULT_POLICY || isTeam(policy) || /^try\.airlock-try-[a-z0-9]{3,12}\.testnet$/.test(policy);
+  return policy === DEFAULT_POLICY || isTeam(policy);
 }
 
 /** The payee of an earlier request: a plain name linked to the explorer (the owner's own names get a label), the full id in the link target only. */
