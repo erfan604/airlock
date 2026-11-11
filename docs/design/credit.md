@@ -9,7 +9,7 @@ A credit line funds an AIRLOCK policy, the card. Three accounts stand around it:
 | Role | Account | What it can do |
 | --- | --- | --- |
 | issuer | `owner_id` (the pool's issuer) | everything the owner could do before: book (`book_set_root`), assets, flags, pause, task key, agents, `reset_escalations`, `reject` (so a pending escalation never blocks `sweep`), and `sweep`; `approve` as an override for a payment to a payee that is not in the book (never for a booked one) |
-| borrower | `approver` (set at init) | `reject` any held payment; `approve` a held payment only to a payee in the book at the current epoch; nothing else |
+| borrower | `approver` (set at init) | `reject` any held payment; `approve` a held payment only to a payee in the book at the current epoch, never one held outside the task, over the task bound or over the payee's daily limit, and only when the payee's daily limit and the task bound can take the full amount; nothing else |
 | pool | `sponsor` (set at init) | the only account `sweep` can pay |
 
 `approver` and `sponsor` are `Option<AccountId>` arguments of `new`, last fields of the state, fixed for the life of the account: no method
@@ -27,7 +27,13 @@ is no sweep, and an init call without the two keys is the init call of before (a
   explicit override by the issuer). So a new payee, a payee whose proof the agent withheld and a stale status are refused to the approver
   (`approve refused for the approver`), who can still reject them, and a booked payee is refused to the owner (`approve refused for
   the owner: ... the approver settles it`). The approver may therefore settle held payments to booked merchants (an amount read from
-  untrusted text, or over the soft limit within the caps) and nothing else. `init` refuses an approver equal to the owner.
+  untrusted text, a trigger or a recipient from untrusted text) and nothing else, and only inside the issuer's bounds (red-team lane 1,
+  2026-11-11): a hold for `OutsideTask`, `OverTaskBound` or `OverPayeeLimit` is refused to the approver (`approve refused for the
+  approver: the payment is held <reason> ...`), and any other hold must fit what is left of the payee's daily limit and of the task
+  bound in full (`... above what is left of the payee's daily limit` or `... of the task bound`), where the owner's approval charges
+  those ledgers only up to their limits. The refused request stays pending: either party may reject it, or it expires. The owner cannot
+  approve it either (a booked payee is the approver's to settle), so a payment past the issuer's bounds needs a new task from the
+  issuer. `init` refuses an approver equal to the owner.
 - `approve_and_remember` is refused when an approver is set (`approve_and_remember is refused when an approver is set: the owner adds
   merchants with book_set_root`): the borrower cannot add a payee, so a line can only reach merchants the issuer put in the book.
 - `sweep(amount)`, owner only, one yocto, only with a sponsor. Reverts, in order: `no sponsor`, `sweep amount must be positive`,

@@ -38,15 +38,17 @@ Code hashes: `docs/EVIDENCE.md` line 555.
 **1.3** The borrower cannot approve a payment to an account outside the book; the issuer can override it, and either of them can reject it. *(in force)*
 
 - Enforced: `contracts/airlock-policy/src/roles.rs` 42 to 56, `require_settle_role`
-- Enforced: `contracts/airlock-policy/src/escalation.rs` 447 to 451, `the borrower cannot add payees`
+- Enforced: `contracts/airlock-policy/src/escalation.rs` 491 to 495, `the borrower cannot add payees`
 - Tested: `contracts/airlock-policy/src/redteam.rs` 519, `rt_con_borrower_pays_himself_is_refused`
 - Tested: `docs/CLAIMS.md` 38, `claim C21`
 - Shown: the borrower's approve of his own account refused, transaction `12VC9dH5f9n7RLRq2h8uDAQDSw2upBwwDygDzjuU69iy` (`docs/EVIDENCE.md` line 375)
 
-**1.4** An amount read from outside text is never paid on the card; it is held for the owner, because no payee in the card's book has a cap for such amounts. *(in force)*
+**1.4** An amount read from outside text is never paid by itself on the card: it is held, because no payee in the card's book has a cap for such amounts. The borrower may approve it for a booked merchant inside what is left of the issuer's task bound and of the merchant's daily limit, and his approve is refused outside them. *(in force)*
 
 - Enforced: `contracts/airlock-verdict/src/lib.rs` 227 to 237, `rule 11`
 - Enforced: `contracts/airlock-policy/src/policy.rs` 297, `a payee without a cap`
+- Enforced: `contracts/airlock-policy/src/escalation.rs` 244 to 278, `require_approver_within_bounds`
+- Tested: `contracts/airlock-policy/src/redteam.rs` 1278, `rt_con_approver_cannot_approve_past_the_payee_daily_limit`
 - Proved: `proofs/Verdict.lean` 123, `p4_p14_p23_untrusted_amount_bounded`
 - Kani: `contracts/airlock-verdict/src/proofs.rs` 137, `p04_p14_p23_untrusted_amount_inside_cap_and_budget`
 - Measured: `docs/BENCH.md` 37, `strict mode paid 0 of 250 attack runs, default mode 10 of 250`
@@ -59,9 +61,14 @@ Code hashes: `docs/EVIDENCE.md` line 555.
 - Kani: `contracts/airlock-verdict/src/proofs.rs` 104, `p01_untrusted_pc_never_allowed`
 - Shown: a bench run held as UntrustedTrigger, `bench/runs/recorded/transcripts/own-S01.A1.1.json` 215
 
-**1.6** Every payment fits the task the owner signed, and what is left of that task shrinks with each payment. *(in force)*
+**1.6** Every payment the agent makes or the borrower approves fits the task the issuer signed, and what is left of that task shrinks with each payment. The borrower cannot approve a held payment outside that task, above what is left of its bound, or above the merchant's daily limit; the issuer's override of a payee outside the book is the one approval that passes them (limit 2.1). *(in force)*
 
 - Enforced: `contracts/airlock-verdict/src/lib.rs` 202 to 209, `rule 6`
+- Enforced: `contracts/airlock-policy/src/escalation.rs` 244 to 278, `require_approver_within_bounds`
+- Tested: `contracts/airlock-policy/src/redteam.rs` 1246, `rt_con_approver_cannot_approve_past_the_task_bound`
+- Tested: `contracts/airlock-policy/src/redteam.rs` 1303, `rt_con_approver_cannot_approve_past_what_is_left_of_the_task_bound`
+- Tested: `contracts/airlock-policy/tests/approver_bounds.rs` 113, `lane1_borrower_cannot_approve_past_the_issuers_task_bound`
+- Tested: `contracts/airlock-policy/tests/approver_bounds.rs` 134, `lane1_borrower_cannot_approve_a_payee_outside_the_signed_task`
 - Proved: `proofs/Verdict.lean` 192, `p21_allowed_in_task_bound`
 - Kani: `contracts/airlock-verdict/src/proofs.rs` 355, `p21_allowed_inside_task_bound`
 - Kani: `contracts/airlock-verdict/src/ledger.rs` 385, `l3_task_bound_holds`
@@ -123,9 +130,10 @@ Code hashes: `docs/EVIDENCE.md` line 555.
 
 ## 2. Limits
 
-**2.1** The issuer books the payees, and the issuer can approve a held payment to a payee outside the book. This has not been done on chain. *(in force)*
+**2.1** The issuer books the payees, and the issuer can approve a held payment to a payee outside the book. That approval is bounded by the card's asset caps, not by the task bound or the payee's daily limit: it charges those two up to their limits and is not refused by them. This has not been done on chain. *(in force)*
 
 - Enforced: `contracts/airlock-policy/src/roles.rs` 42 to 56, `require_settle_role`
+- Enforced: `contracts/airlock-verdict/src/ledger.rs` 97 to 114, `apply_approval`
 - Enforced: `contracts/airlock-policy/src/policy.rs` 478, `book_set_root`
 - Tested: `contracts/airlock-policy/src/redteam.rs` 519, `rt_con_borrower_pays_himself_is_refused`
 
@@ -230,11 +238,12 @@ Code hashes: `docs/EVIDENCE.md` line 555.
 - `contracts/airlock-credit/src/math.rs`: 54 to 70, 153 to 155, 247, 258
 - `contracts/airlock-credit/src/tests.rs`: 179, 195, 247, 285, 303, 328, 430, 657, 708, 740, 752, 774, 806, 894, 957, 1002, 1316, 1641, 1707, 1744, 1814, 1857, 2290, 2338, 2428, 2528
 - `contracts/airlock-credit/tests/pool.rs`: 1190
-- `contracts/airlock-policy/src/escalation.rs`: 447 to 451
+- `contracts/airlock-policy/src/escalation.rs`: 244 to 278, 491 to 495
 - `contracts/airlock-policy/src/policy.rs`: 297, 478
-- `contracts/airlock-policy/src/redteam.rs`: 519
+- `contracts/airlock-policy/src/redteam.rs`: 519, 1246, 1278, 1303
 - `contracts/airlock-policy/src/roles.rs`: 42 to 56, 78 to 109, 78 to 79
-- `contracts/airlock-verdict/src/ledger.rs`: 385
+- `contracts/airlock-policy/tests/approver_bounds.rs`: 113, 134
+- `contracts/airlock-verdict/src/ledger.rs`: 97 to 114, 385
 - `contracts/airlock-verdict/src/lib.rs`: 202 to 209, 210 to 213, 214 to 217, 218 to 222, 227 to 237
 - `contracts/airlock-verdict/src/proofs.rs`: 104, 117, 127, 137, 355
 - `docs/BENCH.md`: 37

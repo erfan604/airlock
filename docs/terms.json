@@ -51,7 +51,7 @@
           "status": "in force",
           "refs": [
             { "role": "Enforced", "file": "contracts/airlock-policy/src/roles.rs", "line": 42, "to": 56, "has": "fn require_settle_role", "name": "require_settle_role" },
-            { "role": "Enforced", "file": "contracts/airlock-policy/src/escalation.rs", "line": 447, "to": 451, "has": "approve_and_remember is refused when an approver is set", "name": "the borrower cannot add payees" },
+            { "role": "Enforced", "file": "contracts/airlock-policy/src/escalation.rs", "line": 491, "to": 495, "has": "approve_and_remember is refused when an approver is set", "name": "the borrower cannot add payees" },
             { "role": "Tested", "file": "contracts/airlock-policy/src/redteam.rs", "line": 519, "has": "fn rt_con_borrower_pays_himself_is_refused", "name": "rt_con_borrower_pays_himself_is_refused" },
             { "role": "Tested", "file": "docs/CLAIMS.md", "line": 38, "has": "| C21 |", "name": "claim C21" },
             { "role": "Shown", "tx": "12VC9dH5f9n7RLRq2h8uDAQDSw2upBwwDygDzjuU69iy", "what": "the borrower's approve of his own account refused", "row": 375 }
@@ -60,11 +60,13 @@
         {
           "n": "1.4",
           "kind": "term",
-          "text": "An amount read from outside text is never paid on the card; it is held for the owner, because no payee in the card's book has a cap for such amounts.",
+          "text": "An amount read from outside text is never paid by itself on the card: it is held, because no payee in the card's book has a cap for such amounts. The borrower may approve it for a booked merchant inside what is left of the issuer's task bound and of the merchant's daily limit, and his approve is refused outside them.",
           "status": "in force",
           "refs": [
             { "role": "Enforced", "file": "contracts/airlock-verdict/src/lib.rs", "line": 227, "to": 237, "has": "Rule 11", "name": "rule 11" },
             { "role": "Enforced", "file": "contracts/airlock-policy/src/policy.rs", "line": 297, "has": "strict", "name": "a payee without a cap" },
+            { "role": "Enforced", "file": "contracts/airlock-policy/src/escalation.rs", "line": 244, "to": 278, "has": "Reason::OutsideTask | Reason::OverTaskBound | Reason::OverPayeeLimit", "name": "require_approver_within_bounds" },
+            { "role": "Tested", "file": "contracts/airlock-policy/src/redteam.rs", "line": 1278, "has": "fn rt_con_approver_cannot_approve_past_the_payee_daily_limit", "name": "rt_con_approver_cannot_approve_past_the_payee_daily_limit" },
             { "role": "Proved", "file": "proofs/Verdict.lean", "line": 123, "has": "theorem p4_p14_p23_untrusted_amount_bounded", "name": "p4_p14_p23_untrusted_amount_bounded" },
             { "role": "Kani", "file": "contracts/airlock-verdict/src/proofs.rs", "line": 137, "has": "fn p04_p14_p23_untrusted_amount_inside_cap_and_budget", "name": "p04_p14_p23_untrusted_amount_inside_cap_and_budget" },
             { "role": "Measured", "file": "docs/BENCH.md", "line": 37, "has": "strict mode A1 in 0 and default mode A2 in 10", "name": "strict mode paid 0 of 250 attack runs, default mode 10 of 250" },
@@ -86,10 +88,15 @@
         {
           "n": "1.6",
           "kind": "term",
-          "text": "Every payment fits the task the owner signed, and what is left of that task shrinks with each payment.",
+          "text": "Every payment the agent makes or the borrower approves fits the task the issuer signed, and what is left of that task shrinks with each payment. The borrower cannot approve a held payment outside that task, above what is left of its bound, or above the merchant's daily limit; the issuer's override of a payee outside the book is the one approval that passes them (limit 2.1).",
           "status": "in force",
           "refs": [
             { "role": "Enforced", "file": "contracts/airlock-verdict/src/lib.rs", "line": 202, "to": 209, "has": "Rule 6", "name": "rule 6" },
+            { "role": "Enforced", "file": "contracts/airlock-policy/src/escalation.rs", "line": 244, "to": 278, "has": "Reason::OutsideTask | Reason::OverTaskBound | Reason::OverPayeeLimit", "name": "require_approver_within_bounds" },
+            { "role": "Tested", "file": "contracts/airlock-policy/src/redteam.rs", "line": 1246, "has": "fn rt_con_approver_cannot_approve_past_the_task_bound", "name": "rt_con_approver_cannot_approve_past_the_task_bound" },
+            { "role": "Tested", "file": "contracts/airlock-policy/src/redteam.rs", "line": 1303, "has": "fn rt_con_approver_cannot_approve_past_what_is_left_of_the_task_bound", "name": "rt_con_approver_cannot_approve_past_what_is_left_of_the_task_bound" },
+            { "role": "Tested", "file": "contracts/airlock-policy/tests/approver_bounds.rs", "line": 113, "has": "fn lane1_borrower_cannot_approve_past_the_issuers_task_bound", "name": "lane1_borrower_cannot_approve_past_the_issuers_task_bound" },
+            { "role": "Tested", "file": "contracts/airlock-policy/tests/approver_bounds.rs", "line": 134, "has": "fn lane1_borrower_cannot_approve_a_payee_outside_the_signed_task", "name": "lane1_borrower_cannot_approve_a_payee_outside_the_signed_task" },
             { "role": "Proved", "file": "proofs/Verdict.lean", "line": 192, "has": "theorem p21_allowed_in_task_bound", "name": "p21_allowed_in_task_bound" },
             { "role": "Kani", "file": "contracts/airlock-verdict/src/proofs.rs", "line": 355, "has": "fn p21_allowed_inside_task_bound", "name": "p21_allowed_inside_task_bound" },
             { "role": "Kani", "file": "contracts/airlock-verdict/src/ledger.rs", "line": 385, "has": "fn l3_task_bound_holds", "name": "l3_task_bound_holds" },
@@ -188,10 +195,11 @@
         {
           "n": "2.1",
           "kind": "limit",
-          "text": "The issuer books the payees, and the issuer can approve a held payment to a payee outside the book. This has not been done on chain.",
+          "text": "The issuer books the payees, and the issuer can approve a held payment to a payee outside the book. That approval is bounded by the card's asset caps, not by the task bound or the payee's daily limit: it charges those two up to their limits and is not refused by them. This has not been done on chain.",
           "status": "in force",
           "refs": [
             { "role": "Enforced", "file": "contracts/airlock-policy/src/roles.rs", "line": 42, "to": 56, "has": "approve refused for the owner", "name": "require_settle_role" },
+            { "role": "Enforced", "file": "contracts/airlock-verdict/src/ledger.rs", "line": 97, "to": 114, "has": "pub fn apply_approval", "name": "apply_approval" },
             { "role": "Enforced", "file": "contracts/airlock-policy/src/policy.rs", "line": 478, "has": "pub fn book_set_root", "name": "book_set_root" },
             { "role": "Tested", "file": "contracts/airlock-policy/src/redteam.rs", "line": 519, "has": "fn rt_con_borrower_pays_himself_is_refused", "name": "rt_con_borrower_pays_himself_is_refused" }
           ]
