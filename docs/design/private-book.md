@@ -185,7 +185,7 @@ owner committed, so claim C3 is unchanged. The untrusted MCP client model gets n
 A new policy account runs the new wasm; the old accounts are not touched and keep their public book (their recorded evidence in
 docs/EVIDENCE.md stays valid and the challenge keeps its account). Steps: `bootstrap-policy.sh` on the new account with the existing
 `fixtures` policy file: registry as before, `set_task_key`, vault built from the file's `book`, one `book_set_root`, then the verify
-step. No state is copied. Testnet only; a mainnet account needs Erfan's yes. The runtime picks the account from its config, so the
+step. No state is copied. Testnet only; a mainnet account needs the author's yes. The runtime picks the account from its config, so the
 choice of old or new is a config value and nothing in the runtime branches on the contract version except `getBook()` (it checks for
 `get_book_root`; a contract without it is read through `get_book` as today, so a still-running old demo keeps working).
 

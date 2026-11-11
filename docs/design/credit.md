@@ -189,7 +189,7 @@ case with collateral seized and a recovery sweep. Mutation check of the money pa
   who can add himself to the book; it does not remove credit risk (spent, not repaid) or issuer risk.
 - One asset, no interest accrual over time (a fixed fee per line), no liquidations before the due date, no partial default,
   no secondary market for shares, no governance.
-- Mainnet needs Erfan's yes; everything here is testnet.
+- Mainnet needs the author's yes; everything here is testnet.
 
 ### Effort against the cut date
 

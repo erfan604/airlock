@@ -99,7 +99,7 @@ GAS TESTNET single_evm burnt_total=18.643 burnt_first=6.648 receipts=8 reserved=
 The batch of three needs 115.617 Tgas against 115.441 on the sandbox, so BATCH CAP 3 holds on testnet (batch NEAR tx
 `9tNTyDLsv4zNjTwySJgxGF7itMWDAMLou64GacMp2KqC`). The approve sweep on pending_id 3 (escalated in
 `BXNFPqFbci2ctJWim4vumWP8ggmmJdBJmEqwS7LirwGs`) failed at 30 and 40 Tgas and succeeded at 50 Tgas, the same as the sandbox.
-The owner's `yes` for this sweep was given by Erfan in chat and relayed to the script's prompt by the coordinator session.
+The owner's `yes` for this sweep was given by the author in chat and relayed to the script's prompt by the coordinator session.
 
 APPROVE_MIN_TGAS=50 testnet
 

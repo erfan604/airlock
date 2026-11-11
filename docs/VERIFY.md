@@ -2,7 +2,7 @@
 
 Three things worth a look first:
 - Steal this agent: the agent's function-call key and an owner-signed task are published on NEAR testnet, every attempt is on chain and stolen is 0 NEAR so far. Results: "Steal this agent (live)" in `docs/EVIDENCE.md`; `pnpm challenge` serves the board.
-- Hosted demo: the static replay console, built with `pnpm build:static` (not published yet, so build it locally with that command; see `docs/HOSTED_DEMO.md`).
+- Hosted demo: the static replay console, built with `pnpm build:static` (published at https://airlock-ere.pages.dev; the same command builds it locally; see `docs/HOSTED_DEMO.md`).
 - Proof transcripts: `pnpm proven:transcripts` (needs Node and pnpm) checks the committed Kani, Lean and differential output in `docs/evidence/`.
 
 Rust: `pnpm try --text` and `pnpm bench:replay` need Rust 1.86. Check with `cargo --version`.
