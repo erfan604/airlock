@@ -32,7 +32,8 @@ const MILLI = 10n ** 21n;
 const NOW = Date.parse('2026-11-12T12:00:00.000Z');
 const decide = (await instantiateVerdict(readFileSync(join(REPO, 'web', 'public', 'verdict.wasm')))).decide;
 
-// the practice card as fixtures/try/policy.try.json sets it: 0.01 NEAR at once, 0.05 a day, the shop uncapped (strict), 0.05 a day
+// the practice card as it was set for the replay of 2026-11-11 (AIR-360): 0.01 NEAR at once, 0.05 a day, the shop uncapped (strict), 0.05 a
+// day; fixtures/try/policy.try.json now sets 0.3 a day (AIR-364), and the replay's plan was built for the day it ran in
 const CARD: CardFacts = { hardCap: 10n * MILLI, dailyCap: 50n * MILLI, shopDailyLimit: 50n * MILLI, paused: false };
 // twelve tasks of 99 actions each bounding the shop at 0.01 NEAR, like the published file
 const pub: TryPublic = {

@@ -27,10 +27,10 @@ const policy = JSON.parse(readFileSync(join(REPO, 'fixtures', 'try', 'policy.try
 test('the try policy: NEAR only, 0.01 NEAR a request, one booked shop with no cap for amounts read from text', () => {
   assert.deepEqual(Object.keys(policy.assets), ['near']);
   assert.equal(policy.assets['near']?.hard_cap, CENT.toString());
-  assert.equal(policy.assets['near']?.daily_cap, (5n * CENT).toString());
+  assert.equal(policy.assets['near']?.daily_cap, (30n * CENT).toString());
   assert.equal(policy.assets['near']?.quick_task_cap, CENT.toString());
   assert.equal(policy.assets['near']?.path, null);
-  assert.deepEqual(policy.book, [{ name: 'shop', key: 'near:{shop}', cap: null, daily_untrusted_budget: '0', daily_limit: (5n * CENT).toString(), label: 'Shop', listed: true }]);
+  assert.deepEqual(policy.book, [{ name: 'shop', key: 'near:{shop}', cap: null, daily_untrusted_budget: '0', daily_limit: (30n * CENT).toString(), label: 'Shop', listed: true }]);
   assert.equal(policy.nonce.path, 'none');
   assert.equal(policy.attestation_expiration_time_ms, '1209600000');
 });

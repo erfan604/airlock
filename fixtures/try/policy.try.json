@@ -6,7 +6,7 @@
       "symbol": "NEAR",
       "decimals": 24,
       "hard_cap": "10000000000000000000000",
-      "daily_cap": "50000000000000000000000",
+      "daily_cap": "300000000000000000000000",
       "max_fee_per_gas": "0",
       "max_gas": "0",
       "quick_task_cap": "10000000000000000000000",
@@ -19,7 +19,7 @@
       "key": "near:{shop}",
       "cap": null,
       "daily_untrusted_budget": "0",
-      "daily_limit": "50000000000000000000000",
+      "daily_limit": "300000000000000000000000",
       "label": "Shop",
       "listed": true
     }
@@ -37,5 +37,5 @@
   "nonce": {
     "path": "none"
   },
-  "_note": "AIR-356: the policy of the try it live card, a policy of its own that any visitor's browser may attack with published function-call keys. NEAR only, 0.01 NEAR a request and 0.05 NEAR a day, one booked shop with no cap for amounts read from text (strict), holds that expire after one minute, and flood flags wide enough that visitors cannot lock the agent. Applied by scripts/try-setup.ts through scripts/bootstrap-policy.sh."
+  "_note": "AIR-356: the policy of the try it live card, a policy of its own that any visitor's browser may attack with published function-call keys. NEAR only, 0.01 NEAR a request and 0.3 NEAR a day (AIR-364, raised from 0.05 so one key holder cannot end the day's honest payments in a few calls), one booked shop with a daily limit of 0.3 NEAR with no cap for amounts read from text (strict), holds that expire after one minute, and flood flags wide enough that visitors cannot lock the agent. Applied by scripts/try-setup.ts through scripts/bootstrap-policy.sh."
 }

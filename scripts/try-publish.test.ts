@@ -15,6 +15,7 @@ import { TRY_BOUND_YOCTO, buildTryPublic, newKeyPair, publishRefusal, tryNames }
 import type { TryChainFacts } from '../runtime/src/trycard/index.ts';
 import { Vault, proofVerifies } from '../runtime/src/vault/index.ts';
 import { parseTryPublic } from '../runtime/src/trycard/public.ts';
+import { stateCheck } from './try-publish.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 const NOW = Date.parse('2026-11-12T12:00:00.000Z');
@@ -107,4 +108,16 @@ test('the script never prints a secret and its output file is ignored by git', (
   assert.doesNotMatch(src, /console\.(log|error)\([^)]*secret/i);
   const ignore = readFileSync(join(REPO, '.gitignore'), 'utf8');
   assert.match(ignore, /^web\/public\/try-public\.json$/m);
+});
+
+test('AIR-364: --verify states the card (day cap, the shop limit the page proves, tasks, free slots) and fails on an expectation it misses', () => {
+  const NEAR = 10n ** 24n;
+  const s = { dailyCap: 3n * NEAR / 10n, shopLimit: 3n * NEAR / 10n, tasks: 60, free: 5900, total: 5940 };
+  const ok = stateCheck(s, { day: '0.3', tasks: 60 });
+  assert.equal(ok.line, 'TRY CARD STATE day cap 0.3 NEAR, shop daily limit 0.3 NEAR in the proof the page sends, 60 tasks, 5900 of 5940 slots free');
+  assert.equal(ok.why, null);
+  assert.equal(stateCheck(s, {}).why, null);
+  assert.match(String(stateCheck({ ...s, dailyCap: NEAR / 20n }, { day: '0.3' }).why), /day cap is 0\.05 NEAR, not 0\.3/);
+  assert.match(String(stateCheck({ ...s, shopLimit: NEAR / 20n }, { day: '0.3' }).why), /shop's daily limit in the published proof is 0\.05 NEAR/);
+  assert.match(String(stateCheck({ ...s, tasks: 20 }, { tasks: 60 }).why), /20 live tasks, not 60/);
 });

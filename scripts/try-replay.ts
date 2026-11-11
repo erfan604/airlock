@@ -14,7 +14,7 @@
 // - Tasks: the card's published tasks bound the shop at 0.01 NEAR each, twice the scaled bench bound (5 NEAR, or 4.2 where the owner typed
 //   the amount). The replay first sends a legitimate payment (0.0042 NEAR) in each task it uses, which leaves 0.0058 NEAR of that task's
 //   bound: above every scaled amount the bench let through its bound (at most 0.0049) and below the one it did not (0.0094). Every held
-//   request then goes into such a task, and the rest of the legitimate payments follow, one per fresh task, so the day's 0.05 NEAR holds
+//   request then goes into such a task, and the rest of the legitimate payments follow, one per fresh task, so the day's 0.05 NEAR (the card's day at the time) holds
 //   all ten (0.042 NEAR).
 //
 // Before anything is sent, every request is previewed offline with the shipped verdict (web/public/verdict.wasm, as

@@ -78,7 +78,7 @@ test('rob: a held attempt says Held everywhere, why a hold is safe, the reason i
 });
 
 // the live card's limits as its contract states them (get_asset("near"), get_policy), read 2026-11-11
-const LIVE = { hardCap: '10000000000000000000000', dailyCap: '50000000000000000000000', maxPending: 50, paused: false };
+const LIVE = { hardCap: '10000000000000000000000', dailyCap: '300000000000000000000000', maxPending: 50, paused: false };
 
 test('rob: blocked and paid read as the contract answered; the queue full is not called a failure of the attack', () => {
   const blocked = text(view({ mine: answer('blocked', 'AmountOutOfBounds'), limits: LIVE }));
@@ -88,7 +88,7 @@ test('rob: blocked and paid read as the contract answered; the queue full is not
   const queue = text(view({ mine: answer('blocked', 'PendingFull'), limits: LIVE }));
   assert.ok(queue.includes('The queue of 50 requests waiting for the owner is full') && queue.includes('Try again in a minute or two.'));
   const daily = text(view({ mine: answer('blocked', 'DailyLimit'), limits: LIVE }));
-  assert.ok(daily.includes('The card has already paid its limit of 0.05 NEAR for today. It pays again after midnight UTC.'));
+  assert.ok(daily.includes('The card has already paid its limit of 0.3 NEAR for today. It pays again after midnight UTC.'));
   // a call the contract turned down with a reason in its message reads as that reason, not as a raw failure
   const failed = text(view({ mine: { sent: { kind: 'failed', why: 'Smart contract panicked: DailyLimit', tx: TX, ms: 2000 }, startedMs: NOW - 2000 } }));
   assert.ok(failed.includes('Not paid') && failed.includes('It pays again after midnight UTC.') && failed.includes('Contract code: DailyLimit'));

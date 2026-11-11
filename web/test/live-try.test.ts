@@ -29,7 +29,7 @@ const file = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
   policy: POLICY,
   agent: AGENT,
   keys: [KEY, { ...KEY, publicKey: 'ed25519:FeTC3uktpWwCaSET19QzS8yxRWH2KCov3sD7zhb7TTiJ' }],
-  shop: { payee: SHOP, proof: { salt: 'd'.repeat(64), cap: null, daily_untrusted_budget: '0', daily_limit: '50000000000000000000000', index: 0, siblings: Array.from({ length: 8 }, () => 'e'.repeat(64)) } },
+  shop: { payee: SHOP, proof: { salt: 'd'.repeat(64), cap: null, daily_untrusted_budget: '0', daily_limit: '300000000000000000000000', index: 0, siblings: Array.from({ length: 8 }, () => 'e'.repeat(64)) } },
   book: [SHOP],
   pendingTtlMs: 60_000,
   honestAmount: '1000000000000000000000',

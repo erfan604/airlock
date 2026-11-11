@@ -5,7 +5,11 @@
 // site deployed again, before the tasks expire: the last line says when.
 //   set -a; . ~/.airlock-try.env; set +a
 //   pnpm tsx scripts/try-publish.ts [--out web/public/try-public.json]     reads the chain, refuses or writes the file
-//   pnpm tsx scripts/try-publish.ts --verify [--file <path> | --url <https url>]   read only: checks an existing file against the chain
+//   pnpm tsx scripts/try-publish.ts --verify [--file <path> | --url <https url>] [--expect-day <NEAR>] [--expect-tasks <n>]
+//                                                     read only: checks an existing file against the chain, then prints the card's state
+//                                                     (the NEAR day cap, the shop's daily limit in the proof the page sends, the tasks, the
+//                                                     free slots) and, with the expect options, fails when the day cap, the shop's limit or
+//                                                     the task count differ (AIR-364)
 // Before anything is written the chain is read (views only) and the publish is refused for a key that is not a function-call key of the
 // try agent for submit_batch on the try policy and nothing else, a full-access key, a stale book proof, another task key, an agent that
 // is not valid, a paused policy, or any credit account. Env (from scripts/try-setup.ts): TRY_OWNER_ACCOUNT, TRY_POLICY_ACCOUNT,
@@ -17,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { DEFAULT_RPC_URLS } from '../runtime/src/chain/rpc.ts';
 import { rpcView } from '../runtime/src/credit/rpc.ts';
 import { taskSigner } from '../runtime/src/mcp/boot.ts';
-import { TRY_KEY_COUNT, buildTryPublic, publishRefusal, refusedAccount } from '../runtime/src/trycard/index.ts';
+import { TRY_KEY_COUNT, buildTryPublic, nearText, parseTryPublic, publishRefusal, refusedAccount } from '../runtime/src/trycard/index.ts';
 import type { TryChainFacts, TryChainKey } from '../runtime/src/trycard/index.ts';
 import { loadVault } from '../runtime/src/vault/file.ts';
 
@@ -69,6 +73,32 @@ export async function chainFacts(policy: string, agent: string): Promise<TryChai
   };
 }
 
+export type CardState = { dailyCap: bigint; shopLimit: bigint; tasks: number; free: number; total: number };
+
+/** The state line of --verify, and why the state is not what the expect options say (null when it is, or when nothing is expected). */
+export function stateCheck(s: CardState, expect: { day?: string; tasks?: number }): { line: string; why: string | null } {
+  const line = `TRY CARD STATE day cap ${nearText(s.dailyCap)} NEAR, shop daily limit ${nearText(s.shopLimit)} NEAR in the proof the page sends, ${String(s.tasks)} tasks, ${String(s.free)} of ${String(s.total)} slots free`;
+  if (expect.day !== undefined && nearText(s.dailyCap) !== expect.day) return { line, why: `the day cap is ${nearText(s.dailyCap)} NEAR, not ${expect.day}` };
+  if (expect.day !== undefined && nearText(s.shopLimit) !== expect.day) return { line, why: `the shop's daily limit in the published proof is ${nearText(s.shopLimit)} NEAR, not ${expect.day}` };
+  if (expect.tasks !== undefined && s.tasks !== expect.tasks) return { line, why: `the file holds ${String(s.tasks)} live tasks, not ${String(expect.tasks)}` };
+  return { line, why: null };
+}
+
+/** The card's state from the chain for a parsed file: the NEAR day cap, the shop's proven limit, and the free slots of its tasks. */
+async function cardState(policy: string, shopLimit: string, tasks: readonly { task_hash: string; task: { max_actions: number } }[]): Promise<CardState> {
+  const asset = await rpcView(RPC, policy, 'get_asset', { asset: 'near' });
+  if (!isObj(asset) || typeof asset['daily_cap'] !== 'string' || !/^[0-9]{1,39}$/.test(asset['daily_cap'])) throw new Error('get_asset answered something unexpected');
+  let free = 0;
+  let total = 0;
+  for (const t of tasks) {
+    const st = await rpcView(RPC, policy, 'get_task_state', { task_hash: t.task_hash });
+    if (!isObj(st) || typeof st['actions_used'] !== 'number' || typeof st['revoked'] !== 'boolean') throw new Error('get_task_state answered something unexpected');
+    total += t.task.max_actions;
+    if (!st['revoked']) free += Math.max(0, t.task.max_actions - st['actions_used']);
+  }
+  return { dailyCap: BigInt(asset['daily_cap']), shopLimit: BigInt(shopLimit), tasks: tasks.length, free, total };
+}
+
 export async function main(argv: readonly string[]): Promise<number> {
   if (argv.includes('--verify')) {
     const url = flag(argv, 'url');
@@ -96,8 +126,23 @@ export async function main(argv: readonly string[]): Promise<number> {
     const why = await publishRefusal(raw, await chainFacts(raw['policy'], raw['agent']), Date.now());
     const tasks = Array.isArray(raw['tasks']) ? raw['tasks'] : [];
     const first = isObj(tasks[0]) && typeof tasks[0]['expiresAt'] === 'string' ? tasks[0]['expiresAt'] : 'unknown';
-    console.log(why === null ? `TRY PUBLIC OK ${raw['policy']}: ${String(Array.isArray(raw['keys']) ? raw['keys'].length : 0)} keys, ${String(tasks.length)} tasks, valid until ${first}` : `TRY PUBLIC NO ${why}`);
-    return why === null ? 0 : 1;
+    if (why !== null) {
+      console.log(`TRY PUBLIC NO ${why}`);
+      return 1;
+    }
+    const parsed = parseTryPublic(raw, Date.now());
+    if (!('ok' in parsed)) throw new Error(parsed.refuse);
+    const expectTasks = flag(argv, 'expect-tasks');
+    if (expectTasks !== undefined && !/^[0-9]{1,4}$/.test(expectTasks)) throw new Error('--expect-tasks takes a whole number');
+    const expectDay = flag(argv, 'expect-day');
+    const state = stateCheck(await cardState(parsed.ok.policy, parsed.ok.shop.proof.daily_limit, parsed.ok.tasks), { ...(expectDay === undefined ? {} : { day: expectDay }), ...(expectTasks === undefined ? {} : { tasks: +expectTasks }) });
+    console.log(state.line);
+    if (state.why !== null) {
+      console.log(`TRY PUBLIC NO ${state.why}`);
+      return 1;
+    }
+    console.log(`TRY PUBLIC OK ${raw['policy']}: ${String(Array.isArray(raw['keys']) ? raw['keys'].length : 0)} keys, ${String(tasks.length)} tasks, valid until ${first}`);
+    return 0;
   }
 
   const names = { owner: need('TRY_OWNER_ACCOUNT'), policy: need('TRY_POLICY_ACCOUNT'), agent: need('TRY_AGENT_ACCOUNT'), shop: need('TRY_SHOP_ACCOUNT') };

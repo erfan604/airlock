@@ -39,7 +39,8 @@ const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MILLI = 10n ** 21n;
 const NOW = Date.parse('2026-11-12T12:00:00.000Z');
 const decide = (await instantiateVerdict(readFileSync(join(REPO, 'web', 'public', 'verdict.wasm')))).decide;
-const CARD: CardFacts = { hardCap: 10n * MILLI, dailyCap: 50n * MILLI, shopDailyLimit: 50n * MILLI, paused: false };
+// the practice card as fixtures/try/policy.try.json sets it: 0.01 NEAR at once, 0.3 NEAR a day, the shop uncapped (strict) with 0.3 a day
+const CARD: CardFacts = { hardCap: 10n * MILLI, dailyCap: 300n * MILLI, shopDailyLimit: 300n * MILLI, paused: false };
 const pub: TryPublic = {
   ...PUB,
   tasks: Array.from({ length: 12 }, (_, k) => ({ ...PUB.tasks[0]!, task: { ...PUB.tasks[0]!.task, task_id: `try-${String(k)}-1` }, task_hash: (k + 10).toString(16).repeat(64).slice(0, 64) })),
@@ -194,7 +195,7 @@ test('offline preview, Part B: the lying runtime is paid only to the booked shop
   const again = plan.map((x) => ({ ...x, taskIndex: 1 }));
   const r2 = await predictItems(again.slice(0, 1), pub, CARD, { ...fresh(), tasks: fresh().tasks.map((t, i) => (i === 1 ? { ...t, spent: 9n * MILLI + 1n } : t)) }, decide);
   assert.deepEqual(r2.predicted[0], { outcome: 'escalated', reason: 'OverTaskBound' });
-  const r3 = await predictItems(plan.slice(0, 1), pub, CARD, { ...fresh(), assetSpent: 50n * MILLI }, decide);
+  const r3 = await predictItems(plan.slice(0, 1), pub, CARD, { ...fresh(), assetSpent: 300n * MILLI }, decide);
   assert.deepEqual(r3.predicted[0], { outcome: 'blocked', reason: 'DailyLimit' });
 });
 
