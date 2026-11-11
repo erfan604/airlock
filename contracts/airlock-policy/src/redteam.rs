@@ -1230,3 +1230,98 @@ fn rt_dos_expire_by_anyone_keeps_the_reject_streak() {
         ["escalated:NewRecipient"]
     );
 }
+
+// ------------------------------------------------------------------- the approver stays inside the issuer's bounds (red-team lane 1)
+
+fn held_no(out: &SubmitOutcome) -> u32 {
+    assert_eq!(out.outcome, "escalated", "{out:?}");
+    out.pending_id
+        .as_ref()
+        .expect("a pending id")
+        .parse()
+        .unwrap()
+}
+
+#[test]
+fn rt_con_approver_cannot_approve_past_the_task_bound() {
+    // the borrower runs the agent: a booked merchant, trusted labels, an amount above the issuer's task bound, held OverTaskBound
+    let mut c = setup_card();
+    let t = task_for("task-over-bound", &[(ALICE, 30)], 1);
+    let labels = Labels {
+        recipient: BOOK_MASK,
+        amount: OWNER_MASK,
+        pc: OWNER_MASK,
+    };
+    let out = submit(&mut c, &t, vec![request(&t, 0, ALICE, 40, labels)]);
+    assert_eq!(tag(&out[0]), "escalated:OverTaskBound");
+    let no = held_no(&out[0]);
+    let k = card(&c, no);
+    assert_eq!(k[5], "in_book");
+    let text = panics(|| approve_as(&mut c, APPROVER_ACCOUNT, NOW, &k));
+    assert!(
+        text.contains("approve refused for the approver: the payment is held OverTaskBound"),
+        "{text}"
+    );
+    assert!(!approved_logged());
+    assert_eq!(
+        c.pending_record(no).unwrap().1.state,
+        RequestState::Pending,
+        "still pending"
+    );
+    // the issuer cannot approve a booked payee either; either party rejects it
+    assert!(panics(|| approve_as(&mut c, OWNER, NOW, &k)).contains("the approver settles"));
+    testing_env!(ctx(OWNER, NOW, 1).build());
+    c.reject(no.to_string());
+}
+
+#[test]
+fn rt_con_approver_cannot_approve_past_the_payee_daily_limit() {
+    // two holds inside the task bound (untrusted recipient), 4_000 each, to a payee whose daily limit is 5_000: the second is refused
+    let mut c = setup_card();
+    let mut nos = Vec::new();
+    for id in ["task-day-a", "task-day-b"] {
+        let t = task_for(id, &[(ALICE, 10_000)], 1);
+        let out = submit(&mut c, &t, vec![data_payee(&t, 0, ALICE, 4_000)]);
+        assert_eq!(tag(&out[0]), "escalated:UntrustedRecipient");
+        nos.push(held_no(&out[0]));
+    }
+    let first = card(&c, nos[0]);
+    approve_as(&mut c, APPROVER_ACCOUNT, NOW, &first);
+    let second = card(&c, nos[1]);
+    let text = panics(|| approve_as(&mut c, APPROVER_ACCOUNT, NOW, &second));
+    assert!(
+        text.contains("approve refused for the approver: the amount is above what is left of the payee's daily limit"),
+        "{text}"
+    );
+    assert_eq!(
+        c.pending_record(nos[1]).unwrap().1.state,
+        RequestState::Pending
+    );
+}
+
+#[test]
+fn rt_con_approver_cannot_approve_past_what_is_left_of_the_task_bound() {
+    // one task bound of 3_000 and two holds of 2_000 under it, each inside the bound when held: the second approval is refused
+    let mut c = setup_card();
+    let t = task_for("task-shared-bound", &[(ALICE, 3_000)], 2);
+    let out = submit(
+        &mut c,
+        &t,
+        vec![
+            data_payee(&t, 0, ALICE, 2_000),
+            data_payee(&t, 1, ALICE, 2_000),
+        ],
+    );
+    let (a, b) = (held_no(&out[0]), held_no(&out[1]));
+    let first = card(&c, a);
+    approve_as(&mut c, APPROVER_ACCOUNT, NOW, &first);
+    let second = card(&c, b);
+    let text = panics(|| approve_as(&mut c, APPROVER_ACCOUNT, NOW, &second));
+    assert!(
+        text.contains(
+            "approve refused for the approver: the amount is above what is left of the task bound"
+        ),
+        "{text}"
+    );
+    assert_eq!(c.pending_record(b).unwrap().1.state, RequestState::Pending);
+}
