@@ -13,7 +13,7 @@ import { url } from '../static.ts';
  * (readLendDoor: 2), the practice card's attempts (153, of which 144 are the replay; 0 paid outside the book), and public/mutants
  * (5 copies, 5 Kani transcripts FAILED).
  */
-export const RECORDED = { atText: 'Nov 11, 2026', lenders: 2, robAttempts: 153, robPaidOutside: 0, copies: 5, kaniFails: 5 } as const;
+export const RECORDED = { atText: 'Nov 11, 2026', lenders: 0, robAttempts: 153, robPaidOutside: 0, copies: 5, kaniFails: 5 } as const;
 
 export type Source = 'live' | 'recorded' | 'failed';
 export type LendDoor = { lenders: number; source: Source };
