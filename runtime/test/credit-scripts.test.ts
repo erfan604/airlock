@@ -13,3 +13,5 @@ import '../../scripts/credit-pool-code-check.test.ts';
 import '../../scripts/uncensored-run.test.ts';
 // AIR-360: the bench replay on the practice card
 import '../../scripts/try-replay.test.ts';
+// red team 2026-11-11: the live proof of the approver bounds (its plan, stop rules, run and verify on a fake chain)
+import '../../scripts/credit-approver-bounds-live.test.ts';
