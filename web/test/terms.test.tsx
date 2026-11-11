@@ -67,3 +67,14 @@ test('/terms is a lazy route of the static site, prerendered, with a print style
   assert.ok((STATIC_ROUTES as readonly string[]).includes('terms'));
   assert.ok(readFileSync(join(web, 'src', 'styles', 'terms.css'), 'utf8').includes('@media print'));
 });
+
+// visitor test 2026-11-11: the page was monospace throughout and read like a code dump. The clauses are set in the reading face; code
+// references, paths and hashes keep the data face.
+test('terms: clause sentences use the reading face and code references the data face', () => {
+  const css = readFileSync(new URL('../src/styles/terms.css', import.meta.url), 'utf8');
+  const rule = (sel: string): string => new RegExp(`${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^{]*\\{([^}]*)\\}`).exec(css)?.[1] ?? '';
+  assert.match(rule('.terms-doc '), /font-family: var\(--font-system\)/);
+  assert.match(rule('.terms .terms-doc dt '), /font-family: var\(--font-system\)/);
+  assert.match(rule('.terms-id,'), /font-family: var\(--font-data\)/);
+  assert.ok(!/font-family: var\(--font-evidence\)/.test(css.split('@media print')[0] ?? ''), 'no typewriter face on screen');
+});

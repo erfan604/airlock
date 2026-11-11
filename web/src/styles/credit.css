@@ -55,6 +55,13 @@
   font-size: 14px;
   cursor: pointer;
 }
+/* a phone stacks the headline down to the hero's bottom edge, where the button sat over the live line: it moves to the top corner there */
+@media (max-width: 719px) {
+  .cr-media-pause {
+    top: var(--space-4);
+    bottom: auto;
+  }
+}
 
 /* the live network: the stage is a framed panel in the page's column */
 .cr-live {

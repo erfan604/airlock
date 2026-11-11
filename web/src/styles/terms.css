@@ -1,4 +1,5 @@
-/* AIR-362: the /terms page, set as a typed agreement: Courier Prime throughout, one measure, numbered clauses with the limits in the same
+/* AIR-362: the /terms page, set as an agreement: the clause sentences in the site's reading face at a comfortable size (visitor test
+   2026-11-11: all monospace read like a code dump), code references, file paths, hashes and line numbers in the data face; one measure, numbered clauses with the limits in the same
    numbering and size, references in small capitals under each clause, the status as italic text in the right margin, a schedule at the end.
    No boxes, fills or marks. Tokens only; the print sheet below sets it black on white with the site's bar and footer removed. */
 .terms {
@@ -9,7 +10,7 @@
 .terms-doc {
   display: grid;
   gap: var(--space-7);
-  font-family: var(--font-evidence);
+  font-family: var(--font-system);
   color: var(--ink);
   min-width: 0;
 }
@@ -17,8 +18,8 @@
 .terms .terms-doc li,
 .terms .terms-doc dd,
 .terms .terms-doc dt {
-  font-family: var(--font-evidence);
-  font-size: 16px;
+  font-family: var(--font-system);
+  font-size: 17px;
   line-height: 1.6;
 }
 .terms-head {
@@ -36,8 +37,8 @@
 .terms-title,
 .terms h1.terms-title {
   margin: 0;
-  font-family: var(--font-evidence);
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 600;
   font-size: 30px;
   line-height: 1.2;
   letter-spacing: 0;
@@ -64,8 +65,8 @@
 }
 .terms-h2 {
   margin: 0;
-  font-family: var(--font-evidence);
-  font-weight: 700;
+  font-family: var(--font-system);
+  font-weight: 600;
   font-size: 18px;
   line-height: 1.4;
   font-variant: small-caps;
@@ -94,7 +95,10 @@
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }
-.terms-id {
+.terms-id,
+.terms .terms-files dd {
+  font-family: var(--font-data);
+  font-size: 0.9em;
   overflow-wrap: anywhere;
 }
 .terms-clauses {
@@ -118,7 +122,8 @@
   }
 }
 .terms-n {
-  font-weight: 700;
+  font-family: var(--font-data);
+  font-weight: 500;
   line-height: 1.6;
 }
 .terms-body {
@@ -143,7 +148,7 @@
   color: var(--ink-2);
 }
 .terms .terms-refs {
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--ink-3);
   overflow-wrap: break-word;
