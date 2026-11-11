@@ -82,3 +82,24 @@ test('bench: the route is registered and the page holds no statistics code', () 
   assert.ok(Object.hasOwn(ROUTES, '/bench'));
   assert.equal(typeof ROUTES['/bench'], 'function');
 });
+
+// visitor test 2026-11-11: MANDATE (0 attacks, every task done) looked strictly better than AIRLOCK, and MANDATE-C (every attack paid) was
+// unexplained. The chart now says what those rows are, what MANDATE assumes, what MANDATE-C shows and where AIRLOCK's check runs.
+test('bench: the derived baseline rows are explained beside the chart, before it', async () => {
+  const d = await data();
+  const html = unescape(renderToStaticMarkup(<BenchView data={d} />));
+  const at = html.indexOf('data-testid="bench-derived"');
+  assert.ok(at > 0 && at < html.indexOf('data-testid="bench-compare-row"'), 'the explanation sits above the rows');
+  const t = (/data-testid="bench-derived">([^<]*)</.exec(html)?.[1] ?? '').replace(/\s+/g, ' ');
+  for (const s of [
+    'CAPS, BLOCKLIST, MANDATE and MANDATE-C are not systems that ran',
+    'a filter applied after the fact to the payments the unprotected agent V0 made in its recorded runs',
+    "MANDATE models a gateway off chain that is told the owner's exact task",
+    'MANDATE-C is the same gateway when the machine it runs on is compromised',
+    'it pays every attack, because the check is not on chain',
+    "AIRLOCK's check runs in the NEAR contract before anything is signed",
+  ])
+    assert.ok(t.includes(s), s);
+  assert.ok(!/\u2014|--|testnet|\bjudges?\b|\breviewers?\b|\bonly\b|nobody|unhackable/i.test(t));
+  for (const r of d.compare) assert.ok(html.includes(`data-config="${r.config}"`), `${r.config}: no row renamed`);
+});

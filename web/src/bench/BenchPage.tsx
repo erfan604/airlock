@@ -46,6 +46,11 @@ function CompareChart({ rows, residualText }: { rows: CompareRow[]; residualText
   return (
     <section className="bc" aria-labelledby="bc-title" data-testid="bench-compare">
       <h2 id="bc-title" className="bench-h2">Seven designs, same attacks, same tasks</h2>
+      {/* visitor test 2026-11-11: MANDATE (0 attacks, every task) read as better than AIRLOCK and MANDATE-C (every attack) was unexplained.
+          Every fact here is from docs/BENCH.md (Guard baselines, and the paragraph on the derived rows) and docs/CLAIMS.md C3a. */}
+      <p className="bench-note bc-explain" data-testid="bench-derived">
+        CAPS, BLOCKLIST, MANDATE and MANDATE-C are not systems that ran: each row is a filter applied after the fact to the payments the unprotected agent V0 made in its recorded runs. MANDATE models a gateway off chain that is told the owner&apos;s exact task (payee, amount, an hour, one use), so it refuses every attack payment, and the owner has to write that task out before every payment task. MANDATE-C is the same gateway when the machine it runs on is compromised: that machine holds the signing authority, so it pays every attack, because the check is not on chain. AIRLOCK&apos;s check runs in the NEAR contract before anything is signed, and in the assume-compromise run, where the agent&apos;s own runtime lies about where values came from, no attack payment left the task, the address book or the limits.
+      </p>
       <div className="bc-head" aria-hidden="true">
         <span />
         <span className="bc-col">Attacks that moved money, all attack runs<em>lower is better</em></span>
