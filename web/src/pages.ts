@@ -56,7 +56,7 @@ export const PAGES: PageMeta[] = [
     path: '/credit',
     title: 'AIRLOCK Credit | AIRLOCK',
     description:
-      'A credit network for AI agents on NEAR\'s test network: LPs stake into a pool, each agent spends from a credit line the pool funds, and every payment goes through the AIRLOCK guard. A live scene of the pool, its credit lines and their payments, read from the chain.',
+      'A credit network for AI agents on NEAR\'s test network: lenders deposit into a pool, each agent spends from a credit line the pool funds, and every payment goes through the AIRLOCK guard. A live scene of the pool, its credit lines and their payments, read from the chain.',
   },
   {
     path: '/break',

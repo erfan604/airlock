@@ -220,7 +220,7 @@ test('agoText words', () => {
 
 test('the page: stats show the pool numbers, the money panel is closed on a fixture and on an unreadable chain, and never shows zeros for either', () => {
   const stats = renderToStaticMarkup(<Stats pool={FIXTURE_POOL} events={[]} feed nowMs={BigInt(FIXTURE_NOW)} />);
-  assert.ok(stats.includes('5,000.00 NEAR') && stats.includes('30.00%') && stats.includes('6.49% a year') && stats.includes('Stolen from LPs'));
+  assert.ok(stats.includes('5,000.00 NEAR') && stats.includes('30.00%') && stats.includes('6.49% a year') && stats.includes('Stolen from lenders'));
   const fixture = renderToStaticMarkup(<MoneyPanel state={{ kind: 'fixture', pool: FIXTURE_POOL, events: [] }} nowMs={0n} />);
   assert.ok(fixture.includes('Pool not deployed') && fixture.includes('not deployed yet') && !fixture.includes('data-testid="wallet-connect"'));
   assert.ok(/data-testid="money-submit"[^>]*disabled|disabled[^>]*data-testid="money-submit"/.test(fixture));

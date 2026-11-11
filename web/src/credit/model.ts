@@ -185,6 +185,10 @@ export function parseNear(text: string): bigint | null {
 }
 
 /** Yocto as NEAR text with `places` decimals (truncated, never rounded up), grouped by thousands: `1234500000000000000000000` is `1.23`. */
+/** The pool charges a new lender's first deposit this much (0.0025 NEAR) for the lender's storage entry: not pool money, not refunded, freed by a
+ *  full withdraw; a first deposit below 0.0035 NEAR is refused (contracts/airlock-credit, the redeploy of 2026-11-11). */
+export const LP_STORAGE = 25n * 10n ** 20n;
+
 export function formatNear(yocto: string | bigint, places = 2): string {
   const v = typeof yocto === 'bigint' ? yocto : BigInt(yocto);
   const scale = 10n ** BigInt(24 - places);

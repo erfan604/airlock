@@ -3,12 +3,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import type { SiteState } from '../src/state/siteState.ts';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { App } from '../src/App.tsx';
 import { PAGES } from '../src/pages.ts';
 import { ROUTES } from '../src/routes.ts';
 import { NAV } from '../src/shell/SiteNav.tsx';
-import LenderPage, { GIVE_UP_MS, LenderView, near4, shortAccount, withdrawnAmount } from '../src/lender/LenderPage.tsx';
+import LenderPage, { ATTACH, GIVE_UP_MS, LenderView, near4, shortAccount, withdrawnAmount } from '../src/lender/LenderPage.tsx';
 import type { ChainView, LenderViewProps } from '../src/lender/LenderPage.tsx';
 import type { Schedule } from '../src/lender/history.ts';
 import type { PoolEvent } from '../src/lender/lenders.ts';
@@ -210,4 +211,23 @@ test('lend: a read that does not arrive gives up with a plain sentence instead o
   const att = text(base({ slow, chain: CHAIN, schedule: SCHEDULE, position: { saved: { accountId: ME, secretKey: 'ed25519:x', createdMs: NOW, depositTx: null }, lp: { shares: NEAR, value: NEAR, lockedUntilMs: 0 }, attacks: null } }));
   assert.ok(att.includes('could not be counted just now'));
   assert.deepEqual(copyProblems(att), []);
+});
+
+test('lend: the amount line says 1 NEAR goes in and 0.0025 NEAR is charged once for the storage entry; the page attaches both', () => {
+  const t = text(base());
+  assert.ok(t.includes('It sends 1.0025 NEAR: 1 NEAR into the pool, and 0.0025 NEAR once for your storage entry, charged by the contract.'));
+  assert.equal(ATTACH, NEAR + 25n * 10n ** 20n);
+});
+
+test('lend: with the site state file the lender count and the loop line show at once, dated, before any chain read', () => {
+  const at = Date.parse('2026-11-11T04:30:00Z');
+  const site = JSON.parse(readFileSync(new URL('./fixtures/site-state.json', import.meta.url), 'utf8')) as SiteState;
+  const s: SiteState = { ...site, as_of_ms: at, lenders: { outside: ['someone.testnet', 'other.testnet'], outside_now: 1, truncated: false }, loop: { ...site.loop, cycles: 3, last_ms: at - 20 * 60_000 } };
+  const t = text(base({ site: s, schedule: { ...SCHEDULE, loopSince: '2026-11-10T00:00:00Z' } }));
+  assert.ok(t.includes('2 lender accounts from outside the team so far, 1 of them lending now'));
+  assert.ok(t.includes('Counted as of'));
+  assert.ok(/Last cycle \d\d:\d\d/.test(t) && t.includes('Read from the chain, as of'));
+  // a live read replaces them, with no date
+  const live = text(base({ site: s, chain: CHAIN, schedule: SCHEDULE }));
+  assert.ok(live.includes('1 lender account from outside the team so far') && !live.includes('Counted as of'));
 });

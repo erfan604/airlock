@@ -119,3 +119,17 @@ test('landing: the credit section says the card pays on other chains too and lin
   assert.ok(sec.includes('data-testid="cta-credit-base"') && sec.includes('href="/credit"'));
   assert.ok(!/testnet|erfan/i.test(t));
 });
+
+const text = (h: string): string => h.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/\s+/g, ' ');
+
+test('doors: numbers from the site state file are dated in the window, and one line names the command that recomputes them', () => {
+  const at = Date.parse('2026-11-11T18:55:00Z');
+  const html = renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 2, source: 'state', asOfMs: at }, rob: { attempts: 153, paidOutside: 0, source: 'state', asOfMs: at }, brk: recordedBreak(), pool: { kind: 'state', assets: '4445000000000000000000003', losses: '0', asOfMs: at }, asOfMs: at }));
+  const t = text(html);
+  assert.ok(t.includes('in 153 attempts.') && t.includes('2 lender accounts from outside the team so far.') && t.includes('4.44'));
+  assert.equal((t.match(/Read from the chain, as of /g) ?? []).length, 2);
+  assert.ok(t.includes("The attempt and lender counts are read from the chain's public history, as of") && html.includes('<code>pnpm site-state</code>'));
+  assert.ok(!t.includes('Recorded Nov 11, 2026. Lend'), 'the history doors are not called recorded');
+  // without the file: no such line
+  assert.ok(!text(renderToStaticMarkup(createElement(DoorsView, { lend: recordedLend(), rob: recordedRob(), brk: recordedBreak(), pool: { kind: 'recorded' } }))).includes('pnpm site-state'));
+});

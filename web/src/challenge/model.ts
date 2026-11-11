@@ -68,6 +68,8 @@ export type ChallengeState = {
   command?: string | null;
   /** AIR-320: the board shows the newest part of a longer chain listing */
   truncated?: boolean;
+  /** the board is the site state file's, written at this time, and the live history read has not added to it */
+  asOfMs?: number | null;
   now: string;
 };
 

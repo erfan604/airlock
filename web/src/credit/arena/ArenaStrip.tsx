@@ -6,6 +6,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentType, ReactElement } from 'react';
 import { STATIC } from '../../static.ts';
+import { asOfText, loadSiteState } from '../../state/siteState.ts';
+import type { SiteState } from '../../state/siteState.ts';
 import { nextDelay } from '../useCredit.ts';
 import { ARENA_CRON_SINCE_MS, ARENA_STRICT_SINCE_MS } from './config.ts';
 import { VERDICT_TONE, VERDICT_WORD, countsOf, dateText, headline } from './model.ts';
@@ -17,7 +19,8 @@ import samplesFile from './samples.json' with { type: 'json' };
 /** `source`: who wrote the email, the attacker model or the rule set that stands in for it. */
 export type ArenaSample = { at: string; subject: string; body: string; verdict: string; reason: string | null; tx: string | null; source?: 'model' | 'rules' | 'scripted' };
 /** `truncated`: the read stopped at its page cap, so older attempts may exist. */
-export type ArenaState = { kind: 'loading' } | { kind: 'off' } | { kind: 'unreadable' } | { kind: 'ok'; attempts: ArenaAttempt[]; truncated: boolean; stale?: boolean };
+/** `asOfMs`: the attempts are the site state file's, written then, and the live read has not added to them. */
+export type ArenaState = { kind: 'loading' } | { kind: 'off' } | { kind: 'unreadable' } | { kind: 'ok'; attempts: ArenaAttempt[]; truncated: boolean; stale?: boolean; asOfMs?: number | null };
 /** The page's explorer link for one transaction hash. */
 export type ArenaLink = ComponentType<{ tx: string | null; what: string }>;
 
@@ -41,21 +44,27 @@ export function useArena(): ArenaState {
     let live = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let failures = 0;
+    let site: SiteState | null = null;
     const cycle = async (): Promise<void> => {
+      // the site state file holds every attempt up to its cut, so the strip shows at once and the read asks only for what came after
+      site ??= await loadSiteState();
+      if (!live || session.current !== mine) return;
+      const known = site;
+      if (known !== null) setState((s) => (s.kind === 'ok' ? s : { kind: 'ok', attempts: known.arena.attempts, truncated: known.arena.truncated, asOfMs: known.as_of_ms }));
       let got: ArenaRead | null = null;
       try {
-        got = await readArena({ cache });
+        got = await readArena({ cache, ...(known === null ? {} : { sinceMs: known.cut_ms }) });
       } catch {
         got = null;
       }
       if (!live || session.current !== mine) return;
       if (got === null) {
         failures += 1;
-        setState((s) => (s.kind === 'ok' ? { ...s, stale: true } : { kind: 'unreadable' }));
+        setState((s) => (s.kind === 'ok' ? (s.asOfMs === undefined || s.asOfMs === null ? { ...s, stale: true } : s) : { kind: 'unreadable' }));
       } else {
         failures = 0;
-        const { attempts, truncated } = got;
-        setState({ kind: 'ok', attempts, truncated });
+        const attempts = known === null ? got.attempts : [...known.arena.attempts, ...got.attempts.filter((a) => !known.arena.attempts.some((k) => k.tx === a.tx))];
+        setState({ kind: 'ok', attempts, truncated: known === null ? got.truncated : known.arena.truncated, asOfMs: null });
       }
       timer = setTimeout(() => void cycle(), failures === 0 ? ARENA_POLL_MS : Math.max(ARENA_POLL_MS, nextDelay(failures) * 4));
     };
@@ -140,6 +149,7 @@ export function ArenaView({
               </>
             )}
             {state.stale === true ? ' The last refresh failed; these are the counts of the read before.' : null}
+            {state.asOfMs === undefined || state.asOfMs === null ? null : ` Counted from the chain, ${asOfText(state.asOfMs)}.`}
           </p>
           <div className="cr-stats" data-testid="arena-counts">
             <Count testId="arena-attempts" label="Attempts that reached the gate" value={c.attempts} />

@@ -9,7 +9,9 @@ import { readPool } from '../credit/chain.ts';
 import { CREDIT_POOL } from '../credit/net.ts';
 import { countText } from '../live/tryChain.ts';
 import { STATIC, url } from '../static.ts';
-import { readBreakDoor, readLendDoor, readRobDoor, recordedBreak, recordedLend, recordedRob, sourceNote } from './doors.ts';
+import { asOfText, bakedState, loadSiteState, SITE_STATE_COMMAND } from '../state/siteState.ts';
+import type { SiteState } from '../state/siteState.ts';
+import { lendOfState, readBreakDoor, readLendDoor, readRobDoor, recordedBreak, recordedLend, recordedRob, robOfState, sourceNote } from './doors.ts';
 import type { BreakDoor, LendDoor, RobDoor } from './doors.ts';
 import { poolLine } from './facts.ts';
 import type { PoolRead } from './facts.ts';
@@ -42,10 +44,12 @@ function DoorLeaf({ plate, title, what, number, caption, note, live, testId }: L
   );
 }
 
-export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDoor; brk: BreakDoor; pool: PoolRead }): ReactElement {
+/** `asOfMs`: the home page's history-derived numbers come from the site state file written at that time (none: they are read live or recorded). */
+export function DoorsView({ lend, rob, brk, pool, asOfMs = null }: { lend: LendDoor; rob: RobDoor; brk: BreakDoor; pool: PoolRead; asOfMs?: number | null }): ReactElement {
   const p = poolLine(pool);
-  // the Lend door shows two reads, the pool's size and its outside lenders: it says live when both are, and failed when either failed
-  const lendSource = lend.source === 'failed' || pool.kind === 'failed' ? 'failed' : lend.source === 'live' && pool.kind === 'live' ? 'live' : 'recorded';
+  // the Lend door shows two reads, the pool's size and its outside lenders: it says live when both are, and failed when either failed; a lender
+  // count from the state file is dated, whatever the pool read did
+  const lendSource = lend.source === 'failed' || pool.kind === 'failed' ? 'failed' : lend.source === 'state' ? 'state' : lend.source === 'live' && pool.kind === 'live' ? 'live' : 'recorded';
   return (
     <section className="doors" aria-labelledby="doors-title" data-testid="landing-doors">
       <h2 id="doors-title" className="doors-title">
@@ -60,8 +64,8 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
               what="Your browser signs what a hijacked agent would send to a practice card, and the card's contract answers."
               number={String(rob.paidOutside)}
               caption={`paid to anyone but the booked shop, in ${countText(rob.attempts)} ${rob.attempts === 1 ? 'attempt' : 'attempts'}.`}
-              note={sourceNote(rob.source, 'Read from the chain.')}
-              live={rob.source === 'live'}
+              note={sourceNote(rob.source, 'Read from the chain.', rob.asOfMs)}
+              live={rob.source === 'live' || rob.source === 'state'}
               testId="door-rob"
             />
           </a>
@@ -74,8 +78,8 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
               what="One click makes you a real account of your own and lends 1 NEAR from it into the live pool."
               number={p.held.replace(/ NEAR$/, '')}
               caption={`NEAR in the pool now. ${lend.lenders === 0 ? 'No lender from outside the team yet. Be one.' : `${String(lend.lenders)} lender ${lend.lenders === 1 ? 'account' : 'accounts'} from outside the team so far.`}`}
-              note={sourceNote(lendSource, 'Read from the pool contract and its own deposit records.')}
-              live={lendSource === 'live'}
+              note={sourceNote(lendSource, 'Read from the pool contract and its own deposit records.', lend.asOfMs)}
+              live={lendSource === 'live' || lendSource === 'state'}
               testId="door-lend"
             />
           </a>
@@ -95,6 +99,12 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
           </a>
         </li>
       </ul>
+      {asOfMs === null ? null : (
+        <p className="doors-limits" data-testid="doors-asof">
+          {`The attempt and lender counts are read from the chain's public history, ${asOfText(asOfMs)}, and refreshed every hour. To recompute them from the repository: `}
+          <code>{SITE_STATE_COMMAND}</code>.
+        </p>
+      )}
       <p className="doors-limits" data-testid="doors-limits">
         Runs on the NEAR test network, where NEAR has no value. The borrower and the merchant in the hourly loop are accounts the team runs, and the issuer books the payees a card may pay. <a href={url('terms')}>Every term, with its code line, proof or test</a>.
       </p>
@@ -102,25 +112,42 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
   );
 }
 
+const poolOfState = (s: SiteState): PoolRead => ({ kind: 'state', assets: s.pool.assets, losses: s.pool.losses, asOfMs: s.as_of_ms });
+
 export function Doors(): ReactElement {
-  const [lend, setLend] = useState<LendDoor>(() => recordedLend());
-  const [rob, setRob] = useState<RobDoor>(() => recordedRob());
+  // a prerendered page carries the state file it was built with, so its first render is the HTML's
+  const [baked] = useState(() => bakedState());
+  const [lend, setLend] = useState<LendDoor>(() => (baked === null ? recordedLend() : lendOfState(baked)));
+  const [rob, setRob] = useState<RobDoor>(() => (baked === null ? recordedRob() : robOfState(baked)));
   const [brk, setBrk] = useState<BreakDoor>(() => recordedBreak());
-  const [pool, setPool] = useState<PoolRead>({ kind: 'recorded' });
+  const [pool, setPool] = useState<PoolRead>(() => (baked === null ? { kind: 'recorded' } : poolOfState(baked)));
+  const [asOfMs, setAsOf] = useState<number | null>(baked?.as_of_ms ?? null);
   useEffect(() => {
     // the local console (replay mode, no keys) makes no request off its own origin: it keeps the recorded values, labelled
     if (!STATIC) return undefined;
     let live = true;
-    readLendDoor().then((v) => live && setLend(v), () => live && setLend(recordedLend(true)));
-    readRobDoor().then((v) => live && setRob(v), () => live && setRob(recordedRob(true)));
+    // the lender and attempt counts come from the site state file (same origin) and the home page asks the history API for nothing; only
+    // without the file (a local build) are they read from the history API as before
+    void loadSiteState().then((s) => {
+      if (!live) return;
+      if (s !== null) {
+        setLend(lendOfState(s));
+        setRob(robOfState(s));
+        setAsOf(s.as_of_ms);
+        setPool((p) => (p.kind === 'live' ? p : poolOfState(s)));
+        return;
+      }
+      readLendDoor().then((v) => live && setLend(v), () => live && setLend(recordedLend(true)));
+      readRobDoor().then((v) => live && setRob(v), () => live && setRob(recordedRob(true)));
+    });
     readBreakDoor().then((v) => live && setBrk(v), () => live && setBrk(recordedBreak(true)));
     readPool({ pool: CREDIT_POOL, rpcUrls: NEAR_RPC }).then(
       (v) => live && setPool({ kind: 'live', assets: v.assets, losses: v.losses }),
-      () => live && setPool({ kind: 'failed' }),
+      () => live && setPool((p) => (p.kind === 'state' ? p : { kind: 'failed' })),
     );
     return () => {
       live = false;
     };
   }, []);
-  return <DoorsView lend={lend} rob={rob} brk={brk} pool={pool} />;
+  return <DoorsView lend={lend} rob={rob} brk={brk} pool={pool} asOfMs={asOfMs} />;
 }

@@ -3,6 +3,7 @@
 // so the page never shows a number the bench did not produce.
 import type { BenchData, Table } from '../bench/types.ts';
 import { formatNear } from '../credit/model.ts';
+import { asOfText } from '../state/siteState.ts';
 
 export type Count = { k: string; n: string };
 export type Facts = {
@@ -79,7 +80,8 @@ export function factsOf(d: BenchData): Facts | null {
  */
 export const RECORDED_POOL = { assets: '3219000000000000000000000', losses: '0', atText: 'Nov 10, 2026' } as const;
 
-export type PoolRead = { kind: 'recorded' } | { kind: 'failed' } | { kind: 'live'; assets: string; losses: string };
+/** `state`: the pool's view as the site state file holds it (written from the chain at deploy time and every hour), until the live read lands. */
+export type PoolRead = { kind: 'recorded' } | { kind: 'failed' } | { kind: 'live'; assets: string; losses: string } | { kind: 'state'; assets: string; losses: string; asOfMs: number };
 export type PoolLine = { held: string; lost: string; note: string; live: boolean };
 
 /** Yocto as NEAR with at most two decimals, truncated, and no `.00` on a whole amount. */
@@ -87,6 +89,7 @@ const nearShort = (yocto: string): string => `${formatNear(yocto, 2).replace(/\.
 
 export function poolLine(read: PoolRead): PoolLine {
   if (read.kind === 'live') return { held: nearShort(read.assets), lost: nearShort(read.losses), note: 'Read from the pool contract as this page opened.', live: true };
+  if (read.kind === 'state') return { held: nearShort(read.assets), lost: nearShort(read.losses), note: `Read from the pool contract, ${asOfText(read.asOfMs)}.`, live: true };
   const note = `Recorded from the pool contract on ${RECORDED_POOL.atText}${read.kind === 'failed' ? '; the chain could not be read just now' : ''}.`;
   return { held: nearShort(RECORDED_POOL.assets), lost: nearShort(RECORDED_POOL.losses), note, live: false };
 }

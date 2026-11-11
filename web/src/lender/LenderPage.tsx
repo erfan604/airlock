@@ -11,8 +11,11 @@ import { readBook } from '../challenge/chainBoard.ts';
 import { RpcError } from '../chain/rpc.ts';
 import { eventLogs, functionCall, generateKey, keyFromSecret } from '../chain/tx.ts';
 import type { Ed25519Key } from '../chain/tx.ts';
+import { historyFetch } from '../chain/historyFetch.ts';
 import { readPool } from '../credit/chain.ts';
-import { formatNear } from '../credit/model.ts';
+import { asOfText, bakedState, loadSiteState } from '../state/siteState.ts';
+import type { SiteState } from '../state/siteState.ts';
+import { LP_STORAGE, formatNear } from '../credit/model.ts';
 import type { PoolView } from '../credit/model.ts';
 import { CREDIT_POOL } from '../credit/net.ts';
 import { depositCall, sendPoolCall } from '../credit/wallet.ts';
@@ -27,7 +30,10 @@ import type { Link, Saved } from './keystore.ts';
 import { countLenders, poolEvents, readAccountTxs, readLp } from './lenders.ts';
 import type { LenderCount, LpView, PoolEvent, PoolTx } from './lenders.ts';
 
+/** What the visitor lends: 1 NEAR is credited to the pool. */
 export const LEND = 10n ** 24n;
+/** The page attaches LEND plus the pool's one-time storage charge for a new lender (credit/model.ts LP_STORAGE), so exactly LEND is credited. */
+export const ATTACH = LEND + LP_STORAGE;
 const TGAS = 10n ** 12n;
 const DEPOSIT_GAS = 60n * TGAS;
 const WITHDRAW_GAS = 80n * TGAS;
@@ -58,6 +64,8 @@ export type ChainView = {
   events: PoolEvent[];
   truncated: boolean;
   lenders: LenderCount | null;
+  /** `events` are only those after the site state file's cut; the file's last loop cycle stands in for the older part */
+  loopKnownMs?: number | null;
 };
 
 export type Position = { saved: Saved; lp: LpView | null; attacks: AttackCount | null };
@@ -74,6 +82,8 @@ const NOT_SLOW: Slow = { chain: false, lp: false, attacks: false };
 
 export type LenderViewProps = {
   nowMs: number;
+  /** the site state file: its lender count and loop line show at once, and stay (dated) when the history API cannot be read */
+  site?: SiteState | null;
   chain: ChainView | null;
   chainFailed: boolean;
   schedule: Schedule | null;
@@ -242,6 +252,13 @@ function Slip({ pos, nowMs, chain, link, onWithdraw, onRetry, onCopy, copied, bu
   );
 }
 
+/** The loop line from the site state file alone: a planned pause is read at the visitor's time, the last cycle as of the file. */
+export function stateLoop(site: SiteState, schedule: Schedule, nowMs: number): string {
+  const paused = activePause(schedule, nowMs) !== null;
+  const line = loopSentence(loopStatus([], schedule, paused ? nowMs : site.as_of_ms, site.loop.last_ms));
+  return paused ? line : `${line} Read from the chain, ${asOfText(site.as_of_ms)}.`;
+}
+
 /** The lenders outside the team, said so that zero reads as "none yet", not as a broken counter. */
 export function lendersSentence(l: LenderCount, truncated: boolean): string {
   const where = `counted from the pool's own deposit records${truncated ? ', newest part' : ''}; the team's accounts are listed in the code`;
@@ -269,6 +286,7 @@ export function LenderView(p: LenderViewProps): ReactElement {
   const join = p.position === null || p.chain === null ? null : joinOf(p.chain.events, p.position.saved.accountId);
   const since = p.position === null || p.chain === null || p.schedule === null || join === null ? null : sinceSentence(p.chain, p.schedule, join.atMs, p.nowMs);
   const slow = p.slow ?? NOT_SLOW;
+  const site = p.site ?? null;
   const fallback = p.problem !== null && (p.problem.kind === 'limited' || p.problem.kind === 'unavailable' || p.problem.kind === 'unsupported');
   return (
     <main className="page lend" data-testid="lend">
@@ -301,6 +319,9 @@ export function LenderView(p: LenderViewProps): ReactElement {
           <button type="button" className="act act-primary lend-go" data-testid="lend-go" disabled={p.busy || closed !== null || p.steps !== null} onClick={p.onLend}>
             Make my account and lend 1 NEAR
           </button>
+          <p className="lend-fine" data-testid="lend-storage">
+            {`It sends ${formatNear(ATTACH, 4)} NEAR: 1 NEAR into the pool, and 0.0025 NEAR once for your storage entry, charged by the contract.`}
+          </p>
           {closed === null ? null : <p className="lend-note" data-testid="lend-closed">{closed}</p>}
         </section>
       ) : null}
@@ -351,7 +372,9 @@ export function LenderView(p: LenderViewProps): ReactElement {
           </>
         ) : null}
         <p data-testid="lend-lenders">
-          {p.chainFailed && p.chain === null
+          {(p.chain === null || p.chain.lenders === null) && site !== null
+            ? `${lendersSentence({ soFar: site.lenders.outside, now: site.lenders.outside_now, truncated: site.lenders.truncated }, site.lenders.truncated)} Counted ${asOfText(site.as_of_ms)}.`
+            : p.chainFailed && p.chain === null
             ? 'The pool could not be read just now, so no lender count is shown.'
             : p.chain?.lenders === null || p.chain === null
               ? slow.chain
@@ -361,7 +384,9 @@ export function LenderView(p: LenderViewProps): ReactElement {
         </p>
         <p data-testid="lend-loop">
           {p.chain !== null && p.schedule !== null
-            ? loopSentence(loopStatus(p.chain.events, p.schedule, p.nowMs))
+            ? loopSentence(loopStatus(p.chain.events, p.schedule, p.nowMs, p.chain.loopKnownMs ?? null))
+            : site !== null && p.schedule !== null
+              ? stateLoop(site, p.schedule, p.nowMs)
             : p.chainFailed || slow.chain
               ? "The loop's last cycle could not be read just now, so it is not shown."
               : "Reading the loop's last cycle from the pool's transaction history."}
@@ -417,6 +442,7 @@ export default function LenderPage(): ReactElement {
   const [nowMs, setNow] = useState(() => Date.now());
   const [chain, setChain] = useState<ChainView | null>(null);
   const [chainFailed, setChainFailed] = useState(false);
+  const [site, setSite] = useState<SiteState | null>(() => bakedState());
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [saved, setSaved] = useState<Saved | null>(null);
   const [lp, setLp] = useState<LpView | null>(null);
@@ -507,20 +533,28 @@ export default function LenderPage(): ReactElement {
     };
   }, []);
 
-  // the pool: its view, its event history and the lender count
+  // the pool: its view, its event history and the lender count. With the site state file, a visitor who holds no position reads only the history
+  // after the file's cut (the file counts the rest); a lender's own slip folds the whole history, so then it is read in full.
+  const savedId = saved?.accountId ?? null;
   useEffect(() => {
     if (PRERENDER) return undefined;
     let live = true;
     setChainSince(Date.now());
     void (async () => {
+      const s = await loadSiteState();
+      if (!live) return;
+      setSite(s);
+      const full = s === null || savedId !== null || loadSaved(storage()) !== null;
       try {
-        const [pool, read] = await Promise.all([readPool({ pool: CREDIT_POOL, rpcUrls: NEAR_RPC }), readAccountTxs(fetch, CREDIT_POOL)]);
+        const [pool, read] = await Promise.all([readPool({ pool: CREDIT_POOL, rpcUrls: NEAR_RPC }), readAccountTxs(historyFetch, CREDIT_POOL, full ? {} : { sinceMs: s.cut_ms })]);
         const events = poolEvents(read.txs, CREDIT_POOL);
         if (!live) return;
-        setChain({ pool, events, truncated: read.truncated, lenders: null });
+        const truncated = full ? read.truncated : s.lenders.truncated;
+        const loopKnownMs = full ? null : s.loop.last_ms;
+        setChain({ pool, events, truncated, lenders: null, loopKnownMs });
         setChainFailed(false);
-        const lenders = await countLenders(events, read.truncated, (a) => readLp(RPC, CREDIT_POOL, a));
-        if (live) setChain({ pool, events, truncated: read.truncated, lenders });
+        const lenders = await countLenders(events, truncated, (a) => readLp(RPC, CREDIT_POOL, a), undefined, full ? [] : s.lenders.outside);
+        if (live) setChain({ pool, events, truncated, lenders, loopKnownMs });
       } catch {
         if (live) setChainFailed(true);
       }
@@ -528,7 +562,7 @@ export default function LenderPage(): ReactElement {
     return () => {
       live = false;
     };
-  }, [reload]);
+  }, [reload, savedId]);
 
   // the visitor's own position, read again every 20 s and a few seconds after their own call (views read final blocks, which trail by about 2 s)
   const [tick, setTick] = useState(0);
@@ -573,7 +607,8 @@ export default function LenderPage(): ReactElement {
           const byCard = new Map<string, { txs: readonly PoolTx[]; book: ReadonlySet<string> | null }>();
           for (const card of cards) {
             // the live card keeps its book private (no get_book view): then the refusals are counted and no paid-out number is shown
-            const [txs, book] = await Promise.all([readAccountTxs(fetch, card), readBook(fetch, card).then((b) => new Set(b), () => null)]);
+            // only the card's transactions since the lender joined are counted, so the listing stops there
+            const [txs, book] = await Promise.all([readAccountTxs(historyFetch, card, { sinceMs: join.atMs - 1 }), readBook(fetch, card).then((b) => new Set(b), () => null)]);
             byCard.set(card, { txs: txs.txs, book });
           }
           if (live) setAttacks(attacksOnCards(byCard, cards, join.atMs, Date.now()));
@@ -591,7 +626,7 @@ export default function LenderPage(): ReactElement {
   const lendFrom = useCallback(async (record: Saved, key: Ed25519Key): Promise<void> => {
     setSteps({ step: 'lending', accountId: record.accountId });
     try {
-      const r = await callWhenKeyLands(() => functionCall(RPC, key, { signerId: record.accountId, receiverId: CREDIT_POOL, method: 'deposit', args: {}, gas: DEPOSIT_GAS, deposit: LEND, random: Math.random }));
+      const r = await callWhenKeyLands(() => functionCall(RPC, key, { signerId: record.accountId, receiverId: CREDIT_POOL, method: 'deposit', args: {}, gas: DEPOSIT_GAS, deposit: ATTACH, random: Math.random }));
       const ok = eventLogs(r.outcome, CREDIT_POOL).some((l) => l.includes('"event":"deposit"') && l.includes(record.accountId));
       if (!ok) throw new Error(failureOf(r.outcome) ?? 'the pool logged no deposit');
       const done: Saved = { ...record, depositTx: r.hash };
@@ -600,6 +635,8 @@ export default function LenderPage(): ReactElement {
       setReceipt(null);
       setSaved(done);
       setSteps({ step: 'done', accountId: record.accountId });
+      // the pool's listing changed with this deposit: the next read must not reuse an answer from before it
+      historyFetch.clear();
       setReload((n) => n + 1);
     } catch (e) {
       setSaved(record);
@@ -663,6 +700,7 @@ export default function LenderPage(): ReactElement {
         if (amount !== null) setReceipt({ amount, accountId: saved.accountId, tx: r.hash });
         // the old shares are gone: read the position again rather than show them beside the receipt
         setLp(null);
+        historyFetch.clear();
         setReload((n) => n + 1);
       } catch (e) {
         setProblem({ kind: 'withdraw', detail: e instanceof Error ? e.message : 'unknown' });
@@ -673,7 +711,7 @@ export default function LenderPage(): ReactElement {
 
   const onWallet = useCallback(() => {
     setBusy(true);
-    void sendPoolCall(depositCall(CREDIT_POOL, LEND)).then((r) => {
+    void sendPoolCall(depositCall(CREDIT_POOL, ATTACH)).then((r) => {
       if (r.ok && r.tx !== '') setWalletTx(r.tx);
       setBusy(false);
     });
@@ -694,7 +732,7 @@ export default function LenderPage(): ReactElement {
     attacks: attacks === null && chain !== null && nowMs - attacksSince > GIVE_UP_MS,
   };
   const confirm = pending === null || saved === null ? null : { linked: pending.accountId, mine: saved.accountId };
-  return <LenderView linkNote={linkNote} confirm={confirm} backups={backups} onKeep={onKeep} onSwitch={onSwitch} onSwitchBack={onSwitchBack} nowMs={nowMs} chain={chain} chainFailed={chainFailed} schedule={schedule} position={position} steps={steps} problem={problem} busy={busy} walletTx={walletTx} link={link} onLend={onLend} onRetry={onRetry} onWithdraw={onWithdraw} onWallet={onWallet} onCopy={onCopy} copied={copied} confirming={confirming} receipt={receipt} slow={slow} />;
+  return <LenderView site={site} linkNote={linkNote} confirm={confirm} backups={backups} onKeep={onKeep} onSwitch={onSwitch} onSwitchBack={onSwitchBack} nowMs={nowMs} chain={chain} chainFailed={chainFailed} schedule={schedule} position={position} steps={steps} problem={problem} busy={busy} walletTx={walletTx} link={link} onLend={onLend} onRetry={onRetry} onWithdraw={onWithdraw} onWallet={onWallet} onCopy={onCopy} copied={copied} confirming={confirming} receipt={receipt} slow={slow} />;
 }
 
 export { LenderPage };

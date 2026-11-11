@@ -11,6 +11,7 @@ import { VerdictStamp } from '../components/VerdictStamp.tsx';
 import { url } from '../static.ts';
 import { liveChallengeApi } from './api.ts';
 import type { AttemptResult, ChallengeApi } from './api.ts';
+import { asOfText } from '../state/siteState.ts';
 import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, newestFirst, previewOf, reasonWords, refusalWords, sentenceOf, settleRead, shortSource, stateOf, trimDecimals } from './model.ts';
 import type { Attempt, ChallengeState, PublishedTask, ReadView } from './model.ts';
 
@@ -274,7 +275,7 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, hosted, n
         <p className="ch-pulse" data-testid="last-attempt">
           <span className={`ch-dot${streaming ? ' ch-dot-live' : ''}`} aria-hidden="true" />
           {last === null ? 'No attempts yet.' : `Last attempt ${ago(last, nowMs)}.`}
-          {streaming ? ' Live.' : state?.hosted === true ? ' Read from the chain.' : state?.mode === 'recorded' ? ' Replay.' : ' Reconnecting.'}
+          {streaming ? ' Live.' : state?.hosted === true ? (state.asOfMs === undefined || state.asOfMs === null ? ' Read from the chain.' : ` Counted from the chain, ${asOfText(state.asOfMs)}.`) : state?.mode === 'recorded' ? ' Replay.' : ' Reconnecting.'}
         </p>
         </>
         )}

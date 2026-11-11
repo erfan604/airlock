@@ -7,6 +7,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { explorerTx } from '../approvals/staticChain.ts';
 import { NEAR_RPC } from '../../csp.ts';
 import { PRERENDER, STATIC } from '../static.ts';
+import { asOfText } from '../state/siteState.ts';
 import { explorerBaseTx, readBaseChecks } from './baseChecks.ts';
 import type { BaseCheckRow } from './baseChecks.ts';
 import { readLp } from './chain.ts';
@@ -16,7 +17,7 @@ import { connectWallet } from '../wallet/connector.ts';
 import { DEFAULT_POOL, poolFromSearch, useCredit } from './useCredit.ts';
 import type { CreditState } from './useCredit.ts';
 import { accountText } from '../components/account.ts';
-import { assetsFor, derive, explorerAccount, shownAccount, formatNear, parseNear, percent, refusedSum, shortId, sharesFor } from './model.ts';
+import { LP_STORAGE, assetsFor, derive, explorerAccount, shownAccount, formatNear, parseNear, percent, refusedSum, shortId, sharesFor } from './model.ts';
 import type { CreditEvent, EventKind, Line, PoolView } from './model.ts';
 import { depositCall, sendPoolCall, withdrawCall } from './wallet.ts';
 import type { SendResult } from './wallet.ts';
@@ -169,7 +170,7 @@ export function Stats({ pool, events, feed, nowMs }: { pool: PoolView; events: r
       <Stat testId="stat-util" label="Utilization" value={percent(d.utilizationBps)} note="lent out of the pool's assets" />
       <Stat
         testId="stat-return"
-        label="Return to LPs"
+        label="Return to lenders"
         value={d.aprBps === null ? `${percent(d.returnBps)} to date` : `${percent(d.aprBps)} a year`}
         note={
           d.feeSplitBps === null
@@ -178,7 +179,7 @@ export function Stats({ pool, events, feed, nowMs }: { pool: PoolView; events: r
         }
       />
       <Stat testId="stat-refused" label="Stopped at the airlock" value={feed ? `${String(heldCount(events))} held, ${String(refusedCount(events))} refused` : 'not read here'} note={feed ? refusedNote(events) : 'the event feed is read on the hosted site'} />
-      <Stat testId="stat-stolen" label="Stolen from LPs" value={`${formatNear(pool.losses)} NEAR`} note="losses the pool records: stolen payments and unrepaid defaults" />
+      <Stat testId="stat-stolen" label="Stolen from lenders" value={`${formatNear(pool.losses)} NEAR`} note="losses the pool records: stolen payments and unrepaid defaults" />
     </dl>
   );
 }
@@ -225,7 +226,11 @@ export function MoneyPanel({ state, nowMs }: { state: CreditState; nowMs: bigint
     live === null || amount === null
       ? null
       : side === 'deposit'
-        ? `${formatNear(sharesFor(amount, live.pool.shares, live.pool.assets))} shares`
+        ? amount < 35n * 10n ** 20n && (mine === null || mine === '0')
+          ? "A new lender's deposit must be at least 0.0035 NEAR: the pool keeps 0.0025 NEAR of it once for the storage entry."
+          : mine === null || mine === '0'
+            ? `${formatNear(sharesFor(amount - LP_STORAGE, live.pool.shares, live.pool.assets))} shares, after the 0.0025 NEAR the pool charges a new lender once for the storage entry`
+            : `${formatNear(sharesFor(amount, live.pool.shares, live.pool.assets))} shares`
         : `${formatNear(assetsFor(amount, live.pool.shares, live.pool.assets))} NEAR at the current share price`;
 
   const onConnect = useCallback(() => {
@@ -267,7 +272,7 @@ export function MoneyPanel({ state, nowMs }: { state: CreditState; nowMs: bigint
   return (
     <section className="cr-panel" aria-labelledby="cr-money-h" data-testid="credit-money">
       <h2 id="cr-money-h" className="cr-h2">
-        Stake and withdraw
+        Deposit and withdraw
       </h2>
       <div className="cr-seg" role="group" aria-label="Deposit or withdraw">
         {(['deposit', 'withdraw'] as const).map((s) => (
@@ -328,13 +333,17 @@ export function MoneyPanel({ state, nowMs }: { state: CreditState; nowMs: bigint
   );
 }
 
-export function Ticker({ events, nowMs, live }: { events: readonly CreditEvent[]; nowMs: number; live: CreditState['kind'] }) {
+/** `asOfMs`: the events are the site state file's, written then; the live history read has not added to them (yet, or it was refused). */
+export function Ticker({ events, nowMs, live, asOfMs = null }: { events: readonly CreditEvent[]; nowMs: number; live: CreditState['kind']; asOfMs?: number | null }) {
   const rows = events.slice(-14).reverse();
   return (
     <section className="cr-panel" aria-labelledby="cr-feed-h" data-testid="credit-ticker">
       <h2 id="cr-feed-h" className="cr-h2">
         Events
       </h2>
+      {asOfMs === null ? null : (
+        <p className="cr-note" data-testid="ticker-asof">{`Read from the chain's public history, ${asOfText(asOfMs)}.`}</p>
+      )}
       {rows.length === 0 ? (
         <p className="cr-note" data-testid="ticker-empty">
           {live === 'live' ? 'The pool has logged no events yet, or the event feed is not read in this build.' : 'No events yet.'}
@@ -678,7 +687,7 @@ export function CreditPage(): ReactElement {
           <h1 id="cr-title" className="cr-title">
             Credit for agents that cannot be talked out of the money
           </h1>
-          <p className="cr-lede">LPs stake into a pool. Each agent spends from a credit line the pool funds, and every payment goes through the airlock first.</p>
+          <p className="cr-lede">Lenders deposit into a pool. Each agent spends from a credit line the pool funds, and every payment goes through the airlock before any money moves.</p>
           <p className="cr-note" data-testid="credit-not-plastic">An AIRLOCK credit line is an on-chain line of credit on NEAR, not a plastic card.</p>
           <Badge state={state} />
         </div>
@@ -762,7 +771,7 @@ export function CreditPage(): ReactElement {
         <>
           <div className="cr-two">
             <MoneyPanel state={state} nowMs={nowMs} />
-            <Ticker events={events} nowMs={now} live={state.kind} />
+            <Ticker events={events} nowMs={now} live={state.kind} asOfMs={state.kind === 'live' ? (state.eventsAsOfMs ?? null) : null} />
           </div>
           <LinesTable lines={pool.lines} selected={selected} onSelect={pick} nowMs={nowMs} />
           {state.kind === 'live' ? <Passports rows={passportRows} pool={poolPassport} /> : null}

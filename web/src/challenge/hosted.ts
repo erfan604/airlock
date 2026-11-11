@@ -3,11 +3,14 @@
 // challenge), and a few tasks the owner signed ahead of time. (2) The chain, through chainBoard.ts. A visitor's pasted text needs the live planner
 // and a model key, which a static site cannot hold, so door one is shut here and the page says so. The page keeps no state of its own: the board
 // is whatever the chain shows.
+import { historyFetch } from '../chain/historyFetch.ts';
 import { url } from '../static.ts';
+import { loadSiteState } from '../state/siteState.ts';
+import type { SiteState } from '../state/siteState.ts';
 import { readChain } from './chainBoard.ts';
-import type { ChainConfig, ChainRead } from './chainBoard.ts';
-import { EMPTY_BOARD } from './model.ts';
-import type { Attempt, ChallengeState, PublishedTask } from './model.ts';
+import type { ChainConfig } from './chainBoard.ts';
+import { EMPTY_BOARD, foldBoard } from './model.ts';
+import type { Attempt, Board, ChallengeState, PublishedTask } from './model.ts';
 import { boardOf } from './chainBoard.ts';
 import type { ChallengeApi } from './api.ts';
 
@@ -75,16 +78,28 @@ export function commandOf(h: HostedPublic, task: PublishedTask, payee: string, a
 export const SUGGESTED_PAYEE = 'near:unbooked-thief.testnet';
 export const SUGGESTED_YOCTO = '1000000000000000000000000';
 
-export type HostedOptions = { fetchFn?: typeof fetch; clock?: () => number; random?: () => number; ttlMs?: number; publicUrl?: string };
+/** `siteState`: where the site state file comes from (default: the site's own /site-state.json; tests give null for none). */
+export type HostedOptions = { fetchFn?: typeof fetch; clock?: () => number; random?: () => number; ttlMs?: number; publicUrl?: string; siteState?: () => Promise<SiteState | null> };
+
+/** What the board shows: the attempts (the newest ones when a state file stands in for the older part), the board of all of them, and when. */
+type Read = { attempts: Attempt[]; board: Board; truncated: boolean; asOfMs: number | null };
+
+/** The state file's board plus the attempts read after its cut, numbered on from the file's count. */
+export function withState(c: NonNullable<SiteState['challenge']>, fresh: readonly Attempt[]): Read {
+  const added = fresh.map((a, i) => ({ ...a, seq: c.board.attempts + i + 1 }));
+  return { attempts: [...c.attempts, ...added], board: added.reduce(foldBoard, c.board), truncated: c.truncated, asOfMs: null };
+}
 
 /** The challenge API of the hosted page. Reads are cached for `ttlMs` so the state and the attempts of one load share one chain read. */
 export function hostedChallengeApi(o: HostedOptions = {}): ChallengeApi {
-  const fetchFn = o.fetchFn ?? ((input, init) => fetch(input, init));
+  const fetchFn = o.fetchFn ?? historyFetch;
   const clock = o.clock ?? Date.now;
   const random = o.random ?? Math.random;
   const ttl = o.ttlMs ?? 10_000;
   let pub: Promise<HostedPublic | null> | null = null;
-  let read: { at: number; value: Promise<ChainRead | null> } | null = null;
+  let read: { at: number; value: Promise<Read | null> } | null = null;
+  let done: Read | null = null;
+  const siteState = o.siteState ?? (() => loadSiteState());
   let pick: { task: PublishedTask; index: number } | null = null;
 
   const published = (): Promise<HostedPublic | null> => {
@@ -96,19 +111,32 @@ export function hostedChallengeApi(o: HostedOptions = {}): ChallengeApi {
     return pub;
   };
 
-  const chain = async (): Promise<ChainRead | null> => {
+  // With the site state file (for the same policy), the board shows the file's numbers at once: the live read asks only for what came after the
+  // file's cut, runs in the background, and the next poll shows it. When the history API refuses, the file's numbers stay, dated.
+  const chain = async (): Promise<Read | null> => {
     const h = await published();
     if (h === null) return null;
+    const s = await siteState().catch(() => null);
+    const known = s?.challenge !== undefined && s.challenge !== null && s.challenge.policy === h.policy ? s.challenge : null;
     if (read === null || clock() - read.at > ttl) {
-      const cfg: ChainConfig = { policy: h.policy, publicKey: h.publicKey, agent: h.agent };
-      const value = readChain(fetchFn, cfg);
+      const cfg: ChainConfig = { policy: h.policy, publicKey: h.publicKey, agent: h.agent, ...(known === null || s === null ? {} : { sinceMs: s.cut_ms }) };
+      const value = readChain(fetchFn, cfg).then((r): Read => (known === null ? { attempts: r.attempts, board: boardOf(r.attempts), truncated: r.truncated, asOfMs: null } : withState(known, r.attempts)));
       read = { at: clock(), value };
-      // a failed read is not kept: the next call asks the chain again
-      value.catch(() => {
-        if (read?.value === value) read = null;
-      });
+      value.then(
+        (v) => {
+          done = v;
+        },
+        () => {
+          // a failed read is not kept: the next call asks the chain again
+          if (read?.value === value) read = null;
+        },
+      );
     }
-    return read.value;
+    if (known === null || s === null) return read.value;
+    const fallback: Read = { attempts: known.attempts, board: known.board, truncated: known.truncated, asOfMs: s.as_of_ms };
+    if (done !== null) return done;
+    // the live read usually lands in a second or two: wait that long for it, then show the file's numbers (the next poll adds the rest)
+    return Promise.race([read.value.catch(() => fallback), new Promise<Read>((r) => setTimeout(() => r(fallback), 2_500))]);
   };
 
   return {
@@ -128,12 +156,13 @@ export function hostedChallengeApi(o: HostedOptions = {}): ChallengeApi {
       const chosen = pick;
       return {
         ...base,
-        board: boardOf(got?.attempts ?? []),
+        board: got?.board ?? EMPTY_BOARD,
         key: { account: h.agent, publicKey: h.publicKey, secretKey: h.secretKey, receiver: h.policy, methods: ['submit_batch'], allowance: h.allowance },
         task: chosen?.task ?? null,
         taskExpired: chosen === null,
         command: chosen === null ? null : commandOf(h, chosen.task, SUGGESTED_PAYEE, SUGGESTED_YOCTO, chosen.index),
         truncated: got?.truncated === true,
+        asOfMs: got?.asOfMs ?? null,
       };
     },
     async attempts(limit: number): Promise<Attempt[]> {

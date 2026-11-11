@@ -4,6 +4,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { NEAR_RPC } from '../../csp.ts';
 import { STATIC } from '../static.ts';
+import { loadSiteState } from '../state/siteState.ts';
+import type { SiteState } from '../state/siteState.ts';
 import { readEvents, readPool } from './chain.ts';
 import { CREDIT_POOL } from './net.ts';
 import { fixtureEvent, fixtureHistory, fixturePool } from './fixture.ts';
@@ -15,7 +17,8 @@ export const DEFAULT_POOL: string | null = CREDIT_POOL;
 export type CreditState =
   | { kind: 'loading' }
   | { kind: 'fixture'; pool: PoolView; events: CreditEvent[] }
-  | { kind: 'live'; poolId: string; pool: PoolView; events: CreditEvent[]; stale: boolean; feed: 'ok' | 'unavailable' }
+  /** `eventsAsOfMs`: the events are the site state file's (written at that time) and the live history read has not added to them */
+  | { kind: 'live'; poolId: string; pool: PoolView; events: CreditEvent[]; stale: boolean; feed: 'ok' | 'unavailable'; eventsAsOfMs?: number | null }
   | { kind: 'unreadable'; poolId: string };
 
 const POOL_NAME = /^[a-z0-9][a-z0-9._-]{1,60}\.testnet$/;
@@ -27,6 +30,8 @@ export function poolFromSearch(search: string): string | null {
 }
 
 export const POLL_MS = 8_000;
+/** The event history is read every this many pool reads (about a minute): the pool's own view is the one that changes by the second. */
+export const EVENTS_EVERY = 8;
 export const MAX_POLL_MS = 60_000;
 
 /** The wait before the next read: the poll interval, doubled for every failure in a row, capped. */
@@ -76,6 +81,8 @@ export function useCredit(poolId: string | null): CreditState {
 
     setState({ kind: 'loading' });
     let failures = 0;
+    let round = 0;
+    let fromHistory = false;
     const cycle = async (): Promise<void> => {
       let pool: PoolView | null = null;
       try {
@@ -90,24 +97,39 @@ export function useCredit(poolId: string | null): CreditState {
       } else {
         failures = 0;
         const view = pool;
-        // the live console's policy does not name the FastNEAR transaction host: events are read on the hosted site only
+        // the live console's policy does not name the FastNEAR transaction host: events are read on the hosted site only. The site state file
+        // (the default pool only) gives the events up to its cut at once; the history read then asks only for what came after, once a minute.
         let events: CreditEvent[] | null = null;
+        let site: SiteState | null = null;
         if (STATIC) {
-          try {
-            events = await readEvents({ pool: poolId, cards: view.lines.map((l) => l.card) });
-          } catch {
-            events = null;
-          }
+          site = poolId === DEFAULT_POOL ? await loadSiteState() : null;
           if (!ok()) return;
+          if (round % EVENTS_EVERY === 0) {
+            try {
+              events = await readEvents({ pool: poolId, cards: view.lines.map((l) => l.card), ...(site === null ? {} : { sinceMs: site.cut_ms }) });
+              fromHistory = true;
+            } catch {
+              events = null;
+            }
+            if (!ok()) return;
+          }
+          round += 1;
         }
-        setState((s) => ({
-          kind: 'live',
-          poolId,
-          pool: view,
-          events: events === null ? (s.kind === 'live' ? s.events : []) : mergeEvents(s.kind === 'live' ? s.events : [], events),
-          stale: false,
-          feed: STATIC && events !== null ? 'ok' : 'unavailable',
-        }));
+        const base = site?.credit.events ?? [];
+        setState((s) => {
+          const prev = s.kind === 'live' ? s.events : [];
+          const merged = mergeEvents(mergeEvents(prev, base), events ?? []);
+          const dated = !fromHistory && site !== null ? site.as_of_ms : null;
+          return {
+            kind: 'live',
+            poolId,
+            pool: view,
+            events: merged,
+            stale: false,
+            feed: STATIC && (fromHistory || site !== null) ? 'ok' : 'unavailable',
+            eventsAsOfMs: dated,
+          };
+        });
       }
       timer = setTimeout(() => void cycle(), nextDelay(failures));
     };

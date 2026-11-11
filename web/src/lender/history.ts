@@ -171,13 +171,16 @@ export function countdown(untilMs: number, nowMs: number): string | null {
 
 export type LoopLine = { kind: 'not-started' } | { kind: 'paused'; until: number; why: string } | { kind: 'stale'; last: number } | { kind: 'running'; last: number };
 
-/** What the page says about the hourly loop, from the chain and schedule.json only. */
-export function loopStatus(events: readonly PoolEvent[], s: Schedule, nowMs: number): LoopLine {
+/**
+ * What the page says about the hourly loop, from the chain and schedule.json only. `knownLastMs`: the last cycle the site state file holds,
+ * when `events` are only the part after the file's cut.
+ */
+export function loopStatus(events: readonly PoolEvent[], s: Schedule, nowMs: number, knownLastMs: number | null = null): LoopLine {
   const pause = activePause(s, nowMs);
   if (pause !== null) return { kind: 'paused', until: Date.parse(pause.to), why: pause.why };
-  const last = loopRepays(events, s).at(-1);
-  if (last === undefined) return { kind: 'not-started' };
-  return nowMs - last.atMs > 75 * 60_000 ? { kind: 'stale', last: last.atMs } : { kind: 'running', last: last.atMs };
+  const last = loopRepays(events, s).at(-1)?.atMs ?? knownLastMs;
+  if (last === null) return { kind: 'not-started' };
+  return nowMs - last > 75 * 60_000 ? { kind: 'stale', last } : { kind: 'running', last };
 }
 
 export function loopSentence(l: LoopLine): string {
