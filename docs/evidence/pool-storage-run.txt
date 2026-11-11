@@ -1,0 +1,22 @@
+== before
+storage_usage 292373 code 5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN
+pool idle 4445000000000000000000002 shares 4009856723377255758362720 assets 4445000000000000000000002
+lp {"shares":"0","value":"0","locked_until_ms":"0"}
+== 1. first deposit of 0.003 NEAR (below 0.0035): expect a refusal
+Error: 
+   0: Error: An error occurred during a `FunctionCall` action.
+      ExecutionError("Smart contract panicked: a first deposit needs at least 0.0035 NEAR: 0.0025 NEAR pays for your entry in the pool's storage")
+== 2. first deposit of 0.1025 NEAR: expect 0.1 NEAR credited
+│    Transaction ID: 5EKouAqzseLiaDNin9jxMyrJvQ6wyio4PcmPNwZoc2Lb
+The "deposit" call to <pool.airlock-credit-c1108d.testnet> on behalf of <lp3.airlock-credit-c1108d.testnet> succeeded.
+storage_usage 292553 code 5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN
+pool idle 4545000000000000000000002 shares 4100067223340748576323636 assets 4545000000000000000000002
+lp {"shares":"90210499963492817960916","value":"99999999999999999999999","locked_until_ms":"1794422661927"}
+== waiting 70 s for the 60 s hold
+== 3. withdraw all 90210499963492817960916 shares: expect the entry freed
+│    Transaction ID: Db7zDeaAsNcDKTarLsHQL7VM5RAqUTjgSM4icvQUzGXA
+The "withdraw" call to <pool.airlock-credit-c1108d.testnet> on behalf of <lp3.airlock-credit-c1108d.testnet> succeeded.
+storage_usage 292373 code 5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN
+pool idle 4445000000000000000000003 shares 4009856723377255758362720 assets 4445000000000000000000003
+lp {"shares":"0","value":"0","locked_until_ms":"0"}
+unclaimed "0"
