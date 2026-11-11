@@ -1,6 +1,6 @@
 // AIR-356: writes web/public/try-public.json, the one file the "try it live" page needs next to the site: the try policy and its agent,
 // the three published function-call keys (their secrets are public on purpose: each can only call submit_batch on the try policy), the
-// booked shop with its book proof, and 20 tasks the owner signed ahead of time (the shop bounded at 0.01 NEAR, 99 actions, 7 days: 1,980
+// booked shop with its book proof, and 60 tasks the owner signed ahead of time (the shop bounded at 0.01 NEAR, 99 actions, 7 days: 5,940
 // attempt slots, because a request id is used once). The site has no server and a task lives at most 7 days, so this is run again, and the
 // site deployed again, before the tasks expire: the last line says when.
 //   set -a; . ~/.airlock-try.env; set +a
@@ -115,10 +115,10 @@ export async function main(argv: readonly string[]): Promise<number> {
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, `${JSON.stringify(file, null, 2)}\n`);
   const expiresAt = file.tasks[0]?.expiresAt ?? 'unknown';
-  // for the refill job: when the tasks expire, and nothing else (no key)
+  // for the refill job: when the tasks expire and their hashes (to count the free slots), and nothing else (no key)
   const note = join(REPO, 'target', 'try', 'published.json');
   mkdirSync(dirname(note), { recursive: true });
-  writeFileSync(note, `${JSON.stringify({ policy: names.policy, agent: names.agent, owner: names.owner, publishedAt: file.publishedAt, expiresAt, tasks: file.tasks.length, slots: file.tasks.length * (file.tasks[0]?.task.max_actions ?? 0) }, null, 2)}\n`);
+  writeFileSync(note, `${JSON.stringify({ policy: names.policy, agent: names.agent, owner: names.owner, publishedAt: file.publishedAt, expiresAt, tasks: file.tasks.length, slots: file.tasks.length * (file.tasks[0]?.task.max_actions ?? 0), maxActions: file.tasks[0]?.task.max_actions ?? 0, taskHashes: file.tasks.map((t) => t.task_hash) }, null, 2)}\n`);
   console.log(`wrote ${out}`);
   console.log(`keys ${keys.map((k) => k.publicKey).join(', ')} on ${names.agent}: function call, receiver ${names.policy}, submit_batch only`);
   console.log(`tasks ${String(file.tasks.length)} of ${String(file.tasks[0]?.task.max_actions ?? 0)} actions (${String(file.tasks.length * (file.tasks[0]?.task.max_actions ?? 0))} attempt slots), each bounding the shop at 0.01 NEAR`);

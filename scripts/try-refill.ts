@@ -3,14 +3,17 @@
 // run, in order: expires holds past their time (at most 50, every slot of the policy: a slot is freed only by an expire call), renews the agent's registration when it has under 3 days left, tops the
 // agent up to 3 NEAR when it is under 1 (at most 6 NEAR a UTC day) and the policy's free float up to 5 NEAR when it is under 3 (at most
 // 4 NEAR a day), both from the owner, which always keeps 1 NEAR. It prints an ALERT line when the published tasks have under 30 hours
-// left (publishing needs a site deploy, which this job does not do), when a ceiling is used, or when the policy is paused.
+// left (publishing needs a site deploy, which this job does not do), when fewer than 20 percent of the published slots are free or of
+// today's NEAR cap is left (AIR-364: anyone holding the published key can use them up), when a ceiling is used, or when the policy is
+// paused. The day is read every run (one view); the slots (one view per published task) at most every 10 minutes, cached in
+// target/try/slots.json, from the task hashes of the publish note.
 //   pnpm tsx scripts/try-refill.ts          dry (the default): the state, the alerts, and each action with its exact command; sends nothing
 //   pnpm tsx scripts/try-refill.ts --live   runs the actions, only while target/try/LIVE_OK exists; a stop exits 0, a failed action exits 1
 // The accounts come from target/try/published.json (written by scripts/try-publish.ts; it holds no key) or from TRY_OWNER_ACCOUNT,
 // TRY_POLICY_ACCOUNT and TRY_AGENT_ACCOUNT. Every transaction is signed by the near CLI from its keychain (the owner for expire and the
 // transfers, the agent for its own registration); this script reads no key. Actions are logged to target/try/refill.jsonl. Testnet only.
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_RPC_URLS } from '../runtime/src/chain/rpc.ts';
@@ -26,6 +29,32 @@ const msOf = (v: unknown): number => {
   // a time in ms: far below 2^53
   return +v;
 };
+/** How long a count of the free slots is reused before the tasks are read again. */
+export const SLOTS_EVERY_MS = 10 * 60_000;
+const isHash = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{64}$/.test(v);
+
+/** The free and total slots of the published tasks, from a cache younger than SLOTS_EVERY_MS or from the chain (then cached). */
+export async function slotsOf(p: { hashes: readonly string[]; maxActions: number; cacheFile: string; nowMs: number; view: (method: string, args: object) => Promise<unknown> }): Promise<{ free: number; total: number } | null> {
+  if (p.hashes.length === 0 || p.maxActions <= 0) return null;
+  if (existsSync(p.cacheFile)) {
+    try {
+      const c = JSON.parse(readFileSync(p.cacheFile, 'utf8')) as Record<string, unknown>;
+      if (typeof c['atMs'] === 'number' && p.nowMs - c['atMs'] < SLOTS_EVERY_MS && c['tasks'] === p.hashes.length && typeof c['free'] === 'number' && typeof c['total'] === 'number') return { free: c['free'], total: c['total'] };
+    } catch {
+      // a torn cache is read again from the chain
+    }
+  }
+  let free = 0;
+  for (const h of p.hashes) {
+    const st = await p.view('get_task_state', { task_hash: h });
+    if (!isObj(st) || typeof st['actions_used'] !== 'number' || typeof st['revoked'] !== 'boolean') throw new Error('get_task_state answered something unexpected');
+    if (!st['revoked']) free += Math.max(0, p.maxActions - st['actions_used']);
+  }
+  const total = p.hashes.length * p.maxActions;
+  mkdirSync(dirname(p.cacheFile), { recursive: true });
+  writeFileSync(p.cacheFile, `${JSON.stringify({ atMs: p.nowMs, tasks: p.hashes.length, free, total })}\n`);
+  return { free, total };
+}
 
 export function liveIo(): RefillIo {
   const dir = env['TRY_DIR'] ?? join(REPO, 'target', 'try');
@@ -63,6 +92,14 @@ export function liveIo(): RefillIo {
         if (rows.length < 20) break;
       }
       const agent = await rpcView(rpc, names.policy, 'get_agent', { account_id: names.agent });
+      const ledgers = await rpcView(rpc, names.policy, 'get_ledgers', { payee: `near:${names.shop}`, asset: 'near', task: null, book: null });
+      const assetDay = isObj(ledgers) && isObj(ledgers['asset_day']) ? ledgers['asset_day'] : null;
+      const dec = (v: unknown): bigint | null => (typeof v === 'string' && /^[0-9]{1,39}$/.test(v) ? BigInt(v) : null);
+      const cap = dec(assetDay?.['cap']);
+      const remaining = dec(assetDay?.['remaining']);
+      const hashes = published !== null && Array.isArray(published['taskHashes']) ? published['taskHashes'].filter(isHash) : [];
+      const maxActions = published !== null && typeof published['maxActions'] === 'number' ? published['maxActions'] : 0;
+      const slots = await slotsOf({ hashes, maxActions, cacheFile: join(dir, 'slots.json'), nowMs: Date.now(), view: (method, args) => rpcView(rpc, names.policy, method, args) });
       return {
         names,
         owner: (await balance(names.owner)).amount,
@@ -73,6 +110,8 @@ export function liveIo(): RefillIo {
         agentValid: (await rpcView(rpc, names.policy, 'is_agent_valid', { account_id: names.agent })) === true,
         agentValidUntilMs: isObj(agent) ? msOf(agent['valid_until_ms']) : null,
         tasksExpireMs,
+        slots,
+        day: cap === null || remaining === null ? null : { cap, remaining },
       };
     },
     run: async (command) => {

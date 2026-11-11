@@ -1,14 +1,17 @@
 // AIR-356: the refill and renew job of the try card. Visitors spend the agent's gas and fill the policy with request records and holds, so
 // the job expires holds past their time, tops the agent and the policy up from the owner under daily ceilings, renews the agent's
-// registration before it ends, and says when the published tasks need publishing again. Dry by default; live only with its switch.
+// registration before it ends, and says when the published tasks need publishing again, or when the free slots or today's NEAR run low
+// (AIR-364). Dry by default; live only with its switch.
 //   pnpm tsx --test scripts/try-refill.test.ts
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { REFILL_LIVE_OFF, refillPlan, runRefill, tryNames } from '../runtime/src/trycard/index.ts';
 import type { RefillIo, RefillRecord, RefillState } from '../runtime/src/trycard/index.ts';
+import { SLOTS_EVERY_MS, slotsOf } from './try-refill.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 const NEAR = 10n ** 24n;
@@ -158,4 +161,39 @@ test('the cron wrapper: one run, a UTC-stamped log, exit 1 only on a failed run'
   assert.match(sh, /scripts\/try-refill\.ts --live/);
   assert.match(sh, /refill\.log/);
   assert.match(sh, /\^STOP /);
+});
+
+test('AIR-364: an alert when under 20 percent of the published slots are free or of today\'s NEAR cap is left, none at 20 percent', () => {
+  const at = (over: Partial<RefillState>): string => refillPlan(healthy(over), [], NOW).alerts.join('\n');
+  assert.match(at({ slots: { free: 1187, total: 5940 } }), /^ALERT 1187 of 5940 published slots are free, under 20 percent: run scripts\/try-publish\.ts and deploy the site$/);
+  assert.equal(at({ slots: { free: 1188, total: 5940 } }), '');
+  const CENT = NEAR / 100n;
+  assert.match(at({ day: { cap: 5n * CENT, remaining: CENT - 1n } }), /^ALERT 0\.009999999999999999999999 of today's 0\.05 NEAR are left, under 20 percent: the card pays again after 2026-11-13T00:00:00\.000Z$/);
+  assert.equal(at({ day: { cap: 5n * CENT, remaining: CENT } }), '');
+  assert.match(at({ day: { cap: 5n * CENT, remaining: 0n } }), /ALERT 0 of today's 0\.05 NEAR are left/);
+  // both read and shown on the state lines; unknown when the publish note has no task hashes
+  assert.match(refillPlan(healthy({ slots: { free: 4000, total: 5940 }, day: { cap: 5n * CENT, remaining: 3n * CENT } }), [], NOW).lines.join('\n'), /slots 4000 of 5940 free, today 0\.03 of 0\.05 NEAR left/);
+  assert.match(refillPlan(healthy({ slots: null }), [], NOW).lines.join('\n'), /slots unknown, today unknown/);
+  // an alert is not an action: nothing is sent for it
+  assert.deepEqual(refillPlan(healthy({ slots: { free: 0, total: 5940 }, day: { cap: 5n * CENT, remaining: 0n } }), [], NOW).actions, []);
+});
+
+test('AIR-364: the free slots are read from every published task at most every 10 minutes, revoked tasks count none', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'try-slots-'));
+  const cacheFile = join(dir, 'slots.json');
+  const hashes = ['a'.repeat(64), 'b'.repeat(64), 'c'.repeat(64)];
+  let reads = 0;
+  const view = async (_m: string, args: object): Promise<unknown> => {
+    reads += 1;
+    const h = (args as { task_hash: string }).task_hash;
+    return h === hashes[0] ? { actions_used: 10, revoked: false } : h === hashes[1] ? { actions_used: 99, revoked: false } : { actions_used: 0, revoked: true };
+  };
+  assert.deepEqual(await slotsOf({ hashes, maxActions: 99, cacheFile, nowMs: NOW, view }), { free: 89, total: 297 });
+  assert.equal(reads, 3);
+  assert.deepEqual(await slotsOf({ hashes, maxActions: 99, cacheFile, nowMs: NOW + SLOTS_EVERY_MS - 1, view }), { free: 89, total: 297 });
+  assert.equal(reads, 3, 'the cache answers within 10 minutes');
+  await slotsOf({ hashes, maxActions: 99, cacheFile, nowMs: NOW + SLOTS_EVERY_MS, view });
+  assert.equal(reads, 6);
+  assert.equal(await slotsOf({ hashes: [], maxActions: 99, cacheFile, nowMs: NOW, view }), null);
+  await assert.rejects(slotsOf({ hashes, maxActions: 99, cacheFile: join(dir, 'other.json'), nowMs: NOW, view: async () => null }), /get_task_state/);
 });

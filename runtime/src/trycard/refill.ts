@@ -27,6 +27,8 @@ export const EXPIRE_PER_RUN = 50;
 const EXPIRE_MARGIN_MS = 30_000;
 const RENEW_BEFORE_MS = 3 * 86_400_000;
 const REPUBLISH_BEFORE_MS = 30 * 3_600_000;
+/** An ALERT when the free published slots or what is left of today's NEAR cap fall under this share: 20 percent, as 1 in 5. */
+export const LOW_SHARE_DIVISOR = 5;
 
 export type RefillState = {
   names: TryNames;
@@ -41,6 +43,10 @@ export type RefillState = {
   agentValidUntilMs: number | null;
   /** when the published tasks expire (the publish note), or null when there is no note */
   tasksExpireMs: number | null;
+  /** the published slots not used yet (max_actions less actions_used over the published tasks), or null when unknown */
+  slots?: { free: number; total: number } | null;
+  /** the card's NEAR day: its cap and what is left of it today (get_ledgers asset_day), or null when unknown */
+  day?: { cap: bigint; remaining: bigint } | null;
 };
 export type RefillRecord = { kind: 'expire' | 'renew' | 'topup-agent' | 'topup-policy'; atMs: number; tx: string | null; amount?: string; id?: string };
 export type RefillAction =
@@ -56,17 +62,22 @@ const near4 = (yocto: bigint): string => nearText(yocto - (yocto % 10n ** 20n));
 export function refillPlan(s: RefillState, records: readonly RefillRecord[], nowMs: number): RefillPlan {
   const n = s.names;
   const free = s.policy.balance - s.policy.storageBytes * STORAGE_YOCTO_PER_BYTE;
+  const slots = s.slots ?? null;
+  const day = s.day ?? null;
   const lines = [
     `agent ${near4(s.agent)} NEAR: about ${(s.agent / ATTEMPT_GAS_YOCTO).toString()} attempts at ${nearText(ATTEMPT_GAS_YOCTO)} NEAR of gas each`,
     `policy free ${free < 0n ? 'below 0' : near4(free)} NEAR (balance ${near4(s.policy.balance)}, storage ${s.policy.storageBytes.toString()} bytes), held requests ${String(s.pending.length)}, paused ${String(s.paused)}`,
     `owner ${near4(s.owner)} NEAR`,
     `agent registration ${s.agentValidUntilMs === null ? 'missing' : `valid until ${iso(s.agentValidUntilMs)}`}, tasks ${s.tasksExpireMs === null ? 'not published' : `expire ${iso(s.tasksExpireMs)}`}`,
+    `slots ${slots === null ? 'unknown' : `${String(slots.free)} of ${String(slots.total)} free`}, today ${day === null ? 'unknown' : `${nearText(day.remaining)} of ${nearText(day.cap)} NEAR left`}`,
   ];
   const alerts: string[] = [];
   const actions: RefillAction[] = [];
   const today = (kind: RefillRecord['kind']): bigint => records.filter((r) => r.kind === kind && utcDay(r.atMs) === utcDay(nowMs)).reduce((sum, r) => sum + BigInt(r.amount ?? '0'), 0n);
   const nextDay = iso(Date.parse(`${utcDay(nowMs)}T00:00:00.000Z`) + 86_400_000);
 
+  if (slots !== null && slots.free * LOW_SHARE_DIVISOR < slots.total) alerts.push(`ALERT ${String(slots.free)} of ${String(slots.total)} published slots are free, under 20 percent: run scripts/try-publish.ts and deploy the site`);
+  if (day !== null && day.remaining * BigInt(LOW_SHARE_DIVISOR) < day.cap) alerts.push(`ALERT ${nearText(day.remaining)} of today's ${nearText(day.cap)} NEAR are left, under 20 percent: the card pays again after ${nextDay}`);
   if (s.paused) alerts.push('ALERT the try policy is paused: every attempt is blocked until the owner resumes it');
   if (s.tasksExpireMs === null) alerts.push('ALERT there is no publish note (target/try/published.json): run scripts/try-publish.ts and deploy the site');
   else if (s.tasksExpireMs <= nowMs) alerts.push(`ALERT the published tasks expired ${iso(s.tasksExpireMs)}: run scripts/try-publish.ts and deploy the site`);
