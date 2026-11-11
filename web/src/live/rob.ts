@@ -117,7 +117,8 @@ export function failureOf(outcome: unknown): string | null {
   return m?.[1] ?? 'the contract refused the call';
 }
 
-export type Sent = { kind: 'answer'; answer: Answer; tx: string; ms: number } | { kind: 'failed'; why: string; tx: string | null; ms: number } | { kind: 'unavailable'; why: string };
+/** `grief`: the card could not answer because a published key was used to spend its gas money or every signed slot (live/robCheck.ts). */
+export type Sent = { kind: 'answer'; answer: Answer; tx: string; ms: number } | { kind: 'failed'; why: string; tx: string | null; ms: number } | { kind: 'unavailable'; why: string; grief?: 'gas' | 'slots' };
 
 export type SendDeps = { rpc: RpcConfig; random: () => number; now: () => number };
 
@@ -133,7 +134,7 @@ export async function send(pub: TryPublic, w: Wish, deps: SendDeps): Promise<Sen
   let lastKey = -1;
   for (;;) {
     const slot = await pickSlot(pub, view, deps.random, deps.now());
-    if (slot === null) return { kind: 'unavailable', why: 'Every attempt slot the owner signed for is used or expired. The owner publishes new ones.' };
+    if (slot === null) return { kind: 'unavailable', why: 'Every attempt slot the owner signed for is used or expired. The owner publishes new ones.', grief: 'slots' };
     let k = Math.floor(deps.random() * pub.keys.length);
     if (k === lastKey && pub.keys.length > 1) k = (k + 1) % pub.keys.length;
     lastKey = k;
@@ -155,8 +156,12 @@ export async function send(pub: TryPublic, w: Wish, deps: SendDeps): Promise<Sen
       return { kind: 'answer', answer, tx: r.hash, ms: deps.now() - t0 };
     } catch (e) {
       const name = e instanceof RpcError ? `${e.message} ${e.causeName ?? ''}` : '';
+      // the agent's gas money or a key's allowance is used up: anyone holding the published keys can spend it, so the page says so plainly
+      if (e instanceof RpcError && e.detail.some((d) => d === 'NotEnoughBalance' || d === 'NotEnoughAllowance' || d === 'LackBalanceForState')) {
+        return { kind: 'unavailable', why: 'The practice agent has used up the gas money it pays for each attempt. The team tops it up every few minutes, within a daily limit.', grief: 'gas' };
+      }
       // a nonce clash comes back as INVALID_TRANSACTION (the node's InvalidNonce); retried once with another key and a fresh nonce
-      if (/INVALID_TRANSACTION|InvalidNonce/i.test(name) && keyTries === 0) {
+      if ((e instanceof RpcError ? e.detail.includes('InvalidNonce') || /InvalidNonce/i.test(name) || (/INVALID_TRANSACTION/i.test(name) && e.detail.length === 0) : false) && keyTries === 0) {
         keyTries += 1;
         continue;
       }
@@ -178,10 +183,10 @@ export const REASON_WORDS: Record<string, string> = {
   UntrustedRecipient: 'The payee came from outside text, not from the owner or the owner\'s book.',
   NewRecipient: 'The payee is not in the owner\'s book.',
   UntrustedAmount: 'The amount came from outside text, and the shop has no cap that allows it.',
-  AmountOutOfBounds: 'The amount is above the most this card may pay at once, 0.01 NEAR.',
-  DailyLimit: 'The card has already paid its 0.05 NEAR for today. It pays again after midnight UTC.',
+  AmountOutOfBounds: 'The amount is above the most this card may pay at once{hard}.',
+  DailyLimit: 'The card has already paid its limit{daily} for today. It pays again after midnight UTC.',
   UnknownAsset: 'The owner never allowed this coin on the card.',
-  PendingFull: 'Fifty requests are already waiting for the owner, so the card takes no new hold until some expire. Try again in a minute.',
+  PendingFull: 'The queue of {pending} waiting for the owner is full, so the card takes no new hold until some expire. Try again in a minute or two.',
   OverPayeeLimit: 'The shop has already been paid its daily limit.',
   BookLabelNotInBook: 'The request claims a book entry that does not exist.',
   MissingProvenance: 'The request does not say where its values came from.',
@@ -196,7 +201,7 @@ export const REASON_SHORT: Record<string, string> = {
   UntrustedRecipient: 'payee from outside text',
   NewRecipient: 'payee not in the book',
   UntrustedAmount: 'amount from outside text',
-  AmountOutOfBounds: 'over 0.01 NEAR at once',
+  AmountOutOfBounds: 'over the most at once',
   DailyLimit: 'daily limit reached',
   UnknownAsset: 'coin not allowed',
   PendingFull: 'queue full',
@@ -205,13 +210,30 @@ export const REASON_SHORT: Record<string, string> = {
 };
 
 const lookup = (m: Record<string, string>, code: string | null): string => (code === null ? '' : (Object.hasOwn(m, code) ? m[code] : undefined) ?? unshownText(code) ?? code);
-export const reasonWords = (code: string | null): string => lookup(REASON_WORDS, code);
+
+/** The card's limits as the words print them, read from its contract (live/robCheck.ts readLimits) or the state file; null leaves the numbers out. */
+export type LimitWords = { hardCap: string; dailyCap: string; maxPending: number | null } | null;
+
+/** The reason in words, the card's own numbers filled in when they are known. */
+export const reasonWords = (code: string | null, lim: LimitWords = null): string =>
+  lookup(REASON_WORDS, code)
+    .replace('{hard}', lim === null ? '' : `, ${nearWords(lim.hardCap)}`)
+    .replace('{daily}', lim === null ? '' : ` of ${nearWords(lim.dailyCap)}`)
+    .replace('{pending}', lim === null || lim.maxPending === null ? 'requests' : `${String(lim.maxPending)} requests`);
+
+/** Yocto as NEAR with no trailing zeros (BigInt only). */
+export function nearWords(yocto: string): string {
+  const v = BigInt(yocto);
+  const y = 10n ** 24n;
+  const frac = (v % y).toString().padStart(24, '0').replace(/0+$/, '');
+  return `${(v / y).toString()}${frac === '' ? '' : `.${frac}`} NEAR`;
+}
 export const reasonShort = (code: string | null): string => lookup(REASON_SHORT, code);
 
 /** A call the contract turned down, in a plain sentence: a reason code inside its message is said in words; anything else is quoted. */
-export function failureWords(why: string): { words: string; code: string | null } {
+export function failureWords(why: string, lim: LimitWords = null): { words: string; code: string | null } {
   const code = Object.keys(REASON_WORDS).find((c) => new RegExp(`\\b${c}\\b`).test(why)) ?? null;
-  if (code !== null) return { words: reasonWords(code), code };
+  if (code !== null) return { words: reasonWords(code, lim), code };
   if (/used|already/i.test(why)) return { words: 'Two attempts took the same signed slot at once. Send it again; the page picks another slot.', code: null };
   return { words: `The contract turned the call down before deciding, with the message: ${why}.`, code: null };
 }

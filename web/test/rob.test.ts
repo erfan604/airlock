@@ -72,7 +72,7 @@ test('rob: the answer decoder maps allowed, escalated and blocked; a failed call
   assert.equal(answerOf({ status: { SuccessValue: b64('x') } }), null);
   assert.equal(failureOf({ status: { Failure: { ActionError: { kind: { FunctionCallError: { ExecutionError: 'Smart contract panicked: request id already used' } } } } } }), 'Smart contract panicked: request id already used');
   assert.equal(failureOf({ status: { SuccessValue: '' } }), null);
-  assert.match(reasonWords('PendingFull'), /Fifty requests are already waiting/);
+  assert.match(reasonWords('PendingFull', { hardCap: '1', dailyCap: '1', maxPending: 50 }), /The queue of 50 requests waiting for the owner is full/);
   assert.equal(reasonWords('SomethingNew'), 'SomethingNew');
   // a reason inside a failed call's message is said in words, with its code; a used slot says what to do; anything else is quoted
   assert.deepEqual(failureWords('Smart contract panicked: DailyLimit'), { words: reasonWords('DailyLimit'), code: 'DailyLimit' });

@@ -5,13 +5,28 @@
 export class RpcError extends Error {
   readonly code: number | undefined;
   readonly causeName: string | undefined;
-  constructor(message: string, code?: number, causeName?: string) {
+  /** The names of the node's invalid transaction errors found in its answer (`NotEnoughBalance`, `NotEnoughAllowance`, ...), never any other text. */
+  readonly detail: readonly string[];
+  constructor(message: string, code?: number, causeName?: string, detail: readonly string[] = []) {
     super(message);
     this.name = 'RpcError';
     this.code = code;
     this.causeName = causeName;
+    this.detail = detail;
   }
 }
+
+/** Invalid transaction errors a caller may need to tell apart (nearcore InvalidTxError and InvalidAccessKeyError names). */
+const DETAILS = ['NotEnoughBalance', 'NotEnoughAllowance', 'LackBalanceForState', 'InvalidNonce', 'AccessKeyNotFound', 'Expired'] as const;
+const detailsOf = (err: unknown): string[] => {
+  let text = '';
+  try {
+    text = JSON.stringify(err) ?? '';
+  } catch {
+    return [];
+  }
+  return DETAILS.filter((d) => new RegExp(`"${d}"|\\b${d}\\b`).test(text));
+};
 
 export type RpcConfig = { rpcUrls: readonly string[]; fetch?: typeof fetch };
 
@@ -49,7 +64,7 @@ export async function rpcCall(cfg: RpcConfig, method: string, params: object): P
     const reply = body as RpcBody;
     if (reply.error !== undefined && reply.error !== null) {
       const err = reply.error;
-      throw new RpcError(text(err.name) ?? text(err.message) ?? 'rpc', typeof err.code === 'number' ? err.code : undefined, text(err.cause?.name));
+      throw new RpcError(text(err.name) ?? text(err.message) ?? 'rpc', typeof err.code === 'number' ? err.code : undefined, text(err.cause?.name), detailsOf(err));
     }
     if (!('result' in reply)) {
       last = new Error('RPC body has no result');

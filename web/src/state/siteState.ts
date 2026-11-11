@@ -49,6 +49,8 @@ export type SiteState = {
     from_browsers: { attempts: number; paid_outside: number };
     /** newest first, at most 25 */
     rows: TryAttempt[];
+    /** the card's limits as its contract stated them (get_asset("near"), get_policy); absent in files written before 2026-11-11 */
+    limits?: { hardCap: string; dailyCap: string; maxPending: number | null; paused: boolean } | null;
   };
   /** the pool's and its cards' newest events (credit/chain.ts readEvents), oldest first, at most 40 */
   credit: { events: CreditEvent[] };
@@ -149,6 +151,11 @@ function cleanAttempt(a: unknown, ours: (a: string) => boolean): Attempt | null 
   return { seq: a['seq'], id, at: a['at'], door: 'key', mode: 'live', source: keep('request', a['source']), label: null, inputChars: 0, preview: null, verdict: a['verdict'] as Attempt['verdict'], reason: keepOrNull('reason', a['reason']), payments, tx: keepOrNull('tx', a['tx']), stolenYocto: a['stolenYocto'], paidToBookYocto: a['paidToBookYocto'] };
 }
 
+function limitsOf(l: unknown): SiteState['rob']['limits'] {
+  if (!isObj(l) || !isAmount(l['hardCap']) || !isAmount(l['dailyCap']) || typeof l['paused'] !== 'boolean') return null;
+  return { hardCap: l['hardCap'], dailyCap: l['dailyCap'], maxPending: isCount(l['maxPending']) ? l['maxPending'] : null, paused: l['paused'] };
+}
+
 function clean(s: SiteState): SiteState {
   const ours = teamOf(s);
   const keepList = <T,>(xs: readonly unknown[], f: (x: unknown) => T | null): T[] => xs.map(f).filter((x): x is T => x !== null);
@@ -158,7 +165,7 @@ function clean(s: SiteState): SiteState {
     pool: { ...s.pool, id: keepStoredAccount(s.pool.id) },
     lenders: { ...s.lenders, outside: s.lenders.outside.map((a) => shownId(a, ours)) },
     loop: { ...s.loop, last_tx: lastTx !== null && isUnshown(lastTx) ? null : lastTx },
-    rob: { ...s.rob, policy: keepStoredAccount(s.rob.policy), rows: keepList(s.rob.rows, (r) => cleanTry(r, ours)) },
+    rob: { ...s.rob, policy: keepStoredAccount(s.rob.policy), rows: keepList(s.rob.rows, (r) => cleanTry(r, ours)), limits: limitsOf(s.rob.limits) },
     credit: { events: keepList(s.credit.events, (e) => cleanEvent(e, ours)) },
     arena: { ...s.arena, attempts: keepList(s.arena.attempts, cleanArena) },
     challenge: s.challenge === null ? null : { ...s.challenge, policy: keepStoredAccount(s.challenge.policy), attempts: keepList(s.challenge.attempts, (a) => cleanAttempt(a, ours)) },

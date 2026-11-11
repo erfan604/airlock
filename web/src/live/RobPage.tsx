@@ -9,8 +9,12 @@ import { NEAR_RPC } from '../../csp.ts';
 import { foreignText, unshownText } from '../components/chainText.ts';
 import { TxLink } from '../credit/CreditPage.tsx';
 import { PRERENDER, url } from '../static.ts';
-import { PRESETS, failureWords, reasonShort, reasonWords, send, wishOf } from './rob.ts';
+import { PRESETS, failureWords, nearWords, reasonShort, reasonWords, send, wishOf } from './rob.ts';
 import type { Choice, Sent } from './rob.ts';
+import { checkColumns, griefOf, readAsset, readLimits } from './robCheck.ts';
+import type { CardLimits, Grief } from './robCheck.ts';
+import { loadVerdict } from '../try/verdictWasm.ts';
+import type { WasmVerdict } from '../try/verdictWasm.ts';
 import { countText, countsOfTry, newTryCache, readTryAttempts, withExpiry } from './tryChain.ts';
 import type { TryAttempt, TryCounts } from './tryChain.ts';
 import { parseTryPublic } from './tryPublic.ts';
@@ -105,6 +109,11 @@ export type RobViewProps = {
   onChoose(c: Choice): void;
   onOwn(payee: string, amount: string): void;
   onSend(): void;
+  /** the card's limits, read from its contract or the state file; null or absent leaves the numbers out */
+  limits?: CardLimits | null;
+  /** the same request checked in the browser by the shipped gate (never a chain answer); 'error' when the gate could not run */
+  check?: { verdict: WasmVerdict } | 'running' | 'error' | null;
+  onCheck?(): void;
 };
 
 /** Why a hold costs the owner nothing, said once in the answer and once in the limits. */
@@ -139,7 +148,49 @@ function Reason({ code, words }: { code: string | null; words: string }): ReactE
   );
 }
 
-function Window({ mine, nowMs, shop, expired }: { mine: Mine; nowMs: number; shop: string | null; expired: boolean }): ReactElement {
+/** What happened, in one sentence, when a published key was used to keep the card from answering (live/robCheck.ts). */
+function griefSentence(g: Grief, lim: CardLimits | null, ttlMs: number | null): string {
+  switch (g) {
+    case 'gas':
+      return 'Nothing was sent: the practice agent has used up the gas money it pays for each attempt. Anyone holding the published keys can spend it; the team tops it up every few minutes, within a daily limit.';
+    case 'daily':
+      return `The card has already paid its limit${lim === null ? '' : ` of ${nearWords(lim.dailyCap)}`} for today, so it pays nothing more until midnight UTC. Anyone holding the published keys can use up the day's limit by sending the payment the owner signed for.`;
+    case 'slots':
+      return 'Nothing was sent: every attempt slot the owner signed for this round is used. Anyone holding the published keys can use them up; the owner signs a new round.';
+    case 'queue':
+      return `The queue of ${lim === null || lim.maxPending === null ? 'requests' : `${String(lim.maxPending)} requests`} waiting for the owner is full, so the card took no new hold. Anyone holding the published keys can fill it; each hold expires${ttlMs === null ? '' : ` after ${String(Math.round(ttlMs / 1000))} s`} and the queue is cleared every minute or two.`;
+  }
+}
+
+const CHECK_WORD: Record<WasmVerdict['kind'], string> = { allow: 'Would pay', escalate: 'Held', block: 'Blocked', malformed: 'Not decided' };
+
+/** The griefing case: what happened, that the card is fine, and the same request checked in the browser by the shipped gate. */
+function GriefNote({ grief, lim, ttlMs, clean, check, onCheck }: { grief: Grief; lim: CardLimits | null; ttlMs: number | null; clean: boolean; check: RobViewProps['check']; onCheck?: () => void }): ReactElement {
+  return (
+    <div className="rob-grief" data-testid="rob-grief" data-grief={grief}>
+      <p className="brk-why" data-testid="rob-grief-why">
+        {`${griefSentence(grief, lim, ttlMs)} The card itself is fine: its contract still decides every payment.${clean ? " Nothing has been paid outside the owner's book." : ''}`}
+      </p>
+      <button type="button" className="act" data-testid="rob-check" onClick={onCheck} disabled={check === 'running' || onCheck === undefined}>
+        Run the same check in your browser
+      </button>
+      {check === null || check === undefined || check === 'running' ? null : check === 'error' ? (
+        <p className="brk-status" data-testid="rob-check-error">The check could not run in this browser.</p>
+      ) : (
+        <div className="rob-check-result" data-testid="rob-check-result" data-verdict={check.verdict.kind}>
+          <p className="brk-word brk-word-idle">{CHECK_WORD[check.verdict.kind]}</p>
+          <p className="brk-why">
+            {`${check.verdict.kind === 'allow' ? 'The gate allows this request.' : check.verdict.kind === 'malformed' ? 'The gate could not read this request.' : `Why: ${reasonWords(check.verdict.reason, lim)}`} Computed in your browser by the same gate code the contract runs. This is not a transaction: nothing was sent to the chain. It assumes the day's limit and the amount the owner signed for are unused.`}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Window({ mine, nowMs, shop, expired, lim, ttlMs, clean, check, onCheck }: { mine: Mine; nowMs: number; shop: string | null; expired: boolean; lim: CardLimits | null; ttlMs: number | null; clean: boolean; check: RobViewProps['check']; onCheck?: () => void }): ReactElement {
+  const grief = mine !== null && 'sent' in mine ? griefOf(mine.sent) : null;
+  const note = grief === null ? null : <GriefNote grief={grief} lim={lim} ttlMs={ttlMs} clean={clean} check={check} {...(onCheck === undefined ? {} : { onCheck })} />;
   if (mine === null) return <p className="brk-word brk-word-idle">Waiting for you</p>;
   if ('busy' in mine) {
     return (
@@ -154,13 +205,13 @@ function Window({ mine, nowMs, shop, expired }: { mine: Mine; nowMs: number; sho
     return (
       <>
         <p className="brk-word brk-word-idle">Not sent</p>
-        <p className="brk-why" data-testid="rob-why">{s.why}</p>
+        {note ?? <p className="brk-why" data-testid="rob-why">{s.why}</p>}
       </>
     );
   }
   const took = `${(s.ms / 1000).toFixed(1)} s`;
   if (s.kind === 'failed') {
-    const f = failureWords(s.why);
+    const f = failureWords(s.why, lim);
     return (
       <>
         <span className="brk-shutter" aria-hidden="true" />
@@ -171,6 +222,7 @@ function Window({ mine, nowMs, shop, expired }: { mine: Mine; nowMs: number; sho
           {` Took ${took}. `}
           {s.tx === null ? null : <TxLink tx={s.tx} what="attempt" label="see the transaction" />}
         </p>
+        {note}
       </>
     );
   }
@@ -194,10 +246,11 @@ function Window({ mine, nowMs, shop, expired }: { mine: Mine; nowMs: number; sho
       <p className="brk-word brk-word-refused">{held ? 'Held' : 'Blocked'}</p>
       <p className="brk-why" data-testid="rob-why">
         {`${lead} Why: `}
-        <Reason code={a.reason} words={reasonWords(a.reason)} />
+        <Reason code={a.reason} words={reasonWords(a.reason, lim)} />
         {` Took ${took}. `}
         <TxLink tx={s.tx} what="attempt" label="see the transaction" />
       </p>
+      {note}
     </>
   );
 }
@@ -379,7 +432,7 @@ export function RobView(p: RobViewProps): ReactElement {
             <span className="brk-plate-id">its contract decides; this page shows the answer</span>
           </figcaption>
           <div className="brk-window" ref={windowRef} tabIndex={-1} key={p.mine === null ? 'idle' : String(p.mine.startedMs)} data-testid="rob-window" aria-live="polite">
-            <Window mine={p.mine} nowMs={p.nowMs} shop={shop} expired={expired} />
+            <Window mine={p.mine} nowMs={p.nowMs} shop={shop} expired={expired} lim={p.limits ?? null} ttlMs={pub?.pendingTtlMs ?? null} clean={p.board !== null && p.board !== 'unreadable' && p.board.counts.paidOutside === 0} check={p.check ?? null} {...(p.onCheck === undefined ? {} : { onCheck: p.onCheck })} />
           </div>
         </figure>
       </section>
@@ -394,7 +447,7 @@ export function RobView(p: RobViewProps): ReactElement {
 
       <section className="rob-fine" aria-label="Limits">
         <p className="brk-status">
-          {`The card may pay at most 0.01 NEAR at once and 0.05 NEAR a day, to the one shop the owner booked. A request the contract does not allow is held for the owner or blocked outright. ${HOLD_SAFE} The owner does not approve holds on this page, so every hold here expires. Every attempt costs the card a little gas, which the team refills.`}
+          {`${p.limits === null || p.limits === undefined ? "The card's contract sets the most it may pay at once and in a day" : `The card may pay at most ${nearWords(p.limits.hardCap)} at once and ${nearWords(p.limits.dailyCap)} a day`}, to the one shop the owner booked. A request the contract does not allow is held for the owner or blocked outright. ${HOLD_SAFE} The owner does not approve holds on this page, so every hold here expires. Every attempt costs the card a little gas, which the team refills.`}
         </p>
         <p className="brk-status" data-testid="rob-limits">
           Runs on the NEAR test network, where NEAR has no value.
@@ -441,6 +494,10 @@ export default function RobPage(): ReactElement {
   const [shown, setShown] = useState(ROWS_STEP);
   const cache = useRef(newTryCache());
   const fresh = useRef<TryAttempt[] | null>(null);
+  // the card's limits: the state file's at first, then the contract's own views once the public file names the card
+  const [liveLimits, setLiveLimits] = useState<CardLimits | null>(null);
+  const limits = liveLimits ?? site?.rob.limits ?? null;
+  const [check, setCheck] = useState<RobViewProps['check']>(null);
 
   useEffect(() => {
     if (PRERENDER) return undefined;
@@ -475,6 +532,18 @@ export default function RobPage(): ReactElement {
       live = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (PRERENDER || pub === null || pub === 'unreadable' || !('policy' in pub)) return undefined;
+    let live = true;
+    readLimits({ rpcUrls: NEAR_RPC }, pub.policy).then(
+      (l) => live && l !== null && setLiveLimits(l),
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [pub]);
 
   // the preset picked first fills the fields once the public file names the shop
   const filled = useRef(false);
@@ -556,7 +625,29 @@ export default function RobPage(): ReactElement {
 
   const onMore = useCallback(() => setShown((n) => n + ROWS_STEP), []);
 
-  return <RobView pub={pub} board={board} shown={shown} onMore={onMore} choice={choice} mine={mine} mineIds={mineIds} nowMs={nowMs} ownPayee={ownPayee} ownAmount={ownAmount} onChoose={onChoose} onOwn={onOwn} onSend={onSend} />;
+  // a new answer clears the last browser check, so a check on screen is always for the request in the fields
+  useEffect(() => setCheck(null), [mine]);
+
+  /** The visitor's exact request through the shipped gate (public/verdict.wasm) with the card's limits: computed here, never sent. */
+  const onCheck = useCallback(() => {
+    if (pub === null || pub === 'unreadable' || !('policy' in pub)) return;
+    const w = wishOf(choice.kind === 'own' ? { kind: 'own', payee: ownPayee, amount: ownAmount } : choice, pub);
+    if ('refuse' in w) return;
+    setCheck('running');
+    void (async () => {
+      try {
+        const rpc = { rpcUrls: NEAR_RPC };
+        const asset = await readAsset(rpc, pub.policy, w.asset);
+        const lim = limits ?? (await readLimits(rpc, pub.policy));
+        const gate = await loadVerdict();
+        setCheck({ verdict: gate.decide(checkColumns(w, pub, asset, lim?.paused ?? false)) });
+      } catch {
+        setCheck('error');
+      }
+    })();
+  }, [pub, choice, ownPayee, ownAmount, limits]);
+
+  return <RobView pub={pub} board={board} shown={shown} onMore={onMore} choice={choice} mine={mine} mineIds={mineIds} nowMs={nowMs} ownPayee={ownPayee} ownAmount={ownAmount} onChoose={onChoose} onOwn={onOwn} onSend={onSend} limits={limits} check={check} onCheck={onCheck} />;
 }
 
 export { RobPage };

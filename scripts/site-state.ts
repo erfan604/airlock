@@ -17,6 +17,7 @@ import { boardOf, readChain } from '../web/src/challenge/chainBoard.ts';
 import { loopRepays, parseSchedule } from '../web/src/lender/history.ts';
 import { depositors, isTeam, poolEvents, readAccountTxs, readLp } from '../web/src/lender/lenders.ts';
 import { countsOfTry, readTryAttempts } from '../web/src/live/tryChain.ts';
+import { readLimits } from '../web/src/live/robCheck.ts';
 import type { TryAttempt } from '../web/src/live/tryChain.ts';
 import replay from '../web/src/live/try-replay.json' with { type: 'json' };
 import { SITE_STATE_COMMAND, SITE_STATE_FORMAT, parseSiteState } from '../web/src/state/siteState.ts';
@@ -90,6 +91,8 @@ const tries = tryRead.attempts.filter((a) => a.atMs <= cut);
 const c = countsOfTry(tries);
 const replayed = new Set(Object.entries(replay.ids).flatMap(([hash, xs]) => xs.map((i) => `${hash}:${String(i)}`)));
 const browsers = countsOfTry(tries.filter((a) => !replayed.has(a.requestId)));
+// the card's limits as its contract states them, so the page prints the card's own numbers (null when a view does not answer)
+const tryLimits = await readLimits(rpc, tryRaw['policy']).catch(() => null);
 const newest = (xs: readonly TryAttempt[], n: number): TryAttempt[] => [...xs].sort((a, b) => b.atMs - a.atMs || b.requestId.localeCompare(a.requestId)).slice(0, n);
 
 // /credit: the pool's and its cards' newest events, and the arena
@@ -128,6 +131,7 @@ const state: SiteState = {
     ttl_ms: ttl,
     from_browsers: { attempts: browsers.attempts, paid_outside: browsers.paidOutside },
     rows: newest(tries, 25),
+    limits: tryLimits,
   },
   credit: { events: creditEvents },
   arena: { attempts: arena.attempts.filter((a) => a.atMs <= cut), truncated: arena.truncated },
