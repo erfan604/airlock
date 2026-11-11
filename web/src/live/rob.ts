@@ -164,20 +164,53 @@ export async function send(pub: TryPublic, w: Wish, deps: SendDeps): Promise<Sen
   }
 }
 
-/** One plain sentence per reason the try card gives; the contract's code is shown beside it. */
+/**
+ * One plain sentence per reason the practice card can give (the gate's rules, contracts/airlock-verdict/src/lib.rs `verdict`, first match wins),
+ * shown with the contract's code as secondary text. The page labels every value of an attack as outside text, so the trigger rule (rule 7)
+ * answers before the payee and amount rules (8 to 11) whenever the earlier rules pass: that is why a bigger amount to the booked shop comes back
+ * UntrustedTrigger, not as an amount reason.
+ */
 export const REASON_WORDS: Record<string, string> = {
-  OutsideTask: 'this payee is not in the task the owner signed, so the owner is asked',
-  UntrustedTrigger: 'the decision to pay came from outside text, not from the owner, so the owner is asked',
-  AmountOutOfBounds: 'the amount is above the most this card may ever pay at once (0.01 NEAR)',
-  UnknownAsset: 'the owner never allowed this coin on the card',
-  PendingFull: 'fifty requests are already waiting for the owner, so the card takes no more holds until they expire',
-  DailyLimit: "the card has paid today's 0.05 NEAR of honest payments",
-  OverTaskBound: 'the amount is above what is left of what the owner signed for',
-  UntrustedRecipient: 'the payee came from outside text',
-  NewRecipient: 'the payee is not in the owner\'s book',
-  UntrustedAmount: 'the amount came from outside text and the shop has no cap for that',
-  BookLabelNotInBook: 'the request claims a book entry that does not exist',
-  MissingProvenance: 'the request does not say where its values came from',
+  OutsideTask: 'The owner signed ahead of time for the payments this card may make, and this one is not among them.',
+  OverTaskBound: 'The amount is more than what is left of what the owner signed for.',
+  UntrustedTrigger: 'Outside text, not the owner, started this payment. The contract checks who started a payment before it looks at the payee or the amount, so this rule holds it whatever the payee or amount.',
+  UntrustedRecipient: 'The payee came from outside text, not from the owner or the owner\'s book.',
+  NewRecipient: 'The payee is not in the owner\'s book.',
+  UntrustedAmount: 'The amount came from outside text, and the shop has no cap that allows it.',
+  AmountOutOfBounds: 'The amount is above the most this card may pay at once, 0.01 NEAR.',
+  DailyLimit: 'The card has already paid its 0.05 NEAR for today. It pays again after midnight UTC.',
+  UnknownAsset: 'The owner never allowed this coin on the card.',
+  PendingFull: 'Fifty requests are already waiting for the owner, so the card takes no new hold until some expire. Try again in a minute.',
+  OverPayeeLimit: 'The shop has already been paid its daily limit.',
+  BookLabelNotInBook: 'The request claims a book entry that does not exist.',
+  MissingProvenance: 'The request does not say where its values came from.',
+  Paused: 'The owner has paused the card.',
 };
 
-export const reasonWords = (code: string | null): string => (code === null ? '' : (Object.hasOwn(REASON_WORDS, code) ? REASON_WORDS[code] : undefined) ?? code);
+/** The same reasons in a few words, for the rows of the board. */
+export const REASON_SHORT: Record<string, string> = {
+  OutsideTask: 'not a payment the owner signed for',
+  OverTaskBound: 'more than the owner signed for',
+  UntrustedTrigger: 'started by outside text',
+  UntrustedRecipient: 'payee from outside text',
+  NewRecipient: 'payee not in the book',
+  UntrustedAmount: 'amount from outside text',
+  AmountOutOfBounds: 'over 0.01 NEAR at once',
+  DailyLimit: 'daily limit reached',
+  UnknownAsset: 'coin not allowed',
+  PendingFull: 'queue full',
+  OverPayeeLimit: 'shop paid its limit',
+  Paused: 'card paused',
+};
+
+const lookup = (m: Record<string, string>, code: string | null): string => (code === null ? '' : (Object.hasOwn(m, code) ? m[code] : undefined) ?? code);
+export const reasonWords = (code: string | null): string => lookup(REASON_WORDS, code);
+export const reasonShort = (code: string | null): string => lookup(REASON_SHORT, code);
+
+/** A call the contract turned down, in a plain sentence: a reason code inside its message is said in words; anything else is quoted. */
+export function failureWords(why: string): { words: string; code: string | null } {
+  const code = Object.keys(REASON_WORDS).find((c) => new RegExp(`\\b${c}\\b`).test(why)) ?? null;
+  if (code !== null) return { words: reasonWords(code), code };
+  if (/used|already/i.test(why)) return { words: 'Two attempts took the same signed slot at once. Send it again; the page picks another slot.', code: null };
+  return { words: `The contract turned the call down before deciding, with the message: ${why}.`, code: null };
+}

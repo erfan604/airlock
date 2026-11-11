@@ -115,16 +115,24 @@ const run: E2E = async ({ page, baseUrl }) => {
   let release = (): void => undefined;
   w.held = new Promise<void>((r) => (release = r));
   await id('rob-pick-stranger', page).click();
+  // a preset fills the custom fields, and one line says what Send sends
+  assert.equal(await id('rob-own-payee', page).inputValue(), 'my-own-wallet');
+  assert.equal(await id('rob-own-amount', page).inputValue(), '0.005');
+  assert.ok((await id('rob-sends', page).innerText()).startsWith('This sends 0.005 NEAR to my-own-wallet'));
   await id('rob-go', page).click();
-  await page.locator('[data-testid="rob-window"]', { hasText: 'Signing' }).waitFor();
+  await page.locator('[data-testid="rob-window"]', { hasText: 'Sending' }).waitFor();
+  assert.equal(await id('rob-go', page).innerText(), 'Sending to the card');
   await shot(page, 'during');
   release();
   w.held = null;
 
   // refused: held for the owner, OutsideTask
   await page.locator('[data-testid="rob-machine"][data-state="refused"]').waitFor({ timeout: 10_000 });
-  assert.ok((await id('rob-why', page).innerText()).includes('Held for the owner; it expires unpaid.'));
+  assert.ok((await id('rob-why', page).innerText()).includes('Held for the owner. A hold is safe: it expires unpaid after a minute'));
   assert.equal(await id('rob-code', page).innerText(), 'OutsideTask');
+  // visitor test 2026-11-11: on a laptop the answer was below the fold; it is in view once it lands
+  await page.waitForTimeout(800);
+  assert.ok(await page.evaluate(() => { const r = document.querySelector('[data-testid="rob-window"]')?.getBoundingClientRect(); return r !== undefined && r.top >= 0 && r.bottom <= innerHeight; }), 'the answer is in view after Send');
   assert.match((await page.locator('[data-testid="rob-why"] a').getAttribute('href')) ?? '', /^https:\/\/testnet\.nearblocks\.io\/txns\/[1-9A-HJ-NP-Za-km-z]{43,44}$/);
   await page.locator('[data-testid="rob-row"][data-mine="true"]').waitFor({ timeout: 10_000 });
   await shot(page, 'refused');
@@ -153,8 +161,12 @@ const run: E2E = async ({ page, baseUrl }) => {
   await id('rob-pick-stranger', page).click();
   await id('rob-go', page).click();
   await page.locator('[data-testid="rob-code"]', { hasText: 'PendingFull' }).waitFor({ timeout: 10_000 });
-  assert.ok((await id('rob-why', page).innerText()).startsWith('The queue is full right now.'));
+  assert.ok((await id('rob-why', page).innerText()).includes('Fifty requests are already waiting for the owner'));
   await shot(page, 'queue');
+  // a change to the request clears the answer, so a stale verdict never sits beside new fields
+  await id('rob-own-amount', page).fill('0.002');
+  await page.locator('[data-testid="rob-window"]', { hasText: 'Waiting for you' }).waitFor();
+  assert.equal(await id('rob-why', page).count(), 0);
 
   // every posted transaction: one submit_batch as the try agent on the try policy, deposit 0, never a credit account
   assert.equal(w.sent.length, 6);

@@ -1,7 +1,7 @@
 // AIR-356: the /rob page's request builder, slot picker, answer decoder and sender, on a mocked RPC (no request reaches a node).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { PRESETS, amountOf, answerOf, batchArgs, failureOf, payeeOf, pickSlot, reasonWords, send, wishOf } from '../src/live/rob.ts';
+import { PRESETS, amountOf, answerOf, batchArgs, failureOf, failureWords, payeeOf, pickSlot, reasonShort, reasonWords, send, wishOf } from '../src/live/rob.ts';
 import type { Wish } from '../src/live/rob.ts';
 import type { TryPublic } from '../src/live/tryPublic.ts';
 import vector from './fixtures/tx-vector.json' with { type: 'json' };
@@ -72,8 +72,19 @@ test('rob: the answer decoder maps allowed, escalated and blocked; a failed call
   assert.equal(answerOf({ status: { SuccessValue: b64('x') } }), null);
   assert.equal(failureOf({ status: { Failure: { ActionError: { kind: { FunctionCallError: { ExecutionError: 'Smart contract panicked: request id already used' } } } } } }), 'Smart contract panicked: request id already used');
   assert.equal(failureOf({ status: { SuccessValue: '' } }), null);
-  assert.match(reasonWords('PendingFull'), /fifty requests are already waiting/);
+  assert.match(reasonWords('PendingFull'), /Fifty requests are already waiting/);
   assert.equal(reasonWords('SomethingNew'), 'SomethingNew');
+  // a reason inside a failed call's message is said in words, with its code; a used slot says what to do; anything else is quoted
+  assert.deepEqual(failureWords('Smart contract panicked: DailyLimit'), { words: reasonWords('DailyLimit'), code: 'DailyLimit' });
+  assert.match(failureWords('Smart contract panicked: request id already used').words, /Send it again/);
+  assert.match(failureWords('Smart contract panicked: odd').words, /with the message: Smart contract panicked: odd\.$/);
+  // every reason the practice card can give has a plain sentence and a short form, never the bare code
+  for (const code of ['OutsideTask', 'OverTaskBound', 'UntrustedTrigger', 'UntrustedRecipient', 'NewRecipient', 'UntrustedAmount', 'AmountOutOfBounds', 'DailyLimit', 'UnknownAsset', 'PendingFull']) {
+    assert.notEqual(reasonWords(code), code);
+    assert.notEqual(reasonShort(code), code);
+  }
+  // the bigger amount to the booked shop comes back as the trigger rule (rule 7 runs before the amount rules): the sentence says so
+  assert.match(reasonWords('UntrustedTrigger'), /before it looks at the payee or the amount/);
 });
 
 type Call = { method: string; params: Record<string, unknown> };
