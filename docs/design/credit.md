@@ -83,7 +83,7 @@ NEAR and hold shares; the pool's issuer opens credit lines that fund cards (AIRL
 | `collateral_bps: u32` | collateral a line needs, in basis points of its limit (default 3000, owner may set 0 to 10000) |
 | `total_shares: u128`, `idle: u128`, `lent: u128`, `staked: u128` | shares issued; liquid NEAR the pool holds for LPs; principal outstanding on open lines; NEAR out earning yield (0 until AIR-332) |
 | `fees_earned: u128`, `losses: u128`, `collateral_held: u128` | fees credited to LPs; losses not covered by collateral; collateral of open lines (never part of LP assets) |
-| `lps: LookupMap<AccountId, u128>` | shares per LP |
+| `lps: LookupMap<AccountId, u128>` | shares per LP; the entry (and the LP's `locks` entry) exists from its first deposit until a full withdraw removes it (2026-11-11 storage fix below) |
 | `cards: IterableMap<AccountId, Card>` | `{ borrower, line: Option<Line> }`; one line per card at a time |
 | `Line` | `{ limit, returned, fee_bps, due_ms, collateral, state: Collecting | Open | Repaid | Defaulted }` |
 
@@ -96,8 +96,8 @@ donation attack). The invariant `contract balance >= idle + collateral_held + re
 
 | Call | Who | Rule |
 | --- | --- | --- |
-| `deposit()` payable | anyone | `shares = amount` when `total_shares` is 0, else `floor(amount * total_shares / assets)`; refused while any open line is past its due date (`deposits are paused while a line is past due`) or any card carries an unrecovered loss (`deposits are paused while a defaulted line is being recovered`), F1 below; sets the LP's lock to `now + min_hold_ms`; at least `MIN_DEPOSIT` (0.001 NEAR); refuses when shares are 0 or `assets` is 0 with shares outstanding |
-| `withdraw(shares)` | an LP | `amount = floor(shares * assets / total_shares)`; refuses above `idle` with the most shares that can leave now; burns, lowers `idle`, then transfers; `on_withdraw` restores the state if the transfer failed |
+| `deposit()` payable | anyone | `shares = amount` when `total_shares` is 0, else `floor(amount * total_shares / assets)`; refused while any open line is past its due date (`deposits are paused while a line is past due`) or any card carries an unrecovered loss (`deposits are paused while a defaulted line is being recovered`), F1 below; sets the LP's lock to `now + min_hold_ms`; at least `MIN_DEPOSIT` (0.001 NEAR); a caller with no `lps` entry pays `LP_STORAGE` (0.0025 NEAR) for its entries out of the attached amount, `amount` is the rest and must still be at least `MIN_DEPOSIT`; refuses when shares are 0 or `assets` is 0 with shares outstanding |
+| `withdraw(shares)` | an LP | `amount = floor(shares * assets / total_shares)`; refuses above `idle` with the most shares that can leave now; burns, lowers `idle`, then transfers; withdrawing all of an LP's shares removes its `lps` and `locks` entries; `on_withdraw` restores the shares if the transfer failed |
 | `register_card(card, borrower)` | owner | asks the card `get_roles` and, in `on_card_roles`, requires `owner_id == pool owner`, `approver == borrower`, `sponsor == this pool`, and `borrower != owner`; then stores the card. The role check is on chain, so the trust assumption of AIR-327 is checked, not stated |
 | `post_collateral(card)` payable | the card's borrower | adds to the card's collecting line |
 | `open_line(card, limit, fee_bps, due_ms)` | owner | needs `collateral >= ceil(limit * collateral_bps / 10000)`, `idle >= limit`, `fee_bps <= 5000`, `now < due_ms <= now + 90 days`, no other line; moves `limit` from `idle` to `lent`, then transfers it to the card; `on_line_funded` restores the state if the transfer failed |
@@ -152,7 +152,7 @@ Amounts are yocto decimal strings everywhere.
   sweeps credited, `state` one of `Collecting`, `Open`, `Repaid`, `Defaulted`. `lines` is the same list as `list_lines(0, 50)`.
 - `get_lp(account)` returns `{ shares, value, locked_until_ms }`, `get_line(card)` one line or null, `list_lines(from_index, limit)` clamped to 50, `get_card(card)`.
 - `deposit()` is payable, `withdraw({ shares })`.
-- Events use the NEP-297 envelope with standard `airlock-credit`, version `1.0.0`: `deposit` `{ account, amount, shares }`, `withdraw`
+- Events use the NEP-297 envelope with standard `airlock-credit`, version `1.0.0`: `deposit` `{ account, amount, shares, storage }` (`amount` is what the pool credited, `storage` the charge of a first deposit, "0" otherwise), `withdraw`
   `{ account, amount, shares }`, `card_registered` `{ card, borrower }`, `collateral_posted` `{ card, amount }`, `line_opened`
   `{ card, borrower, limit, fee_bps, due_ms }`, `swept` `{ card, amount }` (the pool credited a return from the card, emitted by
   `on_card_return`), `repaid` `{ card, amount, fee }`, `defaulted` `{ card, seized, loss }`, `params_set` `{ collateral_bps }`, `collateral_withdrawn` `{ card, amount }`, `write_off` `{ card, loss }`, `line_funding_failed` `{ card, limit, refund }`. The card
@@ -409,7 +409,8 @@ before, cap after one on-time repay] (a0a0da6). The actual run on 2026-11-10: 50
 - `res/airlock_credit.wasm` stays the c1108d bytes (sha256 `1f915ce2...`, the hash docs/EVIDENCE.md and
   `scripts/credit-evidence-check.sh` read); `res/airlock_credit_c1108d.wasm` is the same bytes pinned by `the_c1108d_wasm_is_pinned` for
   the rehearsal; `res/airlock_credit_v2.wasm` is the upgrade the live run deploys (rebuilt with AIR-350; sha256
-  `e754b6aa1b6f06dde89fb388d799d7adfb4589429a0c9fe745073018109f0bcd`, code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`). Its
+  `e754b6aa1b6f06dde89fb388d799d7adfb4589429a0c9fe745073018109f0bcd`, code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`; since
+  the 2026-11-11 storage fix that path holds the fixed build and these bytes are kept as `res/airlock_credit_v2_e754b6aa.wasm`). Its
   preflight refuses to run unless the v2 file equals the wasm the sandbox rehearsal ran.
 - Tests: 62 unit tests (15 new ones failed against stubs of the rules before the rules were written: score, cap, near string,
   record writes, backfill, cap base) and 5 sandbox tests. The rehearsal passed on its first run; it is the gate, and every rule it walks
@@ -494,7 +495,7 @@ Mutants are listed in docs/mutation.md.
 - `src/lib.rs` (`BaseCheck`, `check_base_payment`, `on_base_check`, `parse_base_answer`, the two views, the state fields),
   `src/tests.rs` (10 new tests: 8 failed against stubs of the two calls before they were written; the share price test, a guard, and
   the defaults test passed against the stubs), `tests/pool.rs` (the sandbox checks above), `scripts/credit-passport-run.ts` (the migrate args).
-- `res/airlock_credit_v2.wasm` is rebuilt with it: sha256 `e754b6aa1b6f06dde89fb388d799d7adfb4589429a0c9fe745073018109f0bcd`, code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`.
+- `res/airlock_credit_v2.wasm` is rebuilt with it: sha256 `e754b6aa1b6f06dde89fb388d799d7adfb4589429a0c9fe745073018109f0bcd`, code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr` (kept as `res/airlock_credit_v2_e754b6aa.wasm` since the 2026-11-11 storage fix rebuilt `res/airlock_credit_v2.wasm`).
 - Rehearsed against the real signer on 2026-11-10 (19:50Z, signer weather GOOD): this exact wasm was deployed with `new` on a throwaway
   test network account, `rehearse-52be79.airlock-fund-0c111e.testnet`, which was deleted afterwards. Three calls, each by the account
   that funded it:
@@ -517,3 +518,69 @@ Mutants are listed in docs/mutation.md.
   `8KReKRKbYWAdmRz1dcRmw5rqR41tzhkzz75N31mLzGbQ` (event `base_payment_checked`, payload hash
   cbe31ebcb482f8e759eb4cfc67ae344b8332caa537ab8ca5dc90c097d98272f4). A check cannot be made sooner: the request asks for finality
   `Finalized`. docs/EVIDENCE.md (The card's Base payment checked back on NEAR by the pool) and C24.
+
+## 2026-11-11: a lender pays for its own storage
+
+### What and why
+
+Before this change `deposit` inserted an `lps` entry and a `locks` entry for a new lender and charged nothing for them, and `withdraw`
+wrote `lps` back as 0 on a full exit and kept `locks`. Each lender so cost the pool 164 to 242 bytes forever (0.0016 to 0.0024 NEAR at
+1e19 yocto per byte), paid from the account's spare balance (about 1.4 NEAR on the live pool). About 590 deposit and full withdraw rounds
+by throwaway accounts, or about 870 ordinary lenders, would use it up; after that withdrawals fail with `LackBalanceForState` until
+someone sends the pool NEAR. The pool account's key is to be deleted, so this has to be fixed before then.
+
+- `deposit`: a caller with no `lps` entry pays `LP_STORAGE` = 0.0025 NEAR (250 bytes) out of the attached amount. The pool credits
+  `attached - LP_STORAGE`, which must still be at least `MIN_DEPOSIT`; otherwise the call is refused with `a first deposit needs at least
+  0.0035 NEAR: 0.0025 NEAR pays for your entry in the pool's storage`. The charge is not pool money: it moves none of `idle`, `lent`,
+  `total_shares`, `fees_earned` or the share price, stays in the contract's balance, and is not refunded. A caller with an entry, even one
+  left at 0 shares by the earlier code, pays nothing. The `deposit` event keeps `account`, `amount` (the credited amount) and `shares`
+  and gains `storage` (the charge, "0" when none).
+- `withdraw`: withdrawing all of one's shares removes the `lps` and `locks` entries, so the storage they used is free again and a later
+  first deposit pays the charge again. If the transfer fails, `on_withdraw` writes the shares back; the lock is gone with the entry,
+  so the lender may withdraw at once (its hold had already passed), which is fine.
+- Views: `get_lp` answers a missing entry as 0 shares, value 0, locked until 0, as it did for a zero entry.
+- `on_card_roles` checks `MAX_CARDS` again before the insert, with the same text as `register_card`: two registrations in flight both
+  passed the check in `register_card`, so the pool could hold 101 cards.
+
+Nothing else moved: no state field, `STATE_VERSION` stays 2, `migrate`, the Passport, the Base check and the math are unchanged. The
+state layout is unchanged, so the live pool takes this as a code-only redeploy (DeployContract with no init call).
+
+### Tests
+
+Unit (`src/tests.rs`, 81 tests, 9 of them new; 7 new tests and the property model failed against the code before the fix, the storage
+size test fails under the third mutant of docs/mutation.md, and the pin test reads a file):
+
+| Test | Rule |
+| --- | --- |
+| `a_first_deposit_pays_the_storage_charge_and_a_second_is_credited_in_full` | shares and `get_pool` count `attached - LP_STORAGE` only, the event carries `storage`; a second deposit and a deposit by an account with a 0 share entry are credited in full |
+| `a_first_deposit_must_cover_the_minimum_and_the_charge` | `MIN_DEPOSIT + LP_STORAGE - 1` is refused with the text above and stores nothing; `MIN_DEPOSIT + LP_STORAGE` is accepted |
+| `the_storage_charge_never_moves_the_share_price` | a second lender's first deposit at price 1.5 leaves the price and the first lender's value unchanged |
+| `a_full_withdraw_removes_both_entries_and_a_partial_keeps_them` | read through `lps` and `locks`; the next deposit of that account pays the charge again |
+| `a_failed_withdraw_transfer_after_a_full_exit_gives_the_shares_back` | shares, value, `idle` and `total_shares` restored, locked until 0, the lender withdraws again at once |
+| `the_views_answer_a_missing_entry_like_a_zero_entry` | `get_lp` of a stranger, of a 0 share entry and after a full exit are equal |
+| `the_charge_covers_the_storage_of_the_longest_lender` | the entries of a 64 character account cost no more than the charge, and a full exit gives every byte back |
+| `the_callback_checks_max_cards_again` | 99 cards, two registrations in flight: the first callback stores card 100, the second is refused |
+| `the_e754b6aa_wasm_is_pinned` | the sha256 of `res/airlock_credit_v2_e754b6aa.wasm` |
+| `property_random_operations_keep_the_accounting` | the model learns the charge: an accepted deposit raises `idle` by `attached` less the charge of a lender with no entry, and each lender's two entries exist exactly while the model says so |
+
+The existing tests whose lender is new attach `amount + LP_STORAGE`, so their credited amounts and expected shares are unchanged; no
+assertion was changed or removed. In `deposit_refusals` the price that buys no share is reached with `MIN_DEPOSIT + LP_STORAGE` attached
+by a new lender (the credited amount is `MIN_DEPOSIT`, as before).
+
+Sandbox (`tests/pool.rs`, 6 tests): the five earlier tests stay green (the helper `funded_line` attaches the charge on top); the new
+`the_storage_fix_redeploys_over_a_v2_pool_with_no_init_call` rehearses the live redeploy. It runs the c1108d history on the pinned c1108d
+wasm, migrates to the e754b6aa bytes the live pool runs, then under that code lp3 deposits and lp4 deposits and leaves in full (a zero
+`lps` entry and its lock, read from the contract state). It snapshots every view (`get_pool`, `get_line`, `list_lines`, `get_card`,
+`get_lp` of five lenders, `get_unclaimed`, `get_pool_passport`, `get_passport`, `get_base_check_config`), deploys the new build with no init
+call, and reads every view the same. Then lp1 (c1108d) and lp3 (v2) deposit and are credited in full, lp4 (zero entry) is credited in
+full, lp5 (new) is charged with the share price unchanged and its entries costing no more than the charge; after the hold lp5 withdraws
+all its shares, is paid their value, both entries are gone from the state and the pool's storage usage is back where it was before its
+deposit. The Passport and the Base check config views still answer.
+
+Mutants are listed in docs/mutation.md.
+
+### Build
+
+`res/airlock_credit_v2.wasm` is rebuilt with this change: sha256 `3e914f6f1a906ecfff5fb3f07cb7429c8edd85514e22e20a7b214de7f68791a9`,
+code hash `5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN`, the bytes the sandbox suite ran. The bytes it replaces (sha256 `e754b6aa...`,
+code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`) are kept as `res/airlock_credit_v2_e754b6aa.wasm`.

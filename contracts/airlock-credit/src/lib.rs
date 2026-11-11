@@ -30,6 +30,10 @@ pub const MIN_QUALIFYING_FEE_BPS: u32 = 100;
 
 /// The smallest deposit: 0.001 NEAR (it blunts rounding games on a tiny pool).
 pub const MIN_DEPOSIT: u128 = 1_000_000_000_000_000_000_000;
+/// The storage charge of a lender's first deposit: 0.0025 NEAR, 250 bytes at 1e19 yocto per byte. It pays for the lender's `lps` and
+/// `locks` entries (at most about 242 bytes with a 64 character account id). It is never pool money: no pool field moves, it stays in the
+/// contract's balance, and it is not refunded; a full withdraw removes both entries, so the next first deposit pays it again.
+pub const LP_STORAGE: u128 = 2_500_000_000_000_000_000_000;
 /// The most a line may charge: 50 percent of what the card kept.
 pub const MAX_FEE_BPS: u32 = 5_000;
 /// The longest line: 90 days.
@@ -567,11 +571,13 @@ impl Pool {
     /// Stake the attached NEAR: shares at the current price (the first deposit 1:1), rounded down. At least `MIN_DEPOSIT`. Refused while any
     /// line is past its due date (F1): deposits and withdrawals share one valuation, and pricing a deposit at either the impaired or the
     /// un-impaired value would move value between LPs, so nobody joins until `default` (permissionless) books the overdue line.
+    /// A caller with no `lps` entry pays `LP_STORAGE` out of the attached amount for its entries; the pool is credited the rest, which must
+    /// still be at least `MIN_DEPOSIT`. The charge is not pool money: it stays in the contract's balance and moves no pool field.
     #[payable]
     pub fn deposit(&mut self) -> U128 {
-        let amount = env::attached_deposit().as_yoctonear();
+        let attached = env::attached_deposit().as_yoctonear();
         require!(
-            amount >= MIN_DEPOSIT,
+            attached >= MIN_DEPOSIT,
             "deposit is below the minimum of 0.001 NEAR"
         );
         require!(
@@ -582,21 +588,28 @@ impl Pool {
             !self.has_unrecovered_loss(),
             "deposits are paused while a defaulted line is being recovered; the issuer recovers it by sweeps or writes it off"
         );
+        let who = env::predecessor_account_id();
+        let entry = self.lps.get(&who).copied();
+        let storage = if entry.is_some() { 0 } else { LP_STORAGE };
+        require!(
+            attached >= MIN_DEPOSIT + storage,
+            "a first deposit needs at least 0.0035 NEAR: 0.0025 NEAR pays for your entry in the pool's storage"
+        );
+        let amount = attached - storage;
         let shares = math::shares_for_deposit(amount, self.total_shares, self.assets_at(ms()))
             .unwrap_or_else(|| env::panic_str("the pool has no assets to price a share"));
         require!(
             shares > 0,
             "deposit is too small for one share at this price"
         );
-        let who = env::predecessor_account_id();
-        let have = self.lps.get(&who).copied().unwrap_or(0);
+        let have = entry.unwrap_or(0);
         self.lps.insert(who.clone(), have + shares);
         self.locks.insert(who.clone(), ms() + self.min_hold_ms);
         self.total_shares += shares;
         self.idle += amount;
         emit(
             "deposit",
-            json!({ "account": who, "amount": U128(amount).0.to_string(), "shares": shares.to_string() }),
+            json!({ "account": who, "amount": U128(amount).0.to_string(), "shares": shares.to_string(), "storage": storage.to_string() }),
         );
         U128(shares)
     }
@@ -626,7 +639,13 @@ impl Pool {
                 "insufficient idle liquidity: withdraw at most {max} shares now"
             ));
         }
-        self.lps.insert(who.clone(), have - shares);
+        if shares == have {
+            // a full exit frees the lender's storage: both entries go, and a later deposit pays `LP_STORAGE` again
+            self.lps.remove(&who);
+            self.locks.remove(&who);
+        } else {
+            self.lps.insert(who.clone(), have - shares);
+        }
         self.total_shares -= shares;
         self.idle -= amount;
         emit(
@@ -642,7 +661,9 @@ impl Pool {
             )
     }
 
-    /// Callback of `withdraw`: a failed transfer gives the shares back.
+    /// Callback of `withdraw`: a failed transfer gives the shares back. After a full exit the entries are gone: the `lps` entry is written
+    /// again with the shares, the `locks` entry is not, so the lender may withdraw at once (its hold had passed when it withdrew), and its
+    /// entry counts as one for the storage charge.
     #[private]
     pub fn on_withdraw(&mut self, account: AccountId, shares: U128, amount: U128) {
         if matches!(env::promise_result_checked(0, 0), Err(PromiseError::Failed)) {
@@ -743,6 +764,11 @@ impl Pool {
         require!(
             self.cards.get(&card).is_none(),
             "the card is already registered"
+        );
+        // again here: two registrations in flight both passed the check in `register_card`
+        require!(
+            self.cards.len() < MAX_CARDS,
+            "the pool holds 100 cards at most"
         );
         self.cards.insert(
             card.clone(),

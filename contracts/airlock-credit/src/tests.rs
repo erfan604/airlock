@@ -1,5 +1,6 @@
 // Unit tests of the pool (AIR-328): share math through the calls, every refusal, the callbacks, and a property test of the accounting.
 use crate::*;
+use near_sdk::serde_json::json;
 use near_sdk::test_utils::{VMContextBuilder, get_created_receipts, get_logs};
 use near_sdk::{PromiseResult, testing_env};
 
@@ -80,7 +81,7 @@ fn open(p: &mut Pool, limit: u128, fee_bps: u32) {
 
 fn funded_pool() -> Pool {
     let mut p = pool();
-    call_as(LP1, 100 * NEAR, NOW);
+    call_as(LP1, 100 * NEAR + LP_STORAGE, NOW);
     p.deposit();
     register(&mut p);
     p
@@ -96,7 +97,7 @@ fn funded_pool_with_base(base: u128) -> Pool {
         None,
         None,
     );
-    call_as(LP1, 100 * NEAR, NOW);
+    call_as(LP1, 100 * NEAR + LP_STORAGE, NOW);
     p.deposit();
     register(&mut p);
     p
@@ -133,12 +134,12 @@ fn fails_to_fund(p: &mut Pool, limit: u128) {
 #[test]
 fn deposit_mints_one_to_one_first_then_at_the_price() {
     let mut p = pool();
-    call_as(LP1, 10 * NEAR, NOW);
+    call_as(LP1, 10 * NEAR + LP_STORAGE, NOW);
     assert_eq!(p.deposit().0, 10 * NEAR);
     // a fee of 5 NEAR raises the price to 1.5
     p.idle += 5 * NEAR;
     p.fees_earned += 5 * NEAR;
-    call_as(LP2, 3 * NEAR, NOW);
+    call_as(LP2, 3 * NEAR + LP_STORAGE, NOW);
     assert_eq!(
         p.deposit().0,
         2 * NEAR,
@@ -161,7 +162,7 @@ fn deposit_refusals() {
     let mut p = pool();
     call_as(LP1, MIN_DEPOSIT - 1, NOW);
     assert!(panics(|| p.deposit()).contains("below the minimum"));
-    call_as(LP1, 10 * NEAR, NOW);
+    call_as(LP1, 10 * NEAR + LP_STORAGE, NOW);
     p.deposit();
     // shares outstanding and no assets: the pool cannot price a share
     p.idle = 0;
@@ -170,14 +171,14 @@ fn deposit_refusals() {
     // a price so high that the deposit buys no share
     p.total_shares = 10;
     p.idle = 1_000_000 * NEAR;
-    call_as(LP2, MIN_DEPOSIT, NOW);
+    call_as(LP2, MIN_DEPOSIT + LP_STORAGE, NOW);
     assert!(panics(|| p.deposit()).contains("too small for one share"));
 }
 
 #[test]
 fn a_plain_transfer_to_the_contract_cannot_move_the_share_price() {
     let mut p = pool();
-    call_as(LP1, 10 * NEAR, NOW);
+    call_as(LP1, 10 * NEAR + LP_STORAGE, NOW);
     p.deposit();
     let before = p.get_pool().share_price.0;
     // the balance of the account grows by a gift; the pool accounts with its own fields
@@ -233,6 +234,196 @@ fn a_failed_withdraw_transfer_gives_the_shares_back() {
     assert_eq!(p.total_shares, 100 * NEAR);
 }
 
+// ---- the lender's storage (2026-11-11): a first deposit pays for its entries, a full exit removes them ----
+
+const FIRST_DEPOSIT_TEXT: &str = "a first deposit needs at least 0.0035 NEAR: 0.0025 NEAR pays for your entry in the pool's storage";
+
+/// The `data` of the last `deposit` event.
+fn last_deposit_event() -> near_sdk::serde_json::Value {
+    events("deposit").pop().expect("a deposit event")["data"][0].clone()
+}
+
+#[test]
+fn a_first_deposit_pays_the_storage_charge_and_a_second_is_credited_in_full() {
+    let mut p = pool();
+    call_as(LP1, 10 * NEAR, NOW);
+    let credited = 10 * NEAR - LP_STORAGE;
+    assert_eq!(p.deposit().0, credited, "shares for the credited amount");
+    let e = last_deposit_event();
+    assert_eq!(
+        (&e["account"], &e["amount"], &e["shares"], &e["storage"]),
+        (
+            &json!(LP1),
+            &json!(credited.to_string()),
+            &json!(credited.to_string()),
+            &json!(LP_STORAGE.to_string())
+        ),
+        "{e}"
+    );
+    let v = p.get_pool();
+    assert_eq!(
+        (v.assets.0, v.idle.0, v.shares.0, v.share_price.0),
+        (credited, credited, credited, NEAR),
+        "the pool counts the credited amount only"
+    );
+    assert_eq!((p.fees_earned, p.lent), (0, 0));
+    assert_eq!(p.get_lp(acct(LP1)).value.0, credited);
+    // the second deposit of the same account is credited in full
+    call_as(LP1, 5 * NEAR, NOW);
+    assert_eq!(p.deposit().0, 5 * NEAR);
+    assert_eq!(last_deposit_event()["storage"], json!("0"));
+    assert_eq!(p.idle, credited + 5 * NEAR);
+    assert_eq!(p.total_shares, credited + 5 * NEAR);
+    // an entry left at 0 shares by an earlier version is an entry: no charge
+    p.lps.insert(acct(LP2), 0);
+    call_as(LP2, MIN_DEPOSIT, NOW);
+    assert_eq!(p.deposit().0, MIN_DEPOSIT);
+    assert_eq!(last_deposit_event()["storage"], json!("0"));
+}
+
+#[test]
+fn a_first_deposit_must_cover_the_minimum_and_the_charge() {
+    let mut p = pool();
+    call_as(LP1, MIN_DEPOSIT + LP_STORAGE - 1, NOW);
+    let text = panics(|| p.deposit());
+    assert!(text.contains(FIRST_DEPOSIT_TEXT), "{text}");
+    assert!(!p.lps.contains_key(&acct(LP1)) && !p.locks.contains_key(&acct(LP1)));
+    assert_eq!((p.idle, p.total_shares), (0, 0));
+    call_as(LP1, MIN_DEPOSIT + LP_STORAGE, NOW);
+    assert_eq!(p.deposit().0, MIN_DEPOSIT);
+    assert_eq!(p.idle, MIN_DEPOSIT);
+    // the text states the constants
+    assert_eq!(
+        (MIN_DEPOSIT + LP_STORAGE, LP_STORAGE),
+        (NEAR * 35 / 10_000, NEAR * 25 / 10_000)
+    );
+}
+
+#[test]
+fn the_storage_charge_never_moves_the_share_price() {
+    let mut p = pool();
+    call_as(LP1, 10 * NEAR + LP_STORAGE, NOW);
+    p.deposit();
+    // a fee of 5 NEAR raises the price to 1.5
+    p.idle += 5 * NEAR;
+    p.fees_earned += 5 * NEAR;
+    let price = p.get_pool().share_price.0;
+    assert_eq!(price, 15 * NEAR / 10);
+    call_as(LP2, 3 * NEAR + LP_STORAGE, NOW);
+    assert_eq!(p.deposit().0, 2 * NEAR, "3 NEAR credited at price 1.5");
+    assert_eq!(p.get_pool().share_price.0, price);
+    assert_eq!(
+        p.get_lp(acct(LP1)).value.0,
+        15 * NEAR,
+        "the first lender's shares are worth the same"
+    );
+    assert_eq!(p.get_lp(acct(LP2)).value.0, 3 * NEAR);
+    assert_eq!(
+        (p.idle, p.fees_earned, p.total_shares),
+        (18 * NEAR, 5 * NEAR, 12 * NEAR)
+    );
+}
+
+#[test]
+fn a_full_withdraw_removes_both_entries_and_a_partial_keeps_them() {
+    let mut p = funded_pool();
+    call_as(LP1, 0, NOW);
+    let _ = p.withdraw(U128(40 * NEAR));
+    assert!(p.lps.contains_key(&acct(LP1)) && p.locks.contains_key(&acct(LP1)));
+    assert_eq!(p.get_lp(acct(LP1)).shares.0, 60 * NEAR);
+    call_as(LP1, 0, NOW);
+    let _ = p.withdraw(U128(60 * NEAR));
+    assert!(!p.lps.contains_key(&acct(LP1)), "the lps entry is removed");
+    assert!(
+        !p.locks.contains_key(&acct(LP1)),
+        "the locks entry is removed"
+    );
+    assert_eq!(transfers(), vec![(LP1.to_string(), 60 * NEAR)]);
+    assert_eq!((p.idle, p.total_shares), (0, 0));
+    // the account is new again: its next deposit pays the charge
+    call_as(LP1, 10 * NEAR, NOW);
+    assert_eq!(p.deposit().0, 10 * NEAR - LP_STORAGE);
+    assert_eq!(
+        last_deposit_event()["storage"],
+        json!(LP_STORAGE.to_string())
+    );
+}
+
+#[test]
+fn a_failed_withdraw_transfer_after_a_full_exit_gives_the_shares_back() {
+    let mut p = held_pool();
+    call_as(LP1, 0, NOW + HOLD);
+    let _ = p.withdraw(U128(100 * NEAR));
+    assert!(!p.lps.contains_key(&acct(LP1)) && !p.locks.contains_key(&acct(LP1)));
+    testing_env!(
+        ctx(POOL, 0, NOW + HOLD).build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![PromiseResult::Failed]
+    );
+    p.on_withdraw(acct(LP1), U128(100 * NEAR), U128(100 * NEAR));
+    let lp = p.get_lp(acct(LP1));
+    assert_eq!((lp.shares.0, lp.value.0), (100 * NEAR, 100 * NEAR));
+    assert_eq!((p.idle, p.total_shares), (100 * NEAR, 100 * NEAR));
+    // the lock is gone with the entry: the lender may leave at once
+    assert_eq!(lp.locked_until_ms.0, 0);
+    call_as(LP1, 0, NOW + HOLD);
+    let _ = p.withdraw(U128(100 * NEAR));
+    assert_eq!(transfers(), vec![(LP1.to_string(), 100 * NEAR)]);
+}
+
+#[test]
+fn the_views_answer_a_missing_entry_like_a_zero_entry() {
+    let mut p = funded_pool();
+    let zero = LpView {
+        shares: U128(0),
+        value: U128(0),
+        locked_until_ms: near_sdk::json_types::U64(0),
+    };
+    call_as(OWNER, 0, NOW);
+    assert_eq!(
+        p.get_lp(acct(OTHER)),
+        zero,
+        "an account that never deposited"
+    );
+    // an entry at 0 shares with no lock reads the same
+    p.lps.insert(acct(LP2), 0);
+    assert_eq!(p.get_lp(acct(LP2)), zero);
+    // and so does an account after its full exit
+    call_as(LP1, 0, NOW);
+    let _ = p.withdraw(U128(100 * NEAR));
+    assert_eq!(p.get_lp(acct(LP1)), zero);
+    assert_eq!(p.get_unclaimed(acct(LP1)).0, 0);
+    assert!(panics(|| p.withdraw(U128(1))).contains("exceeds your shares"));
+}
+
+#[test]
+fn the_charge_covers_the_storage_of_the_longest_lender() {
+    let mut p = pool();
+    let longest: AccountId = format!("{}.near", "a".repeat(59)).parse().unwrap();
+    assert_eq!(longest.as_str().len(), 64);
+    // one context for the whole test: a new context resets the storage usage the mock reports (a unit test calls `withdraw` directly,
+    // so the attached deposit of the context does not matter to it)
+    call_as(longest.as_str(), NEAR, NOW);
+    let used = env::storage_usage();
+    p.deposit();
+    p.lps.flush();
+    p.locks.flush();
+    let grew = u128::from(env::storage_usage() - used);
+    assert!(grew > 0, "the entries are stored");
+    assert!(
+        grew * env::storage_byte_cost().as_yoctonear() <= LP_STORAGE,
+        "{grew} bytes cost more than the charge"
+    );
+    // a full exit gives every byte back
+    let shares = p.get_lp(longest.clone()).shares.0;
+    let _ = p.withdraw(U128(shares));
+    p.lps.flush();
+    p.locks.flush();
+    assert_eq!(env::storage_usage(), used);
+}
+
 // ---- cards ----
 
 #[test]
@@ -286,6 +477,39 @@ fn register_card_checks_the_roles_the_card_answers() {
     assert_eq!(p.get_card(acct(CARD)).unwrap().as_str(), BORROWER);
     call_as(OWNER, 0, NOW);
     assert!(panics(|| p.register_card(acct(CARD), acct(BORROWER))).contains("already registered"));
+}
+
+#[test]
+fn the_callback_checks_max_cards_again() {
+    // two registrations in flight both pass the check in `register_card`; the second callback must not store card 101
+    let mut p = pool();
+    for i in 0..MAX_CARDS - 1 {
+        p.cards.insert(
+            acct(&format!("c{i}.test.near")),
+            Card {
+                borrower: acct(BORROWER),
+                line: None,
+                loss: 0,
+            },
+        );
+    }
+    call_as(OWNER, 0, NOW);
+    let _ = p.register_card(acct(CARD), acct(BORROWER));
+    let _ = p.register_card(acct(CARD2), acct(BORROWER));
+    register(&mut p);
+    assert_eq!(p.cards.len(), MAX_CARDS);
+    let roles = format!(r#"{{"owner_id":"{OWNER}","approver":"{BORROWER}","sponsor":"{POOL}"}}"#);
+    testing_env!(
+        ctx(POOL, 0, NOW).build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![PromiseResult::Successful(roles.into_bytes())]
+    );
+    let text = panics(|| p.on_card_roles(acct(CARD2), acct(BORROWER)));
+    assert!(text.contains("the pool holds 100 cards at most"), "{text}");
+    assert_eq!(p.cards.len(), MAX_CARDS);
+    assert!(p.get_card(acct(CARD2)).is_none());
 }
 
 #[test]
@@ -455,7 +679,7 @@ fn deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default() {
     );
     call_as(OWNER, 0, late);
     p.write_off(acct(CARD));
-    call_as(LP2, 29 * NEAR, late);
+    call_as(LP2, 29 * NEAR + LP_STORAGE, late);
     assert_eq!(
         p.deposit().0,
         50 * NEAR,
@@ -475,7 +699,7 @@ fn a_repay_after_the_due_date_reopens_deposits_at_the_restored_price() {
     let late = NOW + 31 * DAY;
     call_as(BORROWER, 63 * NEAR, late);
     p.repay(acct(CARD));
-    call_as(LP2, 103 * NEAR, late);
+    call_as(LP2, 103 * NEAR + LP_STORAGE, late);
     assert_eq!(p.deposit().0, 100 * NEAR, "price 1.03 after the fee");
     assert_eq!(p.get_lp(acct(LP1)).value.0, 103 * NEAR);
 }
@@ -690,7 +914,7 @@ fn deposits_stay_closed_between_a_default_and_its_recovery() {
         100 * NEAR,
         "the incumbents got the whole recovery"
     );
-    call_as(LP2, 100 * NEAR, t);
+    call_as(LP2, 100 * NEAR + LP_STORAGE, t);
     assert_eq!(
         p.deposit().0,
         100 * NEAR,
@@ -707,7 +931,7 @@ fn a_write_off_reopens_deposits() {
     assert!(panics(|| p.deposit()).contains("being recovered"));
     call_as(OWNER, 0, t);
     p.write_off(acct(CARD));
-    call_as(LP2, 65 * NEAR, t);
+    call_as(LP2, 65 * NEAR + LP_STORAGE, t);
     assert_eq!(p.deposit().0, 100 * NEAR, "post-loss price 0.65");
     assert_eq!(p.get_lp(acct(LP1)).value.0, 65 * NEAR);
 }
@@ -723,7 +947,7 @@ fn held_pool() -> Pool {
         None,
         None,
     );
-    call_as(LP1, 100 * NEAR, NOW);
+    call_as(LP1, 100 * NEAR + LP_STORAGE, NOW);
     p.deposit();
     register(&mut p);
     p
@@ -754,7 +978,7 @@ fn a_deposit_just_before_a_repay_cannot_capture_the_fee() {
     // the sandwich: deposit, the borrower repays (the fee lands), withdraw. The hold makes the exit impossible inside the window.
     let mut p = held_pool();
     open(&mut p, 50 * NEAR, 1_000);
-    call_as(LP2, 100 * NEAR, NOW + 1000);
+    call_as(LP2, 100 * NEAR + LP_STORAGE, NOW + 1000);
     p.deposit();
     call_as(BORROWER, 55 * NEAR, NOW + 2000);
     p.repay(acct(CARD));
@@ -937,6 +1161,8 @@ fn run_property(seed: u64) {
         let mut p = pool();
         register(&mut p);
         let lps = [LP1, LP2];
+        // whether each lender has an entry in `lps` and `locks`
+        let mut entry = [false, false];
         let mut now = NOW;
         for _ in 0..120 {
             now += rng.below(3) * DAY / 2;
@@ -946,14 +1172,32 @@ fn run_property(seed: u64) {
             let losses_before = p.losses;
             match rng.below(7) {
                 0 | 1 => {
-                    let who = lps[rng.below(2) as usize];
-                    call_as(who, MIN_DEPOSIT + u128::from(rng.below(40)) * NEAR / 4, now);
+                    let i = rng.below(2) as usize;
+                    let who = lps[i];
+                    let attached = MIN_DEPOSIT + u128::from(rng.below(40)) * NEAR / 4;
+                    call_as(who, attached, now);
                     let value = |p: &Pool, who: &str| p.get_lp(acct(who)).value.0;
                     let other = if who == LP1 { LP2 } else { LP1 };
                     let (price_before, other_before) =
                         (p.get_pool().share_price.0, value(&p, other));
+                    // the model of the storage charge: a lender with no entry pays LP_STORAGE, and the pool is credited the rest
+                    let charge = if entry[i] { 0 } else { LP_STORAGE };
+                    let idle_before = p.idle;
                     let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| p.deposit()));
+                    if r.is_err() && attached < MIN_DEPOSIT + charge {
+                        assert!(
+                            !entry[i],
+                            "a lender with an entry is never refused for the charge"
+                        );
+                    }
                     if r.is_ok() {
+                        assert!(attached >= MIN_DEPOSIT + charge);
+                        assert_eq!(
+                            p.idle - idle_before,
+                            attached - charge,
+                            "the pool is credited the attached amount less the charge"
+                        );
+                        entry[i] = true;
                         // F1: a deposit never moves what the other LP holds, and never lowers the price (rounding favours the pool)
                         call_as(OWNER, 0, now);
                         assert!(
@@ -972,7 +1216,8 @@ fn run_property(seed: u64) {
                     }
                 }
                 2 => {
-                    let who = lps[rng.below(2) as usize];
+                    let i = rng.below(2) as usize;
+                    let who = lps[i];
                     let have = p.get_lp(acct(who)).shares.0;
                     if have > 0 {
                         let s = have / 4 * u128::from(rng.below(4) + 1) + 1;
@@ -981,6 +1226,9 @@ fn run_property(seed: u64) {
                         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                             p.withdraw(U128(s.min(have)))
                         }));
+                        if r.is_ok() && s >= have {
+                            entry[i] = false;
+                        }
                         if r.is_ok() {
                             let paid = p.get_lp(acct(who)).value.0;
                             assert!(paid <= worth, "a withdraw never raises what the LP holds");
@@ -1036,6 +1284,18 @@ fn run_property(seed: u64) {
                 }
             }
             check(&p, &lps);
+            for (i, who) in lps.iter().enumerate() {
+                assert_eq!(
+                    p.lps.contains_key(&acct(who)),
+                    entry[i],
+                    "the lps entry follows the model"
+                );
+                assert_eq!(
+                    p.locks.contains_key(&acct(who)),
+                    entry[i],
+                    "the locks entry follows the model"
+                );
+            }
             call_as(OWNER, 0, now);
             if p.total_shares > 0
                 && p.get_pool().assets.0 > 0
@@ -1601,7 +1861,7 @@ fn a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms() {
     assert_eq!(p.get_pool_passport().base.0, 50 * NEAR);
     assert_eq!(passport(&p, CARD).limit_cap.0, 50 * NEAR);
     // LP2 deposits just before the announcement
-    call_as(LP2, 10 * NEAR, NOW + 9);
+    call_as(LP2, 10 * NEAR + LP_STORAGE, NOW + 9);
     p.deposit();
     // raise: announced, not in force
     set_base(&mut p, 200 * NEAR, NOW + 10);
@@ -1913,6 +2173,18 @@ fn the_c1108d_wasm_is_pinned() {
     );
 }
 
+/// The wasm the live pool runs before the storage fix (2026-11-11): the rehearsal in tests/pool.rs redeploys over a pool on these bytes.
+#[test]
+fn the_e754b6aa_wasm_is_pinned() {
+    call_as(OWNER, 0, NOW);
+    let sha = env::sha256(include_bytes!("../res/airlock_credit_v2_e754b6aa.wasm"));
+    assert_eq!(
+        hex(&sha),
+        "e754b6aa1b6f06dde89fb388d799d7adfb4589429a0c9fe745073018109f0bcd",
+        "res/airlock_credit_v2_e754b6aa.wasm is the v2 code the live pool runs before the storage fix"
+    );
+}
+
 // ---- the Base payment check (AIR-350) ----
 
 const SIGNER: &str = "signer.test.near";
@@ -1931,7 +2203,7 @@ fn checking_pool() -> Pool {
         Some(acct(SIGNER)),
         Some(3),
     );
-    call_as(LP1, 10 * NEAR, NOW);
+    call_as(LP1, 10 * NEAR + LP_STORAGE, NOW);
     p.deposit();
     p
 }

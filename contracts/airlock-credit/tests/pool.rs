@@ -6,6 +6,7 @@
 #[path = "../../airlock-policy/tests/common/mod.rs"]
 mod common;
 
+use airlock_credit::LP_STORAGE;
 use common::*;
 use near_api::{AccountId, Contract, NearToken, Signer};
 use near_api_types::transaction::result::ExecutionFinalResult;
@@ -131,7 +132,7 @@ async fn balance(fx: &Fx, who: &AccountId) -> u128 {
         .as_yoctonear()
 }
 
-/// LPs deposit 60 and 40 NEAR; the issuer registers the card (the pool checks its roles on chain); the borrower posts 3 NEAR of collateral;
+/// LPs deposit 60 and 40 NEAR (each attaches the storage charge of a first deposit on top); the issuer registers the card (the pool checks its roles on chain); the borrower posts 3 NEAR of collateral;
 /// the issuer opens a line of 10 NEAR with a 5 percent fee that is due in `due_secs` seconds.
 async fn funded_line(fx: &Fx, due_secs: u64) {
     let w = &fx.w;
@@ -142,7 +143,7 @@ async fn funded_line(fx: &Fx, due_secs: u64) {
         &fx.lp1.1,
         "deposit",
         json!({}),
-        60 * ONE_NEAR,
+        60 * ONE_NEAR + LP_STORAGE,
     )
     .await);
     ok(&send(
@@ -152,7 +153,7 @@ async fn funded_line(fx: &Fx, due_secs: u64) {
         &fx.lp2.1,
         "deposit",
         json!({}),
-        40 * ONE_NEAR,
+        40 * ONE_NEAR + LP_STORAGE,
     )
     .await);
     let (approver, approver_signer) = w.approver.clone().expect("an approver");
@@ -652,20 +653,16 @@ async fn passport(fx: &Fx) -> Value {
     view(fx, "get_passport", json!({ "card": fx.w.policy })).await
 }
 
-#[tokio::test]
-async fn upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works() {
-    let _s = SLOTS.acquire().await.unwrap();
+/// A pool on the pinned c1108d wasm (LPs held for 5 seconds) with the c1108d history: lp1 and lp2 deposit 60 and 40 NEAR, the card is
+/// registered, a line is paid and repaid, a second line defaults and a sweep recovers it. Returns the fixture, the pool account's own
+/// signer (for the upgrades) and the borrower.
+async fn c1108d_pool_with_history() -> (Fx, Arc<Signer>, AccountId, Arc<Signer>) {
     let w = world_with(WorldOpts {
         roles: true,
         sponsor_is: Some("pool"),
         ..WorldOpts::default()
     })
     .await;
-    let new_wasm = credit_wasm();
-    assert!(
-        std::path::Path::new(&new_wasm).exists(),
-        "{new_wasm} is missing: build contracts/airlock-credit first"
-    );
     // the pool account with a key this test holds, on the pinned c1108d wasm, LPs held for 5 seconds
     let pool: AccountId = format!("pool.{}", w.root).parse().unwrap();
     let pool_key = near_api::signer::generate_secret_key().unwrap();
@@ -705,6 +702,94 @@ async fn upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works() {
             .expect("the top-up");
     }
     let fx = Fx { w, pool, lp1, lp2 };
+    {
+        let w = &fx.w;
+        let owner_call = |method: &'static str, args: Value| {
+            send(w, &fx.pool, &w.owner, &w.owner_signer, method, args, 0)
+        };
+        let card_call = |method: &'static str, args: Value, yocto: u128| {
+            send(w, &w.policy, &w.owner, &w.owner_signer, method, args, yocto)
+        };
+        let borrower_call = |method: &'static str, yocto: u128| {
+            send(
+                w,
+                &fx.pool,
+                &approver,
+                &approver_signer,
+                method,
+                json!({ "card": w.policy }),
+                yocto,
+            )
+        };
+
+        // ---- the c1108d history: deposits, the card, a line paid and repaid, a second line defaulted and recovered ----
+        ok(&send(
+            w,
+            &fx.pool,
+            &fx.lp1.0,
+            &fx.lp1.1,
+            "deposit",
+            json!({}),
+            60 * ONE_NEAR,
+        )
+        .await);
+        ok(&send(
+            w,
+            &fx.pool,
+            &fx.lp2.0,
+            &fx.lp2.1,
+            "deposit",
+            json!({}),
+            40 * ONE_NEAR,
+        )
+        .await);
+        ok(&owner_call(
+            "register_card",
+            json!({ "card": w.policy, "borrower": approver }),
+        )
+        .await);
+        ok(&borrower_call("post_collateral", 3 * ONE_NEAR).await);
+        let due = final_block_ms(w) + 3_600_000;
+        ok(&owner_call("open_line", json!({ "card": w.policy, "limit": (10 * ONE_NEAR).to_string(), "fee_bps": 500, "due_ms": due.to_string() })).await);
+        let o = submit(
+            w,
+            &format!("near:{}", w.payee_near),
+            2 * ONE_NEAR,
+            (BOOK_MASK, OWNER_MASK, OWNER_MASK),
+        )
+        .await;
+        assert_eq!(o["outcome"], "allowed", "{o}");
+        ok(&card_call("sweep", json!({ "amount": (8 * ONE_NEAR).to_string() }), 1).await);
+        ok(&borrower_call("repay", 2 * ONE_NEAR + ONE_NEAR / 10).await);
+        ok(&borrower_call("post_collateral", 3 * ONE_NEAR).await);
+        let due = final_block_ms(w) + 8_000;
+        ok(&owner_call("open_line", json!({ "card": w.policy, "limit": (10 * ONE_NEAR).to_string(), "fee_bps": 500, "due_ms": due.to_string() })).await);
+        tokio::time::sleep(std::time::Duration::from_secs(12)).await;
+        ok(&send(
+            w,
+            &fx.pool,
+            &fx.lp2.0,
+            &fx.lp2.1,
+            "default",
+            json!({ "card": w.policy }),
+            0,
+        )
+        .await);
+        ok(&card_call("pause", json!({ "paused": true }), 1).await);
+        ok(&card_call("sweep", json!({ "amount": (7 * ONE_NEAR).to_string() }), 1).await);
+    }
+    (fx, pool_signer, approver, approver_signer)
+}
+
+#[tokio::test]
+async fn upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works() {
+    let _s = SLOTS.acquire().await.unwrap();
+    let new_wasm = credit_wasm();
+    assert!(
+        std::path::Path::new(&new_wasm).exists(),
+        "{new_wasm} is missing: build contracts/airlock-credit first"
+    );
+    let (fx, pool_signer, approver, approver_signer) = c1108d_pool_with_history().await;
     let w = &fx.w;
     let owner_call = |method: &'static str, args: Value| {
         send(w, &fx.pool, &w.owner, &w.owner_signer, method, args, 0)
@@ -723,62 +808,6 @@ async fn upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works() {
             yocto,
         )
     };
-
-    // ---- the c1108d history: deposits, the card, a line paid and repaid, a second line defaulted and recovered ----
-    ok(&send(
-        w,
-        &fx.pool,
-        &fx.lp1.0,
-        &fx.lp1.1,
-        "deposit",
-        json!({}),
-        60 * ONE_NEAR,
-    )
-    .await);
-    ok(&send(
-        w,
-        &fx.pool,
-        &fx.lp2.0,
-        &fx.lp2.1,
-        "deposit",
-        json!({}),
-        40 * ONE_NEAR,
-    )
-    .await);
-    ok(&owner_call(
-        "register_card",
-        json!({ "card": w.policy, "borrower": approver }),
-    )
-    .await);
-    ok(&borrower_call("post_collateral", 3 * ONE_NEAR).await);
-    let due = final_block_ms(w) + 3_600_000;
-    ok(&owner_call("open_line", json!({ "card": w.policy, "limit": (10 * ONE_NEAR).to_string(), "fee_bps": 500, "due_ms": due.to_string() })).await);
-    let o = submit(
-        w,
-        &format!("near:{}", w.payee_near),
-        2 * ONE_NEAR,
-        (BOOK_MASK, OWNER_MASK, OWNER_MASK),
-    )
-    .await;
-    assert_eq!(o["outcome"], "allowed", "{o}");
-    ok(&card_call("sweep", json!({ "amount": (8 * ONE_NEAR).to_string() }), 1).await);
-    ok(&borrower_call("repay", 2 * ONE_NEAR + ONE_NEAR / 10).await);
-    ok(&borrower_call("post_collateral", 3 * ONE_NEAR).await);
-    let due = final_block_ms(w) + 8_000;
-    ok(&owner_call("open_line", json!({ "card": w.policy, "limit": (10 * ONE_NEAR).to_string(), "fee_bps": 500, "due_ms": due.to_string() })).await);
-    tokio::time::sleep(std::time::Duration::from_secs(12)).await;
-    ok(&send(
-        w,
-        &fx.pool,
-        &fx.lp2.0,
-        &fx.lp2.1,
-        "default",
-        json!({ "card": w.policy }),
-        0,
-    )
-    .await);
-    ok(&card_call("pause", json!({ "paused": true }), 1).await);
-    ok(&card_call("sweep", json!({ "amount": (7 * ONE_NEAR).to_string() }), 1).await);
     let old = sum_rules(&fx).await;
     assert_eq!(
         (n(&old["losses"]), old["lines"][0]["state"].clone()),
@@ -1070,4 +1099,280 @@ async fn upgrade_from_the_c1108d_wasm_keeps_every_view_and_still_works() {
     // LPs are whole: lp1 can still withdraw at the recovered price
     let lp1 = view(&fx, "get_lp", json!({ "account": fx.lp1.0 })).await;
     assert!(n(&lp1["value"]) > 60 * ONE_NEAR, "{lp1}");
+}
+
+// ---- 2026-11-11: the storage fix as a code-only redeploy over a pool on the live v2 wasm ----
+
+/// The v2 wasm the live pool runs before the storage fix (sha256 pinned by the unit test `the_e754b6aa_wasm_is_pinned`).
+fn e754b6aa_wasm() -> String {
+    format!(
+        "{}/res/airlock_credit_v2_e754b6aa.wasm",
+        env!("CARGO_MANIFEST_DIR")
+    )
+}
+
+/// The number of stored entries under `prefix` (a `LookupMap` key is its one byte prefix followed by the borsh account id).
+async fn entries(fx: &Fx, map_prefix: u8, account: &AccountId) -> usize {
+    let mut key = vec![map_prefix];
+    key.extend_from_slice(&(account.as_str().len() as u32).to_le_bytes());
+    key.extend_from_slice(account.as_str().as_bytes());
+    Contract(fx.pool.clone())
+        .view_storage_with_prefix(&key)
+        .fetch_from(&fx.w.net)
+        .await
+        .expect("the state view")
+        .data
+        .values
+        .len()
+}
+/// `StorageKey::Lps` and `StorageKey::Locks` (pinned by `layout_the_storage_keys_follow_declaration_order`).
+const LPS: u8 = 0;
+const LOCKS: u8 = 3;
+
+async fn storage_usage(fx: &Fx) -> u64 {
+    near_api::Account(fx.pool.clone())
+        .view()
+        .fetch_from(&fx.w.net)
+        .await
+        .expect("the pool account")
+        .data
+        .storage_usage
+}
+
+/// The `data` of the one `deposit` event of a transaction.
+fn deposit_event(r: &ExecutionFinalResult) -> Value {
+    let events = extract_event_logs(r).expect("the events parse");
+    let deposits: Vec<&Value> = events.iter().filter(|e| e["event"] == "deposit").collect();
+    assert_eq!(deposits.len(), 1, "{events:?}");
+    deposits[0]["data"][0].clone()
+}
+
+async fn lp_deposit(fx: &Fx, who: &(AccountId, Arc<Signer>), yocto: u128) -> ExecutionFinalResult {
+    send(&fx.w, &fx.pool, &who.0, &who.1, "deposit", json!({}), yocto).await
+}
+
+async fn lp_withdraw(
+    fx: &Fx,
+    who: &(AccountId, Arc<Signer>),
+    shares: u128,
+) -> ExecutionFinalResult {
+    send(
+        &fx.w,
+        &fx.pool,
+        &who.0,
+        &who.1,
+        "withdraw",
+        json!({ "shares": shares.to_string() }),
+        0,
+    )
+    .await
+}
+
+async fn lp_view(fx: &Fx, who: &AccountId) -> Value {
+    view(fx, "get_lp", json!({ "account": who })).await
+}
+
+/// `snapshot`, the `get_lp` of `more`, the pool's Passport, the borrower's Passport and the Base check config.
+async fn all_views(fx: &Fx, borrower: &AccountId, more: &[&AccountId]) -> Vec<Value> {
+    let mut v = snapshot(fx, borrower).await;
+    for who in more {
+        v.push(lp_view(fx, who).await);
+    }
+    v.push(view(fx, "get_pool_passport", json!({})).await);
+    v.push(passport(fx).await);
+    v.push(view(fx, "get_base_check_config", json!({})).await);
+    v
+}
+
+/// What will happen on the live pool: a pool on the e754b6aa (v2) wasm with lenders from c1108d and from v2, one of them left at a zero
+/// entry by a full exit under v2, takes the new build as a code-only redeploy (no init call, no migrate).
+#[tokio::test]
+async fn the_storage_fix_redeploys_over_a_v2_pool_with_no_init_call() {
+    let _s = SLOTS.acquire().await.unwrap();
+    let new_wasm = credit_wasm();
+    assert!(
+        std::path::Path::new(&new_wasm).exists(),
+        "{new_wasm} is missing: build contracts/airlock-credit first"
+    );
+    let (fx, pool_signer, approver, _) = c1108d_pool_with_history().await;
+    let w = &fx.w;
+    // ---- the live path: the c1108d pool migrated to the v2 bytes the live pool runs ----
+    let r = Contract::deploy(fx.pool.clone())
+        .use_code(std::fs::read(e754b6aa_wasm()).unwrap())
+        .with_init_call(
+            "migrate",
+            json!({ "passport_base": ONE_NEAR.to_string(), "mpc_signer": "v1.signer-prod.testnet", "foreign_domain_id": 3 }),
+        )
+        .unwrap()
+        .with_signer(pool_signer.clone())
+        .send_to(&w.net)
+        .await
+        .expect("the migrate to v2 is sent");
+    let r = match r {
+        near_api_types::transaction::result::TransactionResult::Full(r) => *r,
+        other => panic!("the migrate is still pending: {other:?}"),
+    };
+    ok(&r);
+    // under v2: lp3 deposits and stays; lp4 deposits and leaves in full, which v2 records as a zero entry with its lock kept
+    let lp3 = create_user_account(&w.net, &w.root, &w.owner_signer, "lp3")
+        .await
+        .unwrap();
+    let lp4 = create_user_account(&w.net, &w.root, &w.owner_signer, "lp4")
+        .await
+        .unwrap();
+    let lp5 = create_user_account(&w.net, &w.root, &w.owner_signer, "lp5")
+        .await
+        .unwrap();
+    ok(&lp_deposit(&fx, &lp3, 2 * ONE_NEAR).await);
+    let r = lp_deposit(&fx, &lp4, ONE_NEAR).await;
+    ok(&r);
+    assert_eq!(
+        deposit_event(&r)["amount"],
+        json!(ONE_NEAR.to_string()),
+        "v2 credits a first deposit in full"
+    );
+    tokio::time::sleep(std::time::Duration::from_secs(6)).await;
+    let lp4_shares = n(&lp_view(&fx, &lp4.0).await["shares"]);
+    ok(&lp_withdraw(&fx, &lp4, lp4_shares).await);
+    let lp4_view = lp_view(&fx, &lp4.0).await;
+    assert_eq!(n(&lp4_view["shares"]), 0, "{lp4_view}");
+    assert_ne!(lp4_view["locked_until_ms"], json!("0"), "{lp4_view}");
+    assert_eq!(
+        (
+            entries(&fx, LPS, &lp4.0).await,
+            entries(&fx, LOCKS, &lp4.0).await
+        ),
+        (1, 1),
+        "v2 leaves a zero entry and its lock"
+    );
+    sum_rules(&fx).await;
+
+    // ---- every view before the redeploy ----
+    let before = all_views(&fx, &approver, &[&lp3.0, &lp4.0, &lp5.0]).await;
+
+    // ---- the redeploy: DeployContract with no init call ----
+    let r = Contract::deploy(fx.pool.clone())
+        .use_code(std::fs::read(&new_wasm).unwrap())
+        .without_init_call()
+        .with_signer(pool_signer.clone())
+        .send_to(&w.net)
+        .await
+        .expect("the redeploy is sent");
+    let r = match r {
+        near_api_types::transaction::result::TransactionResult::Full(r) => *r,
+        other => panic!("the redeploy is still pending: {other:?}"),
+    };
+    ok(&r);
+    assert_eq!(
+        all_views(&fx, &approver, &[&lp3.0, &lp4.0, &lp5.0]).await,
+        before,
+        "every view reads the same after the redeploy"
+    );
+
+    // ---- the new code on the old state ----
+    let idle = |p: &Value| n(&p["idle"]);
+    // lp1 (c1108d) and lp3 (v2) have entries: credited in full
+    for lp in [&fx.lp1, &lp3] {
+        let p0 = pool_view(&fx).await;
+        let r = lp_deposit(&fx, lp, ONE_NEAR).await;
+        ok(&r);
+        let e = deposit_event(&r);
+        assert_eq!(
+            (e["amount"].clone(), e["storage"].clone()),
+            (json!(ONE_NEAR.to_string()), json!("0")),
+            "{e}"
+        );
+        assert_eq!(idle(&pool_view(&fx).await) - idle(&p0), ONE_NEAR);
+    }
+    // lp4's zero entry is an entry: credited in full
+    let p0 = pool_view(&fx).await;
+    let r = lp_deposit(&fx, &lp4, ONE_NEAR).await;
+    ok(&r);
+    let e = deposit_event(&r);
+    assert_eq!(
+        (e["amount"].clone(), e["storage"].clone()),
+        (json!(ONE_NEAR.to_string()), json!("0")),
+        "{e}"
+    );
+    assert_eq!(idle(&pool_view(&fx).await) - idle(&p0), ONE_NEAR);
+    // lp5 is new: charged
+    let used = storage_usage(&fx).await;
+    let p0 = pool_view(&fx).await;
+    let r = lp_deposit(&fx, &lp5, ONE_NEAR).await;
+    ok(&r);
+    let e = deposit_event(&r);
+    assert_eq!(
+        (e["amount"].clone(), e["storage"].clone()),
+        (
+            json!((ONE_NEAR - LP_STORAGE).to_string()),
+            json!(LP_STORAGE.to_string())
+        ),
+        "{e}"
+    );
+    let p1 = pool_view(&fx).await;
+    assert_eq!(idle(&p1) - idle(&p0), ONE_NEAR - LP_STORAGE);
+    assert_eq!(
+        p1["share_price"], p0["share_price"],
+        "the charge is not pool money"
+    );
+    let grew = storage_usage(&fx).await - used;
+    assert!(
+        u128::from(grew) * 10_000_000_000_000_000_000 <= LP_STORAGE,
+        "the entries took {grew} bytes"
+    );
+    assert_eq!(
+        (
+            entries(&fx, LPS, &lp5.0).await,
+            entries(&fx, LOCKS, &lp5.0).await
+        ),
+        (1, 1)
+    );
+    sum_rules(&fx).await;
+    // lp5 leaves in full after the hold: paid the value of its shares, both entries removed, the pool's storage back where it was
+    tokio::time::sleep(std::time::Duration::from_secs(6)).await;
+    let lp5_view = lp_view(&fx, &lp5.0).await;
+    let (shares, value) = (n(&lp5_view["shares"]), n(&lp5_view["value"]));
+    assert!(
+        value <= ONE_NEAR - LP_STORAGE && ONE_NEAR - LP_STORAGE - value <= 2,
+        "{lp5_view}"
+    );
+    let balance_before = balance(&fx, &lp5.0).await;
+    let r = lp_withdraw(&fx, &lp5, shares).await;
+    ok(&r);
+    let events = extract_event_logs(&r).expect("the events parse");
+    let paid: Vec<&Value> = events.iter().filter(|e| e["event"] == "withdraw").collect();
+    assert_eq!(paid.len(), 1, "{events:?}");
+    assert_eq!(paid[0]["data"][0]["amount"], json!(value.to_string()));
+    let got = balance(&fx, &lp5.0).await - balance_before;
+    assert!(
+        got <= value && got > value - ONE_NEAR / 100,
+        "lp5 received {got} for {value} less gas"
+    );
+    assert_eq!(
+        (
+            entries(&fx, LPS, &lp5.0).await,
+            entries(&fx, LOCKS, &lp5.0).await
+        ),
+        (0, 0),
+        "a full exit removes both entries"
+    );
+    assert_eq!(storage_usage(&fx).await, used, "and frees their storage");
+    assert_eq!(
+        lp_view(&fx, &lp5.0).await,
+        json!({ "shares": "0", "value": "0", "locked_until_ms": "0" })
+    );
+    sum_rules(&fx).await;
+    // the Passport and the Base check config still answer
+    let pv = view(&fx, "get_pool_passport", json!({})).await;
+    assert_eq!(
+        (n(&pv["base"]), pv["version"].clone()),
+        (ONE_NEAR, json!(2)),
+        "{pv}"
+    );
+    let pp = passport(&fx).await;
+    assert_eq!(pp["borrower"], json!(approver.as_str()), "{pp}");
+    assert_eq!(
+        view(&fx, "get_base_check_config", json!({})).await,
+        json!({ "mpc_signer": "v1.signer-prod.testnet", "domain_id": 3, "fee": (ONE_NEAR / 100).to_string() })
+    );
 }

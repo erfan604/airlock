@@ -69,3 +69,13 @@ one was killed.
 - the answer read without the 2,048 byte bound: killed by `an_unreadable_or_oversized_answer_records_nothing`
 - the signer asked with 0 yocto: killed by `base_check_asks_the_configured_signer_with_one_yocto`
 - a failed check stores a record: killed by `a_failed_check_records_nothing_and_refunds_the_fee`, `a_recorded_id_is_refused_and_a_late_duplicate_keeps_the_earlier_answer`, `an_unreadable_or_oversized_answer_records_nothing`
+
+## Credit pool (contracts/airlock-credit): lender storage mutants (2026-11-11)
+
+Each mutant below was applied alone to `src/lib.rs` on 2026-11-11 and the library tests (`cargo test --lib`, 81 tests) were run; every
+one was killed.
+
+- the storage charge added to `idle` (`idle += amount + storage` in `deposit`): killed by `a_first_deposit_pays_the_storage_charge_and_a_second_is_credited_in_full`, `a_first_deposit_must_cover_the_minimum_and_the_charge`, `the_storage_charge_never_moves_the_share_price`, `property_random_operations_keep_the_accounting` and 21 earlier tests
+- the charge taken from a lender who already has an entry: killed by `a_first_deposit_pays_the_storage_charge_and_a_second_is_credited_in_full`, `property_random_operations_keep_the_accounting`
+- the entries not removed on a full exit (`lps` written back as 0, `locks` kept): killed by `a_full_withdraw_removes_both_entries_and_a_partial_keeps_them`, `a_failed_withdraw_transfer_after_a_full_exit_gives_the_shares_back`, `the_views_answer_a_missing_entry_like_a_zero_entry`, `the_charge_covers_the_storage_of_the_longest_lender`, `property_random_operations_keep_the_accounting`
+- the `MAX_CARDS` check in `on_card_roles` removed: killed by `the_callback_checks_max_cards_again`

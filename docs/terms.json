@@ -103,8 +103,8 @@
           "status": "in force",
           "refs": [
             { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 3, "to": 5, "has": "a plain transfer to the contract cannot move the share price", "name": "own accounting fields" },
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 383, "to": 386, "has": "fn assets_at", "name": "assets_at" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 178, "has": "fn a_plain_transfer_to_the_contract_cannot_move_the_share_price", "name": "a_plain_transfer_to_the_contract_cannot_move_the_share_price" }
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 387, "to": 390, "has": "fn assets_at", "name": "assets_at" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 179, "has": "fn a_plain_transfer_to_the_contract_cannot_move_the_share_price", "name": "a_plain_transfer_to_the_contract_cannot_move_the_share_price" }
           ]
         },
         {
@@ -113,12 +113,12 @@
           "text": "Deposits and withdrawals price a share the same way, and every rounding goes in the pool's favour.",
           "status": "in force",
           "refs": [
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 585, "has": "shares_for_deposit", "name": "deposit" },
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 620, "to": 622, "has": "amount_for_shares", "name": "withdraw" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 599, "has": "shares_for_deposit", "name": "deposit" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 633, "to": 635, "has": "amount_for_shares", "name": "withdraw" },
             { "role": "Enforced", "file": "contracts/airlock-credit/src/math.rs", "line": 54, "to": 70, "has": "pub fn amount_for_shares", "name": "share math" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/math.rs", "line": 247, "has": "fn withdraw_rounds_down_and_never_pays_more_than_pro_rata", "name": "withdraw_rounds_down_and_never_pays_more_than_pro_rata" },
             { "role": "Tested", "file": "contracts/airlock-credit/src/math.rs", "line": 258, "has": "fn deposit_then_withdraw_never_gains", "name": "deposit_then_withdraw_never_gains" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1056, "has": "fn property_random_operations_keep_the_accounting", "name": "property_random_operations_keep_the_accounting" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1316, "has": "fn property_random_operations_keep_the_accounting", "name": "property_random_operations_keep_the_accounting" },
             { "role": "Shown", "tx": "5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs", "what": "a lender's 3 NEAR withdrawn as 3.03 NEAR", "row": 380 }
           ]
         },
@@ -128,11 +128,11 @@
           "text": "An overdue line counts as zero in the share price before anyone calls default, and deposits stay closed while a line is overdue or a loss is unrecovered.",
           "status": "in force",
           "refs": [
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 368, "to": 375, "has": "fn impaired_at", "name": "impaired_at" },
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 579, "to": 586, "has": "deposits are paused", "name": "deposit" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 778, "has": "fn an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default", "name": "an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 433, "has": "fn deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default", "name": "deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 670, "has": "fn deposits_stay_closed_between_a_default_and_its_recovery", "name": "deposits_stay_closed_between_a_default_and_its_recovery" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 372, "to": 379, "has": "fn impaired_at", "name": "impaired_at" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 585, "to": 592, "has": "deposits are paused", "name": "deposit" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1002, "has": "fn an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default", "name": "an_overdue_line_is_impaired_in_the_share_price_before_anyone_calls_default" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 657, "has": "fn deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default", "name": "deposits_are_refused_while_a_line_is_past_due_and_reopen_after_default" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 894, "has": "fn deposits_stay_closed_between_a_default_and_its_recovery", "name": "deposits_stay_closed_between_a_default_and_its_recovery" },
             { "role": "Shown", "tx": "5n4ZoQW6fe5KSd7SqNunDWwRQhe4xLepH5ZmjfH9dgon", "what": "a deposit refused while a line was past due", "row": 383 },
             { "role": "Shown", "tx": "6Hzfv7JbAobTBbNMr7x8PuuCbDgN3JQt5y5Xg4w6eTQs", "what": "a deposit refused before a loss was recovered", "row": 385 }
           ]
@@ -143,9 +143,9 @@
           "text": "A lender's shares can be withdrawn by that lender alone, once the hold has passed, from money the pool holds idle.",
           "status": "in force",
           "refs": [
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 605, "to": 628, "has": "pub fn withdraw", "name": "withdraw" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 194, "has": "fn withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond", "name": "withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 733, "has": "fn shares_are_held_for_min_hold_ms_after_a_deposit", "name": "shares_are_held_for_min_hold_ms_after_a_deposit" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 618, "to": 641, "has": "pub fn withdraw", "name": "withdraw" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 195, "has": "fn withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond", "name": "withdraw_pays_the_pro_rata_amount_down_to_idle_and_refuses_beyond" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 957, "has": "fn shares_are_held_for_min_hold_ms_after_a_deposit", "name": "shares_are_held_for_min_hold_ms_after_a_deposit" },
             { "role": "Shown", "tx": "5qLww3EW9EfCJnZ5kkhs4BCzzskw3doYFabYMJ34agEs", "what": "a lender withdraws all its shares", "row": 380 }
           ]
         },
@@ -155,9 +155,9 @@
           "text": "On default the collateral pays the principal before the fee, and what it does not cover is a loss to the lenders.",
           "status": "in force",
           "refs": [
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1097, "to": 1134, "has": "pub fn default", "name": "default" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 528, "has": "fn default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss", "name": "default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 550, "has": "fn default_with_collateral_above_what_is_owed_returns_the_rest", "name": "default_with_collateral_above_what_is_owed_returns_the_rest" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1123, "to": 1160, "has": "pub fn default", "name": "default" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 752, "has": "fn default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss", "name": "default_seizes_collateral_principal_first_and_books_the_rest_as_a_loss" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 774, "has": "fn default_with_collateral_above_what_is_owed_returns_the_rest", "name": "default_with_collateral_above_what_is_owed_returns_the_rest" },
             { "role": "Shown", "tx": "6Pk6PR71dnoPJGjxy1CpQWNGkdgE6a7DmEec5ZnJQcxA", "what": "a default: collateral seized, the rest a loss", "row": 384 }
           ]
         }
@@ -199,9 +199,9 @@
           "text": "The fee is charged on what the card kept, so a sweep before the repay lowers it, and a card that returns everything owes no fee.",
           "status": "in force",
           "refs": [
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1055, "to": 1058, "has": "math::fee_of(outstanding", "name": "repay" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 484, "has": "fn repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral", "name": "repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 516, "has": "fn a_fully_swept_line_owes_nothing", "name": "a_fully_swept_line_owes_nothing" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1081, "to": 1084, "has": "math::fee_of(outstanding", "name": "repay" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 708, "has": "fn repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral", "name": "repay_charges_the_fee_on_what_the_card_kept_and_returns_the_collateral" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 740, "has": "fn a_fully_swept_line_owes_nothing", "name": "a_fully_swept_line_owes_nothing" },
             { "role": "Shown", "tx": "N2344KkGfQG5e3L7p6jwDL8bonzcPoT8mvdqFNhvEi8", "what": "a repay of 0.5 NEAR kept plus its 10 percent fee", "row": 379 }
           ]
         },
@@ -211,16 +211,16 @@
           "text": "The issuer sets the terms of new lines. The collateral ratio of new lines changes at once in either direction, and open lines keep theirs. Since the pool was upgraded on 10 November 2026, a cut of the Passport base applies at once and a raise waits for the hold, 60 seconds on this pool. A cut does not lower the draw a repay must keep to count toward the score, and the cap counts what one borrower account holds across all its cards.",
           "status": "in force",
           "refs": [
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1137, "to": 1142, "has": "pub fn set_collateral_bps", "name": "set_collateral_bps" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 582, "has": "fn the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs", "name": "the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs" },
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1149, "has": "pub fn set_passport_base", "name": "set_passport_base" },
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1168, "has": "pub fn apply_passport_base", "name": "apply_passport_base" },
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 818, "has": "the limit is above this card's Passport cap", "name": "open_line refuses a limit above the cap" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1597, "has": "fn a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms", "name": "a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1554, "has": "fn open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay", "name": "open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1381, "has": "fn ten_dust_lines_kept_in_full_do_not_raise_the_score", "name": "ten_dust_lines_kept_in_full_do_not_raise_the_score" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1447, "has": "fn a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count", "name": "a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1484, "has": "fn the_cap_counts_what_the_borrower_holds_on_their_other_cards", "name": "the_cap_counts_what_the_borrower_holds_on_their_other_cards" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1163, "to": 1168, "has": "pub fn set_collateral_bps", "name": "set_collateral_bps" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 806, "has": "fn the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs", "name": "the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1175, "has": "pub fn set_passport_base", "name": "set_passport_base" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1194, "has": "pub fn apply_passport_base", "name": "apply_passport_base" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 844, "has": "the limit is above this card's Passport cap", "name": "open_line refuses a limit above the cap" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1857, "has": "fn a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms", "name": "a_lower_base_applies_at_once_a_raise_only_after_min_hold_ms" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1814, "has": "fn open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay", "name": "open_line_above_the_cap_is_refused_then_allowed_after_an_on_time_repay" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1641, "has": "fn ten_dust_lines_kept_in_full_do_not_raise_the_score", "name": "ten_dust_lines_kept_in_full_do_not_raise_the_score" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1707, "has": "fn a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count", "name": "a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1744, "has": "fn the_cap_counts_what_the_borrower_holds_on_their_other_cards", "name": "the_cap_counts_what_the_borrower_holds_on_their_other_cards" },
             { "role": "Shown", "tx": "AXfP2CKgY31WxbBfrisb9YfKbg3q3XYad3SA9GbazzUN", "what": "the upgrade that set the Passport base to 1 NEAR", "row": 442 },
             { "role": "Shown", "tx": "BPFvcUAXnd4w9xZpaHTz8pcg7cqDyopNHAYebLaBoLqT", "what": "a line of 1.08 NEAR refused above the cap of 1 NEAR at score 500", "row": 443 },
             { "role": "Shown", "tx": "42r73k13VE3cjmdhgk7C5vfYxKmhGzyruayNx6UoqoaR", "what": "the same line opened after one repay on time raised the cap to 1.16 NEAR", "row": 450 }
@@ -232,8 +232,8 @@
           "text": "Lenders can leave 60 seconds after a deposit on this pool, and then for as much as the pool holds idle; money lent out waits for its repayment. Collateral is 30 percent of a line, and the pool bears any loss beyond it.",
           "status": "in force",
           "refs": [
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 626, "to": 630, "has": "insufficient idle liquidity", "name": "withdraw" },
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 38, "to": 39, "has": "DEFAULT_COLLATERAL_BPS: u32 = 3_000", "name": "collateral ratio" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 639, "to": 643, "has": "insufficient idle liquidity", "name": "withdraw" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 42, "to": 43, "has": "DEFAULT_COLLATERAL_BPS: u32 = 3_000", "name": "collateral ratio" },
             { "role": "Measured", "file": "docs/EVIDENCE.md", "line": 390, "has": "`min_hold_ms` 60000", "name": "the pool's hold, read from the chain" }
           ]
         },
@@ -253,7 +253,7 @@
           "text": "The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.11 and limits 2.4 to 2.6 and 2.10 cite tests.",
           "status": "in force",
           "refs": [
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1056, "has": "fn property_random_operations_keep_the_accounting", "name": "the pool's property test" }
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1316, "has": "fn property_random_operations_keep_the_accounting", "name": "the pool's property test" }
           ]
         },
         {
@@ -273,13 +273,13 @@
           "text": "Anyone who pays the pool 0.01 NEAR can have it ask the MPC signer it names whether a Base payment is final and succeeded, and the pool keeps the signed answer. A payment can be checked once Base has finalized it, about 21 minutes after the card's payment was mined. The answer binds the transaction to a block hash and names no payee and no amount. The pool does not check the signature, and no line, limit or share price depends on the answer. Two payments were checked on 10 November 2026: one made by an older account of the team, and one made by the card itself.",
           "status": "in force",
           "refs": [
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1189, "has": "pub fn check_base_payment", "name": "check_base_payment" },
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1194, "to": 1198, "has": "fee >= BASE_CHECK_FEE", "name": "the fee of 0.01 NEAR" },
-            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1234, "has": "pub fn on_base_check", "name": "on_base_check" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2018, "has": "fn base_check_asks_the_configured_signer_with_one_yocto", "name": "base_check_asks_the_configured_signer_with_one_yocto" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2066, "has": "fn a_signed_answer_is_recorded_and_the_view_returns_it", "name": "a_signed_answer_is_recorded_and_the_view_returns_it" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2156, "has": "fn a_failed_check_records_nothing_and_refunds_the_fee", "name": "a_failed_check_records_nothing_and_refunds_the_fee" },
-            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2256, "has": "fn the_base_check_fee_cannot_move_the_share_price", "name": "the_base_check_fee_cannot_move_the_share_price" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1215, "has": "pub fn check_base_payment", "name": "check_base_payment" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1220, "to": 1224, "has": "fee >= BASE_CHECK_FEE", "name": "the fee of 0.01 NEAR" },
+            { "role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1260, "has": "pub fn on_base_check", "name": "on_base_check" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2290, "has": "fn base_check_asks_the_configured_signer_with_one_yocto", "name": "base_check_asks_the_configured_signer_with_one_yocto" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2338, "has": "fn a_signed_answer_is_recorded_and_the_view_returns_it", "name": "a_signed_answer_is_recorded_and_the_view_returns_it" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2428, "has": "fn a_failed_check_records_nothing_and_refunds_the_fee", "name": "a_failed_check_records_nothing_and_refunds_the_fee" },
+            { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2528, "has": "fn the_base_check_fee_cannot_move_the_share_price", "name": "the_base_check_fee_cannot_move_the_share_price" },
             { "role": "Shown", "tx": "4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz", "what": "the pool records the signed answer for a Base Sepolia payment", "row": 466 },
             { "role": "Shown", "tx": "8KReKRKbYWAdmRz1dcRmw5rqR41tzhkzz75N31mLzGbQ", "what": "the pool records the signed answer for the card's own Base payment", "row": 512 }
           ]
