@@ -1,17 +1,17 @@
 {
   "title": "Terms of the AIRLOCK credit pool",
-  "asOf": "10 November 2026",
+  "asOf": "11 November 2026",
   "claim": "Each term links to the line that enforces it, the proof or test that covers it, and a transaction that shows it; the limits are terms too.",
   "parties": {
-    "lead": "These terms bind the pool, the card it funds, the issuer who runs both, the borrower who holds the card, and every lender who deposits. Each contract signs with the hash of the code it runs, read from the chain on 10 November 2026.",
+    "lead": "These terms bind the pool, the card it funds, the issuer who runs both, the borrower who holds the card, and every lender who deposits. Each contract signs with the hash of the code it runs, read from the chain on 11 November 2026.",
     "list": [
-      { "role": "The pool", "account": "pool.airlock-credit-c1108d", "code": "Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr" },
+      { "role": "The pool", "account": "pool.airlock-credit-c1108d", "code": "5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN" },
       { "role": "The card", "account": "card.airlock-credit-c1108d", "code": "6FCZRf51teMBxkLb2V5sc5bpLXDWws9RZgT3ERaUowTg" },
       { "role": "The issuer", "account": "airlock-credit-c1108d" },
       { "role": "The borrower", "account": "borrower.airlock-credit-c1108d" },
       { "role": "The agent", "account": "agent.airlock-credit-c1108d" }
     ],
-    "row": 436
+    "row": 555
   },
   "parts": [
     {
@@ -160,6 +160,25 @@
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 774, "has": "fn default_with_collateral_above_what_is_owed_returns_the_rest", "name": "default_with_collateral_above_what_is_owed_returns_the_rest" },
             { "role": "Shown", "tx": "6Pk6PR71dnoPJGjxy1CpQWNGkdgE6a7DmEec5ZnJQcxA", "what": "a default: collateral seized, the rest a loss", "row": 384 }
           ]
+        },
+        {
+          "n": "1.12",
+          "kind": "term",
+          "text": "A lender with no entry in the pool pays 0.0025 NEAR for that entry in the pool's storage, out of the amount attached to its deposit; the pool credits the rest, which must be at least 0.001 NEAR. The charge is not pool money and is not refunded, and withdrawing every share removes the entry.",
+          "status": "in force",
+          "refs": [
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 33, "to": 36, "has": "pub const LP_STORAGE", "name": "LP_STORAGE"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 593, "to": 597, "has": "LP_STORAGE", "name": "deposit"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 642, "to": 646, "has": "self.locks.remove(&who)", "name": "withdraw"},
+            {"role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 247, "has": "fn a_first_deposit_pays_the_storage_charge_and_a_second_is_credited_in_full", "name": "a_first_deposit_pays_the_storage_charge_and_a_second_is_credited_in_full"},
+            {"role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 285, "has": "fn a_first_deposit_must_cover_the_minimum_and_the_charge", "name": "a_first_deposit_must_cover_the_minimum_and_the_charge"},
+            {"role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 303, "has": "fn the_storage_charge_never_moves_the_share_price", "name": "the_storage_charge_never_moves_the_share_price"},
+            {"role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 328, "has": "fn a_full_withdraw_removes_both_entries_and_a_partial_keeps_them", "name": "a_full_withdraw_removes_both_entries_and_a_partial_keeps_them"},
+            {"role": "Tested", "file": "contracts/airlock-credit/tests/pool.rs", "line": 1190, "has": "fn the_storage_fix_redeploys_over_a_v2_pool_with_no_init_call", "name": "the_storage_fix_redeploys_over_a_v2_pool_with_no_init_call"},
+            {"role": "Shown", "tx": "AC3T5NXnAWQ796wDFGfg4QVtkHhrJNAiVaAShpHB3nnn", "what": "a deposit of 0.003 NEAR by a new lender refused", "row": 566},
+            {"role": "Shown", "tx": "5EKouAqzseLiaDNin9jxMyrJvQ6wyio4PcmPNwZoc2Lb", "what": "a deposit of 0.1025 NEAR credited as 0.1 NEAR", "row": 567},
+            {"role": "Shown", "tx": "Db7zDeaAsNcDKTarLsHQL7VM5RAqUTjgSM4icvQUzGXA", "what": "a full withdrawal that freed the entry", "row": 568}
+          ]
         }
       ]
     },
@@ -187,10 +206,10 @@
         {
           "n": "2.3",
           "kind": "limit",
-          "text": "The pool and the card each hold one full-access key, held by the operator, so the operator can deploy new code to either. The agent holds a full-access key to its own account and a function-call key that can call submit_batch and expire on the card.",
+          "text": "The pool and the card each hold one full-access key on their own accounts, held by the team: a holder can deploy new code to either contract and move that account's balance. The agent account holds a full-access key and a function-call key whose receiver is the card, for the methods submit_batch and expire. The issuer's account holds one full-access key; the issuer is the owner in the state of the pool and of the card, and keeps the powers of limits 2.11 to 2.14 through those contracts' own methods.",
           "status": "in force",
           "refs": [
-            { "role": "Shown", "tx": "FAyo8RPPeUU67nTGgKi7kVStb1YtYs2wnFFMn8bV3m1m", "what": "the agent's function-call key added on the card" }
+            { "role": "Shown", "tx": "FAyo8RPPeUU67nTGgKi7kVStb1YtYs2wnFFMn8bV3m1m", "what": "the function-call key added to the agent account, receiver the card" }
           ]
         },
         {
@@ -250,7 +269,7 @@
         {
           "n": "2.8",
           "kind": "limit",
-          "text": "The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.11 and limits 2.4 to 2.6 and 2.10 cite tests.",
+          "text": "The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.12 and limits 2.4 to 2.6 and 2.10 to 2.14 cite tests.",
           "status": "in force",
           "refs": [
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1316, "has": "fn property_random_operations_keep_the_accounting", "name": "the pool's property test" }
@@ -282,6 +301,59 @@
             { "role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 2528, "has": "fn the_base_check_fee_cannot_move_the_share_price", "name": "the_base_check_fee_cannot_move_the_share_price" },
             { "role": "Shown", "tx": "4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz", "what": "the pool records the signed answer for a Base Sepolia payment", "row": 466 },
             { "role": "Shown", "tx": "8KReKRKbYWAdmRz1dcRmw5rqR41tzhkzz75N31mLzGbQ", "what": "the pool records the signed answer for the card's own Base payment", "row": 512 }
+          ]
+        },
+        {
+          "n": "2.11",
+          "kind": "limit",
+          "text": "The issuer registers the cards, and the pool checks a card by the answer the card account gives to get_roles: owner, approver and sponsor. The pool does not read the card's code, so the issuer can register a contract that is not an AIRLOCK card and that gives that answer.",
+          "status": "in force",
+          "refs": [
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 711, "to": 713, "has": "get_roles", "name": "register_card"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 747, "to": 763, "has": "roles.owner_id == self.owner_id", "name": "on_card_roles"},
+            {"role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 430, "has": "fn register_card_checks_the_roles_the_card_answers", "name": "register_card_checks_the_roles_the_card_answers"}
+          ]
+        },
+        {
+          "n": "2.12",
+          "kind": "limit",
+          "text": "The issuer can lend all the money the pool holds idle to borrower accounts it names, with no waiting period: it sets the collateral ratio of new lines to 0, which applies at once, registers one card for each new borrower account (the pool holds 100 cards at most), each account's cap being the Passport base (1 NEAR on this pool), and opens a line on each card, due up to 90 days later. With one card instead, it announces a raise of the base, which applies 60 seconds later on this pool, and opens one line for everything. Lenders can withdraw no more than the pool holds idle, so they wait for those lines to be repaid or to default.",
+          "status": "in force",
+          "refs": [
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1163, "to": 1168, "has": "pub fn set_collateral_bps", "name": "set_collateral_bps"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 841, "to": 847, "has": "Passport cap", "name": "open_line refuses a limit above the cap"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 896, "to": 905, "has": "self.idle >= limit", "name": "open_line needs collateral and idle money"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/math.rs", "line": 153, "to": 155, "has": "pub fn limit_cap", "name": "limit_cap"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1184, "has": "ms() + self.min_hold_ms", "name": "set_passport_base"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 636, "to": 640, "has": "insufficient idle liquidity", "name": "withdraw"},
+            {"role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 806, "has": "fn the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs", "name": "the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs"},
+            {"role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1744, "has": "fn the_cap_counts_what_the_borrower_holds_on_their_other_cards", "name": "the_cap_counts_what_the_borrower_holds_on_their_other_cards"}
+          ]
+        },
+        {
+          "n": "2.13",
+          "kind": "limit",
+          "text": "A raise of the Passport base that has applied also raises, for good, the draw a repay must keep to count toward a score, a tenth of the highest base so far; no call lowers it. The issuer can cancel a raise while it is pending, and anyone can apply it once it is due.",
+          "status": "in force",
+          "refs": [
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1175, "to": 1191, "has": "pub fn set_passport_base", "name": "set_passport_base"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1203, "has": "self.floor_base = self.floor_base.max(base)", "name": "apply_passport_base"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1092, "has": "self.floor_base / MIN_QUALIFYING_DRAW_DIV", "name": "repay"},
+            {"role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 1707, "has": "fn a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count", "name": "a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count"}
+          ]
+        },
+        {
+          "n": "2.14",
+          "kind": "limit",
+          "text": "A loss that is not recovered keeps deposits closed for every lender. Two calls clear it, and both need the issuer's key: write_off on the pool, and sweep on an AIRLOCK card, whose money the pool credits as a recovery. If the issuer's key is lost, no call of either contract clears such a loss and deposits stay closed for good, while withdrawals of idle money go on; as long as the card account keeps its own key, new card code could still return the money.",
+          "status": "in force",
+          "refs": [
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 381, "to": 384, "has": "c.loss > 0", "name": "has_unrecovered_loss"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 588, "to": 591, "has": "deposits are paused while a defaulted line is being recovered", "name": "deposit"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1005, "to": 1006, "has": "self.owner_only()", "name": "write_off"},
+            {"role": "Enforced", "file": "contracts/airlock-policy/src/roles.rs", "line": 78, "to": 79, "has": "self.owner_call()", "name": "sweep"},
+            {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 1022, "to": 1026, "has": "only the card can return its funds", "name": "on_card_return"},
+            {"role": "Tested", "file": "contracts/airlock-credit/src/tests.rs", "line": 894, "has": "fn deposits_stay_closed_between_a_default_and_its_recovery", "name": "deposits_stay_closed_between_a_default_and_its_recovery"}
           ]
         }
       ]

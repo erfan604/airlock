@@ -1,20 +1,20 @@
 # Terms of the AIRLOCK credit pool
 
-As in force on 10 November 2026. Generated from `docs/terms.json` by `scripts/terms-check.ts --write`; `scripts/terms-check.ts` checks every citation below.
+As in force on 11 November 2026. Generated from `docs/terms.json` by `scripts/terms-check.ts --write`; `scripts/terms-check.ts` checks every citation below.
 
 Each term links to the line that enforces it, the proof or test that covers it, and a transaction that shows it; the limits are terms too.
 
 ## Parties
 
-These terms bind the pool, the card it funds, the issuer who runs both, the borrower who holds the card, and every lender who deposits. Each contract signs with the hash of the code it runs, read from the chain on 10 November 2026.
+These terms bind the pool, the card it funds, the issuer who runs both, the borrower who holds the card, and every lender who deposits. Each contract signs with the hash of the code it runs, read from the chain on 11 November 2026.
 
-- The pool: `pool.airlock-credit-c1108d`, code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`
+- The pool: `pool.airlock-credit-c1108d`, code hash `5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN`
 - The card: `card.airlock-credit-c1108d`, code hash `6FCZRf51teMBxkLb2V5sc5bpLXDWws9RZgT3ERaUowTg`
 - The issuer: `airlock-credit-c1108d`
 - The borrower: `borrower.airlock-credit-c1108d`
 - The agent: `agent.airlock-credit-c1108d`
 
-Code hashes: `docs/EVIDENCE.md` line 436.
+Code hashes: `docs/EVIDENCE.md` line 555.
 
 ## 1. What the card and the pool do
 
@@ -107,6 +107,20 @@ Code hashes: `docs/EVIDENCE.md` line 436.
 - Tested: `contracts/airlock-credit/src/tests.rs` 774, `default_with_collateral_above_what_is_owed_returns_the_rest`
 - Shown: a default: collateral seized, the rest a loss, transaction `6Pk6PR71dnoPJGjxy1CpQWNGkdgE6a7DmEec5ZnJQcxA` (`docs/EVIDENCE.md` line 384)
 
+**1.12** A lender with no entry in the pool pays 0.0025 NEAR for that entry in the pool's storage, out of the amount attached to its deposit; the pool credits the rest, which must be at least 0.001 NEAR. The charge is not pool money and is not refunded, and withdrawing every share removes the entry. *(in force)*
+
+- Enforced: `contracts/airlock-credit/src/lib.rs` 33 to 36, `LP_STORAGE`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 593 to 597, `deposit`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 642 to 646, `withdraw`
+- Tested: `contracts/airlock-credit/src/tests.rs` 247, `a_first_deposit_pays_the_storage_charge_and_a_second_is_credited_in_full`
+- Tested: `contracts/airlock-credit/src/tests.rs` 285, `a_first_deposit_must_cover_the_minimum_and_the_charge`
+- Tested: `contracts/airlock-credit/src/tests.rs` 303, `the_storage_charge_never_moves_the_share_price`
+- Tested: `contracts/airlock-credit/src/tests.rs` 328, `a_full_withdraw_removes_both_entries_and_a_partial_keeps_them`
+- Tested: `contracts/airlock-credit/tests/pool.rs` 1190, `the_storage_fix_redeploys_over_a_v2_pool_with_no_init_call`
+- Shown: a deposit of 0.003 NEAR by a new lender refused, transaction `AC3T5NXnAWQ796wDFGfg4QVtkHhrJNAiVaAShpHB3nnn` (`docs/EVIDENCE.md` line 566)
+- Shown: a deposit of 0.1025 NEAR credited as 0.1 NEAR, transaction `5EKouAqzseLiaDNin9jxMyrJvQ6wyio4PcmPNwZoc2Lb` (`docs/EVIDENCE.md` line 567)
+- Shown: a full withdrawal that freed the entry, transaction `Db7zDeaAsNcDKTarLsHQL7VM5RAqUTjgSM4icvQUzGXA` (`docs/EVIDENCE.md` line 568)
+
 ## 2. Limits
 
 **2.1** The issuer books the payees, and the issuer can approve a held payment to a payee outside the book. This has not been done on chain. *(in force)*
@@ -117,9 +131,9 @@ Code hashes: `docs/EVIDENCE.md` line 436.
 
 **2.2** A booked merchant that colludes with the borrower can keep what it is paid. Nothing in the code prevents this. *(in force)*
 
-**2.3** The pool and the card each hold one full-access key, held by the operator, so the operator can deploy new code to either. The agent holds a full-access key to its own account and a function-call key that can call submit_batch and expire on the card. *(in force)*
+**2.3** The pool and the card each hold one full-access key on their own accounts, held by the team: a holder can deploy new code to either contract and move that account's balance. The agent account holds a full-access key and a function-call key whose receiver is the card, for the methods submit_batch and expire. The issuer's account holds one full-access key; the issuer is the owner in the state of the pool and of the card, and keeps the powers of limits 2.11 to 2.14 through those contracts' own methods. *(in force)*
 
-- Shown: the agent's function-call key added on the card, transaction `FAyo8RPPeUU67nTGgKi7kVStb1YtYs2wnFFMn8bV3m1m`
+- Shown: the function-call key added to the agent account, receiver the card, transaction `FAyo8RPPeUU67nTGgKi7kVStb1YtYs2wnFFMn8bV3m1m`
 
 **2.4** The fee is charged on what the card kept, so a sweep before the repay lowers it, and a card that returns everything owes no fee. *(in force)*
 
@@ -154,7 +168,7 @@ Code hashes: `docs/EVIDENCE.md` line 436.
 
 - Measured: `docs/EVIDENCE.md` 350, `the accounts of the run`
 
-**2.8** The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.11 and limits 2.4 to 2.6 and 2.10 cite tests. *(in force)*
+**2.8** The pool's terms rest on tests, not proofs. The Lean theorems and the Kani harnesses cover the payment gate of the card, the verdict function, and not the credit pool: terms 1.7 to 1.12 and limits 2.4 to 2.6 and 2.10 to 2.14 cite tests. *(in force)*
 
 - Tested: `contracts/airlock-credit/src/tests.rs` 1316, `the pool's property test`
 
@@ -176,21 +190,55 @@ Code hashes: `docs/EVIDENCE.md` line 436.
 - Shown: the pool records the signed answer for a Base Sepolia payment, transaction `4aMpo4V2949S9Pp25GvxwrLa7x2Fb7zKjAr9crFpgqMz` (`docs/EVIDENCE.md` line 466)
 - Shown: the pool records the signed answer for the card's own Base payment, transaction `8KReKRKbYWAdmRz1dcRmw5rqR41tzhkzz75N31mLzGbQ` (`docs/EVIDENCE.md` line 512)
 
+**2.11** The issuer registers the cards, and the pool checks a card by the answer the card account gives to get_roles: owner, approver and sponsor. The pool does not read the card's code, so the issuer can register a contract that is not an AIRLOCK card and that gives that answer. *(in force)*
+
+- Enforced: `contracts/airlock-credit/src/lib.rs` 711 to 713, `register_card`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 747 to 763, `on_card_roles`
+- Tested: `contracts/airlock-credit/src/tests.rs` 430, `register_card_checks_the_roles_the_card_answers`
+
+**2.12** The issuer can lend all the money the pool holds idle to borrower accounts it names, with no waiting period: it sets the collateral ratio of new lines to 0, which applies at once, registers one card for each new borrower account (the pool holds 100 cards at most), each account's cap being the Passport base (1 NEAR on this pool), and opens a line on each card, due up to 90 days later. With one card instead, it announces a raise of the base, which applies 60 seconds later on this pool, and opens one line for everything. Lenders can withdraw no more than the pool holds idle, so they wait for those lines to be repaid or to default. *(in force)*
+
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1163 to 1168, `set_collateral_bps`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 841 to 847, `open_line refuses a limit above the cap`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 896 to 905, `open_line needs collateral and idle money`
+- Enforced: `contracts/airlock-credit/src/math.rs` 153 to 155, `limit_cap`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1184, `set_passport_base`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 636 to 640, `withdraw`
+- Tested: `contracts/airlock-credit/src/tests.rs` 806, `the_collateral_ratio_is_the_owner_s_and_open_lines_keep_theirs`
+- Tested: `contracts/airlock-credit/src/tests.rs` 1744, `the_cap_counts_what_the_borrower_holds_on_their_other_cards`
+
+**2.13** A raise of the Passport base that has applied also raises, for good, the draw a repay must keep to count toward a score, a tenth of the highest base so far; no call lowers it. The issuer can cancel a raise while it is pending, and anyone can apply it once it is due. *(in force)*
+
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1175 to 1191, `set_passport_base`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1203, `apply_passport_base`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1092, `repay`
+- Tested: `contracts/airlock-credit/src/tests.rs` 1707, `a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count`
+
+**2.14** A loss that is not recovered keeps deposits closed for every lender. Two calls clear it, and both need the issuer's key: write_off on the pool, and sweep on an AIRLOCK card, whose money the pool credits as a recovery. If the issuer's key is lost, no call of either contract clears such a loss and deposits stay closed for good, while withdrawals of idle money go on; as long as the card account keeps its own key, new card code could still return the money. *(in force)*
+
+- Enforced: `contracts/airlock-credit/src/lib.rs` 381 to 384, `has_unrecovered_loss`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 588 to 591, `deposit`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1005 to 1006, `write_off`
+- Enforced: `contracts/airlock-policy/src/roles.rs` 78 to 79, `sweep`
+- Enforced: `contracts/airlock-credit/src/lib.rs` 1022 to 1026, `on_card_return`
+- Tested: `contracts/airlock-credit/src/tests.rs` 894, `deposits_stay_closed_between_a_default_and_its_recovery`
+
 ## Schedule of cited files
 
 - `bench/runs/recorded/transcripts/own-S01.A1.1.json`: 215
-- `contracts/airlock-credit/src/lib.rs`: 3 to 5, 42 to 43, 372 to 379, 387 to 390, 585 to 592, 599, 618 to 641, 633 to 635, 639 to 643, 844, 1081 to 1084, 1123 to 1160, 1163 to 1168, 1175, 1194, 1215, 1220 to 1224, 1260
-- `contracts/airlock-credit/src/math.rs`: 54 to 70, 247, 258
-- `contracts/airlock-credit/src/tests.rs`: 179, 195, 657, 708, 740, 752, 774, 806, 894, 957, 1002, 1316, 1641, 1707, 1744, 1814, 1857, 2290, 2338, 2428, 2528
+- `contracts/airlock-credit/src/lib.rs`: 3 to 5, 33 to 36, 42 to 43, 372 to 379, 381 to 384, 387 to 390, 585 to 592, 588 to 591, 593 to 597, 599, 618 to 641, 633 to 635, 636 to 640, 639 to 643, 642 to 646, 711 to 713, 747 to 763, 841 to 847, 844, 896 to 905, 1005 to 1006, 1022 to 1026, 1081 to 1084, 1092, 1123 to 1160, 1163 to 1168, 1175, 1175 to 1191, 1184, 1194, 1203, 1215, 1220 to 1224, 1260
+- `contracts/airlock-credit/src/math.rs`: 54 to 70, 153 to 155, 247, 258
+- `contracts/airlock-credit/src/tests.rs`: 179, 195, 247, 285, 303, 328, 430, 657, 708, 740, 752, 774, 806, 894, 957, 1002, 1316, 1641, 1707, 1744, 1814, 1857, 2290, 2338, 2428, 2528
+- `contracts/airlock-credit/tests/pool.rs`: 1190
 - `contracts/airlock-policy/src/escalation.rs`: 447 to 451
 - `contracts/airlock-policy/src/policy.rs`: 297, 478
 - `contracts/airlock-policy/src/redteam.rs`: 519
-- `contracts/airlock-policy/src/roles.rs`: 42 to 56, 78 to 109
+- `contracts/airlock-policy/src/roles.rs`: 42 to 56, 78 to 109, 78 to 79
 - `contracts/airlock-verdict/src/ledger.rs`: 385
 - `contracts/airlock-verdict/src/lib.rs`: 202 to 209, 210 to 213, 214 to 217, 218 to 222, 227 to 237
 - `contracts/airlock-verdict/src/proofs.rs`: 104, 117, 127, 137, 355
 - `docs/BENCH.md`: 37
 - `docs/CLAIMS.md`: 38
-- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390, 436, 442, 443, 450, 466, 512
+- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390, 442, 443, 450, 466, 512, 555, 566, 567, 568
 - `proofs/Verdict.lean`: 12, 96, 105, 115, 123, 192
 - `runtime/src/economy/facts.ts`: 1 to 3, 24 to 26
