@@ -3,7 +3,7 @@
 // copy pays, the Kani harness that fails on the copy and the Lean theorem it breaks. The page runs every answer itself with the wasm files;
 // the tags in the manifest are what the tests compare it with. Amounts stay BigInt or decimal strings.
 import { REASONS } from '../try/verdictWasm.ts';
-import type { ReasonName, WasmVerdict } from '../try/verdictWasm.ts';
+import type { ReasonName, VerdictModule, WasmVerdict } from '../try/verdictWasm.ts';
 
 /** The coverage text the page shows word for word (AIR-361 design, Copy). */
 export const COVERAGE =
@@ -142,6 +142,17 @@ export function resultOf(a: Attack, real: WasmVerdict, copy: WasmVerdict): Resul
   else if (r.kind === 'paid' && c.kind === 'paid') line = 'Both pay: this request breaks no rule.';
   else line = 'The real gate pays and the copy refuses.';
   return { real: r, copy: c, line };
+}
+
+/**
+ * The copy whose missing rule an attack exploits: the first copy that pays it while the real gate refuses, found by running every copy on the
+ * attack in the browser. Before the gates have loaded it is the copy the manifest pairs with the attack; undefined when no copy pays it.
+ */
+export function payingCopy(m: Manifest, a: Attack, gates: { real: VerdictModule; copies: Record<string, VerdictModule> } | null): Copy | undefined {
+  if (gates === null) return m.copies.find((c) => c.attack === a.id);
+  const cols = a.columns.map((v) => BigInt(v));
+  if (gates.real.decide(cols).kind === 'allow') return undefined;
+  return m.copies.find((c) => gates.copies[c.id]?.decide(cols).kind === 'allow');
 }
 
 /** The changed lines of a unified diff (no file headers): what the page shows of the patch. */

@@ -6,18 +6,18 @@ import { useEffect, useRef, useState } from 'react';
 import { url } from '../static.ts';
 import { instantiateVerdict, loadVerdict } from '../try/verdictWasm.ts';
 import type { VerdictModule } from '../try/verdictWasm.ts';
-import { COVERAGE, hunkLines, parseManifest, reasonWords, resultOf } from './model.ts';
+import { COVERAGE, hunkLines, parseManifest, payingCopy, reasonWords, resultOf } from './model.ts';
 import type { Attack, Copy, Manifest, Side } from './model.ts';
 
 export type Modules = { real: VerdictModule; copies: Record<string, VerdictModule> };
 
 const TITLE = 'Break the proof';
-const LEAD = 'The gate below is the same function the contract runs, compiled for your browser. Each copy on the right has one rule taken out. Pick an attack and a copy.';
+const LEAD = 'The gate below is the same function the contract runs, compiled for your browser. Each broken copy of it has one rule taken out. Pick an attack: the page puts it through the real gate and through the copy that pays it, and you can then try any other copy.';
 const NUMBER = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
 
 function claim(n: number): string {
   const word = NUMBER[n] ?? String(n);
-  return `${word} ${n === 1 ? 'copy' : 'copies'} of the gate, each with one rule removed, ${n === 1 ? 'pays' : 'pay'} an attack the real gate refuses. A named Kani harness fails on each copy (recorded output), and each copy breaks a Lean theorem about the model.`;
+  return `${word} ${n === 1 ? 'copy' : 'copies'} of the gate, each with one rule removed, ${n === 1 ? 'pays' : 'pay'} an attack the real gate refuses. A named check of our model checker (Kani) fails on each copy (recorded output), and each copy breaks a machine-checked proof (Lean) about the model.`;
 }
 
 function Head() {
@@ -115,7 +115,7 @@ function Evidence({ copy, kani }: { copy: Copy; kani: string | undefined }) {
           </pre>
         </article>
         <article className="brk-ev">
-          <h3 className="brk-h3">The Kani harness that fails on it</h3>
+          <h3 className="brk-h3">The model checker (Kani) check that fails on it</h3>
           <p className="brk-ev-meta">
             <code className="brk-mono brk-name">{copy.harness.name}</code> at <span className="brk-mono">{`${copy.harness.file}:${String(copy.harness.line)}`}</span>. Recorded output of Kani on this copy, then on the unpatched crate:
           </p>
@@ -124,7 +124,7 @@ function Evidence({ copy, kani }: { copy: Copy; kani: string | undefined }) {
           </pre>
         </article>
         <article className="brk-ev">
-          <h3 className="brk-h3">The Lean theorem it breaks</h3>
+          <h3 className="brk-h3">The machine-checked proof (Lean) it breaks</h3>
           <p className="brk-ev-meta">
             <code className="brk-mono brk-name">{copy.lean.name}</code> at <span className="brk-mono">{`${copy.lean.file}:${String(copy.lean.line)}`}</span>, proved about the model of the gate. The copy answers Allow where the theorem says it cannot:
           </p>
@@ -166,7 +166,7 @@ export function BreakView({ data, kani, modules, initial, failed = false }: { da
   const cols = attack.columns.map((v) => BigInt(v));
   const copyMod = modules?.copies[copy.id];
   const result = modules === null || copyMod === undefined ? null : resultOf(attack, modules.real.decide(cols), copyMod.decide(cols));
-  const pays = (a: Attack): Copy | undefined => data.copies.find((c) => c.attack === a.id);
+  const pays = (a: Attack): Copy | undefined => payingCopy(data, a, modules);
 
   return (
     <main className="page brk" data-testid="break">
@@ -186,6 +186,9 @@ export function BreakView({ data, kani, modules, initial, failed = false }: { da
                 data-testid={`brk-attack-${a.id}`}
                 onClick={() => {
                   setAttackId(a.id);
+                  // visitor test 2026-11-11: keeping the old copy left both sides saying Refused; switch to the copy this attack exploits
+                  const c = pays(a);
+                  if (c !== undefined) setCopyId(c.id);
                   setRun((r) => r + 1);
                   reveal();
                 }}

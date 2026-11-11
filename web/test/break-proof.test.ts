@@ -16,7 +16,7 @@ import { STATIC_ROUTES } from '../vite-static.ts';
 import { PAGES } from '../src/pages.ts';
 import { ROUTES } from '../src/routes.ts';
 import { BreakView } from '../src/break/BreakPage.tsx';
-import { COVERAGE, parseManifest, resultOf } from '../src/break/model.ts';
+import { COVERAGE, parseManifest, payingCopy, resultOf } from '../src/break/model.ts';
 import type { Manifest } from '../src/break/model.ts';
 import { instantiateVerdict, tagOf } from '../src/try/verdictWasm.ts';
 import type { VerdictModule } from '../src/try/verdictWasm.ts';
@@ -175,6 +175,26 @@ test('the rendered page carries the coverage text word for word, labels construc
   // before the modules load the page still renders its text, and says it is loading
   const t = renderedText(m, kani, null).replace(/\s+/g, ' ');
   assert.ok(t.includes(COVERAGE));
+});
+
+// visitor test 2026-11-11: picking an attack kept the previous copy, so both machines said Refused. The page now selects the copy that pays the
+// attack, found by running every copy on it; this pins that the computed copy is the one the manifest pairs with each attack.
+test('picking an attack selects the copy that pays it, computed by running the copies, and the intro is true at every width', async () => {
+  const m = manifest();
+  const copies: Record<string, VerdictModule> = {};
+  for (const c of m.copies) copies[c.id] = await copyWasm(c.id);
+  const gates = { real: await realWasm(), copies };
+  for (const a of m.attacks) {
+    const c = payingCopy(m, a, gates);
+    assert.equal(c?.id, m.copies.find((x) => x.attack === a.id)?.id, a.id);
+    assert.equal(payingCopy(m, a, null)?.id, c?.id, `${a.id}: before the gates load the manifest pair is used`);
+    if (c !== undefined) assert.equal(resultOf(a, gates.real.decide(a.columns.map(BigInt)), copies[c.id]?.decide(a.columns.map(BigInt)) ?? { kind: 'malformed' }).line, 'The real gate refuses. The broken copy pays.');
+  }
+  const t = renderedText(m, {}, gates).replace(/\s+/g, ' ');
+  assert.ok(!t.includes('on the right'), 'a phone shows the copies below, so the intro names no side');
+  assert.ok(t.indexOf('our model checker (Kani)') >= 0 || t.indexOf('model checker (Kani)') >= 0, 'plain words before Kani');
+  assert.ok(t.indexOf('model checker (Kani)') < t.indexOf('Kani ') || !t.includes('Kani '), 'the first Kani is introduced');
+  assert.ok(t.includes('machine-checked proof (Lean)'));
 });
 
 test('the /break route is a lazy route listed in the static site', () => {
