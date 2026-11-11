@@ -6,6 +6,7 @@
 // A call that failed (a used slot, a malformed request) is counted apart. With a cache a final transaction is read once.
 import { classifyTx, listedOf } from '../challenge/chainBoard.ts';
 import type { ListedTx } from '../challenge/chainBoard.ts';
+import { historyFetch } from '../chain/historyFetch.ts';
 
 export const FASTNEAR_TX = 'https://tx.test.fastnear.com';
 /** Listing pages (100 transactions each) one read walks at most: 5,000 transactions, more than two publishes of 1,980 slots. */
@@ -77,8 +78,9 @@ async function postJson(fetchFn: typeof fetch, url: string, body: unknown): Prom
  * The attempts on the try card, oldest first. `truncated`: the listing is longer than the page cap, so older attempts may be missing.
  * Throws when a read fails, so the page can say the counts are unreadable instead of showing zeros.
  */
-export async function readTryAttempts(p: TryCfg & { nowMs: number; ttlMs: number; fetch?: typeof fetch; maxPages?: number; cache?: TryCache }): Promise<TryRead> {
-  const fetchFn = p.fetch ?? globalThis.fetch.bind(globalThis);
+export async function readTryAttempts(p: TryCfg & { nowMs: number; ttlMs: number; fetch?: typeof fetch; maxPages?: number; cache?: TryCache; sinceMs?: number }): Promise<TryRead> {
+  const fetchFn = p.fetch ?? historyFetch;
+  const since = p.sinceMs;
   const cache = p.cache ?? newTryCache();
   let token: string | null = null;
   let ended = false;
@@ -86,11 +88,12 @@ export async function readTryAttempts(p: TryCfg & { nowMs: number; ttlMs: number
     const body: Record<string, unknown> = { account_id: p.policy, is_function_call: true, limit: 100 };
     if (token !== null) body['resume_token'] = token;
     const got = listedOf(await postJson(fetchFn, `${FASTNEAR_TX}/v0/account`, body));
-    const fresh = got.txs.filter((t) => !cache.listed.has(t.hash));
+    // `sinceMs` (the site state file's cut): only the newer part is read, the file holds the rest
+    const fresh = got.txs.filter((t) => !cache.listed.has(t.hash) && (since === undefined || t.atMs > since));
     for (const t of fresh) cache.listed.set(t.hash, t);
     token = got.resume;
     // newest first: once the history was walked, a page with nothing new means every older page is already known
-    if (token === null || got.txs.length === 0 || (cache.walked && fresh.length === 0)) {
+    if (token === null || got.txs.length === 0 || (cache.walked && fresh.length === 0) || (since !== undefined && got.txs.some((t) => t.atMs <= since))) {
       ended = true;
       break;
     }

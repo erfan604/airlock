@@ -48,11 +48,12 @@ async function postJson(fetchFn: typeof fetch, url: string, body: unknown, retry
 const SETTLED = new Map<string, unknown>();
 const SETTLED_MS = 5 * 60_000;
 
-/** The function-call transactions of `account`, oldest first, each with its block time. `truncated` when the page limit cut the older part. */
+/** The function-call transactions of `account`, oldest first, each with its block time. `truncated` when the page limit cut the older part.
+ *  `sinceMs`: only the transactions after that time (the site state file holds the older part). */
 export async function readAccountTxs(
   fetchFn: typeof fetch,
   account: string,
-  opts: { pageLimit?: number; maxPages?: number; base?: string; retryMs?: readonly number[]; cache?: Map<string, unknown>; nowMs?: number } = {},
+  opts: { pageLimit?: number; maxPages?: number; base?: string; retryMs?: readonly number[]; cache?: Map<string, unknown>; nowMs?: number; sinceMs?: number } = {},
 ): Promise<TxRead> {
   const base = opts.base ?? FASTNEAR_TX;
   const retryMs = opts.retryMs ?? [1_500, 3_000];
@@ -64,8 +65,10 @@ export async function readAccountTxs(
   let truncated = false;
   do {
     const page = listedOf(await postJson(fetchFn, `${base}/v0/account`, { account_id: account, is_function_call: true, limit: opts.pageLimit ?? 100, ...(resume === null ? {} : { resume_token: resume }) }, retryMs));
-    listed.push(...page.txs);
-    resume = page.resume;
+    // with `sinceMs` (the site state file's cut) only the newer part is wanted: the listing is newest first, so it stops at the first older one
+    const since = opts.sinceMs;
+    listed.push(...(since === undefined ? page.txs : page.txs.filter((t) => t.atMs > since)));
+    resume = since !== undefined && page.txs.some((t) => t.atMs <= since) ? null : page.resume;
     pages += 1;
     if (resume !== null && pages >= (opts.maxPages ?? 10)) {
       truncated = true;
@@ -157,8 +160,9 @@ export async function readLp(rpc: { rpcUrls: readonly string[]; fetch?: typeof f
 export type LenderCount = { soFar: string[]; now: number; truncated: boolean };
 
 /** The lenders outside the team: everyone with a deposit event ("so far") and the part still holding shares ("now"). */
-export async function countLenders(events: readonly PoolEvent[], truncated: boolean, lp: (account: string) => Promise<LpView>, t: Team = TEAM): Promise<LenderCount> {
-  const soFar = depositors(events).filter((a) => !isTeam(a, t));
+export async function countLenders(events: readonly PoolEvent[], truncated: boolean, lp: (account: string) => Promise<LpView>, t: Team = TEAM, known: readonly string[] = []): Promise<LenderCount> {
+  // `known`: the outside lenders the site state file already counted, when `events` are only the part after its cut
+  const soFar = [...known, ...depositors(events).filter((a) => !isTeam(a, t) && !known.includes(a))];
   let now = 0;
   for (const a of soFar) if ((await lp(a)).shares > 0n) now += 1;
   return { soFar, now, truncated };

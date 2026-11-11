@@ -3,6 +3,7 @@
 // and the NEP-297 log lines of the pool's own receipts. A read that fails throws, so the page says "unreadable" and never shows zeros.
 import { rpcView } from '../chain/rpc.ts';
 import { listedOf } from '../challenge/chainBoard.ts';
+import { historyFetch } from '../chain/historyFetch.ts';
 import { parseEventLog, parseLp, parsePool } from './model.ts';
 import type { CreditEvent, PoolView } from './model.ts';
 
@@ -51,13 +52,15 @@ export function eventsOfTx(raw: unknown, accounts: string | readonly string[], a
 }
 
 /** The newest events of the pool and of its cards (`cards`, at most 6: each is one more listing), oldest first. One listing page per account. */
-export async function readEvents(cfg: { pool: string; cards?: readonly string[]; fetch?: typeof fetch; limit?: number }): Promise<CreditEvent[]> {
-  const fetchFn = cfg.fetch ?? globalThis.fetch.bind(globalThis);
+export async function readEvents(cfg: { pool: string; cards?: readonly string[]; fetch?: typeof fetch; limit?: number; sinceMs?: number }): Promise<CreditEvent[]> {
+  const fetchFn = cfg.fetch ?? historyFetch;
+  const since = cfg.sinceMs;
   const accounts = [cfg.pool, ...(cfg.cards ?? []).slice(0, 6)];
   const out = new Map<string, CreditEvent>();
   for (const account of accounts) {
     const page = listedOf(await postJson(fetchFn, `${FASTNEAR_TX}/v0/account`, { account_id: account, is_function_call: true, limit: cfg.limit ?? 40 }));
-    const meta = new Map(page.txs.map((t) => [t.hash, t]));
+    // `sinceMs` (the site state file's cut): only the newer transactions are fetched, the file holds the older events
+    const meta = new Map(page.txs.filter((t) => since === undefined || t.atMs > since).map((t) => [t.hash, t]));
     const hashes = [...meta.keys()];
     for (let i = 0; i < hashes.length; i += 20) {
       const res = await postJson(fetchFn, `${FASTNEAR_TX}/v0/transactions`, { tx_hashes: hashes.slice(i, i + 20) });

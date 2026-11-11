@@ -7,7 +7,7 @@
 // It then writes llms.txt, llms-full.txt, robots.txt and sitemap.xml (scripts/llms.ts) from the same sources.
 // Run: `tsx scripts/prerender.tsx [--out <dir>]` (STATIC_BASE as for the build, SITE_ORIGIN for absolute links, default the hosted demo).
 // The last line is `PRERENDER OK <n> pages`.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { ReactElement } from 'react';
 import { prerenderToNodeStream } from 'react-dom/static';
@@ -47,6 +47,12 @@ const held = acts.find((a) => a.id === 'b01')?.pendingNo;
 const request = held === null || held === undefined ? null : (readJson(`data/replay/request/${encodeURIComponent(held)}.json`) as { view: { asset: string }; asset: unknown });
 const registry = request === null ? null : registryFromRows([[request.view.asset, request.asset]] as Parameters<typeof registryFromRows>[0]);
 const replay = summarize(acts, streams, readJson('data/replay/tamper.json') as { tx: string; url: string; failure: string }, registry);
+// the site state file (scripts/site-state.ts, copied from web/public by the build when ops wrote it): its numbers are baked into the pages that
+// show them, so the first paint already says what the live read will; a file that does not parse is a build error, not a silent fallback
+const { parseSiteState } = await import('../src/state/siteState.ts');
+const siteState = existsSync(join(out, 'site-state.json')) ? parseSiteState(readJson('site-state.json')) : undefined;
+if (siteState === null) throw new Error('site-state.json is present but does not parse');
+const STATE_PAGES = new Set(['/', '/lend', '/rob', '/credit', '/challenge']);
 
 // the picture a shared link shows (1200 by 630): the agent credit card in front of the gold, cut from the vault plate of the credit film
 const SHARE_ALT = 'A black card marked AIRLOCK agent credit stands in front of shelves of gold bars.';
@@ -106,7 +112,8 @@ async function write(route: string, file: string, mode: 'hydrate' | 'replace', p
 for (const p of PAGES) {
   const file = p.path === '/' ? 'index.html' : `${p.path.slice(1)}/index.html`;
   const replayLike = p.path === '/replay' || p.alias !== undefined;
-  const pre: Preload | null = p.path === '/' ? { facts } : p.path === '/bench' ? { bench } : replayLike ? { replay } : null;
+  const own: Preload | null = p.path === '/' ? { facts } : p.path === '/bench' ? { bench } : replayLike ? { replay } : null;
+  const pre: Preload | null = siteState !== undefined && STATE_PAGES.has(p.path) ? { ...(own ?? {}), siteState } : own;
   // AIR-318: /approvals renders fresh too: what it shows depends on ?policy= and on the chain
   // the Bench page renders fresh over its prerendered text: the prerender leaves out the dot and whisker marks (bench/DotWhisker.tsx)
   await write(p.path, file, replayLike || p.path === '/bench' || p.path === '/approvals' || p.path === '/credit' || p.path === '/break' || p.path === '/lend' || p.path === '/rob' || p.path === '/terms' ? 'replace' : 'hydrate', pre);
@@ -114,5 +121,5 @@ for (const p of PAGES) {
 await write('/no-such-page', '404.html', 'replace', null);
 
 writeLlmsFiles({ out, base, origin: SITE_ORIGIN, bench, facts, replay });
-console.log(`PRERENDER OK ${String(pages)} pages`);
+console.log(`PRERENDER OK ${String(pages)} pages${siteState === undefined ? '' : `, site state of ${new Date(siteState.as_of_ms).toISOString()} baked in`}`);
 process.exit(0);

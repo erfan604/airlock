@@ -1,0 +1,212 @@
+{
+ "format": "airlock-site-state-v1",
+ "as_of_ms": 1794422734807,
+ "block_height": 277253810,
+ "cut_ms": 1794422586635,
+ "command": "pnpm site-state",
+ "pool": {
+  "id": "pool.airlock-credit-c1108d.testnet",
+  "assets": "4445000000000000000000003",
+  "shares": "4009856723377255758362720",
+  "losses": "0",
+  "idle": "4445000000000000000000003",
+  "lent": "0",
+  "fees_earned": "375000000000000000000000",
+  "lines": 1
+ },
+ "lenders": {
+  "outside": [],
+  "outside_now": 0,
+  "truncated": false
+ },
+ "loop": {
+  "cycles": 37,
+  "last_ms": 1794421365642,
+  "last_tx": "JHxe2soTr2BfM5h2Y9ta8ke9iC62Vo7NfTMpuePnBHd",
+  "fees_earned_by_loop": "325000000000000000000000"
+ },
+ "rob": {
+  "policy": "try.airlock-try-b193fe.testnet",
+  "attempts": 153,
+  "blocked": 0,
+  "held_open_ms": [
+   1794422585635
+  ],
+  "expired": 140,
+  "paid_shop": 13,
+  "paid_outside": 0,
+  "failed": 0,
+  "last_ms": 1794389378401,
+  "truncated": false,
+  "ttl_ms": 60000,
+  "from_browsers": {
+   "attempts": 9,
+   "paid_outside": 0
+  },
+  "rows": [
+   {
+    "tx": "9CNafjzB2oKJV4BLW9hamHj3ZinkRkEvAyWZYg5T8JWv",
+    "atMs": 1794389378401,
+    "requestId": "2ef394bb7843d64c5caa4989d28be7afac44ab839d5ab0c049fa6c0793d44593:0",
+    "payee": "near:shop.airlock-try-b193fe.testnet",
+    "amount": "4200000000000000000000",
+    "reason": null,
+    "kind": "paid_shop",
+    "verdict": "paid_shop"
+   },
+   {
+    "tx": "7Lwcuc962cFLoeEc6HBivCJLDMibXK4xQrDe3k5Qf5Aw",
+    "atMs": 1794389374904,
+    "requestId": "2af1ac67f7f6500c8b90e74c3b4bc80b1a63ff999e8e1161fbddd96c7e3b6516:0",
+    "payee": "near:shop.airlock-try-b193fe.testnet",
+    "amount": "4200000000000000000000",
+    "reason": null,
+    "kind": "paid_shop",
+    "verdict": "paid_shop"
+   },
+   {
+    "tx": "4tp5qr73gkDbSGupHnWJvFmMf7kRATk36uubbFqeCfZD",
+    "atMs": 1794389371131,
+    "requestId": "8b7f56df2395bcf7761f5b0bf0f5a9009c3a8f69149569e9067d0a0849703497:0",
+    "payee": "near:shop.airlock-try-b193fe.testnet",
+    "amount": "4200000000000000000000",
+    "reason": null,
+    "kind": "paid_shop",
+    "verdict": "paid_shop"
+   }
+  ]
+ },
+ "credit": {
+  "events": [
+   {
+    "id": "9ihR8ZWJSfuMN9Mrig4q57twxrgc7pEj8rJmMMEbRb6a:0",
+    "kind": "card_paid",
+    "atMs": 1794421357750,
+    "who": "card.airlock-credit-c1108d.testnet",
+    "amount": "90000000000000000000000",
+    "chain": "near",
+    "requestId": "b6869db95a43d481dc4a4df56e8a46768ed8078c15f9c6ddcc6684ae9b91c112:0",
+    "tx": "9ihR8ZWJSfuMN9Mrig4q57twxrgc7pEj8rJmMMEbRb6a",
+    "fixture": false
+   },
+   {
+    "id": "JHxe2soTr2BfM5h2Y9ta8ke9iC62Vo7NfTMpuePnBHd:0",
+    "kind": "repaid",
+    "atMs": 1794421365642,
+    "who": "card.airlock-credit-c1108d.testnet",
+    "amount": "99000000000000000000000",
+    "chain": null,
+    "requestId": null,
+    "tx": "JHxe2soTr2BfM5h2Y9ta8ke9iC62Vo7NfTMpuePnBHd",
+    "fixture": false
+   },
+   {
+    "id": "5NQPQCsfMD7eAG78pgoJMcZKBrh64MtYPom8gN2fLtXc:0",
+    "kind": "card_held",
+    "atMs": 1794421412341,
+    "who": "card.airlock-credit-c1108d.testnet",
+    "amount": "0",
+    "chain": "near",
+    "requestId": "789db6c6e416b6a7cdb304ee7726e1a43b7a8905a9e70457f0441a67bedfc72e:0",
+    "tx": "5NQPQCsfMD7eAG78pgoJMcZKBrh64MtYPom8gN2fLtXc",
+    "fixture": false
+   }
+  ]
+ },
+ "arena": {
+  "attempts": [
+   {
+    "tx": "3qAb5rksLra6Ww6N4Grxr9w19JsBGaurLPB6KS4G2Pjx",
+    "atMs": 1794414079019,
+    "verdict": "held",
+    "reason": "UntrustedAmount",
+    "amount": "10000000000000000000000",
+    "flood": false
+   },
+   {
+    "tx": "5NQPQCsfMD7eAG78pgoJMcZKBrh64MtYPom8gN2fLtXc",
+    "atMs": 1794421412341,
+    "verdict": "held",
+    "reason": "UntrustedRecipient",
+    "amount": "10000000000000000000000",
+    "flood": false
+   }
+  ],
+  "truncated": false
+ },
+ "challenge": {
+  "policy": "challenge.demo-airlock.testnet",
+  "board": {
+   "attempts": 18,
+   "allow": 3,
+   "escalate": 5,
+   "block": 10,
+   "noAction": 0,
+   "doors": {
+    "text": 0,
+    "key": 18,
+    "seed": 0
+   },
+   "stolenYocto": "0",
+   "paidToBookYocto": "10000000000000000000002",
+   "heldYocto": "7510000000000000000000001",
+   "firstAt": "2026-11-03T21:21:20.753Z",
+   "lastAt": "2026-11-07T22:13:10.913Z"
+  },
+  "attempts": [
+   {
+    "seq": 17,
+    "id": "9cdbcf26cbe549583b7b0249bdf7987ff3cace95128edb339adcec8975212e70:6",
+    "at": "2026-11-07T22:12:52.783Z",
+    "door": "key",
+    "mode": "live",
+    "source": "9cdbcf26cbe549583b7b0249bdf7987ff3cace95128edb339adcec8975212e70:6",
+    "label": null,
+    "inputChars": 0,
+    "preview": null,
+    "verdict": "Allow",
+    "reason": null,
+    "payments": [
+     {
+      "payee": "near:accountant.demo-airlock.testnet",
+      "asset": "near",
+      "amount": "1",
+      "outcome": "ALLOW",
+      "reason": null,
+      "toBook": true
+     }
+    ],
+    "tx": "4UzoNTDctymiL7QMugV222UB97B47KKoUsWzNpVt7ZrT",
+    "stolenYocto": "0",
+    "paidToBookYocto": "1"
+   },
+   {
+    "seq": 18,
+    "id": "9cdbcf26cbe549583b7b0249bdf7987ff3cace95128edb339adcec8975212e70:6",
+    "at": "2026-11-07T22:13:10.913Z",
+    "door": "key",
+    "mode": "live",
+    "source": "9cdbcf26cbe549583b7b0249bdf7987ff3cace95128edb339adcec8975212e70:6",
+    "label": null,
+    "inputChars": 0,
+    "preview": null,
+    "verdict": "Allow",
+    "reason": null,
+    "payments": [
+     {
+      "payee": "near:accountant.demo-airlock.testnet",
+      "asset": "near",
+      "amount": "1",
+      "outcome": "ALLOW",
+      "reason": null,
+      "toBook": true
+     }
+    ],
+    "tx": "HSae6tc2AaUGELz99sb7YmsbjHxVxwnZPHyfU8AeijFL",
+    "stolenYocto": "0",
+    "paidToBookYocto": "1"
+   }
+  ],
+  "truncated": false
+ }
+}

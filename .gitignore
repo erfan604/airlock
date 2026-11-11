@@ -40,3 +40,6 @@ web/public/challenge-public.json
 web/public/try-public.json
 # local agent rules that name private paths (never committed)
 CLAUDE.local.md
+
+# the site state file (scripts/site-state.ts): written by ops at deploy time and every hour, so it belongs to a deploy, not to a commit
+web/public/site-state.json

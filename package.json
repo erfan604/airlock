@@ -17,7 +17,8 @@
     "proven:transcripts": "tsx scripts/proof-transcripts.ts",
     "challenge": "tsx challenge/src/cli.ts",
     "try": "pnpm -C bench exec tsx src/scripts/try.ts",
-    "airlock": "tsx scripts/airlock.ts"
+    "airlock": "tsx scripts/airlock.ts",
+    "site-state": "pnpm -C web exec tsx ../scripts/site-state.ts"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",

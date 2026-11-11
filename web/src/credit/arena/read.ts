@@ -6,6 +6,7 @@
 // read stops at the first listing page it already knows. A failed read throws, so the strip says "unreadable".
 import { classifyTx, listedOf } from '../../challenge/chainBoard.ts';
 import type { ListedTx } from '../../challenge/chainBoard.ts';
+import { historyFetch } from '../../chain/historyFetch.ts';
 import { ARENA_AGENT, ARENA_CARD, ARENA_INVOICE_YOCTO, ARENA_MERCHANT_KEY, ARENA_TASK_PREFIX } from './config.ts';
 import { attemptOf } from './model.ts';
 import type { ArenaAttempt } from './model.ts';
@@ -63,8 +64,9 @@ function arenaAttemptOf(raw: unknown, meta: ListedTx): ArenaAttempt | null | 'pe
 }
 
 /** The arena's attempts on the card, oldest first. `truncated`: the listing is longer than the page cap, so older attempts may be missing. */
-export async function readArena(cfg: { fetch?: typeof fetch; maxPages?: number; cache?: ArenaCache } = {}): Promise<ArenaRead> {
-  const fetchFn = cfg.fetch ?? globalThis.fetch.bind(globalThis);
+export async function readArena(cfg: { fetch?: typeof fetch; maxPages?: number; cache?: ArenaCache; sinceMs?: number } = {}): Promise<ArenaRead> {
+  const fetchFn = cfg.fetch ?? historyFetch;
+  const since = cfg.sinceMs;
   const cache = cfg.cache ?? newArenaCache();
   let token: string | null = null;
   let ended = false;
@@ -72,11 +74,12 @@ export async function readArena(cfg: { fetch?: typeof fetch; maxPages?: number; 
     const body: Record<string, unknown> = { account_id: ARENA_CARD, is_function_call: true, limit: 100 };
     if (token !== null) body['resume_token'] = token;
     const got = listedOf(await postJson(fetchFn, `${FASTNEAR_TX}/v0/account`, body));
-    const fresh = got.txs.filter((t) => !cache.listed.has(t.hash));
+    // `sinceMs` (the site state file's cut): only the newer part is read, the file holds the rest
+    const fresh = got.txs.filter((t) => !cache.listed.has(t.hash) && (since === undefined || t.atMs > since));
     for (const t of fresh) cache.listed.set(t.hash, t);
     token = got.resume;
     // newest first: once the history was walked, a page with nothing new means every older page is already known
-    if (token === null || got.txs.length === 0 || (cache.walked && fresh.length === 0)) {
+    if (token === null || got.txs.length === 0 || (cache.walked && fresh.length === 0) || (since !== undefined && got.txs.some((t) => t.atMs <= since))) {
       ended = true;
       break;
     }

@@ -7,7 +7,8 @@ import type { BenchData } from './bench/types.ts';
 import type { Facts } from './landing/facts.ts';
 import type { ActSummary } from './replay/summary.ts';
 
-export type Preload = { facts?: Facts | null; bench?: BenchData | null; replay?: ActSummary[] };
+/** `siteState`: the site state file (state/siteState.ts) as it was at build time, parsed again by the page before use. */
+export type Preload = { facts?: Facts | null; bench?: BenchData | null; replay?: ActSummary[]; siteState?: unknown };
 
 export const PRELOAD_ID = 'airlock-preload';
 

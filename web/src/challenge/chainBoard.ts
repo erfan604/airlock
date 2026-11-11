@@ -128,7 +128,8 @@ export function listedOf(page: unknown): { txs: ListedTx[]; resume: string | nul
   return { txs, resume: str(page['resume_token']) };
 }
 
-export type ChainConfig = { policy: string; publicKey: string; agent?: string; txBase?: string; rpcUrl?: string; pageLimit?: number; maxPages?: number; batch?: number };
+/** `sinceMs`: only the transactions after that time are read (the site state file holds the older ones). */
+export type ChainConfig = { policy: string; publicKey: string; agent?: string; txBase?: string; rpcUrl?: string; pageLimit?: number; maxPages?: number; batch?: number; sinceMs?: number };
 export type ChainRead = { attempts: Attempt[]; book: string[]; truncated: boolean };
 
 async function postJson(fetchFn: typeof fetch, url: string, body: unknown): Promise<unknown> {
@@ -174,9 +175,10 @@ export async function readChain(fetchFn: typeof fetch, cfg: ChainConfig): Promis
     const body: Record<string, unknown> = { account_id: cfg.policy, is_function_call: true, limit: cfg.pageLimit ?? 100 };
     if (token !== null) body['resume_token'] = token;
     const got = listedOf(await postJson(fetchFn, `${base}/v0/account`, body));
-    for (const t of got.txs) listed.set(t.hash, t);
+    const since = cfg.sinceMs;
+    for (const t of got.txs) if (since === undefined || t.atMs > since) listed.set(t.hash, t);
     token = got.resume;
-    if (token === null || got.txs.length === 0) break;
+    if (token === null || got.txs.length === 0 || (since !== undefined && got.txs.some((t) => t.atMs <= since))) break;
     if (page + 1 === (cfg.maxPages ?? 5)) truncated = true;
   }
   const found: { listed: ListedTx; obs: Observation[] }[] = [];
