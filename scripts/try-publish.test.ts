@@ -1,5 +1,5 @@
-// AIR-356: the public file of the try card. 20 tasks the owner signed ahead of time (the shop bounded at 0.01 NEAR, 99 actions, 7 days:
-// 1,980 attempt slots), the three published keys and the shop's book proof. Before it is written, and again in the verify mode, every
+// AIR-356: the public file of the try card. 60 tasks the owner signed ahead of time (the shop bounded at 0.01 NEAR, 99 actions, 7 days:
+// 5,940 attempt slots, AIR-364), the three published keys and the shop's book proof. Before it is written, and again in the verify mode, every
 // key must be a function-call key of the try agent for submit_batch on the try policy and nothing else, and the file must match the chain.
 //   pnpm tsx --test scripts/try-publish.test.ts
 import assert from 'node:assert/strict';
@@ -42,11 +42,11 @@ const facts = (over: Partial<TryChainFacts> = {}): TryChainFacts => ({
   ...over,
 });
 
-test('the file: 20 tasks of 99 actions for 7 days, each bounding the shop at 0.01 NEAR, with the keys and the shop proof', () => {
+test('the file: 60 tasks of 99 actions for 7 days, each bounding the shop at 0.01 NEAR, with the keys and the shop proof', () => {
   const f = built();
   assert.equal(f.format, 'airlock-try-public-v1');
-  assert.equal(f.tasks.length, 20);
-  assert.equal(f.tasks.length * (f.tasks[0]?.task.max_actions ?? 0), 1980);
+  assert.equal(f.tasks.length, 60);
+  assert.equal(f.tasks.length * (f.tasks[0]?.task.max_actions ?? 0), 5940);
   for (const t of f.tasks) {
     assert.deepEqual(t.task.bounds, [{ payee_key: SHOP, max_total: TRY_BOUND_YOCTO.toString() }]);
     assert.equal(t.task.max_actions, 99);
@@ -56,7 +56,7 @@ test('the file: 20 tasks of 99 actions for 7 days, each bounding the shop at 0.0
     assert.equal(t.task_hash, taskHash(t.task));
     assert.ok(signedBy(TASK_KEY, ownerTaskBorsh(t.task), new Uint8Array(Buffer.from(t.task_sig, 'base64'))));
   }
-  assert.equal(new Set(f.tasks.map((t) => t.task_hash)).size, 20, 'every task has its own hash, so its own slots');
+  assert.equal(new Set(f.tasks.map((t) => t.task_hash)).size, 60, 'every task has its own hash, so its own slots');
   assert.deepEqual(f.keys, keys);
   assert.deepEqual(f.book, [SHOP]);
   assert.ok(proofVerifies(vault.root(), SHOP, f.shop.proof));
@@ -65,7 +65,9 @@ test('the file: 20 tasks of 99 actions for 7 days, each bounding the shop at 0.0
   // the page's own parser accepts it
   const parsed = parseTryPublic(JSON.parse(JSON.stringify(f)), NOW);
   assert.ok('ok' in parsed, 'refuse' in parsed ? parsed.refuse : '');
-  assert.equal(parsed.ok.tasks.length, 20);
+  assert.equal(parsed.ok.tasks.length, 60);
+  // the file the page fetches stays small with 60 tasks: under 100 kB as written (about 0.8 kB a task)
+  assert.ok(`${JSON.stringify(f, null, 2)}\n`.length < 100_000, `${String(JSON.stringify(f, null, 2).length)} bytes`);
 });
 
 test('publish is refused for a key that is not a submit_batch function-call key of the try agent on the try policy', async () => {

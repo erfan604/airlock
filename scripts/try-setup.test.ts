@@ -52,7 +52,7 @@ test('the try flags are the design values and inside the bounds of set_flags', (
   // a published task: the bound is inside the quick cap and inside hard cap times actions (task.rs verify_bounds)
   assert.ok(TRY_BOUND_YOCTO <= BigInt(policy.assets['near']?.quick_task_cap ?? '0'));
   assert.ok(TRY_BOUND_YOCTO <= BigInt(policy.assets['near']?.hard_cap ?? '0') * BigInt(TRY_MAX_ACTIONS));
-  assert.equal(TRY_TASK_COUNT * TRY_MAX_ACTIONS, 1980);
+  assert.equal(TRY_TASK_COUNT * TRY_MAX_ACTIONS, 5940);
 });
 
 test('account names: a new top-level owner with sub-accounts, never a credit account or a personal name', () => {

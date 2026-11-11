@@ -7,7 +7,8 @@ export const YOCTO_PER_NEAR = 10n ** 24n;
 export const TRY_BOUND_YOCTO = 10n ** 22n;
 /** The amount of the honest request the page may send (the owner's own amount, label Owner): 0.001 NEAR. */
 export const TRY_HONEST_YOCTO = 10n ** 21n;
-export const TRY_TASK_COUNT = 20;
+/** Tasks one publish offers: 60 of 99 actions, 5,940 attempt slots (AIR-364: anyone holding the published key can use 1,980 in about 660 calls). */
+export const TRY_TASK_COUNT = 60;
 /** The contract's maximum of actions for one task (policy.rs MAX_TASK_ACTIONS). */
 export const TRY_MAX_ACTIONS = 99;
 /** The contract's maximum life of a task: 7 days. */

@@ -9,7 +9,7 @@ import type { ListedTx } from '../challenge/chainBoard.ts';
 import { historyFetch } from '../chain/historyFetch.ts';
 
 export const FASTNEAR_TX = 'https://tx.test.fastnear.com';
-/** Listing pages (100 transactions each) one read walks at most: 5,000 transactions, more than two publishes of 1,980 slots. */
+/** Listing pages (100 transactions each) one read walks at most: 5,000 transactions; a longer history is read as truncated. */
 export const TRY_MAX_PAGES = 50;
 
 export type TryKind = 'blocked' | 'held' | 'paid_shop' | 'paid_outside';

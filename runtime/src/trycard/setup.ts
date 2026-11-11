@@ -17,7 +17,7 @@ const STORAGE_YOCTO_PER_BYTE = 10n ** 19n;
 const DEPLOY_MARGIN_YOCTO = YOCTO_PER_NEAR;
 /** Free NEAR left on the policy for the request records visitors create (each attempt stores one). */
 const POLICY_FLOAT_YOCTO = 8n * YOCTO_PER_NEAR;
-/** The agent pays the gas of every attempt: 1,980 slots at up to about 0.003 NEAR. */
+/** The agent pays the gas of every attempt, up to about 0.003 NEAR each (5,940 slots a publish); the refill job keeps it topped up. */
 const AGENT_YOCTO = 6n * YOCTO_PER_NEAR;
 const SHOP_YOCTO = YOCTO_PER_NEAR / 10n;
 /** What stays on the owner: gas for its own calls and the refill job's reserve. */
