@@ -32,7 +32,11 @@ function pool(w: World): object {
   return { assets: assets.toString(), shares: assets.toString(), idle: assets.toString(), staked: '0', lent: '0', fees_earned: '0', losses: '0', share_price: NEAR.toString(), lines: [{ card: 'card.airlock-credit-c1108d.testnet', borrower: 'borrower.airlock-credit-c1108d.testnet', limit: '0', drawn: '0', returned: '0', fee_bps: 1000, due_ms: '1', state: 'Defaulted' }] };
 }
 
+/** The test's own schedule: the committed one carries real pause windows, which would shut the lend button on those days. */
+const SCHEDULE = { loopCard: 'card.airlock-credit-c1108d.testnet', loopSince: '2026-11-10T07:17:00Z', pauses: [] };
+
 async function routes(page: Page, w: World): Promise<void> {
+  await page.route('**/lender/schedule.json', (r: Route) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SCHEDULE) }));
   await page.route('https://helper.testnet.near.org/**', async (r: Route) => {
     if (w.faucet === 'down') return r.fulfill({ status: 503, headers: CORS, body: 'down' });
     const body = JSON.parse(r.request().postData() ?? '{}') as { newAccountId?: string; newAccountPublicKey?: string };

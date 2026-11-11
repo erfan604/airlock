@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { RECORDED } from '../src/landing/doors.ts';
 import { PAGES } from '../src/pages.ts';
 import { HIRED, WORLD } from '../src/try/model.ts';
 import type { E2E } from './types.ts';
@@ -55,7 +56,8 @@ const run: E2E = async ({ page, baseUrl }) => {
     'Lend 1 NEAR to the agents',
     'Send a real attack',
     'Take one rule out of the gate',
-    'Recorded Nov 10, 2026.',
+    // the doors' numbers say where they come from: the recorded values say so, with their date (landing/doors.ts RECORDED)
+    `Recorded ${RECORDED.atText}.`,
     'How the pool lends',
     'Same payee, new amount',
     '68 of 69 attacks that worked on an agent with no guard paid a payee already in the owner',

@@ -31,6 +31,14 @@ export async function clipAudit(page: Page, widths: readonly number[] = AUDIT_WI
   const messages: string[] = [];
   for (const width of widths) {
     await page.setViewportSize({ width, height: AUDIT_HEIGHT });
+    // the audit measures the settled layout: an entry animation still running (a number that lands from scale(1.4) after a chain read) is
+    // not where the text stays. Looping animations never finish and are left alone; the wait is capped at 3 s.
+    await page.evaluate(() =>
+      Promise.race([
+        Promise.all(document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))),
+        new Promise((r) => setTimeout(r, 3_000)),
+      ]),
+    );
     const metrics = (await page.evaluate(() => ({
       innerWidth: window.innerWidth,
       clientWidth: document.documentElement.clientWidth,
