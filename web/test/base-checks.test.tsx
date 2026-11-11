@@ -55,11 +55,11 @@ test('the table shows the request link when the row has one and plain text when 
   assert.ok(withReq !== null && without !== null);
   const html = renderToStaticMarkup(<BaseChecks rows={[withReq, without]} nowMs={1794340215416 + 120_000} />);
   assert.ok(html.includes(`href="https://testnet.nearblocks.io/txns/${REQ}"`));
-  assert.equal(html.split('by an older account, not the card').length, 2, 'plain text once, for the row without a request');
-  assert.ok(html.includes('Requested on NEAR') && html.includes('Paid on Base') && html.includes('Checked on NEAR'));
+  assert.equal(html.split('>older account<').length, 2, 'plain text once, for the row without a request');
+  assert.ok(html.includes('>Request<') && html.includes('>Payment<') && html.includes('>Check<'));
   const at = (h: string): number => html.indexOf(`>${h}</th>`);
-  assert.ok(at('Requested on NEAR') > 0 && at('Requested on NEAR') < at('Paid on Base') && at('Paid on Base') < at('Checked on NEAR') && at('Checked on NEAR') < at('Asked by'));
-  assert.ok(html.includes('For the top row the three links are one payment: the card&#x27;s request, the payment on Base, and the pool&#x27;s check.'));
+  assert.ok(at('Request') > 0 && at('Request') < at('Payment') && at('Payment') < at('Check') && at('Check') < at('Asked by'));
+  assert.ok(html.includes('Each row reads left to right: the card&#x27;s request on NEAR, the payment on Base, and the pool&#x27;s check on NEAR.'));
 });
 
 test('baseCheckRowOf reads a good answer', () => {
