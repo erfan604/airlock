@@ -236,6 +236,48 @@ impl Contract {
 }
 
 impl Contract {
+    /// Red-team lane 1 (2026-11-11): the approver (the borrower on a credit card) settles only what stays inside the bounds the owner (the
+    /// issuer) set. A hold for `OutsideTask`, `OverTaskBound` or `OverPayeeLimit` is refused to the approver, and any other hold must fit
+    /// the payee's daily limit and the task bound stored with the escalation in full (spend or refuse, never the owner's saturating
+    /// charge). The revert leaves the request pending: the approver or the owner may still reject it, or it expires. The owner's approve,
+    /// and every approve on a policy without an approver, is unchanged.
+    fn require_approver_within_bounds(
+        &self,
+        reason: Reason,
+        key: &LedgerKey,
+        caps: &airlock_verdict::ledger::Caps,
+        amount: u128,
+        now_ms: u64,
+    ) {
+        let Some(approver) = &self.approver else {
+            return;
+        };
+        let who = env::predecessor_account_id();
+        if &who != approver || who == self.owner_id {
+            return;
+        }
+        if matches!(
+            reason,
+            Reason::OutsideTask | Reason::OverTaskBound | Reason::OverPayeeLimit
+        ) {
+            env::panic_str(&format!(
+                "approve refused for the approver: the payment is held {} and the approver may not settle a payment outside the owner's task or over the payee's daily limit; reject it, or let it expire",
+                reason.as_str()
+            ));
+        }
+        let spent = self.spent_now(key, now_ms);
+        if airlock_verdict::ledger::spend(spent.payee_day, amount, caps.payee_limit).is_none() {
+            env::panic_str(
+                "approve refused for the approver: the amount is above what is left of the payee's daily limit; reject it, or let it expire",
+            );
+        }
+        if airlock_verdict::ledger::spend(spent.task, amount, caps.task_bound).is_none() {
+            env::panic_str(
+                "approve refused for the approver: the amount is above what is left of the task bound; reject it, or let it expire",
+            );
+        }
+    }
+
     /// The shared body of `approve` and `approve_and_remember` (everything after the owner guard). Returns the stored payee key, the
     /// stored amount and the asset id of the approved request.
     fn approve_stored(
@@ -326,6 +368,7 @@ impl Contract {
             None
         };
         let caps = approval_caps(&asset_entry, payee_limit, pending.task_bound);
+        self.require_approver_within_bounds(reason, &key, &caps, rec.amount, now_ms);
         let charge = self.charge_approval(&key, &caps, rec.amount, now_ms);
         rec.applied_charge = Some(charge);
         rec.charge_day = utc_day(now_ms);
