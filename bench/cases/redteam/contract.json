@@ -126,6 +126,30 @@
   "expect": "the stranger's reject reverts; the issuer (owner) may reject it, which empties the pending list so sweep can run"
  },
  {
+  "id": "RT-CON-22",
+  "test": "rt_con_approver_cannot_approve_past_the_task_bound",
+  "attack": "on a card with an approver, the borrower runs the agent: a booked merchant, trusted labels, an amount above the issuer's task bound, held OverTaskBound, then the borrower approves his own hold",
+  "expect": "after the fix: the approve is refused for the approver and the request stays pending; the owner cannot approve a booked payee either, and either party can reject it",
+  "before": "before the fix (red team of 2026-11-11): the approval recheck covered the asset limits alone and the charge capped the task ledger instead of refusing, so the borrower settled a payment above the issuer's task bound",
+  "fix": "f21b003"
+ },
+ {
+  "id": "RT-CON-23",
+  "test": "rt_con_approver_cannot_approve_past_the_payee_daily_limit",
+  "attack": "two holds of 4,000 to a booked payee whose daily limit is 5,000, each inside its task bound; the borrower approves both",
+  "expect": "after the fix: the first is settled, the second is refused for the approver (above what is left of the payee's daily limit) and stays pending",
+  "before": "before the fix: both were settled and the payee's day ledger was capped at the limit, so the borrower paid a booked merchant past its daily limit",
+  "fix": "f21b003"
+ },
+ {
+  "id": "RT-CON-24",
+  "test": "rt_con_approver_cannot_approve_past_what_is_left_of_the_task_bound",
+  "attack": "one task bound of 3,000 and two holds of 2,000 under it, each inside the bound when held; the borrower approves both",
+  "expect": "after the fix: the first is settled, the second is refused for the approver (above what is left of the task bound) and stays pending",
+  "before": "before the fix: both were settled, 4,000 against a bound of 3,000",
+  "fix": "f21b003"
+ },
+ {
   "id": "RT-APPR-01",
   "test": "rt_appr_changed_amount_reverts",
   "attack": "approve with a different amount than the stored request",
