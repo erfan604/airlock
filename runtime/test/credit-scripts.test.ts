@@ -11,3 +11,5 @@ import '../../scripts/try-refill.test.ts';
 import '../../scripts/credit-pool-code-check.test.ts';
 // AIR-364: the uncensored-attacker run on the practice card
 import '../../scripts/uncensored-run.test.ts';
+// AIR-360: the bench replay on the practice card
+import '../../scripts/try-replay.test.ts';
