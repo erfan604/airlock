@@ -87,6 +87,8 @@ test('the block shows the score, the cap, the three reasons, the counts and the 
   for (const r of REAL.reasons) assert.ok(text.includes(r), r);
   assert.equal((html.match(/data-testid="passport-reason"/g) ?? []).length, 3);
   assert.ok(text.includes('3 lines opened, 1 repaid on time, 0 repaid late, 0 defaults'));
+  assert.ok(text.includes('2 more did not count toward the score: drawn under a tenth of the base, closed undrawn, or still open.'));
+  assert.ok(text.includes("The hourly loop draws less than that on purpose"));
   assert.ok(text.includes('computes the score') && text.includes('a tenth of the line and at least a tenth of the base (the base is 1.00 NEAR)') && text.includes('not a credit model'));
   assert.ok(html.includes('href="https://testnet.nearblocks.io/address/borrower.airlock-credit-c1108d.testnet"'));
   assert.ok(!text.includes('(the base is') === false);

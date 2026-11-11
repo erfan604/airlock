@@ -151,10 +151,12 @@ function Stat({ label, value, note, testId }: { label: string; value: string; no
 }
 
 const refusedCount = (events: readonly CreditEvent[]): number => events.filter((e) => e.kind === 'card_refused').length;
+const heldCount = (events: readonly CreditEvent[]): number => events.filter((e) => e.kind === 'card_held').length;
 /** The refused events of a card policy carry no amount (docs/design/credit.md), so the value is shown only when some event does. */
 const refusedNote = (events: readonly CreditEvent[]): string => {
   const sum = refusedSum(events);
-  return sum > 0n ? `payments the airlock refused, ${formatNear(sum)} NEAR of them with a recorded amount` : 'payments the airlock refused, in the events below';
+  const what = 'held: the card kept the payment for the owner and it expired unpaid; refused: the owner or the contract turned it down';
+  return sum > 0n ? `${what}; ${formatNear(sum)} NEAR of the refused had a recorded amount` : what;
 };
 
 export function Stats({ pool, events, feed, nowMs }: { pool: PoolView; events: readonly CreditEvent[]; feed: boolean; nowMs: bigint }) {
@@ -175,7 +177,7 @@ export function Stats({ pool, events, feed, nowMs }: { pool: PoolView; events: r
             : `${percent(d.feeSplitBps)} from spend fees (${fees} NEAR), ${percent(10_000n - d.feeSplitBps)} from staking${staking === null ? ' (not reported yet)' : ` (${staking} NEAR)`}`
         }
       />
-      <Stat testId="stat-refused" label="Refused at the airlock" value={feed ? `${String(refusedCount(events))} refused` : 'not read here'} note={feed ? refusedNote(events) : 'the event feed is read on the hosted site'} />
+      <Stat testId="stat-refused" label="Stopped at the airlock" value={feed ? `${String(heldCount(events))} held, ${String(refusedCount(events))} refused` : 'not read here'} note={feed ? refusedNote(events) : 'the event feed is read on the hosted site'} />
       <Stat testId="stat-stolen" label="Stolen from LPs" value={`${formatNear(pool.losses)} NEAR`} note="losses the pool records: stolen payments and unrepaid defaults" />
     </dl>
   );
@@ -438,6 +440,9 @@ export function LinesTable({ lines, selected, onSelect, nowMs }: { lines: readon
 }
 
 /** The Credit Passport the pool contract keeps for each borrower, as the contract answered. Nothing at all (no heading, no box) until at least one card has one. */
+/** The lines of a record that moved no counter: the pool counts a repay only above its floors, so the hourly loop's small lines land here. */
+const uncounted = (r: { linesOpened: number; repaidOnTime: number; repaidLate: number; defaults: number }): number => Math.max(0, r.linesOpened - r.repaidOnTime - r.repaidLate - r.defaults);
+
 export function Passports({ rows, pool }: { rows: readonly PassportRow[]; pool: PoolPassport | null }) {
   if (rows.length === 0) return null;
   const r = 34;
@@ -448,7 +453,7 @@ export function Passports({ rows, pool }: { rows: readonly PassportRow[]; pool: 
         Agent Credit Passports
       </h2>
       <p className="cr-note">
-        {`The pool contract keeps each borrower's record and computes the score, and the score caps the borrower's next line. A repay counts only when the card kept at least a tenth of the line and at least a tenth of the base${pool === null ? '' : ` (the base is ${formatNear(pool.floorBase)} NEAR)`}. These are rules of thumb on the pool's own events, not a credit model.`}
+        {`The pool contract keeps each borrower's record and computes the score, and the score caps the borrower's next line. A repay counts only when the card kept at least a tenth of the line and at least a tenth of the base${pool === null ? '' : ` (the base is ${formatNear(pool.floorBase)} NEAR)`}. The hourly loop draws less than that on purpose, so the team's own loop does not raise a score. These are rules of thumb on the pool's own events, not a credit model.`}
       </p>
       <ul className="cr-passes">
         {rows.map(({ card, passport: p }) => (
@@ -471,6 +476,9 @@ export function Passports({ rows, pool }: { rows: readonly PassportRow[]; pool: 
                 </p>
               ))}
               <p className="cr-pass-line">{`${String(p.record.linesOpened)} lines opened, ${String(p.record.repaidOnTime)} repaid on time, ${String(p.record.repaidLate)} repaid late, ${String(p.record.defaults)} defaults`}</p>
+              {uncounted(p.record) > 0 ? (
+                <p className="cr-pass-line" data-testid="passport-uncounted">{`${String(uncounted(p.record))} more did not count toward the score: drawn under a tenth of the base, closed undrawn, or still open.`}</p>
+              ) : null}
             </div>
           </li>
         ))}
