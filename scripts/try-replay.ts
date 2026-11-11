@@ -367,14 +367,14 @@ export function replayExport(rows: readonly ReplayRow[], meta: { policy: string;
 
 // ---- verify ----
 
-async function postJson(fetchFn: typeof fetch, url: string, body: unknown): Promise<unknown> {
+export async function postJson(fetchFn: typeof fetch, url: string, body: unknown): Promise<unknown> {
   const res = await fetchFn(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`${new URL(url).host} answered ${String(res.status)}`);
   return (await res.json()) as unknown;
 }
 
 /** An archival JSON-RPC transaction status in the shape of FastNEAR's transaction API (the transaction and its receipts with predecessors). */
-async function archivalTx(fetchFn: typeof fetch, hash: string, signer: string): Promise<unknown> {
+export async function archivalTx(fetchFn: typeof fetch, hash: string, signer: string): Promise<unknown> {
   for (const url of ARCHIVAL_RPC) {
     try {
       const r = await postJson(fetchFn, url, { jsonrpc: '2.0', id: 'replay', method: 'EXPERIMENTAL_tx_status', params: { tx_hash: hash, sender_account_id: signer, wait_until: 'FINAL' } });
@@ -455,7 +455,7 @@ const flag = (argv: readonly string[], name: string): string | undefined => {
   return i >= 0 ? argv[i + 1] : undefined;
 };
 
-async function loadPublic(argv: readonly string[], nowMs: number): Promise<TryPublic> {
+export async function loadPublic(argv: readonly string[], nowMs: number): Promise<TryPublic> {
   const src = flag(argv, 'public') ?? (existsSync(join(REPO, 'web', 'public', 'try-public.json')) ? join(REPO, 'web', 'public', 'try-public.json') : SITE_PUBLIC);
   let raw: unknown;
   if (/^https:\/\//.test(src)) {
@@ -470,7 +470,7 @@ async function loadPublic(argv: readonly string[], nowMs: number): Promise<TryPu
 
 const view = (pub: TryPublic): ((method: string, args: object) => Promise<unknown>) => rpcView({ contractId: pub.policy, rpcUrls: NEAR_RPC });
 
-async function readCard(pub: TryPublic): Promise<{ card: CardFacts; start: ChainStart }> {
+export async function readCard(pub: TryPublic): Promise<{ card: CardFacts; start: ChainStart }> {
   const v = view(pub);
   const pol = await v('get_policy', {});
   const assets = await v('list_assets', {});

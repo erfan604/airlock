@@ -9,3 +9,5 @@ import '../../scripts/try-publish.test.ts';
 import '../../scripts/try-refill.test.ts';
 // the pool redeploy of 2026-11-11: the committed bytes and the storage run
 import '../../scripts/credit-pool-code-check.test.ts';
+// AIR-364: the uncensored-attacker run on the practice card
+import '../../scripts/uncensored-run.test.ts';
