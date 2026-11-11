@@ -132,8 +132,7 @@ button {
   flex: 1 1 auto;
   min-width: 0;
 }
-/* a phone keeps the shell to one 44 px row: the wordmark is the overview link, so the Overview tab is left out there, and the
-   network label waits for a wider screen (every replay screen and the landing footer say testnet) */
+/* on a phone the wordmark is the overview link, so the Overview tab is left out there */
 .site-tabs {
   display: flex;
   justify-content: flex-end;
@@ -147,28 +146,95 @@ button {
 .site-tabs > li:first-child {
   display: none;
 }
-/* under 440px the tabs no longer fit: the strip scrolls from its first tab (with flex-end an overflowing strip would cut its first tab where
-   no scroll reaches it). Under 720px each edge with tabs past it fades (D20): SiteNav sets `data-edge` from the scroll position, and the
-   prerendered strip says `end`, so a page read before the script runs still fades its right edge. */
-@media (max-width: 439px) {
+/* a strip wider than its box (a narrow laptop window) scrolls, and each edge with tabs past it fades (D20): SiteNav sets `data-edge` from the
+   scroll position. */
+.site-tabs[data-edge='end'] {
+  mask-image: linear-gradient(90deg, black 0, black calc(100% - 32px), transparent);
+}
+.site-tabs[data-edge='start'] {
+  mask-image: linear-gradient(90deg, transparent, black 32px, black 100%);
+}
+.site-tabs[data-edge='start end'] {
+  mask-image: linear-gradient(90deg, transparent, black 32px, black calc(100% - 32px), transparent);
+}
+/* the More menu: a disclosure in the bar that opens a short list of plain links right under it, where the reader is */
+.site-menu {
+  position: relative;
+  flex: none;
+}
+.site-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.site-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.site-menu[open] > summary {
+  color: var(--ink);
+}
+.site-menu-list {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 6;
+  min-width: 12rem;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  list-style: none;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-m);
+  background: var(--paper);
+  box-shadow: var(--lift);
+  animation: menu-in 180ms var(--ease-out) backwards;
+}
+.site-menu-list .site-more-link {
+  display: flex;
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+/* a phone keeps the shell to one 44 px row (the AIR-181 geometry of the card pages needs it) and every top-level page in reach without a
+   sideways swipe: the bar holds Lend, Rob it and Break and the More menu holds the rest; when the page you are on is in that menu, More
+   carries the current-page underline. Under 375 px the strip scrolls and fades its cut edge. */
+.site-tab-short {
+  display: none;
+}
+/* under 375 px the phone row no longer fits: the strip scrolls from its first tab, and a mark not yet updated after a resize still fades the
+   right edge */
+@media (max-width: 374px) {
   .site-tabs {
-    justify-content: flex-start;
     padding-right: 28px;
   }
-  /* the strip never fits this narrow: a mark not yet updated after a resize still fades the right edge */
   .site-tabs[data-edge=''] {
     mask-image: linear-gradient(90deg, black 0, black calc(100% - 32px), transparent);
   }
 }
 @media (max-width: 719px) {
-  .site-tabs[data-edge='end'] {
-    mask-image: linear-gradient(90deg, black 0, black calc(100% - 32px), transparent);
+  .site-tabs {
+    justify-content: flex-start;
   }
-  .site-tabs[data-edge='start'] {
-    mask-image: linear-gradient(90deg, transparent, black 32px, black 100%);
+  .site-wide {
+    display: none;
   }
-  .site-tabs[data-edge='start end'] {
-    mask-image: linear-gradient(90deg, transparent, black 32px, black calc(100% - 32px), transparent);
+  .site-tab-long {
+    display: none;
+  }
+  .site-tab-short {
+    display: inline;
+  }
+  .site-menu[data-current='true'] > summary {
+    color: var(--ink);
+  }
+  .site-menu[data-current='true'] > summary::after {
+    transform: scaleX(1);
+  }
+}
+@media (min-width: 720px) {
+  .site-narrow {
+    display: none;
   }
 }
 .site-tab {
@@ -408,7 +474,7 @@ button {
 }
 
 /* the second group of pages, above every footer: a quiet line of plain links, one click from anywhere; the current page carries the same
-   underline as a tab. The header's "More" jumps here. */
+   underline as a tab. The header's "More" menu lists the same pages. */
 .site-more {
   max-width: 80rem;
   margin: var(--space-8) auto 0;

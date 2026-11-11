@@ -143,8 +143,9 @@ const run: E2E = async ({ page, baseUrl }) => {
     await ctx.close();
   }
 
-  // the nav strip on a phone: the current tab is fully inside the strip on every page that has a tab. A separate context with the chain hosts and the
-  // challenge file cut off: those pages fail their own reads there, and the browser logs that as console errors the harness would count.
+  // the nav on a phone (visitor test 2026-11-11): one row with Lend, Rob it, Break and More, all inside the viewport with no sideways swipe; a
+  // page that waits in the More menu marks More as current, and More opens its list in place, under the bar. A separate context with the chain
+  // hosts and the challenge file cut off: those pages fail their own reads there, and the browser logs that as console errors the harness would count.
   const navCtx = await page.context().browser()?.newContext({ viewport: { width: 375, height: 812 } });
   if (navCtx === undefined) throw new Error('no browser context');
   const nav = await navCtx.newPage();
@@ -152,16 +153,19 @@ const run: E2E = async ({ page, baseUrl }) => {
   await nav.route('**/challenge-public.json', (r) => r.abort());
   for (const path of ['/credit/', '/approvals/', '/challenge/', '/bench/', '/proven/', '/replay/', '/use/']) {
     await nav.goto(`${baseUrl}${path}`);
-    await nav.locator('[data-testid^="tab-"][aria-current="page"]').waitFor();
+    await nav.locator('[data-testid="nav-more"][data-current="true"]').waitFor();
     await nav.waitForTimeout(150);
     const fit = await nav.evaluate(() => {
+      const more = (document.querySelector('[data-testid="nav-more"] summary') as HTMLElement).getBoundingClientRect();
       const ul = document.querySelector('.site-tabs') as HTMLElement;
-      const tab = document.querySelector('[data-testid^="tab-"][aria-current="page"]') as HTMLElement;
-      const u = ul.getBoundingClientRect();
-      const t = tab.getBoundingClientRect();
-      return { left: t.left - u.left, right: u.right - t.right };
+      return { moreRight: window.innerWidth - more.right, stripScroll: ul.scrollWidth - ul.clientWidth, bar: (document.querySelector('.shell-bar') as HTMLElement).getBoundingClientRect().height };
     });
-    assert.ok(fit.left >= -1 && fit.right >= 27, `${path}: the current tab is inside the strip (${JSON.stringify(fit)})`);
+    assert.ok(fit.moreRight >= 0 && fit.stripScroll <= 1 && fit.bar <= 46, `${path}: one row, More on screen, no sideways strip (${JSON.stringify(fit)})`);
+    await nav.locator('[data-testid="nav-more"] summary').click();
+    const panel = await nav.locator('.site-menu-list').boundingBox();
+    assert.ok(panel !== null && panel.y < 120, `${path}: More opens under the bar`);
+    assert.equal(await nav.locator(`.site-menu-list [aria-current="page"]`).count(), 1, `${path}: the menu marks the page`);
+    await nav.keyboard.press('Escape');
     assert.deepEqual(await clipAudit(nav, [375]), [], `clip audit 375, ${path}`);
   }
   await navCtx.close();

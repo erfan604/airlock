@@ -39,10 +39,17 @@ export function edgesOf(m: { scrollLeft: number; clientWidth: number; scrollWidt
   return [start ? 'start' : '', end ? 'end' : ''].filter((x) => x !== '').join(' ');
 }
 
+/** Tabs a phone leaves to the More menu: the bar keeps Lend, Rob it and Break (one 44 px row), and More marks a current page it holds. */
+const PHONE_MENU = new Set(['terms', 'credit']);
+const PHONE_BAR = new Set(['', 'lend', 'rob', 'break']);
+/** A phone's shorter label for a tab, where the full one does not fit the row. */
+const SHORT: Record<string, string> = { break: 'Break' };
+
 export function SiteNav({ path }: { path: string }) {
-  // a phone shows the strip scrolled: bring the current tab fully into the strip (the strip's own scroll, never the page's), and fade
-  // whichever edge has tabs beyond it, so a cut tab always reads as "more this way" (D20)
+  // a strip wider than its box (a narrow laptop window) scrolls: bring the current tab fully into the strip (the strip's own scroll, never
+  // the page's), and fade whichever edge has tabs beyond it, so a cut tab always reads as "more this way" (D20).
   const strip = useRef<HTMLUListElement>(null);
+  const menu = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     const ul = strip.current;
     if (ul === null) return undefined;
@@ -74,26 +81,56 @@ export function SiteNav({ path }: { path: string }) {
       seen?.disconnect();
     };
   }, [path]);
+  useEffect(() => {
+    // the More menu opens in place under the bar; a tap outside it or Escape closes it
+    const close = (e: Event): void => {
+      const d = menu.current;
+      if (d === null || !d.open) return;
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !(e.target instanceof Node && d.contains(e.target))) d.open = false;
+    };
+    document.addEventListener('click', close);
+    document.addEventListener('keydown', close);
+    return () => {
+      document.removeEventListener('click', close);
+      document.removeEventListener('keydown', close);
+    };
+  }, []);
   return (
-    <nav className="site-nav" data-testid="site-nav" aria-label="Pages">
-      <ul className="site-tabs" ref={strip} data-edge="end">
-        {[...PRIMARY, ...MORE.filter((n) => n.match.includes(path))].map((n) => {
-          const current = n.match.includes(path);
-          return (
-            <li key={n.path}>
-              <a className="site-tab" href={url(n.path)} aria-current={current ? 'page' : undefined} data-testid={`tab-${n.path === '' ? 'overview' : n.path}`}>
+    <>
+      <nav className="site-nav" data-testid="site-nav" aria-label="Pages">
+        <ul className="site-tabs" ref={strip} data-edge="">
+          {[...PRIMARY, ...MORE.filter((n) => n.match.includes(path))].map((n) => {
+            const current = n.match.includes(path);
+            return (
+              <li key={n.path} className={PHONE_BAR.has(n.path) ? undefined : 'site-wide'}>
+                <a className="site-tab" href={url(n.path)} aria-current={current ? 'page' : undefined} data-testid={`tab-${n.path === '' ? 'overview' : n.path}`}>
+                  {SHORT[n.path] === undefined ? (
+                    n.label
+                  ) : (
+                    <>
+                      <span className="site-tab-long">{n.label}</span>
+                      <span className="site-tab-short">{SHORT[n.path]}</span>
+                    </>
+                  )}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <details className="site-menu" ref={menu} data-testid="nav-more" data-current={NAV.some((n) => !PHONE_BAR.has(n.path) && n.match.includes(path)) ? 'true' : undefined}>
+        <summary className="site-tab site-tab-more">More</summary>
+        <ul className="site-menu-list" aria-label="More pages">
+          {[...PRIMARY.filter((n) => PHONE_MENU.has(n.path)), ...MORE].map((n) => (
+            <li key={n.path} className={PHONE_MENU.has(n.path) ? 'site-narrow' : undefined}>
+              <a className="site-more-link" href={url(n.path)} aria-current={n.match.includes(path) ? 'page' : undefined} data-testid={`menu-${n.path}`}>
                 {n.label}
               </a>
             </li>
-          );
-        })}
-        <li>
-          <a className="site-tab site-tab-more" href="#more" data-testid="nav-more">
-            More
-          </a>
-        </li>
-      </ul>
-    </nav>
+          ))}
+        </ul>
+      </details>
+    </>
   );
 }
 

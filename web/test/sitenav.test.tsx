@@ -28,8 +28,26 @@ test('nav: edgesOf names the edges with tabs beyond them', () => {
   assert.equal(edgesOf({ scrollLeft: 299.5, clientWidth: 300, scrollWidth: 600 }), 'start', 'a sub-pixel remainder is the end');
 });
 
-test('nav: the strip carries a fade attribute before any script runs, so a long strip still fades its right edge', () => {
-  assert.ok(renderToStaticMarkup(<SiteNav path="/credit" />).includes('data-edge="end"'));
+// visitor test 2026-11-11: at 390 px the strip was cut at "Terms" and More sat off screen. A phone keeps one 44 px row (the card pages'
+// AIR-181 geometry) with Lend, Rob it, Break and More; every other page is in the More menu, and More carries the current-page mark then.
+test('nav: a phone row holds Lend, Rob it, Break and More, and More marks a current page it holds', () => {
+  const html = renderToStaticMarkup(<SiteNav path="/lend" />);
+  assert.ok(html.includes('data-edge=""'));
+  assert.equal((html.match(/class="site-wide"/g) ?? []).length, 2, 'Terms and Credit wait in More on a phone');
+  assert.ok(html.includes('<span class="site-tab-long">Break the proof</span><span class="site-tab-short">Break</span>'));
+  assert.ok(!/data-testid="nav-more" data-current/.test(html));
+  const bench = renderToStaticMarkup(<SiteNav path="/bench" />);
+  assert.equal((bench.match(/class="site-wide"/g) ?? []).length, 3, 'the current page of the second group is in the menu on a phone');
+  assert.ok(/data-testid="nav-more" data-current="true"/.test(bench));
+  assert.ok(/data-testid="nav-more" data-current="true"/.test(renderToStaticMarkup(<SiteNav path="/terms" />)));
+});
+
+test('nav: More opens a menu in place that lists every other page, Terms and Credit included for a phone', () => {
+  const html = renderToStaticMarkup(<SiteNav path="/bench" />);
+  assert.ok(/<details class="site-menu"/.test(html));
+  assert.ok(!html.includes('href="#more"'), 'More no longer jumps to the footer');
+  for (const n of [...MORE, ...PRIMARY.filter((p) => p.path === 'terms' || p.path === 'credit')]) assert.ok(html.includes(`data-testid="menu-${n.path}"`), n.path);
+  assert.ok(/aria-current="page" data-testid="menu-bench"/.test(html));
 });
 
 // A blind read called 13 tabs "too many things": the header holds the six a stranger should touch, the rest sit in one quieter group that every
@@ -47,7 +65,7 @@ test('nav: a page of the second group is marked in the header too, beside the li
   assert.deepEqual(tabs('/lend'), ['overview', 'lend', 'rob', 'break', 'terms', 'credit']);
   assert.deepEqual(tabs('/bench'), ['overview', 'lend', 'rob', 'break', 'terms', 'credit', 'bench']);
   assert.deepEqual(current('/bench'), ['bench']);
-  assert.ok(renderToStaticMarkup(<SiteNav path="/lend" />).includes('href="#more"'), 'the header links to the second group');
+  assert.ok(renderToStaticMarkup(<SiteNav path="/lend" />).includes('data-testid="nav-more"'), 'the header opens the second group');
 });
 
 test('nav: the second group lists every other page as a plain link and marks the current one', () => {
