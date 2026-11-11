@@ -224,3 +224,16 @@ test('hosted page: no owner name and no testnet in the text a reader sees; the p
   assert.ok(html.includes(COMMAND), 'the command is unchanged inside the fold');
   assert.ok(text.includes('0.01 NEAR') && text.includes('0.995 NEAR left'));
 });
+
+// visitor test 2026-11-11: /challenge, /rob and /credit count three different cards and no page said so; a reader without JavaScript saw
+// "0 attempts" before anything was read.
+test('challenge: says it is the earlier practice card and links the current one; before a read it draws no zeros', () => {
+  const pre = body({ state: null, hosted: true });
+  assert.ok(pre.includes('This is the earlier practice card. The current one, which runs in your browser, is on the <a href="/rob">Rob it</a> page.'));
+  assert.ok(pre.includes('The count is read from the chain when the page loads.'));
+  assert.ok(pre.includes('The latest attempts are read from the chain when the page loads.'));
+  for (const bad of ['count-attempts', 'No attempts yet', 'Nothing yet', '0 NEAR']) assert.equal(pre.includes(bad), false, bad);
+  const read = body({ state: READ_A.state, rows: READ_A.rows, hosted: true });
+  assert.ok(read.includes('data-testid="count-attempts"') && read.includes('data-testid="ch-practice"'));
+  assert.equal(read.includes('ch-count-pending'), false);
+});

@@ -8,6 +8,7 @@ import { explorerAccount } from '../components/account.ts';
 import { Door } from '../components/Door.tsx';
 import { UntrustedInline } from '../components/Specimen.tsx';
 import { VerdictStamp } from '../components/VerdictStamp.tsx';
+import { url } from '../static.ts';
 import { liveChallengeApi } from './api.ts';
 import type { AttemptResult, ChallengeApi } from './api.ts';
 import { EMPTY_BOARD, ago, explorerUrl, foldBoard, nearText, newestFirst, previewOf, reasonWords, refusalWords, sentenceOf, settleRead, shortSource, stateOf, trimDecimals } from './model.ts';
@@ -220,6 +221,8 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, hosted, n
   const isHosted = hosted === true || state?.hosted === true;
   // a failed read with no data: no counts, no empty feed, only the cause
   const blind = failed && state === null;
+  // nothing read yet (the prerendered page, or the first second): say where the count comes from instead of drawing zeros
+  const unread = state === null && !failed;
 
   return (
     <main className="page challenge" data-testid="challenge" data-mode={state?.mode ?? 'loading'}>
@@ -250,6 +253,16 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, hosted, n
       ) : null}
       {blind ? null : (
       <section className="ch-ledger" aria-label="Scoreboard">
+        {/* visitor test 2026-11-11: three pages count three different cards and none said so */}
+        <p className="ch-note" data-testid="ch-practice">
+          This is the earlier practice card. The current one, which runs in your browser, is on the <a href={url('rob')}>Rob it</a> page.
+        </p>
+        {unread ? (
+          <p className="ch-count ch-count-headline" data-testid="ch-count-pending">
+            The count is read from the chain when the page loads.
+          </p>
+        ) : (
+        <>
         <p className="ch-count ch-count-headline" aria-live="polite" data-testid="ch-count">
           <span className="ch-num" key={`a${String(board.attempts)}`} data-testid="count-attempts">{board.attempts}</span>
           {' attempts, '}
@@ -263,6 +276,8 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, hosted, n
           {last === null ? 'No attempts yet.' : `Last attempt ${ago(last, nowMs)}.`}
           {streaming ? ' Live.' : state?.hosted === true ? ' Read from the chain.' : state?.mode === 'recorded' ? ' Replay.' : ' Reconnecting.'}
         </p>
+        </>
+        )}
       </section>
       )}
 
@@ -281,7 +296,7 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, hosted, n
       {blind ? null : (
       <section className="ch-rules" aria-label="How the board counts">
         <p className="ch-fine" data-testid="ch-fine">
-          Stolen is NEAR the contract let out to a payee outside the owner's address book. NEAR paid to the owner's own payees inside the owner's caps is counted apart: {nearText(board.paidToBookYocto)}. Held means the contract asked the owner and paid nothing.
+          Stolen is NEAR the contract let out to a payee outside the owner's address book. NEAR paid to the owner's own payees inside the owner's caps is counted apart{unread ? '' : `: ${nearText(board.paidToBookYocto)}`}. Held means the contract asked the owner and paid nothing.
         </p>
         {state?.hosted === true ? (
           <p className="ch-fine" data-testid="ch-hosted">
@@ -295,7 +310,9 @@ export function ChallengeBody({ state, rows, fresh, streaming, failed, hosted, n
       {blind ? null : (
       <section className="ch-feed" aria-labelledby="ch-feed-title">
         <h2 className="ch-door-title" id="ch-feed-title">Latest attempts</h2>
-        {rows.length === 0 ? (
+        {unread ? (
+          <p className="ch-note" data-testid="ch-feed-pending">The latest attempts are read from the chain when the page loads.</p>
+        ) : rows.length === 0 ? (
           <p className="ch-note" data-testid="ch-empty">Nothing yet. The first attempt appears here as it happens.</p>
         ) : (
           <ol className="ch-rows" data-testid="ch-rows">
