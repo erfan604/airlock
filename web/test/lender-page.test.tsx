@@ -149,6 +149,18 @@ test('lend: slip amounts round to four places, so 1 NEAR less a yocto reads 1.00
   assert.equal(near4(0n), '0.0000');
 });
 
+// Red team 2026-11-11: with nothing kept in this browser a link was taken without a question, so a link somebody else made put the visitor on
+// an account whose key that person holds. The page now asks, and says why.
+test('lend: a link in a browser that keeps no account asks first and says who else holds the key', () => {
+  const html = base({ confirm: { linked: 'lender-zzzzzzzzzz.testnet', mine: null } });
+  const t = text(html);
+  assert.ok(t.includes('This link opens the lender account lender-zzzz…. Whoever made the link holds its key and can move what is lent from it, so use it when the link is your own.'), t);
+  assert.ok(html.includes('data-testid="lend-keep-mine"') && t.includes('Ignore the link'));
+  assert.ok(html.includes('data-testid="lend-switch-linked"') && t.includes('Use this account'));
+  assert.ok(!t.includes('Keep mine') && !t.includes('than the one kept in this browser'));
+  assert.deepEqual(copyProblems(t), []);
+});
+
 // AIR-359 security review: a restore link naming another account than the saved one replaces nothing until the visitor chooses.
 test('lend: a link to another account asks first, in a plain sentence with two buttons', () => {
   const html = base({ confirm: { linked: 'lender-zzzzzzzzzz.testnet', mine: ME } });

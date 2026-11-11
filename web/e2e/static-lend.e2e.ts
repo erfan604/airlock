@@ -151,7 +151,8 @@ const run: E2E = async ({ page, baseUrl }) => {
   assert.ok(stored !== null && stored.includes(w.account ?? 'none'));
   await shot(page, 'position');
 
-  // a reload keeps the position from this browser's storage; the restore link works in a fresh context and leaves the address clean
+  // a reload keeps the position from this browser's storage; the restore link works in a fresh context after the visitor says so (nothing
+  // is kept or shown before that) and leaves the address clean
   const link = await page.evaluate(() => {
     const s = JSON.parse(localStorage.getItem('airlock.lender.v1') ?? '{}') as { accountId: string; secretKey: string };
     return `${location.origin}/lend/#k=${s.secretKey.slice(8)}&a=${s.accountId}`;
@@ -161,8 +162,16 @@ const run: E2E = async ({ page, baseUrl }) => {
   const p2 = await ctx.newPage();
   await routes(p2, w);
   await p2.goto(link);
-  await p2.locator('[data-testid="lend-position"]').waitFor();
+  await p2.locator('[data-testid="lend-confirm"]').waitFor();
   assert.equal(new URL(p2.url()).hash, '', 'the key is taken out of the address bar');
+  assert.ok((await p2.locator('[data-testid="lend-confirm"]').innerText()).includes('Whoever made the link holds its key'));
+  assert.equal(await p2.evaluate(() => localStorage.getItem('airlock.lender.v1')), null, 'nothing is kept before the visitor chooses');
+  assert.equal(await p2.locator('[data-testid="lend-position"]').count(), 0, 'no position is shown before the visitor chooses');
+  await p2.locator('[data-testid="lend-keep-mine"]').click();
+  assert.equal(await p2.evaluate(() => localStorage.getItem('airlock.lender.v1')), null, 'ignoring the link keeps nothing');
+  await p2.goto(link);
+  await p2.locator('[data-testid="lend-switch-linked"]').click();
+  await p2.locator('[data-testid="lend-position"]').waitFor();
   await ctx.close();
 
   // a restore link to another account: nothing is replaced until the visitor chooses; the record left is kept and can be switched back to

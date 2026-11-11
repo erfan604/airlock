@@ -4,7 +4,7 @@
 // event logs) or from schedule.json; when there is nothing to read the page says so instead of showing a number. The key never leaves the
 // browser except in the restore link the visitor keeps.
 import { isShortened, isUnshown } from '../components/chainText.ts';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { NEAR_RPC } from '../../csp.ts';
 import { TxLink } from '../credit/CreditPage.tsx';
@@ -96,8 +96,8 @@ export type LenderViewProps = {
   link: string | null;
   /** why a restore link was not taken, when it was not */
   linkNote: LinkNote | null;
-  /** a checked link naming another account than the saved one, waiting for the visitor's choice */
-  confirm: { linked: string; mine: string } | null;
+  /** a checked link that is not this browser's record, waiting for the visitor's choice; `mine` is null when nothing is kept here */
+  confirm: { linked: string; mine: string | null } | null;
   /** accounts kept in this browser that the visitor switched away from */
   backups: string[];
   onKeep(): void;
@@ -303,13 +303,17 @@ export function LenderView(p: LenderViewProps): ReactElement {
       )}
       {p.confirm === null ? null : (
         <section className="lend-confirm" aria-label="Which account" data-testid="lend-confirm">
-          <p>{`This link holds a different lender account (${shortAccount(p.confirm.linked)}) than the one kept in this browser (${shortAccount(p.confirm.mine)}). Which one should this page show? Whichever you leave stays kept in this browser.`}</p>
+          <p>
+            {p.confirm.mine === null
+              ? `This link opens the lender account ${shortAccount(p.confirm.linked)}. Whoever made the link holds its key and can move what is lent from it, so use it when the link is your own.`
+              : `This link holds a different lender account (${shortAccount(p.confirm.linked)}) than the one kept in this browser (${shortAccount(p.confirm.mine)}). Which one should this page show? Whichever you leave stays kept in this browser.`}
+          </p>
           <div className="lend-confirm-acts">
             <button type="button" className="act act-primary" data-testid="lend-keep-mine" onClick={p.onKeep}>
-              Keep mine
+              {p.confirm.mine === null ? 'Ignore the link' : 'Keep mine'}
             </button>
             <button type="button" className="act act-quiet" data-testid="lend-switch-linked" onClick={p.onSwitch}>
-              Switch to the linked account
+              {p.confirm.mine === null ? 'Use this account' : 'Switch to the linked account'}
             </button>
           </div>
         </section>
@@ -454,6 +458,19 @@ export default function LenderPage(): ReactElement {
   const [walletTx, setWalletTx] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [reload, setReload] = useState(0);
+  // after the visitor's own deposit or withdrawal the pool is read again at once and twice more: views read final blocks (about 2 s behind)
+  // and the history API indexes a call some seconds later, so the first read can still count the lender as before the call
+  const later = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const reloadSoon = useCallback(() => {
+    for (const t of later.current) clearTimeout(t);
+    const again = (): void => {
+      historyFetch.clear();
+      setReload((n) => n + 1);
+    };
+    again();
+    later.current = [4_000, 12_000].map((ms) => setTimeout(again, ms));
+  }, []);
+  useEffect(() => () => later.current.forEach((t) => clearTimeout(t)), []);
   const [linkNote, setLinkNote] = useState<LinkNote | null>(null);
   const [pending, setPending] = useState<Link | null>(null);
   const [backups, setBackups] = useState<string[]>([]);
@@ -464,8 +481,9 @@ export default function LenderPage(): ReactElement {
   const [lpSince, setLpSince] = useState(() => Date.now());
   const [attacksSince, setAttacksSince] = useState(() => Date.now());
 
-  // a restore link: out of the address bar at once; checked on chain (its key must be a key of the named account); taken as is when nothing is
-  // saved or it is the saved record, else held until the visitor chooses (security review of AIR-359)
+  // a restore link: out of the address bar at once; checked on chain (its key must be a key of the named account); taken as is when it is
+  // the saved record, else held until the visitor chooses, also when nothing is saved: a link somebody else made would put the visitor on an
+  // account whose key that person holds (security review of AIR-359, red team 2026-11-11)
   useEffect(() => {
     if (PRERENDER) return undefined;
     let live = true;
@@ -480,7 +498,7 @@ export default function LenderPage(): ReactElement {
       void verifyLinkKey(RPC, link).then((v) => {
         if (!live) return;
         if (v !== 'ok') return setLinkNote(v);
-        if (decideLink(current, link) === 'differs' && current !== null) return setPending(link);
+        if (decideLink(current, link) !== 'same') return setPending(link);
         setSaved(adoptLink(storage(), link, Date.now()));
       });
     };
@@ -553,7 +571,8 @@ export default function LenderPage(): ReactElement {
         if (!live) return;
         const truncated = full ? read.truncated : s.lenders.truncated;
         const loopKnownMs = full ? null : s.loop.last_ms;
-        setChain({ pool, events, truncated, lenders: null, loopKnownMs });
+        // a read again keeps the last count on screen until the new one is in, so the line does not blink back to the file's number
+        setChain((prev) => ({ pool, events, truncated, lenders: prev?.lenders ?? null, loopKnownMs }));
         setChainFailed(false);
         const lenders = await countLenders(events, truncated, (a) => readLp(RPC, CREDIT_POOL, a), undefined, full ? [] : s.lenders.outside);
         if (live) setChain({ pool, events, truncated, lenders, loopKnownMs });
@@ -637,14 +656,13 @@ export default function LenderPage(): ReactElement {
       setReceipt(null);
       setSaved(done);
       setSteps({ step: 'done', accountId: record.accountId });
-      // the pool's listing changed with this deposit: the next read must not reuse an answer from before it
-      historyFetch.clear();
-      setReload((n) => n + 1);
+      // the pool's listing changed with this deposit: the next reads must not reuse an answer from before it
+      reloadSoon();
     } catch (e) {
       setSaved(record);
       setProblem({ kind: 'deposit', detail: e instanceof RpcError ? e.message : e instanceof Error ? e.message : 'unknown' });
     }
-  }, []);
+  }, [reloadSoon]);
 
   const onLend = useCallback(() => {
     if (busy) return;
@@ -702,14 +720,13 @@ export default function LenderPage(): ReactElement {
         if (amount !== null) setReceipt({ amount, accountId: saved.accountId, tx: r.hash });
         // the old shares are gone: read the position again rather than show them beside the receipt
         setLp(null);
-        historyFetch.clear();
-        setReload((n) => n + 1);
+        reloadSoon();
       } catch (e) {
         setProblem({ kind: 'withdraw', detail: e instanceof Error ? e.message : 'unknown' });
       }
       setBusy(false);
     })();
-  }, [saved, lp, busy]);
+  }, [saved, lp, busy, reloadSoon]);
 
   const onWallet = useCallback(() => {
     setBusy(true);
@@ -733,7 +750,7 @@ export default function LenderPage(): ReactElement {
     lp: lp === null && nowMs - lpSince > GIVE_UP_MS,
     attacks: attacks === null && chain !== null && nowMs - attacksSince > GIVE_UP_MS,
   };
-  const confirm = pending === null || saved === null ? null : { linked: pending.accountId, mine: saved.accountId };
+  const confirm = pending === null ? null : { linked: pending.accountId, mine: saved?.accountId ?? null };
   return <LenderView site={site} linkNote={linkNote} confirm={confirm} backups={backups} onKeep={onKeep} onSwitch={onSwitch} onSwitchBack={onSwitchBack} nowMs={nowMs} chain={chain} chainFailed={chainFailed} schedule={schedule} position={position} steps={steps} problem={problem} busy={busy} walletTx={walletTx} link={link} onLend={onLend} onRetry={onRetry} onWithdraw={onWithdraw} onWallet={onWallet} onCopy={onCopy} copied={copied} confirming={confirming} receipt={receipt} slow={slow} />;
 }
 

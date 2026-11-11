@@ -75,7 +75,7 @@ export function parseFragment(hash: string): Fragment {
 }
 
 /** Takes a restore fragment out of the address bar (always, good or bad) and returns it. Nothing is stored here: a link is checked on chain first,
- * and one that names another account than the saved one waits for the visitor's choice (security review of AIR-359). */
+ * and one that is not the saved record waits for the visitor's choice (security review of AIR-359). */
 export function takeFragment(loc: { hash: string; pathname: string; search: string }, hist: { replaceState(data: unknown, unused: string, url: string): void }): Fragment {
   const f = parseFragment(loc.hash);
   if (f.kind !== 'none') hist.replaceState(null, '', `${loc.pathname}${loc.search}`);
@@ -84,7 +84,8 @@ export function takeFragment(loc: { hash: string; pathname: string; search: stri
 
 export type Link = { accountId: string; secretKey: string };
 
-/** `new`: nothing is saved; `same`: the link is the saved record; `differs`: another account or another key, so the visitor is asked first. */
+/** `new`: nothing is saved; `same`: the link is the saved record; `differs`: another account or another key. The page asks the visitor before
+ * it takes a `new` or a `differs` link. */
 export function decideLink(saved: Saved | null, link: Link): 'new' | 'same' | 'differs' {
   if (saved === null) return 'new';
   return saved.accountId === link.accountId && saved.secretKey === link.secretKey ? 'same' : 'differs';
