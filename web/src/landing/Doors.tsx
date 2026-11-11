@@ -1,6 +1,6 @@
 // The home page's main content: three doors in one wall, each a real thing to do in under a minute. A door is a physical thing of the /break and
 // /lend family: a frame, an engraved plate, a leaf that swings a little open on hover (and settles on press) to show the lit inside, a window
-// with the one number that door has, and a push bar. Numbers come from doors.ts; until a read lands the recorded value shows, labelled.
+// with the one number that door has. Numbers come from doors.ts; until a read lands the recorded value shows, labelled.
 // Motion is transform only and base.css turns it off under reduced motion.
 import { useEffect, useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
@@ -14,11 +14,13 @@ import type { BreakDoor, LendDoor, RobDoor } from './doors.ts';
 import { poolLine } from './facts.ts';
 import type { PoolRead } from './facts.ts';
 
-type LeafProps = { plate: string; title: string; what: string; number: string; caption: ReactNode; note: string; testId: string };
+type LeafProps = { plate: string; title: string; what: string; number: string; caption: ReactNode; note: string; live: boolean; testId: string };
 
 // The inside of a door. The anchor around it is written out at each door below, so every link target is a constant on its own line
 // (scripts/security-pass.sh reads them there).
-function DoorLeaf({ plate, title, what, number, caption, note, testId }: LeafProps): ReactElement {
+// Until a read lands the number is the recorded one: it is dimmed, and the note in the same window says it is the recorded value, so a phone
+// never shows a figure that changes a second later without saying so on the same screen.
+function DoorLeaf({ plate, title, what, number, caption, note, live, testId }: LeafProps): ReactElement {
   return (
     <>
       <span className="door-inside" aria-hidden="true" />
@@ -26,7 +28,7 @@ function DoorLeaf({ plate, title, what, number, caption, note, testId }: LeafPro
         <span className="door-plate">{plate}</span>
         <span className="door-title">{title}</span>
         <span className="door-what">{what}</span>
-        <span className="door-window">
+        <span className="door-window" data-live={live ? 'true' : 'false'}>
           <span className="door-number" data-testid={`${testId}-number`}>
             {number}
           </span>
@@ -35,7 +37,6 @@ function DoorLeaf({ plate, title, what, number, caption, note, testId }: LeafPro
             {note}
           </span>
         </span>
-        <span className="door-bar" aria-hidden="true" />
       </span>
     </>
   );
@@ -51,19 +52,6 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
         Three things to do in under a minute
       </h2>
       <ul className="door-wall" role="list">
-        <li className="door door-lend">
-          <a className="door-frame" href={url('lend')} data-testid="door-lend">
-            <DoorLeaf
-              plate="Lend"
-              title="Lend 1 NEAR to the agents"
-              what="One click makes you a real account of your own and lends 1 NEAR from it into the live pool."
-              number={p.held.replace(/ NEAR$/, '')}
-              caption={`NEAR in the pool now. ${String(lend.lenders)} lender ${lend.lenders === 1 ? 'account' : 'accounts'} not on the team's list so far.`}
-              note={sourceNote(lendSource, 'Read from the pool contract and its own deposit records.')}
-              testId="door-lend"
-            />
-          </a>
-        </li>
         <li className="door door-rob">
           <a className="door-frame" href={url('rob')} data-testid="door-rob">
             <DoorLeaf
@@ -73,7 +61,22 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
               number={String(rob.paidOutside)}
               caption={`paid to anyone but the booked shop, in ${countText(rob.attempts)} ${rob.attempts === 1 ? 'attempt' : 'attempts'}.`}
               note={sourceNote(rob.source, 'Read from the chain.')}
+              live={rob.source === 'live'}
               testId="door-rob"
+            />
+          </a>
+        </li>
+        <li className="door door-lend">
+          <a className="door-frame" href={url('lend')} data-testid="door-lend">
+            <DoorLeaf
+              plate="Lend"
+              title="Lend 1 NEAR to the agents"
+              what="One click makes you a real account of your own and lends 1 NEAR from it into the live pool."
+              number={p.held.replace(/ NEAR$/, '')}
+              caption={`NEAR in the pool now. ${lend.lenders === 0 ? 'No lender from outside the team yet. Be one.' : `${String(lend.lenders)} lender ${lend.lenders === 1 ? 'account' : 'accounts'} from outside the team so far.`}`}
+              note={sourceNote(lendSource, 'Read from the pool contract and its own deposit records.')}
+              live={lendSource === 'live'}
+              testId="door-lend"
             />
           </a>
         </li>
@@ -84,8 +87,9 @@ export function DoorsView({ lend, rob, brk, pool }: { lend: LendDoor; rob: RobDo
               title="Take one rule out of the gate"
               what="Run an attack through the real gate and through a copy with one rule removed: the copy pays."
               number={String(brk.copies)}
-              caption={`broken copies of the gate; Kani fails on ${brk.kaniFails === brk.copies ? 'each one' : `${String(brk.kaniFails)} of them`}.`}
-              note={sourceNote(brk.source, 'From the recorded Kani runs the page shows.')}
+              caption={`broken copies of the gate; our model checker catches ${brk.kaniFails === brk.copies ? 'each one' : `${String(brk.kaniFails)} of them`}.`}
+              note={sourceNote(brk.source, 'From the recorded model checker (Kani) runs the page shows.')}
+              live={brk.source === 'live'}
               testId="door-break"
             />
           </a>

@@ -45,11 +45,12 @@ const run: E2E = async ({ page, baseUrl }) => {
     assert.ok(textOf(r.body).length > 400, `${p.path} has text without JavaScript (${String(textOf(r.body).length)} characters)`);
   }
 
-  // the landing: the claim, the numbers next to their labels, the case, the hired-agent section, JSON-LD
+  // the landing: the claim, the numbers next to their labels, the case, JSON-LD
   const home = await get('/');
   const t = textOf(home.body);
   for (const s of [
-    'A lending pool for AI agents on NEAR.',
+    'A lending pool for AI agents on NEAR',
+    'Credit for AI agents that cannot be talked out of the money.',
     'Three things to do in under a minute',
     'Lend 1 NEAR to the agents',
     'Send a real attack',
@@ -61,8 +62,6 @@ const run: E2E = async ({ page, baseUrl }) => {
     '0 of 250 attack runs moved money with AIRLOCK in strict mode.',
     '10 of 250 attack runs moved money in default mode, all 10 in one case',
     '44 of 70 honest payment tasks went through in default mode with no tap from you.',
-    'Built for agents you hire',
-    'is the task bound.',
     'How it works',
     'What is proven, and what is not',
   ])

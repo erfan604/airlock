@@ -59,11 +59,19 @@ test('poolLine: the recorded value is labelled recorded, a live read says it is 
 
 test('landing: the hero names the lending pool and the three doors come right under it, before the older sections; /live is not linked', () => {
   const html = renderToStaticMarkup(createElement(Landing));
-  assert.ok(html.includes('A lending pool for AI agents on NEAR.'));
+  assert.ok(html.includes('<p class="hero-kicker">A lending pool for AI agents on NEAR</p>'), 'the pool is the small line above the headline');
+  assert.ok(html.includes('Credit for AI agents that cannot be talked out of the money.'));
+  assert.ok(html.includes('Lend to AI agents on NEAR. Their card pays only the shops the owner approved, even when the agent is hijacked: a contract checks where every payee and amount came from before anything is signed.'));
+  assert.ok(html.indexOf('hero-kicker') < html.indexOf('id="hero-title"'));
+  // visitor test 2026-11-11: the hired-agent section read as written for the event and made the page long
+  assert.ok(!html.includes('data-testid="landing-hire"') && !html.includes('Built for agents you hire'));
+  assert.ok(html.includes('Lenders put money in a pool.') && !html.includes('Lenders stake'));
   const hero = html.indexOf('id="hero-title"');
   const doors = html.indexOf('data-testid="landing-doors"');
   assert.ok(hero > 0 && doors > hero, 'the doors follow the hero');
   for (const d of ['door-lend', 'door-rob', 'door-break']) assert.ok(html.indexOf(`data-testid="${d}"`) > doors, d);
+  assert.ok(html.indexOf('data-testid="door-rob"') < html.indexOf('data-testid="door-lend"') && html.indexOf('data-testid="door-lend"') < html.indexOf('data-testid="door-break"'), 'Rob it, then Lend, then Break the proof');
+  assert.ok(!html.includes('door-bar'), 'no bar that reads as a disabled button');
   assert.ok(doors < html.indexOf('data-testid="landing-credit"') && html.indexOf('data-testid="landing-credit"') < html.indexOf('data-testid="landing-case"'), 'the older sections come after the doors');
   assert.ok(!html.includes('hero-actions') && !html.includes('data-testid="hero-pool"'));
   assert.ok(!html.includes('badged fixture'));
@@ -76,15 +84,22 @@ test('doors: each door links its page, shows its one number, and says recorded u
   const rec = renderToStaticMarkup(createElement(DoorsView, { lend: recordedLend(), rob: recordedRob(), brk: recordedBreak(), pool: { kind: 'recorded' } }));
   assert.ok(rec.includes('href="/lend"') && rec.includes('href="/rob"') && rec.includes('href="/break"') && rec.includes('href="/terms"'));
   const t = text(rec);
-  assert.ok(t.includes(`${String(RECORDED.lenders)} lender accounts not on the team's list so far.`));
+  assert.ok(t.includes(RECORDED.lenders === 0 ? 'No lender from outside the team yet. Be one.' : `${String(RECORDED.lenders)} lender accounts from outside the team so far.`));
+  assert.equal((rec.match(/data-live="false"/g) ?? []).length, 3, 'every recorded number is marked as not live');
+  assert.ok(/data-live="false"><span class="door-number" data-testid="door-rob-number">[^<]*<\/span><span class="door-caption">[^<]*<\/span><span class="door-note"/.test(rec), 'the recorded note is in the same window as the number');
   assert.ok(t.includes(`${String(RECORDED.robPaidOutside)} paid to anyone but the booked shop, in ${countText(RECORDED.robAttempts)} attempts.`));
-  assert.ok(t.includes(`${String(RECORDED.copies)} broken copies of the gate; Kani fails on each one.`));
+  assert.ok(rec.includes(`data-testid="door-rob-number">${String(RECORDED.robPaidOutside)}<`));
+  assert.ok(t.includes(`${String(RECORDED.copies)} broken copies of the gate; our model checker catches each one.`));
+  assert.ok(rec.includes(`data-testid="door-break-number">${String(RECORDED.copies)}<`));
   assert.equal(t.split(`Recorded ${RECORDED.atText}.`).length, 4, 'all three doors say recorded');
   assert.ok(t.includes('Runs on the NEAR test network, where NEAR has no value.') && t.includes('the issuer books the payees'));
   assert.ok(!/testnet|erfan/i.test(t));
   const live = text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 3, source: 'live' }, rob: { attempts: 1, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 4, source: 'live' }, pool: { kind: 'live', assets: '3201000000000000000000000', losses: '0' } })));
-  assert.ok(live.includes("3.2 NEAR in the pool now. 3 lender accounts not on the team's list so far."));
-  assert.ok(live.includes('in 1 attempt.') && live.includes('Kani fails on 4 of them.'));
+  assert.ok(live.includes('3.2 NEAR in the pool now. 3 lender accounts from outside the team so far.'));
+  assert.ok(live.includes('in 1 attempt.') && live.includes('our model checker catches 4 of them.'));
+  const zero = text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 0, source: 'live' }, rob: { attempts: 1, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 5, source: 'live' }, pool: { kind: 'live', assets: '3201000000000000000000000', losses: '0' } })));
+  assert.ok(zero.includes('No lender from outside the team yet. Be one.'));
+  assert.ok(text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 1, source: 'live' }, rob: { attempts: 1, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 5, source: 'live' }, pool: { kind: 'live', assets: '3201000000000000000000000', losses: '0' } }))).includes('1 lender account from outside the team so far.'));
   // AIR-360: a large count reads with its thousands grouped
   const big = text(renderToStaticMarkup(createElement(DoorsView, { lend: { lenders: 3, source: 'live' }, rob: { attempts: 12345, paidOutside: 0, source: 'live' }, brk: { copies: 5, kaniFails: 5, source: 'live' }, pool: { kind: 'failed' } })));
   assert.ok(big.includes('0 paid to anyone but the booked shop, in 12,345 attempts.'));

@@ -1,4 +1,4 @@
-// AIR-311, AIR-346: the landing. Top to bottom: the hero (the one sentence over the loop), the three doors (Lend, Rob it, Break the proof, each
+// AIR-311, AIR-346: the landing. Top to bottom: the hero (the one sentence over the loop), the three doors (Rob it, Lend, Break the proof, each
 // with one number from where it lives) and the limits line, how the pool lends, the headline case (one booked payee, one email that changes only the
 // amount, the request field by field with where each value came from, AIRLOCK's verdict next to a payee-list guard's), the numbers from
 // bench.json, how it works, and what is and is not proven. Motion is CSS only and plays once; reduced motion shows the end state and the poster.
@@ -129,44 +129,6 @@ function Numbers({ facts }: { facts: Facts | null | 'loading' }) {
   );
 }
 
-const HIRE_MAP = [
-  { theirs: 'The job budget', ours: 'the task bound', says: 'The agent cannot pay out more than the job pays it.' },
-  { theirs: "The job's payees", ours: 'the address book', says: "Inference, tools and the poster's refund account; nothing else is a known payee." },
-  { theirs: 'The job post and every other agent', ours: 'outside text', says: 'A payee they pick waits for the owner; an amount they pick is paid only up to the cap the owner set, and strict mode holds every one.' },
-];
-
-/** AIR-312: the Swarm-for-Hire mapping, in plain words, with the link that opens the Try page in the hired-agent world. */
-function Hire() {
-  return (
-    <section className="hire" aria-labelledby="hire-title" data-testid="landing-hire">
-      <div className="hire-intro">
-        <h2 id="hire-title" className="land-h2">
-          Built for agents you hire
-        </h2>
-        <p className="land-p">
-          In a Swarm-for-Hire, anyone posts a job, an agent takes it and pays for its own inference out of the job payment, and it reads text written by the poster and by other agents. AIRLOCK reads that setup the same way it reads a bill:
-        </p>
-      </div>
-      <dl className="hire-map">
-        {HIRE_MAP.map((m) => (
-          <div key={m.theirs} className="hire-row">
-            <dt className="hire-theirs">{m.theirs}</dt>
-            <dd className="hire-ours">
-              <span className="hire-is">{`is ${m.ours}.`}</span> {m.says}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <p className="case-more">
-        <a href={url('try?s=hired')} data-testid="cta-hired">
-          Try it with an agent you hired
-        </a>
-        : an inflated inference bill from another agent, a job post that grabs the budget. It runs on the shipped verdict in your browser; it is a scenario, not a benchmarked case.
-      </p>
-    </section>
-  );
-}
-
 /** AIR-346: the pool, said plainly, right under the hero: what lenders fund, what the card can pay, what the contract checks, and what it does not stop. */
 function CreditTeaser() {
   return (
@@ -176,7 +138,7 @@ function CreditTeaser() {
           How the pool lends
         </h2>
         <p className="land-p">
-          Lenders stake NEAR into one pool. Each agent gets a credit line held on a card, and the card pays only merchants the owner booked. A line needs 30 percent collateral. Every payment goes through the policy contract first: a payee or an amount that came from outside text, such as an email, is held for the owner or refused before the pool&apos;s money moves.
+          Lenders put money in a pool. Each agent gets a credit line held on a card, and the card pays only merchants the owner booked. A line needs 30 percent collateral. Every payment goes through the policy contract first: a payee or an amount that came from outside text, such as an email, is held for the owner or refused before the pool&apos;s money moves.
         </p>
         <p className="land-p">
           What it does not stop: the issuer books the merchants, so a merchant who works with the borrower can still walk off with the money. And in default mode an amount read from outside text is paid when it stays inside the booked merchant&apos;s cap.
@@ -287,10 +249,11 @@ export function Landing() {
         <div className="hero-copy">
           {/* the words sit on a solid plate, so they stay legible over any loop or poster that replaces the current one */}
           <div className="hero-plate">
+          <p className="hero-kicker">A lending pool for AI agents on NEAR</p>
           <h1 id="hero-title" className="hero-title">
-            A lending pool for AI agents on NEAR.
+            Credit for AI agents that cannot be talked out of the money.
           </h1>
-          <p className="hero-line">Lenders fund a credit line held on a card that pays only merchants the owner booked. A contract checks where every payee and amount came from, so a hijacked agent cannot send the lenders&apos; money anywhere but a booked merchant.</p>
+          <p className="hero-line">Lend to AI agents on NEAR. Their card pays only the shops the owner approved, even when the agent is hijacked: a contract checks where every payee and amount came from before anything is signed.</p>
           </div>
         </div>
       </section>
@@ -299,7 +262,6 @@ export function Landing() {
         <CreditTeaser />
         <HeadlineCase />
         <Numbers facts={facts} />
-        <Hire />
         <How />
         <Proven />
         <footer className="land-foot">

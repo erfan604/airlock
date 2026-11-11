@@ -1609,7 +1609,18 @@ h1 {
   box-shadow: -40px 0 0 var(--paper);
 }
 .landing .hero-title {
-  font-size: 44px;
+  max-width: 20ch;
+  font-size: 40px;
+}
+/* the small line above the headline: what the thing is, in the data face of the section labels; no box */
+.hero-kicker {
+  font-family: var(--font-data);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  animation: rise 520ms var(--ease-out) 60ms backwards;
 }
 @media (min-width: 720px) {
   .landing .hero-title {
@@ -1702,7 +1713,7 @@ h1 {
   align-content: start;
   height: 100%;
   min-height: 19rem;
-  padding: var(--space-4) var(--space-5) var(--space-7);
+  padding: var(--space-4) var(--space-5) var(--space-5);
   border: 1px solid var(--hair);
   border-bottom: 0;
   background: var(--raised);
@@ -1770,18 +1781,12 @@ h1 {
   font-size: 13px;
   color: var(--ink-3);
 }
-.door-bar {
-  position: absolute;
-  right: var(--space-5);
-  bottom: var(--space-5);
-  width: 44%;
-  height: 8px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--ink) 30%, var(--raised));
-  transition: background 300ms var(--ease-out);
+/* a recorded number waits, dimmed, with its note right under it, and comes up to full strength when the live read lands */
+.door-number {
+  transition: opacity 400ms var(--ease-out);
 }
-.door-frame:hover .door-bar {
-  background: var(--door-light);
+.door-window[data-live='false'] .door-number {
+  opacity: 0.6;
 }
 .landing .doors-limits {
   max-width: 52rem;

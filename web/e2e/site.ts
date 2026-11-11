@@ -27,9 +27,8 @@ export async function checkLanding(page: Page, baseUrl: string): Promise<void> {
   assert.equal(await id('door-break', page).getAttribute('href'), '/break');
   // AIR-346: the pool line under the hero buttons, live or recorded and saying which
   for (const d of ['door-lend', 'door-rob', 'door-break']) assert.ok(/^(Read from|From the recorded|Recorded )/.test(await id(`${d}-note`, page).innerText()), d);
-  // AIR-312: the hired-agent section links the Try page in the hired world
-  assert.ok((await id('landing-hire', page).innerText()).includes('is the task bound.'));
-  assert.equal(await id('cta-hired', page).getAttribute('href'), '/try?s=hired');
+  // the hired-agent section left the home page (visitor test 2026-11-11); the Try page keeps its hired world
+  assert.equal(await id('landing-hire', page).count(), 0);
 }
 
 async function verdictOf(page: Page): Promise<{ state: string | null; guard: string | null }> {
