@@ -98,7 +98,7 @@ donation attack). The invariant `contract balance >= idle + collateral_held + re
 | --- | --- | --- |
 | `deposit()` payable | anyone | `shares = amount` when `total_shares` is 0, else `floor(amount * total_shares / assets)`; refused while any open line is past its due date (`deposits are paused while a line is past due`) or any card carries an unrecovered loss (`deposits are paused while a defaulted line is being recovered`), F1 below; sets the LP's lock to `now + min_hold_ms`; at least `MIN_DEPOSIT` (0.001 NEAR); a caller with no `lps` entry pays `LP_STORAGE` (0.0025 NEAR) for its entries out of the attached amount, `amount` is the rest and must still be at least `MIN_DEPOSIT`; refuses when shares are 0 or `assets` is 0 with shares outstanding |
 | `withdraw(shares)` | an LP | `amount = floor(shares * assets / total_shares)`; refuses above `idle` with the most shares that can leave now; burns, lowers `idle`, then transfers; withdrawing all of an LP's shares removes its `lps` and `locks` entries; `on_withdraw` restores the shares if the transfer failed |
-| `register_card(card, borrower)` | owner | asks the card `get_roles` and, in `on_card_roles`, requires `owner_id == pool owner`, `approver == borrower`, `sponsor == this pool`, and `borrower != owner`; then stores the card. The role check is on chain, so the trust assumption of AIR-327 is checked, not stated |
+| `register_card(card, borrower)` | owner | asks the card `get_roles` and, in `on_card_roles`, requires `owner_id == pool owner`, `approver == borrower`, `sponsor == this pool`, and `borrower != owner`; then stores the card. The roles are the card account's own `get_roles` answer, read on chain; the pool does not read the card's code, so a contract that is not an AIRLOCK card but gives that answer is registered too. The trust assumption of AIR-327 rests on the owner, who registers the cards (docs/KNOWN_LIMITATIONS.md, credit pool owner powers) |
 | `post_collateral(card)` payable | the card's borrower | adds to the card's collecting line |
 | `open_line(card, limit, fee_bps, due_ms)` | owner | needs `collateral >= ceil(limit * collateral_bps / 10000)`, `idle >= limit`, `fee_bps <= 5000`, `now < due_ms <= now + 90 days`, no other line; moves `limit` from `idle` to `lent`, then transfers it to the card; `on_line_funded` restores the state if the transfer failed |
 | `on_card_return(card)` payable (emits `swept`) | the card account itself | credits the open line: `credited = min(deposit, limit - returned)`; `idle += credited`, `lent -= credited`, `returned += credited`; the excess is sent back to the card. After a default it credits the loss recovery in the same way (losses fall, never below 0) |
@@ -421,6 +421,7 @@ before, cap after one on-time repay] (a0a0da6). The actual run on 2026-11-10: 50
   Storage needs no top-up: the pool holds 5.45 NEAR against 4.92 NEAR needed.
 - Live since 2026-11-10T22:47:06Z: transaction `AXfP2CKgY31WxbBfrisb9YfKbg3q3XYad3SA9GbazzUN` deployed `res/airlock_credit_v2.wasm` on
   `pool.airlock-credit-c1108d.testnet` and called `migrate`; the run is in docs/EVIDENCE.md (Pool upgrade and Credit Passport run) and C23.
+  These bytes ran until the code-only redeploy of 2026-11-11 (below, 2026-11-11: a lender pays for its own storage).
 
 ## AIR-350: the pool asks the MPC network whether a Base payment landed, and keeps the answer
 
@@ -584,3 +585,12 @@ Mutants are listed in docs/mutation.md.
 `res/airlock_credit_v2.wasm` is rebuilt with this change: sha256 `3e914f6f1a906ecfff5fb3f07cb7429c8edd85514e22e20a7b214de7f68791a9`,
 code hash `5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN`, the bytes the sandbox suite ran. The bytes it replaces (sha256 `e754b6aa...`,
 code hash `Ga26kv1dYjLoHokUa2DU5XZmATDscBtEst8ajjAZphjr`) are kept as `res/airlock_credit_v2_e754b6aa.wasm`.
+
+### Live
+
+Live on `pool.airlock-credit-c1108d.testnet` since 2026-11-11T18:41:42Z: transaction `GChCfQ8eUoKkVjT5oLgBkmkL754NyZqGWeSNwWCTXHxq`
+(block 277253469), sent by the pool to itself, holds one DeployContract action of these bytes and no init call; the pool's code hash is
+now `5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN`. Snapshots before and after read the same raw state and the same views, and a new lender
+(`lp3.airlock-credit-c1108d.testnet`) was refused at 0.003 NEAR, charged 0.0025 NEAR of a 0.1025 NEAR deposit and freed its entries with a
+full withdraw. docs/EVIDENCE.md (Pool redeploy with the storage fix), C27 and C28; `pnpm tsx scripts/credit-pool-code-check.ts --verify`
+checks it with no keys.
