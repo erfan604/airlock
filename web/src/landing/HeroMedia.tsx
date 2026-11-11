@@ -1,10 +1,10 @@
-// AIR-311: the hero's muted scan loop (web/public/media). A phone-shaped screen gets the 1080x1350 cut and its own poster. Under reduced motion only the poster is
+// AIR-311: the hero's muted loop (web/public/media), cut from the vault plate of the credit film. A phone-shaped screen gets the 1080x1350 cut and its own poster. Under reduced motion only the poster is
 // shown and the video is never loaded. The loop is decorative (aria-hidden) and has a pause button, since it runs longer than five seconds.
 import { useEffect, useRef, useState } from 'react';
 import { url } from '../static.ts';
 import { useMedia } from './media.ts';
 
-export const HERO_ALT = 'A rendered loop: suitcases ride a baggage belt through a glass scanner labelled AIRLOCK, and the scanner looks inside each one.';
+export const HERO_ALT = 'A rendered loop: a vault door marked AIRLOCK swings open on shelves of gold bars, and a black card marked AIRLOCK agent credit stands in front of them.';
 
 export function HeroMedia() {
   const reduced = useMedia('(prefers-reduced-motion: reduce)');
