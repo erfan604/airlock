@@ -4,7 +4,7 @@
 import { CADENCE_LOG_MS, CADENCE_MIN_ATTEMPTS, LIVE_WINDOW_MS } from './config.ts';
 
 export type ArenaVerdict = 'none' | 'blocked' | 'held' | 'paid_at' | 'paid_under' | 'paid_over' | 'paid_unbooked';
-/** `flood`: the card's flood limits turned the request away (PendingFull, EscalationsLocked, EscalationBudget) before the policy judged it. */
+/** `flood`: the card's flood limits turned the request away (PendingFull, EscalationsLocked, EscalationBudget) before the policy decided on it. */
 export type ArenaAttempt = { tx: string; atMs: number; verdict: ArenaVerdict; reason: string | null; amount: string | null; flood: boolean };
 /** The reasons of the card's flood control: a refusal for the number of requests, not for what the request asks. */
 export const FLOOD_REASONS: ReadonlySet<string> = new Set(['PendingFull', 'EscalationsLocked', 'EscalationBudget']);

@@ -211,7 +211,7 @@ test('under strict mode the bound line says that every amount read from an email
 test('a flood refusal has its own line and is not in the blocked count', () => {
   const html = view({ state: ok([at(300, 'blocked'), at(200, 'blocked', null, true), at(100, 'held')]) });
   assert.match(html, /data-testid="arena-blocked"[^>]*>[\s\S]*?>1</);
-  assert.match(text(html), /1 attempt was turned away by the card's flood limits before the policy judged it\./);
+  assert.match(text(html), /1 attempt was turned away by the card's flood limits before the policy decided on it\./);
   assert.match(html, /data-testid="arena-row" data-verdict="flood"/);
 });
 

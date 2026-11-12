@@ -164,8 +164,8 @@ export function ArenaView({
           {c.flood === 0 ? null : (
             <p className="cr-note" data-testid="arena-flood" style={GAP}>
               {c.flood === 1
-                ? "1 attempt was turned away by the card's flood limits before the policy judged it."
-                : `${String(c.flood)} attempts were turned away by the card's flood limits before the policy judged them.`}
+                ? "1 attempt was turned away by the card's flood limits before the policy decided on it."
+                : `${String(c.flood)} attempts were turned away by the card's flood limits before the policy decided on them.`}
             </p>
           )}
           <p className="cr-note" data-testid="arena-bound" style={GAP}>

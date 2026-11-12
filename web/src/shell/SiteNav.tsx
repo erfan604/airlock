@@ -134,7 +134,7 @@ export function SiteNav({ path }: { path: string }) {
   );
 }
 
-/** The second group, above every page's footer: the pages a judge may want after the first six, as one quiet line of plain links. */
+/** The second group, above every page's footer: the pages a reader may want after the first six, as one quiet line of plain links. */
 export function MoreNav({ path }: { path: string }) {
   return (
     <nav className="site-more" id="more" aria-label="More pages" data-testid="site-more">

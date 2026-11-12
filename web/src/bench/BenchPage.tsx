@@ -61,7 +61,7 @@ function CompareChart({ rows, residualText }: { rows: CompareRow[]; residualText
         {rows.map((r, i) => (
           <li key={r.config} className="bc-li">
             {i === gateAt && gateAt > 0 ? (
-              <p className="bc-gate" data-testid="bench-gate">Above this line a guard judges the payment, or nothing does. Below it AIRLOCK judges where each value came from.</p>
+              <p className="bc-gate" data-testid="bench-gate">Above this line a guard decides on the payment, or nothing does. Below it AIRLOCK decides by where each value came from.</p>
             ) : null}
             <div className="bc-row" data-testid="bench-compare-row" data-config={r.config}>
               <p className="bc-name">

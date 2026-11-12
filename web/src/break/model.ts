@@ -7,7 +7,7 @@ import type { ReasonName, VerdictModule, WasmVerdict } from '../try/verdictWasm.
 
 /** The coverage text the page shows word for word (AIR-361 design, Copy). */
 export const COVERAGE =
-  "The Lean theorems are proved about a model of the gate written in Lean from the Rust function; they do not read the Rust. Two checks tie the model to the code: Kani checks the same properties on the Rust function itself for every input its harness allows, and a test runs the Lean model and the Rust function on 2,000 fixed cases and compares every answer. None of this covers the rest of the contract: storage, the address book proofs, the ledgers' bookkeeping, signatures, the agent, the model or the chain.";
+  "The Lean theorems are proved about a model of the gate written in Lean from the Rust function; they do not read the Rust. Two checks tie the model to the code: Kani checks the same properties on the Rust function itself for every input its harness allows, and a test runs the Lean model and the Rust function on generated cases (40,000 in the full check, 2,000 in the quick one) and compares every answer. None of this covers the rest of the contract: storage, the address book proofs, the ledgers' bookkeeping, signatures, the agent, the model or the chain.";
 
 export type Labels = { recipient: string[]; amount: string[]; pc: string[] };
 

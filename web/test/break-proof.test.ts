@@ -161,7 +161,7 @@ test('the rendered page carries the coverage text word for word, labels construc
     const t = renderedText(m, kani, { real: await realWasm(), copies }, { attack: c.attack, copy: c.id });
     const flat = t.replace(/\s+/g, ' ');
     assert.ok(flat.includes(COVERAGE), 'the coverage text is not on the page word for word');
-    assert.equal(COVERAGE, 'The Lean theorems are proved about a model of the gate written in Lean from the Rust function; they do not read the Rust. Two checks tie the model to the code: Kani checks the same properties on the Rust function itself for every input its harness allows, and a test runs the Lean model and the Rust function on 2,000 fixed cases and compares every answer. None of this covers the rest of the contract: storage, the address book proofs, the ledgers\' bookkeeping, signatures, the agent, the model or the chain.');
+    assert.equal(COVERAGE, 'The Lean theorems are proved about a model of the gate written in Lean from the Rust function; they do not read the Rust. Two checks tie the model to the code: Kani checks the same properties on the Rust function itself for every input its harness allows, and a test runs the Lean model and the Rust function on generated cases (40,000 in the full check, 2,000 in the quick one) and compares every answer. None of this covers the rest of the contract: storage, the address book proofs, the ledgers\' bookkeeping, signatures, the agent, the model or the chain.');
     assert.ok(flat.includes('Break the proof'));
     assert.ok(flat.includes('The real gate refuses. The broken copy pays.'), `${c.id}: the result line is missing`);
     assert.ok(flat.includes(c.harness.name) && flat.includes(`${c.harness.file}:${String(c.harness.line)}`), `${c.id}: harness not shown`);
