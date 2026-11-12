@@ -33,7 +33,8 @@ is no sweep, and an init call without the two keys is the init call of before (a
   bound in full (`... above what is left of the payee's daily limit` or `... of the task bound`), where the owner's approval charges
   those ledgers only up to their limits. The refused request stays pending: either party may reject it, or it expires. The owner cannot
   approve it either (a booked payee is the approver's to settle), so a payment past the issuer's bounds needs a new task from the
-  issuer. `init` refuses an approver equal to the owner.
+  issuer. Both live cards run this code since their code-only redeploys of 2026-11-12 UTC (docs/EVIDENCE.md, Card redeploy with the
+  approver bounds; `pnpm tsx scripts/credit-card-code-check.ts --verify`). `init` refuses an approver equal to the owner.
 - `approve_and_remember` is refused when an approver is set (`approve_and_remember is refused when an approver is set: the owner adds
   merchants with book_set_root`): the borrower cannot add a payee, so a line can only reach merchants the issuer put in the book.
 - `sweep(amount)`, owner only, one yocto, only with a sponsor. Reverts, in order: `no sponsor`, `sweep amount must be positive`,

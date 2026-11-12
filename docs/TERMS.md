@@ -1,20 +1,20 @@
 # Terms of the AIRLOCK credit pool
 
-As in force on 11 November 2026. Generated from `docs/terms.json` by `scripts/terms-check.ts --write`; `scripts/terms-check.ts` checks every citation below.
+As in force on 12 November 2026. Generated from `docs/terms.json` by `scripts/terms-check.ts --write`; `scripts/terms-check.ts` checks every citation below.
 
 Each term links to the line that enforces it, the proof or test that covers it, and a transaction that shows it; the limits are terms too.
 
 ## Parties
 
-These terms bind the pool, the card it funds, the issuer who runs both, the borrower who holds the card, and every lender who deposits. Each contract signs with the hash of the code it runs, read from the chain on 11 November 2026.
+These terms bind the pool, the card it funds, the issuer who runs both, the borrower who holds the card, and every lender who deposits. Each contract signs with the hash of the code it runs, read from the chain on 12 November 2026.
 
 - The pool: `pool.airlock-credit-c1108d`, code hash `5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN`
-- The card: `card.airlock-credit-c1108d`, code hash `6FCZRf51teMBxkLb2V5sc5bpLXDWws9RZgT3ERaUowTg`
+- The card: `card.airlock-credit-c1108d`, code hash `79BH9QUuWjxt4SggfgD66maVb7m2ckg5HHq3aB5pKGX7`
 - The issuer: `airlock-credit-c1108d`
 - The borrower: `borrower.airlock-credit-c1108d`
 - The agent: `agent.airlock-credit-c1108d`
 
-Code hashes: `docs/EVIDENCE.md` line 555.
+Code hashes: `docs/EVIDENCE.md` line 589.
 
 ## 1. What the card and the pool do
 
@@ -248,6 +248,6 @@ Code hashes: `docs/EVIDENCE.md` line 555.
 - `contracts/airlock-verdict/src/proofs.rs`: 104, 117, 127, 137, 355
 - `docs/BENCH.md`: 37
 - `docs/CLAIMS.md`: 38
-- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390, 442, 443, 450, 466, 512, 555, 566, 567, 568
+- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390, 442, 443, 450, 466, 512, 566, 567, 568, 589
 - `proofs/Verdict.lean`: 12, 96, 105, 115, 123, 192
 - `runtime/src/economy/facts.ts`: 1 to 3, 24 to 26

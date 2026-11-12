@@ -1,0 +1,410 @@
+{
+ "transaction": {
+  "signer_id": "borrower.airlock-credit-c1108d.testnet",
+  "public_key": "ed25519:5iu56otZFmQ5pmyj7unTLTLkoeTC1bQYwMW49Ddk6svS",
+  "nonce": 276872351000092,
+  "receiver_id": "pool.airlock-credit-c1108d.testnet",
+  "actions": [
+   {
+    "FunctionCall": {
+     "method_name": "repay",
+     "args": "eyJjYXJkIjoiY2FyZC5haXJsb2NrLWNyZWRpdC1jMTEwOGQudGVzdG5ldCJ9",
+     "gas": 100000000000000,
+     "deposit": "99000000000000000000000"
+    }
+   }
+  ],
+  "priority_fee": 0,
+  "signature": "ed25519:5cWQvQjDJCTXkDSV8ySoupLxf9m5717C7Lm2RW7LAXfXxDmXvqfVzM62f78JMkbp1u5atBFKWDKY2Z9T6zMSXtwa",
+  "hash": "EMMUERoEasbJCecmtScKhsN9bpgYnRi896HT7Vb3f7gF"
+ },
+ "execution_outcome": {
+  "block_hash": "9pfmVnAg5ygWVHfk3iQoC6HVcdi8bVveHvUBmJpabSeh",
+  "block_timestamp": 1794445130068040893,
+  "block_height": 277291919,
+  "index": 0,
+  "id": "EMMUERoEasbJCecmtScKhsN9bpgYnRi896HT7Vb3f7gF",
+  "outcome": {
+   "logs": [],
+   "receipt_ids": [
+    "AQY3MGG4FnAwmhTFYmg8aBCovYEWdDqzaDYUo4VJ32CS"
+   ],
+   "gas_burnt": 310443685750,
+   "tokens_burnt": "31044368575000000000",
+   "executor_id": "borrower.airlock-credit-c1108d.testnet",
+   "status": {
+    "SuccessReceiptId": "AQY3MGG4FnAwmhTFYmg8aBCovYEWdDqzaDYUo4VJ32CS"
+   },
+   "metadata": {
+    "version": 1,
+    "gas_profile": null
+   }
+  }
+ },
+ "receipts": [
+  {
+   "execution_outcome": {
+    "block_hash": "EqBZnUd4pWHGMhsU7f8u4D8AXkeNiAgsFuDEcSR2suRd",
+    "block_timestamp": 1794445130669893689,
+    "block_height": 277291920,
+    "index": 4,
+    "id": "AQY3MGG4FnAwmhTFYmg8aBCovYEWdDqzaDYUo4VJ32CS",
+    "outcome": {
+     "logs": [
+      "EVENT_JSON:{\"standard\":\"airlock-credit\",\"version\":\"1.0.0\",\"event\":\"repaid\",\"data\":[{\"card\":\"card.airlock-credit-c1108d.testnet\",\"amount\":\"99000000000000000000000\",\"fee\":\"9000000000000000000000\"}]}"
+     ],
+     "receipt_ids": [
+      "GnjTJiGGB3XcMJroVSYaQY1pB9EZAmeUoX6snynNiz32",
+      "Apgx9G27haj8Rkw3BouHVoKMmrViGXCYNrnbPdzH8Hp9",
+      "7VJ6bCoEha6bT2K9Mderc6btxnSFbq91r6WTASBWAKz5"
+     ],
+     "gas_burnt": 2792759328622,
+     "tokens_burnt": "279275932862200000000",
+     "executor_id": "pool.airlock-credit-c1108d.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       {
+        "local": "5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN"
+       }
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277291920,
+    "block_hash": "EqBZnUd4pWHGMhsU7f8u4D8AXkeNiAgsFuDEcSR2suRd",
+    "block_timestamp": 1794445130669893689,
+    "receipt_index": 0,
+    "predecessor_id": "borrower.airlock-credit-c1108d.testnet",
+    "receiver_id": "pool.airlock-credit-c1108d.testnet",
+    "receipt_id": "AQY3MGG4FnAwmhTFYmg8aBCovYEWdDqzaDYUo4VJ32CS",
+    "receipt": {
+     "Action": {
+      "signer_id": "borrower.airlock-credit-c1108d.testnet",
+      "signer_public_key": "ed25519:5iu56otZFmQ5pmyj7unTLTLkoeTC1bQYwMW49Ddk6svS",
+      "gas_price": "1000000000",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "FunctionCall": {
+         "method_name": "repay",
+         "args": "eyJjYXJkIjoiY2FyZC5haXJsb2NrLWNyZWRpdC1jMTEwOGQudGVzdG5ldCJ9",
+         "gas": 100000000000000,
+         "deposit": "99000000000000000000000"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  },
+  {
+   "execution_outcome": {
+    "block_hash": "G1Q1K6t6QBw1XY7oUF3msYey7TML4ACtLENiPoAcHpng",
+    "block_timestamp": 1794445131302084050,
+    "block_height": 277291921,
+    "index": 0,
+    "id": "GnjTJiGGB3XcMJroVSYaQY1pB9EZAmeUoX6snynNiz32",
+    "outcome": {
+     "logs": [],
+     "receipt_ids": [
+      "7ZpfKsZGHkYjT6GMRWJTtHG2YEGTJnch9k5gUe59kumH"
+     ],
+     "gas_burnt": 223182562500,
+     "tokens_burnt": "22318256250000000000",
+     "executor_id": "borrower.airlock-credit-c1108d.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       null
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277291921,
+    "block_hash": "G1Q1K6t6QBw1XY7oUF3msYey7TML4ACtLENiPoAcHpng",
+    "block_timestamp": 1794445131302084050,
+    "receipt_index": 4,
+    "predecessor_id": "pool.airlock-credit-c1108d.testnet",
+    "receiver_id": "borrower.airlock-credit-c1108d.testnet",
+    "receipt_id": "GnjTJiGGB3XcMJroVSYaQY1pB9EZAmeUoX6snynNiz32",
+    "receipt": {
+     "Action": {
+      "signer_id": "borrower.airlock-credit-c1108d.testnet",
+      "signer_public_key": "ed25519:5iu56otZFmQ5pmyj7unTLTLkoeTC1bQYwMW49Ddk6svS",
+      "gas_price": "1000000000",
+      "output_data_receivers": [
+       {
+        "data_id": "E95e813e71qCyDJJUMJ3YPZ7HrtYyvJfyBm2jaMCpBLZ",
+        "receiver_id": "pool.airlock-credit-c1108d.testnet"
+       }
+      ],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "Transfer": {
+         "deposit": "27000000000000000000000"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  },
+  {
+   "execution_outcome": {
+    "block_hash": "G1Q1K6t6QBw1XY7oUF3msYey7TML4ACtLENiPoAcHpng",
+    "block_timestamp": 1794445131302084050,
+    "block_height": 277291921,
+    "index": 1,
+    "id": "7VJ6bCoEha6bT2K9Mderc6btxnSFbq91r6WTASBWAKz5",
+    "outcome": {
+     "logs": [],
+     "receipt_ids": [],
+     "gas_burnt": 223182562500,
+     "tokens_burnt": "0",
+     "executor_id": "borrower.airlock-credit-c1108d.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       null
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277291921,
+    "block_hash": "G1Q1K6t6QBw1XY7oUF3msYey7TML4ACtLENiPoAcHpng",
+    "block_timestamp": 1794445131302084050,
+    "receipt_index": 6,
+    "predecessor_id": "system",
+    "receiver_id": "borrower.airlock-credit-c1108d.testnet",
+    "receipt_id": "7VJ6bCoEha6bT2K9Mderc6btxnSFbq91r6WTASBWAKz5",
+    "receipt": {
+     "Action": {
+      "signer_id": "borrower.airlock-credit-c1108d.testnet",
+      "signer_public_key": "ed25519:5iu56otZFmQ5pmyj7unTLTLkoeTC1bQYwMW49Ddk6svS",
+      "gas_price": "0",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "Transfer": {
+         "deposit": "2513483395759800000000"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  },
+  {
+   "execution_outcome": {
+    "block_hash": "9VbVh11iZPztwtcWWRTa2TqsfJC1mAVf4wpzmwHBKmSh",
+    "block_timestamp": 1794445131927045471,
+    "block_height": 277291922,
+    "index": 1,
+    "id": "7ZpfKsZGHkYjT6GMRWJTtHG2YEGTJnch9k5gUe59kumH",
+    "outcome": {
+     "logs": [],
+     "receipt_ids": [],
+     "gas_burnt": 223182562500,
+     "tokens_burnt": "0",
+     "executor_id": "borrower.airlock-credit-c1108d.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       null
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277291922,
+    "block_hash": "9VbVh11iZPztwtcWWRTa2TqsfJC1mAVf4wpzmwHBKmSh",
+    "block_timestamp": 1794445131927045471,
+    "receipt_index": 0,
+    "predecessor_id": "system",
+    "receiver_id": "borrower.airlock-credit-c1108d.testnet",
+    "receipt_id": "7ZpfKsZGHkYjT6GMRWJTtHG2YEGTJnch9k5gUe59kumH",
+    "receipt": {
+     "Action": {
+      "signer_id": "borrower.airlock-credit-c1108d.testnet",
+      "signer_public_key": "ed25519:5iu56otZFmQ5pmyj7unTLTLkoeTC1bQYwMW49Ddk6svS",
+      "gas_price": "0",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "Transfer": {
+         "deposit": "200864306250000000000"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  },
+  {
+   "execution_outcome": {
+    "block_hash": "9VbVh11iZPztwtcWWRTa2TqsfJC1mAVf4wpzmwHBKmSh",
+    "block_timestamp": 1794445131927045471,
+    "block_height": 277291922,
+    "index": 6,
+    "id": "Apgx9G27haj8Rkw3BouHVoKMmrViGXCYNrnbPdzH8Hp9",
+    "outcome": {
+     "logs": [],
+     "receipt_ids": [
+      "9aD2wmNbc15kSfKZtkQgT1X1SuVsLcpRS1hsJSZJFUZU"
+     ],
+     "gas_burnt": 1511732515531,
+     "tokens_burnt": "151173251553100000000",
+     "executor_id": "pool.airlock-credit-c1108d.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       {
+        "local": "5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN"
+       }
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277291921,
+    "block_hash": "G1Q1K6t6QBw1XY7oUF3msYey7TML4ACtLENiPoAcHpng",
+    "block_timestamp": 1794445131302084050,
+    "receipt_index": 5,
+    "predecessor_id": "pool.airlock-credit-c1108d.testnet",
+    "receiver_id": "pool.airlock-credit-c1108d.testnet",
+    "receipt_id": "Apgx9G27haj8Rkw3BouHVoKMmrViGXCYNrnbPdzH8Hp9",
+    "receipt": {
+     "Action": {
+      "signer_id": "borrower.airlock-credit-c1108d.testnet",
+      "signer_public_key": "ed25519:5iu56otZFmQ5pmyj7unTLTLkoeTC1bQYwMW49Ddk6svS",
+      "gas_price": "1000000000",
+      "output_data_receivers": [],
+      "input_data_ids": [
+       "E95e813e71qCyDJJUMJ3YPZ7HrtYyvJfyBm2jaMCpBLZ"
+      ],
+      "actions": [
+       {
+        "FunctionCall": {
+         "method_name": "on_payout",
+         "args": "eyJ0byI6ImJvcnJvd2VyLmFpcmxvY2stY3JlZGl0LWMxMTA4ZC50ZXN0bmV0IiwiYW1vdW50IjoiMjcwMDAwMDAwMDAwMDAwMDAwMDAwMDAifQ==",
+         "gas": 96983966435584,
+         "deposit": "0"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  },
+  {
+   "execution_outcome": {
+    "block_hash": "97YsBKLLkwTsJvvjysBfwVXj8hhnWAokUE59nJFLCeJx",
+    "block_timestamp": 1794445132523643692,
+    "block_height": 277291923,
+    "index": 0,
+    "id": "9aD2wmNbc15kSfKZtkQgT1X1SuVsLcpRS1hsJSZJFUZU",
+    "outcome": {
+     "logs": [],
+     "receipt_ids": [],
+     "gas_burnt": 223182562500,
+     "tokens_burnt": "0",
+     "executor_id": "borrower.airlock-credit-c1108d.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       null
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277291923,
+    "block_hash": "97YsBKLLkwTsJvvjysBfwVXj8hhnWAokUE59nJFLCeJx",
+    "block_timestamp": 1794445132523643692,
+    "receipt_index": 6,
+    "predecessor_id": "system",
+    "receiver_id": "borrower.airlock-credit-c1108d.testnet",
+    "receipt_id": "9aD2wmNbc15kSfKZtkQgT1X1SuVsLcpRS1hsJSZJFUZU",
+    "receipt": {
+     "Action": {
+      "signer_id": "borrower.airlock-credit-c1108d.testnet",
+      "signer_public_key": "ed25519:5iu56otZFmQ5pmyj7unTLTLkoeTC1bQYwMW49Ddk6svS",
+      "gas_price": "0",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "Transfer": {
+         "deposit": "97721056154024900000000"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  }
+ ],
+ "data_receipts": [
+  {
+   "block_height": 277291922,
+   "block_hash": "9VbVh11iZPztwtcWWRTa2TqsfJC1mAVf4wpzmwHBKmSh",
+   "block_timestamp": 1794445131927045471,
+   "receipt_index": 1,
+   "predecessor_id": "borrower.airlock-credit-c1108d.testnet",
+   "receiver_id": "pool.airlock-credit-c1108d.testnet",
+   "receipt_id": "4bDKPeyZr22XShmNuC3J3GKne6HSgVzbnvsPT3zR1WKN",
+   "receipt": {
+    "Data": {
+     "data_id": "E95e813e71qCyDJJUMJ3YPZ7HrtYyvJfyBm2jaMCpBLZ",
+     "data": "",
+     "is_promise_resume": false
+    }
+   },
+   "priority": 0
+  }
+ ]
+}

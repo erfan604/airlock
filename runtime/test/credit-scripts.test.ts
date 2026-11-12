@@ -15,3 +15,5 @@ import '../../scripts/uncensored-run.test.ts';
 import '../../scripts/try-replay.test.ts';
 // red team 2026-11-11: the live proof of the approver bounds (its plan, stop rules, run and verify on a fake chain)
 import '../../scripts/credit-approver-bounds-live.test.ts';
+// the card redeploy of 2026-11-12 (UTC): both cards run the committed bytes
+import '../../scripts/credit-card-code-check.test.ts';

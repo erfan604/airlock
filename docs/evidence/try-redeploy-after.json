@@ -1,0 +1,123 @@
+{
+ "account": "try.airlock-try-b193fe.testnet",
+ "amount": "20442145619304783900000009",
+ "block_height": 277286803,
+ "code_hash": "79BH9QUuWjxt4SggfgD66maVb7m2ckg5HHq3aB5pKGX7",
+ "keys": [
+  "FullAccess"
+ ],
+ "state_entries": 349,
+ "state_height": 277286803,
+ "state_sha256": "abf0f29b40a604d1b1b0ba0d6bc17d00fe9d918a162ed7b6a3d0838f3fc8835b",
+ "storage_usage": 1226280,
+ "views": {
+  "get_agent": {
+   "agent.airlock-try-b193fe.testnet": {
+    "account_id": "agent.airlock-try-b193fe.testnet",
+    "measurements": {
+     "app_compose_hash_payload": "0000000000000000000000000000000000000000000000000000000000000000",
+     "key_provider_event_digest": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+     "rtmrs": {
+      "mrtd": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr0": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr1": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr2": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+     }
+    },
+    "ppid": "00000000000000000000000000000000",
+    "valid_until_ms": "1795532449522",
+    "validity": "Valid"
+   }
+  },
+  "get_agents": [
+   {
+    "account_id": "agent.airlock-try-b193fe.testnet",
+    "measurements": {
+     "app_compose_hash_payload": "0000000000000000000000000000000000000000000000000000000000000000",
+     "key_provider_event_digest": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+     "rtmrs": {
+      "mrtd": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr0": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr1": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr2": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+     }
+    },
+    "ppid": "00000000000000000000000000000000",
+    "valid_until_ms": "1795532449522",
+    "validity": "Valid"
+   }
+  ],
+  "get_allowed_agents": [
+   [
+    "agent.airlock-try-b193fe.testnet",
+    {
+     "allowed_ms": "1794322855706",
+     "fingerprint": "7f2f6bd09e7b"
+    }
+   ]
+  ],
+  "get_book_epoch": "1",
+  "get_book_root": "8e430e40ec7377b07d4021aff617225ac756e473d5ddf59140652d44e42a2d50",
+  "get_contract_info": {
+   "attestation_expiration_time_ms": "1209600000",
+   "mpc_contract_id": "v1.signer-prod.testnet",
+   "owner_id": "airlock-try-b193fe.testnet",
+   "requires_tee": false
+  },
+  "get_escalation_state": {
+   "agent.airlock-try-b193fe.testnet": {
+    "consecutive_rejects": 0,
+    "hour_count": 0,
+    "limits": {
+     "hourly_budget": 10000,
+     "lock_consecutive": 10000,
+     "lock_per_day": 10000,
+     "max_pending": 50
+    },
+    "locked": false,
+    "pending": 0,
+    "rejects_today": 0
+   }
+  },
+  "get_pending": [],
+  "get_policy": {
+   "flags": {
+    "hourly_escalation_budget": 10000,
+    "lock_consecutive_rejects": 10000,
+    "lock_rejects_per_day": 10000,
+    "max_pending_per_agent": 50,
+    "max_task_actions": 99,
+    "max_task_ttl_ms": "604800000",
+    "pending_ttl_ms": "60000"
+   },
+   "mpc_contract_id": "v1.signer-prod.testnet",
+   "owner_id": "airlock-try-b193fe.testnet",
+   "paused": false,
+   "requires_tee": false
+  },
+  "get_roles": {
+   "approver": null,
+   "owner_id": "airlock-try-b193fe.testnet",
+   "sponsor": null
+  },
+  "get_task_key": "ed25519:BdCA9DcjYMBpkCVHr8MsnzRUDeER4cFZL77Y6RUH2GN8",
+  "get_whitelisted_agents_for_local": [
+   "agent.airlock-try-b193fe.testnet"
+  ],
+  "list_assets": [
+   [
+    "near",
+    {
+     "daily_cap": "50000000000000000000000",
+     "decimals": 24,
+     "hard_cap": "10000000000000000000000",
+     "max_fee_per_gas": "0",
+     "max_gas": "0",
+     "path": null,
+     "quick_task_cap": "10000000000000000000000",
+     "symbol": "NEAR"
+    }
+   ]
+  ]
+ }
+}
