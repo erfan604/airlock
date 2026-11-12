@@ -85,5 +85,5 @@ and 100 GB of bandwidth per month). A public repository gets Pages on the free p
 
 ## Keep it up
 
-Rules Q-012 ask that the demo stays up until 2026-11-18, ideally 2026-11-25. Both hosts keep a deployment until it is deleted; no renewal is needed.
+Rules Q-012 ask that the demo stays up until 2026-11-18, ideally 2026-11-25. Both hosts keep a deployment until it is deleted; no renewal of the pages is needed. The pages that sign on chain depend on two things that expire. The practice card's published tasks last 7 days (the 60 published on 2026-11-12 are valid until 2026-11-19T01:02:54Z), and the hourly job republishes them when under 30 hours remain, as it does for the challenge tasks. The agents' registrations on the cards (the credit agent on the credit card, the challenge agent on the challenge card) end on 2026-11-26 after their renewal of 2026-11-12; `pnpm tsx scripts/agent-renew.ts --verify` reads both.
 After any change to the recordings or the console, rebuild and publish again with the same command.

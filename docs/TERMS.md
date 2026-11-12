@@ -180,7 +180,7 @@ Code hashes: `docs/EVIDENCE.md` line 589.
 
 - Tested: `contracts/airlock-credit/src/tests.rs` 1316, `the pool's property test`
 
-**2.9** An hourly loop borrows 0.09 NEAR from the pool, pays the booked merchant and repays with a 10 percent fee. Its borrower and merchant are the team's accounts, so the fee the lenders earn from it is the team's own money. *(in force)*
+**2.9** An hourly loop borrows 0.09 NEAR from the pool, pays the booked merchant and repays with a 10 percent fee. Its borrower and merchant are the team's accounts, so the fee the lenders earn from it is the team's own money. The loop runs each hour on the team's computer and skips a run when a stop rule holds, for example while a held request is pending on the card; its runs and gaps are in the evidence. *(in force)*
 
 - Enforced: `runtime/src/economy/facts.ts` 1 to 3, `the loop's accounts`
 - Enforced: `runtime/src/economy/facts.ts` 24 to 26, `0.09 NEAR at 10 percent`

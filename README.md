@@ -1,6 +1,6 @@
 # AIRLOCK
 
-AIRLOCK is a lending pool for AI agents on NEAR: lenders fund a credit line held on a card that pays only merchants the owner booked, and a contract checks where every payee and amount came from, so a hijacked agent cannot send the lenders' money to an account outside the book [C3b] [C21].
+AIRLOCK is a lending pool for AI agents on NEAR: lenders fund a credit line held on a card, and a contract checks where every payee and amount came from, so the agent cannot pay a payee outside the issuer's book: such a payment is held for the issuer [C3b] [C21].
 
 Strict mode has run on the live credit card since 2026-11-10T07:14:52Z: every amount the agent read from text is held for the owner, at any size [C22]. In the bench it paid 0 of 250 attack runs [C6]; replayed on chain, its 144 recorded requests gave 134 held, 10 legitimate paid, 0 elsewhere [C26]. 222 attacks an uncensored model wrote, sent on chain, paid 0 outside the book [C30].
 
@@ -15,22 +15,22 @@ The payment rule is proved in Lean and model-checked with Kani, and 40,000 gener
 | Open https://airlock-ere.pages.dev/break/ (no wallet) | The real gate beside five copies, each missing one rule: the gate holds or blocks an attack and the copy pays, beside that rule's Kani failure and Lean theorem |
 | `pnpm i && scripts/claims-run.sh --tier node` (Node 24 and pnpm, no keys) | One PASS or SKIP line per claim, ending `CLAIMS TIER node OK <n> run, <k> skipped` |
 
-Also there: `/credit/` (pool, Passport, Base checks), `/terms/`.
+Also: `/credit/`, `/terms/`.
 
 ## The problem
 
-An email tells your agent your usual supplier's bill went up: the payee is right and booked, and the doctored amount is under your per-payment cap. A caps guard or a payee list pays it, because it checks what the owner allowed and not where the amount came from [C6]. In our bench, 68 of the 69 attacker payments to an unprotected agent were this kind, and the caps and blocklist guards we rebuilt paid in 67 and 68 runs [C6].
+An email tells your agent your usual supplier's bill went up: the payee is right and booked, and the doctored amount is under your per-payment cap. A caps guard or a payee list pays it, because it checks what the owner allowed and not where the amount came from [C6]. In our bench, 68 of the 69 attacker payments to an unprotected agent went to a booked payee (a doctored amount, a faked condition or another booked payee), and the caps and blocklist guards we rebuilt paid in 67 and 68 runs [C6].
 
 ## What NEAR does here
 
 - The policy contract builds every payment and asks NEAR's MPC signer for the signature, so the agent process cannot route around the gate [C2a].
 - The credit card paid a booked merchant on Base Sepolia through MPC; an injected address was refused [C25].
-- The pool asked the MPC network if that payment landed and keeps the signed answer; one command checks it [C24].
-- A function-call key scopes the agent to `submit_batch` and `expire` on the card.
+- The pool asked the MPC network if that payment landed and keeps the signed answer [C24].
+- The loop's agent signs with a function-call key limited to `submit_batch` and `expire` on the card; its account also holds a full-access key (Keys).
 
 ## Keys
 
-Read from chain on 2026-11-11. `agent.airlock-credit-c1108d.testnet` holds one full-access key and one function-call key (for the card, no allowance limit). `card.airlock-credit-c1108d.testnet` and `pool.airlock-credit-c1108d.testnet` each hold one full-access key, so the deployer can redeploy them. Details: `docs/KEYS.md`.
+Read from chain on 2026-11-11. `agent.airlock-credit-c1108d.testnet` holds one full-access key and one function-call key (for the card). `card.airlock-credit-c1108d.testnet` and `pool.airlock-credit-c1108d.testnet` each hold one full-access key, so the deployer can redeploy them. Details: `docs/KEYS.md`.
 
 ## What is enforced where
 
@@ -73,9 +73,9 @@ All tables: `docs/BENCH.md`.
 | 2 | T1 | `scripts/claims-run.sh --tier node` | about 10 s | `CLAIMS TIER node OK <n> run, <k> skipped` |
 | 3 | T2 | `pnpm bench:replay` | about 8 s | `REPLAY OK <n> runs` |
 | 4 | T3 | `scripts/check.sh full` | about 2482 s | `ALL GREEN (full` |
-| 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
+| 5 | T4 | `scripts/claims-run.sh --network` | about 23 s | `CLAIMS NETWORK OK <n> rows` |
 
-Tiers: T1 Node 24 and pnpm (`source scripts/env.sh` under nvm), T2 plus Rust 1.86, T3 plus Kani and Lean, T4 plus RPC reads. A missing tool prints `SKIP <id> needs <tool>`. Details: `docs/VERIFY.md`.
+Tiers: T1 Node 24 and pnpm, T2 plus Rust 1.86, T3 plus Kani and Lean, T4 plus RPC reads. Details: `docs/VERIFY.md`.
 
 ## Tracks
 
@@ -106,7 +106,7 @@ Provenance labels are published in CaMeL and FIDES, which ships in `microsoft/ag
 
 ## Hackathon window
 
-Code written since the 2026-10-19 announcement counts (rules, Q-001). The repo starts on 2026-10-28 with `9a00336`, our prep scaffold (`docs/PRIOR_WORK.md`). At submission: tag `pre-hackathon` there, `hackathon-submission` on the submitted commit: https://github.com/erfan604/airlock/compare/pre-hackathon...hackathon-submission. A window that starts on Nov 1 starts after `a14f32a`, the last Oct 28 commit.
+Code written since the 2026-10-19 announcement counts (rules, Q-001). The repo starts on 2026-10-28 with `9a00336`, our prep scaffold (`docs/PRIOR_WORK.md`). Both tags are made at submission (`pre-hackathon` there, `hackathon-submission` on the submitted commit); until then this link does not resolve: https://github.com/erfan604/airlock/compare/pre-hackathon...hackathon-submission. A window that starts on Nov 1 starts after `a14f32a`, the last Oct 28 commit.
 
 ## More
 
