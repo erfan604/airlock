@@ -1,0 +1,162 @@
+{
+ "transaction": {
+  "signer_id": "airlock-try-b193fe.testnet",
+  "public_key": "ed25519:9T15fh1DzTEZVuo1ES2qrcdhPXEDsyTL1uukw1baZ2b",
+  "nonce": 277082920000156,
+  "receiver_id": "try.airlock-try-b193fe.testnet",
+  "actions": [
+   {
+    "FunctionCall": {
+     "method_name": "asset_set",
+     "args": "eyJhc3NldCI6Im5lYXIiLCJlbnRyeSI6eyJkYWlseV9jYXAiOiIzMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJkZWNpbWFscyI6MjQsImhhcmRfY2FwIjoiMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJtYXhfZmVlX3Blcl9nYXMiOiIwIiwibWF4X2dhcyI6IjAiLCJwYXRoIjpudWxsLCJxdWlja190YXNrX2NhcCI6IjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIiwic3ltYm9sIjoiTkVBUiJ9fQ==",
+     "gas": 100000000000000,
+     "deposit": "1"
+    }
+   }
+  ],
+  "priority_fee": 0,
+  "signature": "ed25519:3GBS9RRXLxvCT1FwKDAzYPCUpQusAnZyfXdLxtqsEGhddePUNzW32KyprjL5coYLQqGgUdrsbaK1gotZwdwKWBnB",
+  "hash": "F5ZbYTVNmzXh3apJSAgMn2jg8iQMCvNUGMCZZ2SZPezi"
+ },
+ "execution_outcome": {
+  "block_hash": "6awb2MfiqHJdf9R3Guy6kBtfft2yu5EfKTMHUZnxPwjp",
+  "block_timestamp": 1794445393540199079,
+  "block_height": 277292357,
+  "index": 1,
+  "id": "F5ZbYTVNmzXh3apJSAgMn2jg8iQMCvNUGMCZZ2SZPezi",
+  "outcome": {
+   "logs": [],
+   "receipt_ids": [
+    "DJfvGZAgmP9xBDtGeEiFsj1trbYPXQscJJqy5JnTwuMq"
+   ],
+   "gas_burnt": 319122121880,
+   "tokens_burnt": "31912212188000000000",
+   "executor_id": "airlock-try-b193fe.testnet",
+   "status": {
+    "SuccessReceiptId": "DJfvGZAgmP9xBDtGeEiFsj1trbYPXQscJJqy5JnTwuMq"
+   },
+   "metadata": {
+    "version": 1,
+    "gas_profile": null
+   }
+  }
+ },
+ "receipts": [
+  {
+   "execution_outcome": {
+    "block_hash": "9JQ7TPViHczEYgp9ZoUXN2fLDbRM573CV1zq99F7ZUnt",
+    "block_timestamp": 1794445394080718689,
+    "block_height": 277292358,
+    "index": 5,
+    "id": "DJfvGZAgmP9xBDtGeEiFsj1trbYPXQscJJqy5JnTwuMq",
+    "outcome": {
+     "logs": [
+      "EVENT_JSON:{\"standard\":\"airlock\",\"version\":\"1.0.0\",\"event\":\"asset_set\",\"data\":[{\"asset\":\"near\",\"symbol\":\"NEAR\",\"decimals\":24,\"hard_cap\":\"10000000000000000000000\",\"daily_cap\":\"300000000000000000000000\",\"quick_task_cap\":\"10000000000000000000000\",\"path\":null}]}"
+     ],
+     "receipt_ids": [
+      "6hqD4SjdnEd5dVJcxZCUJhriZbQxZ6aPGb4CMi7XNPYE"
+     ],
+     "gas_burnt": 3220348554778,
+     "tokens_burnt": "322034855477800000000",
+     "executor_id": "try.airlock-try-b193fe.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       {
+        "local": "79BH9QUuWjxt4SggfgD66maVb7m2ckg5HHq3aB5pKGX7"
+       }
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277292358,
+    "block_hash": "9JQ7TPViHczEYgp9ZoUXN2fLDbRM573CV1zq99F7ZUnt",
+    "block_timestamp": 1794445394080718689,
+    "receipt_index": 1,
+    "predecessor_id": "airlock-try-b193fe.testnet",
+    "receiver_id": "try.airlock-try-b193fe.testnet",
+    "receipt_id": "DJfvGZAgmP9xBDtGeEiFsj1trbYPXQscJJqy5JnTwuMq",
+    "receipt": {
+     "Action": {
+      "signer_id": "airlock-try-b193fe.testnet",
+      "signer_public_key": "ed25519:9T15fh1DzTEZVuo1ES2qrcdhPXEDsyTL1uukw1baZ2b",
+      "gas_price": "1000000000",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "FunctionCall": {
+         "method_name": "asset_set",
+         "args": "eyJhc3NldCI6Im5lYXIiLCJlbnRyeSI6eyJkYWlseV9jYXAiOiIzMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJkZWNpbWFscyI6MjQsImhhcmRfY2FwIjoiMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJtYXhfZmVlX3Blcl9nYXMiOiIwIiwibWF4X2dhcyI6IjAiLCJwYXRoIjpudWxsLCJxdWlja190YXNrX2NhcCI6IjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIiwic3ltYm9sIjoiTkVBUiJ9fQ==",
+         "gas": 100000000000000,
+         "deposit": "1"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  },
+  {
+   "execution_outcome": {
+    "block_hash": "7nREpCR25EoGuJQ31ixhi8hBxWftDErytqUpTGf1cs5a",
+    "block_timestamp": 1794445394670798228,
+    "block_height": 277292359,
+    "index": 0,
+    "id": "6hqD4SjdnEd5dVJcxZCUJhriZbQxZ6aPGb4CMi7XNPYE",
+    "outcome": {
+     "logs": [],
+     "receipt_ids": [],
+     "gas_burnt": 223182562500,
+     "tokens_burnt": "0",
+     "executor_id": "airlock-try-b193fe.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       null
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277292359,
+    "block_hash": "7nREpCR25EoGuJQ31ixhi8hBxWftDErytqUpTGf1cs5a",
+    "block_timestamp": 1794445394670798228,
+    "receipt_index": 4,
+    "predecessor_id": "system",
+    "receiver_id": "airlock-try-b193fe.testnet",
+    "receipt_id": "6hqD4SjdnEd5dVJcxZCUJhriZbQxZ6aPGb4CMi7XNPYE",
+    "receipt": {
+     "Action": {
+      "signer_id": "airlock-try-b193fe.testnet",
+      "signer_public_key": "ed25519:9T15fh1DzTEZVuo1ES2qrcdhPXEDsyTL1uukw1baZ2b",
+      "gas_price": "0",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "Transfer": {
+         "deposit": "100566543381210200000000"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  }
+ ],
+ "data_receipts": []
+}

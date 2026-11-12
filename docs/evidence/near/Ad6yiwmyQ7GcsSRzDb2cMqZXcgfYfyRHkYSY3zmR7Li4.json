@@ -1,0 +1,162 @@
+{
+ "transaction": {
+  "signer_id": "airlock-try-b193fe.testnet",
+  "public_key": "ed25519:9T15fh1DzTEZVuo1ES2qrcdhPXEDsyTL1uukw1baZ2b",
+  "nonce": 277082920000157,
+  "receiver_id": "try.airlock-try-b193fe.testnet",
+  "actions": [
+   {
+    "FunctionCall": {
+     "method_name": "book_set_root",
+     "args": "eyJleHBlY3RlZF9vbGQiOiI4ZTQzMGU0MGVjNzM3N2IwN2Q0MDIxYWZmNjE3MjI1YWM3NTZlNDczZDVkZGY1OTE0MDY1MmQ0NGU0MmEyZDUwIiwibmV3X3Jvb3QiOiI2ZGIwZmQxY2QyYjU5Nzc1Y2E2NDNiZmJiNjNlNGE4NTZkYWE0NGVkODY2OTZmMDIzNWYwNmFiN2I2ZjUxMzUxIn0=",
+     "gas": 100000000000000,
+     "deposit": "1"
+    }
+   }
+  ],
+  "priority_fee": 0,
+  "signature": "ed25519:67KCZBHSTUy3PSGNth73pjXmosrUBdfxDQKRnKzrMMby2wkFx8GBuHL9HyBW43y5RddEAWvMH2nif3MFvh8jBmyU",
+  "hash": "Ad6yiwmyQ7GcsSRzDb2cMqZXcgfYfyRHkYSY3zmR7Li4"
+ },
+ "execution_outcome": {
+  "block_hash": "7cFczz4tNrS1qNhd8w9Ek9n5JSRE6Jr7JF5GsMjpisE2",
+  "block_timestamp": 1794445429206543468,
+  "block_height": 277292417,
+  "index": 0,
+  "id": "Ad6yiwmyQ7GcsSRzDb2cMqZXcgfYfyRHkYSY3zmR7Li4",
+  "outcome": {
+   "logs": [],
+   "receipt_ids": [
+    "27P29V1uhAefozzr5XQc3Yv4jHkhNB8EnpubbUNNAyjm"
+   ],
+   "gas_burnt": 316356466410,
+   "tokens_burnt": "31635646641000000000",
+   "executor_id": "airlock-try-b193fe.testnet",
+   "status": {
+    "SuccessReceiptId": "27P29V1uhAefozzr5XQc3Yv4jHkhNB8EnpubbUNNAyjm"
+   },
+   "metadata": {
+    "version": 1,
+    "gas_profile": null
+   }
+  }
+ },
+ "receipts": [
+  {
+   "execution_outcome": {
+    "block_hash": "9kXooNjHYJVcALLSNqnUhW1XFdQkyo3ULKeUzyNeLUXi",
+    "block_timestamp": 1794445429848483576,
+    "block_height": 277292418,
+    "index": 2,
+    "id": "27P29V1uhAefozzr5XQc3Yv4jHkhNB8EnpubbUNNAyjm",
+    "outcome": {
+     "logs": [
+      "EVENT_JSON:{\"standard\":\"airlock\",\"version\":\"1.0.0\",\"event\":\"book_root_set\",\"data\":[{\"old\":\"8e430e40ec7377b07d4021aff617225ac756e473d5ddf59140652d44e42a2d50\",\"new\":\"6db0fd1cd2b59775ca643bfbb63e4a856daa44ed86696f0235f06ab7b6f51351\",\"epoch\":\"2\"}]}"
+     ],
+     "receipt_ids": [
+      "DTKPwBkgtcumWmibvbY8GGiGdVa377V478eT4r4w5XNg"
+     ],
+     "gas_burnt": 2673059391147,
+     "tokens_burnt": "267305939114700000000",
+     "executor_id": "try.airlock-try-b193fe.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       {
+        "local": "79BH9QUuWjxt4SggfgD66maVb7m2ckg5HHq3aB5pKGX7"
+       }
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277292418,
+    "block_hash": "9kXooNjHYJVcALLSNqnUhW1XFdQkyo3ULKeUzyNeLUXi",
+    "block_timestamp": 1794445429848483576,
+    "receipt_index": 0,
+    "predecessor_id": "airlock-try-b193fe.testnet",
+    "receiver_id": "try.airlock-try-b193fe.testnet",
+    "receipt_id": "27P29V1uhAefozzr5XQc3Yv4jHkhNB8EnpubbUNNAyjm",
+    "receipt": {
+     "Action": {
+      "signer_id": "airlock-try-b193fe.testnet",
+      "signer_public_key": "ed25519:9T15fh1DzTEZVuo1ES2qrcdhPXEDsyTL1uukw1baZ2b",
+      "gas_price": "1000000000",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "FunctionCall": {
+         "method_name": "book_set_root",
+         "args": "eyJleHBlY3RlZF9vbGQiOiI4ZTQzMGU0MGVjNzM3N2IwN2Q0MDIxYWZmNjE3MjI1YWM3NTZlNDczZDVkZGY1OTE0MDY1MmQ0NGU0MmEyZDUwIiwibmV3X3Jvb3QiOiI2ZGIwZmQxY2QyYjU5Nzc1Y2E2NDNiZmJiNjNlNGE4NTZkYWE0NGVkODY2OTZmMDIzNWYwNmFiN2I2ZjUxMzUxIn0=",
+         "gas": 100000000000000,
+         "deposit": "1"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  },
+  {
+   "execution_outcome": {
+    "block_hash": "EwbfchqtWtjZ6x7hA9YKZArzqJikqVfB2KoYCfKEMAYA",
+    "block_timestamp": 1794445430512442717,
+    "block_height": 277292419,
+    "index": 0,
+    "id": "DTKPwBkgtcumWmibvbY8GGiGdVa377V478eT4r4w5XNg",
+    "outcome": {
+     "logs": [],
+     "receipt_ids": [],
+     "gas_burnt": 223182562500,
+     "tokens_burnt": "0",
+     "executor_id": "airlock-try-b193fe.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       null
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277292419,
+    "block_hash": "EwbfchqtWtjZ6x7hA9YKZArzqJikqVfB2KoYCfKEMAYA",
+    "block_timestamp": 1794445430512442717,
+    "receipt_index": 2,
+    "predecessor_id": "system",
+    "receiver_id": "airlock-try-b193fe.testnet",
+    "receipt_id": "DTKPwBkgtcumWmibvbY8GGiGdVa377V478eT4r4w5XNg",
+    "receipt": {
+     "Action": {
+      "signer_id": "airlock-try-b193fe.testnet",
+      "signer_public_key": "ed25519:9T15fh1DzTEZVuo1ES2qrcdhPXEDsyTL1uukw1baZ2b",
+      "gas_price": "0",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "Transfer": {
+         "deposit": "100621142613401300000000"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  }
+ ],
+ "data_receipts": []
+}

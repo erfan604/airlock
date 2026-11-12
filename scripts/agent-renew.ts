@@ -1,6 +1,7 @@
 // Renewing an agent's attestation on its policy, as a dry run. An agent may submit only while its registration is valid; register_agent
 // (signed by the agent itself) sets the end to the block time plus the policy's attestation lifetime, 14 days on both policies here. The
-// /challenge agent's registration ends 2026-11-17 and the credit agent's 2026-11-23; both must outlast Nov 25. This script reads the chain
+// /challenge agent's and the credit agent's registrations were renewed on 2026-11-12 (transactions GmVkkZhvmoJnj7UftheHXGZqp7ccRBVHgziYSZHc8sBP
+// and 2SyrvpVrguEhbkiZnHsuV9JnmoJSA1VK9mYAHomkLeYr) and end 2026-11-26 at 01:06Z; both must outlast Nov 25. This script reads the chain
 // and prints, for each agent, where it stands and the exact near CLI commands that renew it. It sends nothing and has no sending path.
 //   pnpm tsx scripts/agent-renew.ts                    the plan for both agents and the commands (not sent)
 //   pnpm tsx scripts/agent-renew.ts --verify           read only: AGENT RENEW OK per agent, exit 1 if either does not outlast the date
