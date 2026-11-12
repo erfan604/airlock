@@ -1,2 +1,4 @@
 # false positive: line 4 is the public Base Sepolia USDC token contract address, not a key (AIR-109, coordinator 2026-11-03)
 dc60557a84fca50e00ecf21e78d893e25392db97:fixtures/x402-asset.json:generic-api-key:4
+# false positive: the committed snapshot of the pool before the lock lists its public key as "FullAccess ed25519:<public key>"; public keys are not secrets (lock of 2026-11-12)
+docs/evidence/lock-pool-before.json:generic-api-key:6

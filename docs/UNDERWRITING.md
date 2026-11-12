@@ -29,7 +29,7 @@ Lenders deposit NEAR in the pool (`contracts/airlock-credit`). The issuer opens 
 - Money spent at a booked merchant and not repaid, beyond the collateral: that loss falls on the lenders. There is no insurance and no credit scoring.
 - A merchant who colludes with the borrower: a booked merchant can send money back off chain. The issuer books the merchants, so this is issuer risk.
 - The issuer: it picks the borrowers, the limits, the fees, the due dates and the collateral ratio, owns the card policy and can write off a loss.
-- The deployer: the pool, the card and the agent each hold a full-access key, so the code can be redeployed (`docs/KEYS.md`).
+- The deployer: the pool and the credit card hold no access key since 2026-11-12, so their code cannot be redeployed and a bug in it cannot be fixed; the agent account keeps a full-access key (`docs/KEYS.md`).
 - The proofs: the Lean theorems and Kani harnesses cover the gate (the verdict function), not the pool. The pool's rules rest on unit, property and sandbox tests [C20].
 - The fee: it is charged on what the card kept at repay, so a sweep before repay lowers the fee the lenders earn.
 

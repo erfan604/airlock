@@ -17,3 +17,5 @@ import '../../scripts/try-replay.test.ts';
 import '../../scripts/credit-approver-bounds-live.test.ts';
 // the card redeploy of 2026-11-12 (UTC): both cards run the committed bytes
 import '../../scripts/credit-card-code-check.test.ts';
+// the lock of 2026-11-12 (UTC): the pool and the credit card hold no access key
+import '../../scripts/credit-lock-check.test.ts';

@@ -30,7 +30,7 @@ An email tells your agent your usual supplier's bill went up: the payee is right
 
 ## Keys
 
-Read from chain on 2026-11-11. `agent.airlock-credit-c1108d.testnet` holds one full-access key and one function-call key (for the card). `card.airlock-credit-c1108d.testnet` and `pool.airlock-credit-c1108d.testnet` each hold one full-access key, so the deployer can redeploy them. Details: `docs/KEYS.md`.
+Read from chain on 2026-11-12. The pool and the credit card hold no access key, so nobody can redeploy them [C32]. `agent.airlock-credit-c1108d.testnet` holds a full-access key and a function-call key (for the card). Details: `docs/KEYS.md`.
 
 ## What is enforced where
 

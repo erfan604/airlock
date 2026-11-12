@@ -214,10 +214,12 @@
         {
           "n": "2.3",
           "kind": "limit",
-          "text": "The pool and the card each hold one full-access key on their own accounts, held by the team: a holder can deploy new code to either contract and move that account's balance. The agent account holds a full-access key and a function-call key whose receiver is the card, for the methods submit_batch and expire. The issuer's account holds one full-access key; the issuer is the owner in the state of the pool and of the card, and keeps the powers of limits 2.11 to 2.14 through those contracts' own methods.",
+          "text": "The pool and the card hold no access key since 12 November 2026: no one, the team included, can sign a transaction for either account, so neither contract's code can be replaced and neither balance moves except through the contracts' own methods; a bug found in either can no longer be fixed by a redeploy, and the owner can pause the card, stop opening lines and move to new contracts. The agent account holds a full-access key and a function-call key whose receiver is the card, for the methods submit_batch and expire. The issuer's account holds one full-access key; the issuer is the owner in the state of the pool and of the card, and keeps the powers of limits 2.11 to 2.14 through those contracts' own methods.",
           "status": "in force",
           "refs": [
-            { "role": "Shown", "tx": "FAyo8RPPeUU67nTGgKi7kVStb1YtYs2wnFFMn8bV3m1m", "what": "the function-call key added to the agent account, receiver the card" }
+            { "role": "Shown", "tx": "FAyo8RPPeUU67nTGgKi7kVStb1YtYs2wnFFMn8bV3m1m", "what": "the function-call key added to the agent account, receiver the card" },
+            { "role": "Shown", "tx": "3d8CupXr6kVZaEhQuwb36u94hHPH5VPCwRHopy6jRAoU", "what": "the pool deletes its one full-access key", "row": 636 },
+            { "role": "Shown", "tx": "3Jj1qMjQx7ztS8n3DKzd9EKuQmpbc3PynSWtSx9vqHMG", "what": "the card deletes its one full-access key", "row": 637 }
           ]
         },
         {
@@ -353,7 +355,7 @@
         {
           "n": "2.14",
           "kind": "limit",
-          "text": "A loss that is not recovered keeps deposits closed for every lender. Two calls clear it, and both need the issuer's key: write_off on the pool, and sweep on an AIRLOCK card, whose money the pool credits as a recovery. If the issuer's key is lost, no call of either contract clears such a loss and deposits stay closed for good, while withdrawals of idle money go on; as long as the card account keeps its own key, new card code could still return the money.",
+          "text": "A loss that is not recovered keeps deposits closed for every lender. Two calls clear it, and both need the issuer's key: write_off on the pool, and sweep on an AIRLOCK card, whose money the pool credits as a recovery. If the issuer's key is lost, no call of either contract clears such a loss and deposits stay closed for good, while withdrawals of idle money go on; the card account holds no key since 12 November 2026, so no new card code can return the money either.",
           "status": "in force",
           "refs": [
             {"role": "Enforced", "file": "contracts/airlock-credit/src/lib.rs", "line": 381, "to": 384, "has": "c.loss > 0", "name": "has_unrecovered_loss"},

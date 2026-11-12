@@ -571,7 +571,7 @@ What the numbers show (from the run's reads of `get_pool`, `get_lp`, `get_unclai
 
 The read-only check, no keys: `pnpm tsx scripts/credit-pool-code-check.ts --verify` recomputes the code hash of both committed wasm files, compares the two committed snapshots (same raw state hash, same views, storage up by the size difference), reads the pool's code hash now, reads the redeploy transaction (sent by the pool to itself, exactly one DeployContract action whose code hash is the committed file's sha256) and the three transactions of the run (signer, method, attached amount, status, event amounts and shares), and ended `POOL CODE VERIFY OK 5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN` when run on 2026-11-11 at 19:01Z. `--offline` runs the file and snapshot checks with no network.
 
-Limits: testnet, and lp3 is the team's account. The charge is not refunded, so a lender who leaves in full and comes back pays it again. The check reads the chain through public RPCs and does not re-read the views of the run, which other deposits change; the reads are in the run's output. The pool and card accounts each still hold a full-access key (docs/KEYS.md), so the code that runs can still be replaced; the check above says what runs at the moment it is run.
+Limits: testnet, and lp3 is the team's account. The charge is not refunded, so a lender who leaves in full and comes back pays it again. The check reads the chain through public RPCs and does not re-read the views of the run, which other deposits change; the reads are in the run's output. The pool and card accounts each still hold a full-access key (docs/KEYS.md), so the code that runs can still be replaced; the check above says what runs at the moment it is run. Since 2026-11-12T04:51Z the pool and the credit card hold no access key (section The lock), so this redeploy was the pool's last possible one.
 
 ## Card redeploy with the approver bounds, testnet 2026-11-12
 
@@ -597,7 +597,7 @@ After the redeploy `pnpm tsx scripts/credit-economy.ts check` passed, and one lo
 
 The read-only check, no keys: `pnpm tsx scripts/credit-card-code-check.ts --verify` recomputes the code hash of both committed wasm files, compares the committed snapshots of each card (same raw state hash, entry count, keys and views; storage up by the size difference; blocks on each side of the redeploy), reads each card's code hash now and reads both redeploy transactions (sent by the card to itself, exactly one DeployContract action whose code hash is the committed file's sha256, success, in the recorded block); it ended `CARD CODE VERIFY OK 79BH9QUuWjxt4SggfgD66maVb7m2ckg5HHq3aB5pKGX7` when run on 2026-11-12 at 01:04Z. `--offline` runs the file and snapshot checks with no network.
 
-Limits: testnet, between accounts the team runs. The card accounts each still hold a full-access key (docs/KEYS.md), so the code that runs can still be replaced; the check above says what runs at the moment it is run.
+Limits: testnet, between accounts the team runs. The card accounts each still hold a full-access key (docs/KEYS.md), so the code that runs can still be replaced; the check above says what runs at the moment it is run. Since 2026-11-12T04:51Z the credit card holds no access key (section The lock), so this redeploy was its last possible one; the practice card keeps its key.
 
 ## Attacks written by an uncensored model, run on the practice card (AIR-364), testnet 2026-11-12
 
@@ -626,3 +626,25 @@ What changed on the card and what did not: `get_request` answered Pending after 
 The read-only check, no keys: `pnpm tsx scripts/credit-approver-bounds-live.ts --verify docs/evidence/approver-bounds-run.json` reads the three transactions from RPC (the agent's `submit_batch` to the card with outcome escalated OverTaskBound and the recorded request id; the borrower's approve to the card with a receipt failure holding the refusal text; the expire succeeding) and the request's state now; it printed three PASS lines and ended `APPROVER BOUNDS VERIFY OK qMUBqtZy6VDATxbkqPWW5fjjHLfDxseCyn8Fmj9iBsJ CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni 74t8UB6KyVwggFNQeMzkmRwV96F5CquCg6vTJUeUJqgo`.
 
 Limits: testnet; the borrower and the agent are the team's accounts, and the run shows one hold reason (OverTaskBound). The other refusals of C29 (OutsideTask, OverPayeeLimit, what is left of the payee's daily limit and of the task bound) are covered by its unit and sandbox tests, not by a live run.
+
+## The lock: the pool and the credit card hold no access key, testnet 2026-11-12
+
+At 2026-11-12T04:51Z, at the owner's instruction, the pool and the credit card each deleted their one full-access key, each in a transaction it signed with that key and sent to itself, holding one DeleteKey action and nothing else:
+
+| Step | Account | Tx |
+| --- | --- | --- |
+| the pool deletes its one full-access key (ed25519 2An6c6PmaryEhZS3yYPpKoxaGozUT49ktCUnGujKFnXU) at 04:51:08Z (block 277315728) | `pool.airlock-credit-c1108d.testnet` | https://testnet.nearblocks.io/txns/3d8CupXr6kVZaEhQuwb36u94hHPH5VPCwRHopy6jRAoU |
+| the credit card deletes its one full-access key (ed25519 B2ene5PPtj7PU4ZRS2CV5pFU3xD5yvdMaoEpKRGAtjor) at 04:51:14Z (block 277315738) | `card.airlock-credit-c1108d.testnet` | https://testnet.nearblocks.io/txns/3Jj1qMjQx7ztS8n3DKzd9EKuQmpbc3PynSWtSx9vqHMG |
+
+Since then both accounts hold no access key of any kind (`view_access_key_list` answers an empty list): no one, the team included, can sign a transaction as either account, so neither contract can be redeployed, neither account can be deleted, and neither balance moves except through the contracts' own methods. The pool's redeploy of 2026-11-11 and the card's of 2026-11-12 (the two sections above) were the last possible ones.
+
+Snapshots before and after, read with no key, committed as `docs/evidence/lock-pool-before.json`, `docs/evidence/lock-pool-after.json`, `docs/evidence/lock-card-before.json` and `docs/evidence/lock-card-after.json`, with the read-only check's output before and after as `docs/evidence/lock-check-before.txt` and `docs/evidence/lock-check-after.txt`:
+
+- The pool, before at block 277315691 and after at block 277315753: code hash 5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN both times, 20 state entries, raw state sha256 f0d0b66e53f77c815cc76802dcde8e093b6d984d455c31e26158c400cf756d4c before and after, the same 9 view answers, keys 1 then 0 (`storage_usage` down 82 bytes, the deleted key's record).
+- The credit card, before at block 277315702 and after at block 277315764: code hash 79BH9QUuWjxt4SggfgD66maVb7m2ckg5HHq3aB5pKGX7 both times, 281 state entries, raw state sha256 6d4a65361796082612ebb5b400b3a2c75facd50ebdbcbd2a6018cfa38d13fe69 before and after, the same 13 view answers, keys 1 then 0 (`storage_usage` down 82 bytes).
+
+What stays: the owner inside both contracts is the issuer `airlock-credit-c1108d.testnet`, which keeps its own full-access key and every owner method (the powers of docs/TERMS.md limits 2.11 to 2.14: pause, lines, the book, the limits, `write_off`, `sweep`); the agent account keeps its full-access key and its function-call key; the borrower, merchant and lender accounts are unchanged. The practice card `try.airlock-try-b193fe.testnet` is not locked and keeps its key.
+
+The read-only check, no keys: `pnpm tsx scripts/credit-lock-check.ts --verify` compares the committed snapshots (one full-access key before and none after, the same code, raw state and views), reads each account's access key list (empty) and code hash now, reads both deletion transactions (sent by the account to itself, signed by the key it deletes, exactly one DeleteKey action of that key, success, in the recorded block) and checks that the owner in both contracts still holds a full-access key; it ended `LOCK VERIFY OK 2 accounts hold no access key` when run on 2026-11-12 at 04:54Z.
+
+Limits: testnet. A bug found later in the pool or the credit card cannot be fixed by a redeploy; the owner can pause the card, stop opening lines and move to new contracts, and lenders withdraw what the pool holds idle. The owner's powers are unchanged, so a lender still trusts the issuer as docs/TERMS.md part 2 says.

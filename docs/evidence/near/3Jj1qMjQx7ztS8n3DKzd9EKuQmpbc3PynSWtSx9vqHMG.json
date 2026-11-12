@@ -1,0 +1,156 @@
+{
+ "transaction": {
+  "signer_id": "card.airlock-credit-c1108d.testnet",
+  "public_key": "ed25519:B2ene5PPtj7PU4ZRS2CV5pFU3xD5yvdMaoEpKRGAtjor",
+  "nonce": 276872340000003,
+  "receiver_id": "card.airlock-credit-c1108d.testnet",
+  "actions": [
+   {
+    "DeleteKey": {
+     "public_key": "ed25519:B2ene5PPtj7PU4ZRS2CV5pFU3xD5yvdMaoEpKRGAtjor"
+    }
+   }
+  ],
+  "priority_fee": 0,
+  "signature": "ed25519:54zNvMnNiQEnXkuhn1rxXiBeyzqnoCCCE6j31nsCxVzWyKtMCFpGVTeYfmuy2M2DmNwFmX3DCDcJMoHz1cW3mZCj",
+  "hash": "3Jj1qMjQx7ztS8n3DKzd9EKuQmpbc3PynSWtSx9vqHMG"
+ },
+ "execution_outcome": {
+  "block_hash": "EXuXKKrHSpsTfpKDKwwp43yykJfBrn2qoBGBA9NC4kuU",
+  "block_timestamp": 1794459074870259840,
+  "block_height": 277315738,
+  "index": 0,
+  "id": "3Jj1qMjQx7ztS8n3DKzd9EKuQmpbc3PynSWtSx9vqHMG",
+  "outcome": {
+   "logs": [],
+   "receipt_ids": [
+    "8xiLwzMJWnY4bojzYb4MTvrkAUfNw26RzWHRREfXbvWD"
+   ],
+   "gas_burnt": 203006125000,
+   "tokens_burnt": "20300612500000000000",
+   "executor_id": "card.airlock-credit-c1108d.testnet",
+   "status": {
+    "SuccessReceiptId": "8xiLwzMJWnY4bojzYb4MTvrkAUfNw26RzWHRREfXbvWD"
+   },
+   "metadata": {
+    "version": 1,
+    "gas_profile": null
+   }
+  }
+ },
+ "receipts": [
+  {
+   "execution_outcome": {
+    "block_hash": "EXuXKKrHSpsTfpKDKwwp43yykJfBrn2qoBGBA9NC4kuU",
+    "block_timestamp": 1794459074870259840,
+    "block_height": 277315738,
+    "index": 0,
+    "id": "8xiLwzMJWnY4bojzYb4MTvrkAUfNw26RzWHRREfXbvWD",
+    "outcome": {
+     "logs": [],
+     "receipt_ids": [
+      "CkT6CmTLcHNEVAaELXHAayMj55aHtCiu7jAJgDFxit3V"
+     ],
+     "gas_burnt": 203006125000,
+     "tokens_burnt": "20300612500000000000",
+     "executor_id": "card.airlock-credit-c1108d.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       {
+        "local": "79BH9QUuWjxt4SggfgD66maVb7m2ckg5HHq3aB5pKGX7"
+       }
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277315738,
+    "block_hash": "EXuXKKrHSpsTfpKDKwwp43yykJfBrn2qoBGBA9NC4kuU",
+    "block_timestamp": 1794459074870259840,
+    "receipt_index": 0,
+    "predecessor_id": "card.airlock-credit-c1108d.testnet",
+    "receiver_id": "card.airlock-credit-c1108d.testnet",
+    "receipt_id": "8xiLwzMJWnY4bojzYb4MTvrkAUfNw26RzWHRREfXbvWD",
+    "receipt": {
+     "Action": {
+      "signer_id": "card.airlock-credit-c1108d.testnet",
+      "signer_public_key": "ed25519:B2ene5PPtj7PU4ZRS2CV5pFU3xD5yvdMaoEpKRGAtjor",
+      "gas_price": "1000000000",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "DeleteKey": {
+         "public_key": "ed25519:B2ene5PPtj7PU4ZRS2CV5pFU3xD5yvdMaoEpKRGAtjor"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  },
+  {
+   "execution_outcome": {
+    "block_hash": "BS5sswjiuARaNNKbkqcZmZxCkX95oRpvXf3a2txrrWSh",
+    "block_timestamp": 1794459075382943027,
+    "block_height": 277315739,
+    "index": 0,
+    "id": "CkT6CmTLcHNEVAaELXHAayMj55aHtCiu7jAJgDFxit3V",
+    "outcome": {
+     "logs": [],
+     "receipt_ids": [],
+     "gas_burnt": 223182562500,
+     "tokens_burnt": "0",
+     "executor_id": "card.airlock-credit-c1108d.testnet",
+     "status": {
+      "SuccessValue": ""
+     },
+     "metadata": {
+      "version": 4,
+      "gas_profile": null,
+      "contracts": [
+       {
+        "local": "79BH9QUuWjxt4SggfgD66maVb7m2ckg5HHq3aB5pKGX7"
+       }
+      ]
+     }
+    }
+   },
+   "receipt": {
+    "block_height": 277315739,
+    "block_hash": "BS5sswjiuARaNNKbkqcZmZxCkX95oRpvXf3a2txrrWSh",
+    "block_timestamp": 1794459075382943027,
+    "receipt_index": 0,
+    "predecessor_id": "system",
+    "receiver_id": "card.airlock-credit-c1108d.testnet",
+    "receipt_id": "CkT6CmTLcHNEVAaELXHAayMj55aHtCiu7jAJgDFxit3V",
+    "receipt": {
+     "Action": {
+      "signer_id": "card.airlock-credit-c1108d.testnet",
+      "signer_public_key": "ed25519:B2ene5PPtj7PU4ZRS2CV5pFU3xD5yvdMaoEpKRGAtjor",
+      "gas_price": "0",
+      "output_data_receivers": [],
+      "input_data_ids": [],
+      "actions": [
+       {
+        "Transfer": {
+         "deposit": "182705512500000000000"
+        }
+       }
+      ],
+      "is_promise_yield": false
+     }
+    },
+    "priority": 0
+   }
+  }
+ ],
+ "data_receipts": []
+}

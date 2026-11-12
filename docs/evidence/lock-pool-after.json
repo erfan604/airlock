@@ -1,0 +1,149 @@
+{
+ "amount": "9865833952433548100000002",
+ "block_height": 277315753,
+ "code_hash": "5DEnqxwBiVwsxuXNzYeE3a9P4DLYuSj2pjnQKvY88xyN",
+ "keys": [],
+ "state_entries": 20,
+ "state_sha256": "f0d0b66e53f77c815cc76802dcde8e093b6d984d455c31e26158c400cf756d4c",
+ "storage_usage": 292455,
+ "views": {
+  "get_base_check_config": {
+   "domain_id": 3,
+   "fee": "10000000000000000000000",
+   "mpc_signer": "v1.signer-prod.testnet"
+  },
+  "get_card": "borrower.airlock-credit-c1108d.testnet",
+  "get_line": {
+   "borrower": "borrower.airlock-credit-c1108d.testnet",
+   "card": "card.airlock-credit-c1108d.testnet",
+   "collateral": "0",
+   "drawn": "90000000000000000000000",
+   "due_ms": "1794544207782",
+   "fee_bps": 1000,
+   "limit": "90000000000000000000000",
+   "returned": "90000000000000000000000",
+   "state": "Repaid"
+  },
+  "get_lp": {
+   "archc0ff40bf4e.testnet": {
+    "locked_until_ms": "0",
+    "shares": "0",
+    "value": "0"
+   },
+   "borrower.airlock-credit-c1108d.testnet": {
+    "locked_until_ms": "0",
+    "shares": "0",
+    "value": "0"
+   },
+   "lender-0f2w2vr3v6.testnet": {
+    "locked_until_ms": "1794388003239",
+    "shares": "0",
+    "value": "0"
+   },
+   "lender-8x136mujmt.testnet": {
+    "locked_until_ms": "1794387940874",
+    "shares": "920747812486166649451830",
+    "value": "1034928891217464823897242"
+   },
+   "lender-lzg0iszbw5.testnet": {
+    "locked_until_ms": "1794390101727",
+    "shares": "0",
+    "value": "0"
+   },
+   "lender-vf1hib3df3.testnet": {
+    "locked_until_ms": "1794292554776",
+    "shares": "990099009900990099009900",
+    "value": "1112880266036729001338220"
+   },
+   "lp1.airlock-credit-c1108d.testnet": {
+    "locked_until_ms": "1794198909113",
+    "shares": "0",
+    "value": "0"
+   },
+   "lp2.airlock-credit-c1108d.testnet": {
+    "locked_until_ms": "1794199125550",
+    "shares": "2099009900990099009900990",
+    "value": "2359306163997865482837029"
+   }
+  },
+  "get_passport": {
+   "borrower": "borrower.airlock-credit-c1108d.testnet",
+   "limit_cap": "1160000000000000000000000",
+   "reasons": [
+    "base +500",
+    "repaid_on_time x1 +80",
+    "backfilled: counts only what the pool state proves"
+   ],
+   "record": {
+    "backfilled": true,
+    "defaults": 0,
+    "fees_paid": "262000000000000000000000",
+    "last_event_ms": "1794457830174",
+    "lines_opened": 31,
+    "recovered": 0,
+    "repaid_late": 0,
+    "repaid_on_time": 1,
+    "volume_repaid": "2620000000000000000000000",
+    "written_off": 0
+   },
+   "score": 580
+  },
+  "get_pool": {
+   "assets": "5517000000000000000000004",
+   "collateral_bps": 3000,
+   "collateral_held": "0",
+   "fees_earned": "447000000000000000000000",
+   "idle": "5517000000000000000000004",
+   "impaired": "0",
+   "lent": "0",
+   "lines": [
+    {
+     "borrower": "borrower.airlock-credit-c1108d.testnet",
+     "card": "card.airlock-credit-c1108d.testnet",
+     "collateral": "0",
+     "drawn": "90000000000000000000000",
+     "due_ms": "1794544207782",
+     "fee_bps": 1000,
+     "limit": "90000000000000000000000",
+     "returned": "90000000000000000000000",
+     "state": "Repaid"
+    }
+   ],
+   "losses": "0",
+   "min_hold_ms": "60000",
+   "share_price": "1124009068697096291351603",
+   "shares": "4908323387813118576727657",
+   "staked": "0"
+  },
+  "get_pool_passport": {
+   "base": "1000000000000000000000000",
+   "effective_ms": null,
+   "floor_base": "1000000000000000000000000",
+   "pending_base": null,
+   "version": 2
+  },
+  "get_unclaimed": {
+   "archc0ff40bf4e.testnet": "0",
+   "borrower.airlock-credit-c1108d.testnet": "0",
+   "lender-0f2w2vr3v6.testnet": "0",
+   "lender-8x136mujmt.testnet": "0",
+   "lender-lzg0iszbw5.testnet": "0",
+   "lender-vf1hib3df3.testnet": "0",
+   "lp1.airlock-credit-c1108d.testnet": "0",
+   "lp2.airlock-credit-c1108d.testnet": "0"
+  },
+  "list_lines": [
+   {
+    "borrower": "borrower.airlock-credit-c1108d.testnet",
+    "card": "card.airlock-credit-c1108d.testnet",
+    "collateral": "0",
+    "drawn": "90000000000000000000000",
+    "due_ms": "1794544207782",
+    "fee_bps": 1000,
+    "limit": "90000000000000000000000",
+    "returned": "90000000000000000000000",
+    "state": "Repaid"
+   }
+  ]
+ }
+}

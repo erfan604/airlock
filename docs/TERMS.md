@@ -139,9 +139,11 @@ Code hashes: `docs/EVIDENCE.md` line 589.
 
 **2.2** A booked merchant that colludes with the borrower can keep what it is paid. Nothing in the code prevents this. *(in force)*
 
-**2.3** The pool and the card each hold one full-access key on their own accounts, held by the team: a holder can deploy new code to either contract and move that account's balance. The agent account holds a full-access key and a function-call key whose receiver is the card, for the methods submit_batch and expire. The issuer's account holds one full-access key; the issuer is the owner in the state of the pool and of the card, and keeps the powers of limits 2.11 to 2.14 through those contracts' own methods. *(in force)*
+**2.3** The pool and the card hold no access key since 12 November 2026: no one, the team included, can sign a transaction for either account, so neither contract's code can be replaced and neither balance moves except through the contracts' own methods; a bug found in either can no longer be fixed by a redeploy, and the owner can pause the card, stop opening lines and move to new contracts. The agent account holds a full-access key and a function-call key whose receiver is the card, for the methods submit_batch and expire. The issuer's account holds one full-access key; the issuer is the owner in the state of the pool and of the card, and keeps the powers of limits 2.11 to 2.14 through those contracts' own methods. *(in force)*
 
 - Shown: the function-call key added to the agent account, receiver the card, transaction `FAyo8RPPeUU67nTGgKi7kVStb1YtYs2wnFFMn8bV3m1m`
+- Shown: the pool deletes its one full-access key, transaction `3d8CupXr6kVZaEhQuwb36u94hHPH5VPCwRHopy6jRAoU` (`docs/EVIDENCE.md` line 636)
+- Shown: the card deletes its one full-access key, transaction `3Jj1qMjQx7ztS8n3DKzd9EKuQmpbc3PynSWtSx9vqHMG` (`docs/EVIDENCE.md` line 637)
 
 **2.4** The fee is charged on what the card kept, so a sweep before the repay lowers it, and a card that returns everything owes no fee. *(in force)*
 
@@ -222,7 +224,7 @@ Code hashes: `docs/EVIDENCE.md` line 589.
 - Enforced: `contracts/airlock-credit/src/lib.rs` 1092, `repay`
 - Tested: `contracts/airlock-credit/src/tests.rs` 1707, `a_cut_of_the_base_does_not_lower_the_draw_a_repay_needs_to_count`
 
-**2.14** A loss that is not recovered keeps deposits closed for every lender. Two calls clear it, and both need the issuer's key: write_off on the pool, and sweep on an AIRLOCK card, whose money the pool credits as a recovery. If the issuer's key is lost, no call of either contract clears such a loss and deposits stay closed for good, while withdrawals of idle money go on; as long as the card account keeps its own key, new card code could still return the money. *(in force)*
+**2.14** A loss that is not recovered keeps deposits closed for every lender. Two calls clear it, and both need the issuer's key: write_off on the pool, and sweep on an AIRLOCK card, whose money the pool credits as a recovery. If the issuer's key is lost, no call of either contract clears such a loss and deposits stay closed for good, while withdrawals of idle money go on; the card account holds no key since 12 November 2026, so no new card code can return the money either. *(in force)*
 
 - Enforced: `contracts/airlock-credit/src/lib.rs` 381 to 384, `has_unrecovered_loss`
 - Enforced: `contracts/airlock-credit/src/lib.rs` 588 to 591, `deposit`
@@ -248,6 +250,6 @@ Code hashes: `docs/EVIDENCE.md` line 589.
 - `contracts/airlock-verdict/src/proofs.rs`: 104, 117, 127, 137, 355
 - `docs/BENCH.md`: 37
 - `docs/CLAIMS.md`: 38
-- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390, 442, 443, 450, 466, 512, 566, 567, 568, 589
+- `docs/EVIDENCE.md`: 350, 372, 373, 375, 378, 379, 380, 383, 384, 385, 390, 442, 443, 450, 466, 512, 566, 567, 568, 589, 636, 637
 - `proofs/Verdict.lean`: 12, 96, 105, 115, 123, 192
 - `runtime/src/economy/facts.ts`: 1 to 3, 24 to 26

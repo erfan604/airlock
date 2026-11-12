@@ -1,0 +1,185 @@
+{
+ "account": "card.airlock-credit-c1108d.testnet",
+ "amount": "13232143578656583100000022",
+ "block_height": 277315702,
+ "code_hash": "79BH9QUuWjxt4SggfgD66maVb7m2ckg5HHq3aB5pKGX7",
+ "keys": [
+  "FullAccess"
+ ],
+ "state_entries": 281,
+ "state_height": 277315702,
+ "state_sha256": "6d4a65361796082612ebb5b400b3a2c75facd50ebdbcbd2a6018cfa38d13fe69",
+ "storage_usage": 1200058,
+ "views": {
+  "get_agent": {
+   "agent.airlock-credit-c1108d.testnet": {
+    "account_id": "agent.airlock-credit-c1108d.testnet",
+    "measurements": {
+     "app_compose_hash_payload": "0000000000000000000000000000000000000000000000000000000000000000",
+     "key_provider_event_digest": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+     "rtmrs": {
+      "mrtd": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr0": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr1": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr2": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+     }
+    },
+    "ppid": "00000000000000000000000000000000",
+    "valid_until_ms": "1795655214399",
+    "validity": "Valid"
+   }
+  },
+  "get_agents": [
+   {
+    "account_id": "agent.airlock-credit-c1108d.testnet",
+    "measurements": {
+     "app_compose_hash_payload": "0000000000000000000000000000000000000000000000000000000000000000",
+     "key_provider_event_digest": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+     "rtmrs": {
+      "mrtd": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr0": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr1": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "rtmr2": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+     }
+    },
+    "ppid": "00000000000000000000000000000000",
+    "valid_until_ms": "1795655214399",
+    "validity": "Valid"
+   }
+  ],
+  "get_allowed_agents": [
+   [
+    "agent.airlock-credit-c1108d.testnet",
+    {
+     "allowed_ms": "1794198813324",
+     "fingerprint": "dc8cc04c0abe"
+    }
+   ]
+  ],
+  "get_book_epoch": "3",
+  "get_book_root": "395f3d496964f09d31378e42196aa47a5148ae10386e7b10ae4a9a9cfd511732",
+  "get_contract_info": {
+   "attestation_expiration_time_ms": "1209600000",
+   "mpc_contract_id": "v1.signer-prod.testnet",
+   "owner_id": "airlock-credit-c1108d.testnet",
+   "requires_tee": false
+  },
+  "get_escalation_state": {
+   "agent.airlock-credit-c1108d.testnet": {
+    "consecutive_rejects": 1,
+    "hour_count": 0,
+    "limits": {
+     "hourly_budget": 6,
+     "lock_consecutive": 3,
+     "lock_per_day": 20,
+     "max_pending": 3
+    },
+    "locked": false,
+    "pending": 0,
+    "rejects_today": 0
+   }
+  },
+  "get_pending": [
+   {
+    "agent": "agent.airlock-credit-c1108d.testnet",
+    "amount": "10000000000000000000000",
+    "asset": "near",
+    "book_status": "in_book",
+    "created_ms": "1794457907939",
+    "digest": "963563936780580a1d2c960d235793572ac30af5f11cc06a09b509eb968722fa",
+    "display": {
+     "amount_decimal": "0.01",
+     "asset_symbol": "NEAR"
+    },
+    "expires_ms": "1794461507939",
+    "id": "40",
+    "labels": {
+     "amount": 4128,
+     "pc": 1,
+     "recipient": 2
+    },
+    "payee": "near:merchant.airlock-credit-c1108d.testnet",
+    "reason": "UntrustedAmount",
+    "request_id": "2d402988a331aa3116bb60d93517c56b0feae4e784b4f9d9f13790ff6d969af1:0",
+    "state": "Pending",
+    "task_id": "arena-1794457899699-5f5545"
+   },
+   {
+    "agent": "agent.airlock-credit-c1108d.testnet",
+    "amount": "9000000000000000000000",
+    "asset": "near",
+    "book_status": "in_book",
+    "created_ms": "1794457907939",
+    "digest": "3e89498a68e855fc7dbe22951eaf46d04187cb041d5afc3600d4808b94ada42c",
+    "display": {
+     "amount_decimal": "0.009",
+     "asset_symbol": "NEAR"
+    },
+    "expires_ms": "1794461507939",
+    "id": "41",
+    "labels": {
+     "amount": 4128,
+     "pc": 1,
+     "recipient": 2
+    },
+    "payee": "near:merchant.airlock-credit-c1108d.testnet",
+    "reason": "UntrustedAmount",
+    "request_id": "2d402988a331aa3116bb60d93517c56b0feae4e784b4f9d9f13790ff6d969af1:1",
+    "state": "Pending",
+    "task_id": "arena-1794457899699-5f5545"
+   }
+  ],
+  "get_policy": {
+   "flags": {
+    "hourly_escalation_budget": 6,
+    "lock_consecutive_rejects": 3,
+    "lock_rejects_per_day": 20,
+    "max_pending_per_agent": 3,
+    "max_task_actions": 20,
+    "max_task_ttl_ms": "3600000",
+    "pending_ttl_ms": "3600000"
+   },
+   "mpc_contract_id": "v1.signer-prod.testnet",
+   "owner_id": "airlock-credit-c1108d.testnet",
+   "paused": false,
+   "requires_tee": false
+  },
+  "get_roles": {
+   "approver": "borrower.airlock-credit-c1108d.testnet",
+   "owner_id": "airlock-credit-c1108d.testnet",
+   "sponsor": "pool.airlock-credit-c1108d.testnet"
+  },
+  "get_task_key": "ed25519:FYtnNw6ZrdkNvuZNqhxoQZCShoJWnS6VkoQjxEak6wTD",
+  "get_whitelisted_agents_for_local": [
+   "agent.airlock-credit-c1108d.testnet"
+  ],
+  "list_assets": [
+   [
+    "near",
+    {
+     "daily_cap": "20000000000000000000000000",
+     "decimals": 24,
+     "hard_cap": "5000000000000000000000000",
+     "max_fee_per_gas": "0",
+     "max_gas": "0",
+     "path": null,
+     "quick_task_cap": "10000000000000000000000000",
+     "symbol": "NEAR"
+    }
+   ],
+   [
+    "evm:84532:native",
+    {
+     "daily_cap": "10000000000000",
+     "decimals": 18,
+     "hard_cap": "5000000000000",
+     "max_fee_per_gas": "100000000",
+     "max_gas": "21000",
+     "path": "credit-card-1",
+     "quick_task_cap": "10000000000000",
+     "symbol": "ETH.base"
+    }
+   ]
+  ]
+ }
+}
