@@ -24,6 +24,7 @@
 //   UNCENSORED_LIVE=1 pnpm tsx scripts/uncensored-run.ts --dir <d> --live   sends; resumable (target/uncensored/rows-a.jsonl and rows-b.jsonl)
 //   pnpm tsx scripts/uncensored-run.ts --dir <d> --export            writes docs/evidence/uncensored-rows.json (no message text, a hash of it)
 //   pnpm tsx scripts/uncensored-run.ts --verify [--sample <n>]       read only, no key: re-reads the transactions of the committed rows file
+//   pnpm tsx scripts/uncensored-run.ts --page                        writes web/src/live/uncensored-run.json from the committed rows file
 // Options: --part a|b|both (default both), --seed <text> (default AIR-364), --public <path or https URL of try-public.json>, --file <rows file>
 // for --verify, --assume-fresh-day (dry only: the preview starts from an empty day ledger, to see the gate's answers past the daily cap). Budget: at most 200 requests a part and 400 transactions in all (rows already sent count); a corpus larger than its part's
 // budget is sampled with the seed, and the output says so. Pending holds are kept at 30 or under. Testnet only; the only key is the published
@@ -55,6 +56,8 @@ export const MAX_PENDING = 30;
 export const DEFAULT_SEED = 'AIR-364';
 export const ROWS_DIR = join(REPO, 'target', 'uncensored');
 export const PUBLIC_ROWS = join(REPO, 'docs', 'evidence', 'uncensored-rows.json');
+/** The /rob page's file: the run's counts and its answered request ids, so the page counts the browsers' attempts apart (live/teamRuns.ts). */
+export const PAGE_FILE = join(REPO, 'web', 'src', 'live', 'uncensored-run.json');
 const SUBMIT_GAS = 100n * 10n ** 12n;
 const PENDING_WAIT_MS = 20_000;
 const PENDING_GIVE_UP_MS = 15 * 60_000;
@@ -509,6 +512,21 @@ const nearOf = (yocto: string): string => {
 export const countsLine = (c: Counts): string =>
   `${String(c.requests)} requests: ${String(c.held)} held, ${String(c.blocked)} blocked, ${String(c.paid_shop)} paid to the booked shop (${nearOf(c.paidShopYocto)} NEAR), ${String(c.paid_outside)} paid outside the book, ${String(c.failed)} failed calls`;
 
+/** The page file of a rows file: counts over both parts and the answered request ids as task hash to action indices (hex and numbers only). */
+export function pageOf(file: PublicFile): { date: string; requests: number; attempts: number; held: number; blocked: number; paidShop: number; paidOutside: number; failed: number; firstTx: string; lastTx: string; lastMs: number; ids: Record<string, number[]> } {
+  const rows = [...file.rows].sort((a, b) => a.atMs - b.atMs);
+  const ids: Record<string, number[]> = {};
+  for (const r of rows) {
+    if (r.requestId === null) continue;
+    const [hash, index] = r.requestId.split(':');
+    if (hash === undefined || index === undefined || !/^[0-9a-f]{64}$/.test(hash) || !/^[0-9]{1,3}$/.test(index)) throw new Error(`request id ${r.requestId} is not <task hash>:<index>`);
+    (ids[hash] ??= []).push(+index);
+  }
+  for (const v of Object.values(ids)) v.sort((a, b) => a - b);
+  const c = countsOf(rows);
+  return { date: file.date, requests: c.requests, attempts: c.requests - c.failed, held: c.held, blocked: c.blocked, paidShop: c.paid_shop, paidOutside: c.paid_outside, failed: c.failed, firstTx: rows[0]?.tx ?? '', lastTx: rows.at(-1)?.tx ?? '', lastMs: rows.at(-1)?.atMs ?? 0, ids };
+}
+
 // ---- main ----
 
 export type MainDeps = {
@@ -580,6 +598,12 @@ export async function main(argv: readonly string[], deps: MainDeps = { env: proc
     const sample = flag(argv, 'sample');
     return verifyRows(file, { print, ...(sample === undefined || !/^[0-9]{1,6}$/.test(sample) ? {} : { sample: Math.max(1, +sample) }) });
   }
+  if (argv.includes('--page')) {
+    const page = pageOf(JSON.parse(readFileSync(flag(argv, 'file') ?? PUBLIC_ROWS, 'utf8')) as PublicFile);
+    writeFileSync(PAGE_FILE, `${JSON.stringify(page, null, 1)}\n`);
+    print(`wrote ${PAGE_FILE}: ${String(page.requests)} requests, ${String(page.attempts)} answered`);
+    return 0;
+  }
   const live = argv.includes('--live');
   if (live && deps.env[LIVE_FLAG] !== '1') {
     print(`--live needs ${LIVE_FLAG}=1 next to it; nothing sent`);
@@ -623,7 +647,8 @@ export async function main(argv: readonly string[], deps: MainDeps = { env: proc
     }
     const out = exportRows(rows, { pub, seed, dateText: flag(argv, 'date') ?? new Date(rows[0]?.atMs ?? Date.now()).toISOString().slice(0, 10), corpora: meta });
     writeFileSync(PUBLIC_ROWS, `${JSON.stringify(out, null, 1)}\n`);
-    print(`wrote ${PUBLIC_ROWS}: ${JSON.stringify(out.counts)}`);
+    writeFileSync(PAGE_FILE, `${JSON.stringify(pageOf(out), null, 1)}\n`);
+    print(`wrote ${PUBLIC_ROWS} and ${PAGE_FILE}: ${JSON.stringify(out.counts)}`);
     return 0;
   }
   const chain = deps.offline ?? (await readCard(pub));

@@ -45,8 +45,11 @@ export type SiteState = {
     last_ms: number | null;
     truncated: boolean;
     ttl_ms: number;
-    /** the attempts that are not the team's bench replay (live/try-replay.json) */
-    from_browsers: { attempts: number; paid_outside: number };
+    /**
+     * the attempts that are not the team's own runs (live/teamRuns.ts); `excludes` names the runs left out, and a file without it (written
+     * before 2026-11-12) left out the bench replay only
+     */
+    from_browsers: { attempts: number; paid_outside: number; paid_shop?: number; excludes?: string[] };
     /** newest first, at most 25 */
     rows: TryAttempt[];
     /** the card's limits as its contract stated them (get_asset("near"), get_policy); absent in files written before 2026-11-11 */
@@ -156,6 +159,15 @@ function limitsOf(l: unknown): SiteState['rob']['limits'] {
   return { hardCap: l['hardCap'], dailyCap: l['dailyCap'], maxPending: isCount(l['maxPending']) ? l['maxPending'] : null, paused: l['paused'] };
 }
 
+/** The browsers' count as the page reads it: counts kept only as whole numbers, `excludes` only as the names of the team's runs. */
+function browsersOf(b: SiteState['rob']['from_browsers']): SiteState['rob']['from_browsers'] {
+  const n = (v: unknown): number => (isCount(v) ? v : 0);
+  const out: SiteState['rob']['from_browsers'] = { attempts: n(b.attempts), paid_outside: n(b.paid_outside) };
+  if (typeof b.paid_shop === 'number') out.paid_shop = n(b.paid_shop);
+  if (Array.isArray(b.excludes)) out.excludes = b.excludes.filter((x) => x === 'replay' || x === 'model');
+  return out;
+}
+
 function clean(s: SiteState): SiteState {
   const ours = teamOf(s);
   const keepList = <T,>(xs: readonly unknown[], f: (x: unknown) => T | null): T[] => xs.map(f).filter((x): x is T => x !== null);
@@ -165,7 +177,7 @@ function clean(s: SiteState): SiteState {
     pool: { ...s.pool, id: keepStoredAccount(s.pool.id) },
     lenders: { ...s.lenders, outside: s.lenders.outside.map((a) => shownId(a, ours)) },
     loop: { ...s.loop, last_tx: lastTx !== null && isUnshown(lastTx) ? null : lastTx },
-    rob: { ...s.rob, policy: keepStoredAccount(s.rob.policy), rows: keepList(s.rob.rows, (r) => cleanTry(r, ours)), limits: limitsOf(s.rob.limits) },
+    rob: { ...s.rob, policy: keepStoredAccount(s.rob.policy), rows: keepList(s.rob.rows, (r) => cleanTry(r, ours)), limits: limitsOf(s.rob.limits), from_browsers: browsersOf(s.rob.from_browsers) },
     credit: { events: keepList(s.credit.events, (e) => cleanEvent(e, ours)) },
     arena: { ...s.arena, attempts: keepList(s.arena.attempts, cleanArena) },
     challenge: s.challenge === null ? null : { ...s.challenge, policy: keepStoredAccount(s.challenge.policy), attempts: keepList(s.challenge.attempts, (a) => cleanAttempt(a, ours)) },

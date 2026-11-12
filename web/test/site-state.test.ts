@@ -66,3 +66,18 @@ test('history door: a 429 and a network error are asked again after a pause; pas
   await assert.rejects(always(HIST, { method: 'POST', body: 'x' }), /rate limited/);
   assert.equal(always.stats().throttled, 2);
 });
+
+// AIR-364 follow-up: the state script counts the browsers' attempts with the page's own split, leaving out both of the team's runs
+test('site state: the script splits with teamRuns and names the runs it left out; the parser keeps whole counts and known run names', () => {
+  const script = readFileSync(new URL('../../scripts/site-state.ts', import.meta.url), 'utf8');
+  assert.match(script, /import \{[^}]*splitAttempts[^}]*\} from '\.\.\/web\/src\/live\/teamRuns\.ts'/);
+  assert.match(script, /from_browsers: \{ attempts: browsers\.attempts, paid_outside: browsers\.paidOutside, paid_shop: browsers\.paidShop, excludes: \[\.\.\.TEAM_RUN_NAMES\] \}/);
+  assert.ok(!script.includes('try-replay.json'), 'no second list of the team ids in the script');
+  const rob = STATE['rob'] as Record<string, unknown>;
+  const withRuns = parseSiteState({ ...STATE, rob: { ...rob, from_browsers: { attempts: 5, paid_outside: 0, paid_shop: 2, excludes: ['replay', 'model', 'other'] } } });
+  assert.deepEqual(withRuns?.rob.from_browsers, { attempts: 5, paid_outside: 0, paid_shop: 2, excludes: ['replay', 'model'] });
+  const junk = parseSiteState({ ...STATE, rob: { ...rob, from_browsers: { attempts: -3, paid_outside: 1.5 } } });
+  assert.deepEqual(junk?.rob.from_browsers, { attempts: 0, paid_outside: 0 });
+  // an older file without the new fields still parses as it was
+  assert.deepEqual(parseSiteState(STATE)?.rob.from_browsers, { attempts: 9, paid_outside: 0 });
+});

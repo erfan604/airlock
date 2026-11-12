@@ -24,6 +24,7 @@ import {
   main,
   mapRequest,
   mapText,
+  pageOf,
   payeeOfWish,
   planItems,
   predictItems,
@@ -387,4 +388,16 @@ test('--live needs UNCENSORED_LIVE=1; the dry run over both fixtures prints the 
   const tight: string[] = [];
   await main([], { env: {}, print: (l) => tight.push(l), offline: { pub, card: CARD, start: fresh(), nowMs: NOW, decide, texts: TEXTS, requests: REQUESTS, rowsSent: TOTAL_BUDGET - 10 } });
   assert.match(tight.join('\n'), /part B: SAMPLED 4 of 13 usable rows \(seeded\)/);
+});
+
+test('the page file: the counts over both parts and the answered request ids, the failed calls left out of the ids', async () => {
+  const { plan, predicted } = await planned();
+  const io = mockIo(asPredicted(plan, predicted));
+  await runPart(io, { plan, predicted, pub, maxPending: 30, totalBudget: TOTAL_BUDGET });
+  const page = pageOf(exportRows(io.written, { pub, seed: 'AIR-364', dateText: '2026-11-12', corpora: {} }));
+  assert.deepEqual({ ...page, ids: undefined, firstTx: undefined, lastTx: undefined, lastMs: undefined }, { date: '2026-11-12', requests: 13, attempts: 12, held: 3, blocked: 5, paidShop: 4, paidOutside: 0, failed: 1, ids: undefined, firstTx: undefined, lastTx: undefined, lastMs: undefined });
+  assert.equal(Object.values(page.ids).flat().length, 12);
+  // the committed page file is the committed rows file's
+  const committed = JSON.parse(readFileSync(join(REPO, 'web', 'src', 'live', 'uncensored-run.json'), 'utf8')) as unknown;
+  assert.deepEqual(committed, pageOf(JSON.parse(readFileSync(join(REPO, 'docs', 'evidence', 'uncensored-rows.json'), 'utf8')) as Parameters<typeof pageOf>[0]));
 });

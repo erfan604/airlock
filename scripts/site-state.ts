@@ -19,7 +19,7 @@ import { depositors, isTeam, poolEvents, readAccountTxs, readLp } from '../web/s
 import { countsOfTry, readTryAttempts } from '../web/src/live/tryChain.ts';
 import { readLimits } from '../web/src/live/robCheck.ts';
 import type { TryAttempt } from '../web/src/live/tryChain.ts';
-import replay from '../web/src/live/try-replay.json' with { type: 'json' };
+import { MODEL_RUN, REPLAY, TEAM_RUN_NAMES, splitAttempts } from '../web/src/live/teamRuns.ts';
 import { SITE_STATE_COMMAND, SITE_STATE_FORMAT, parseSiteState } from '../web/src/state/siteState.ts';
 import type { SiteState } from '../web/src/state/siteState.ts';
 
@@ -89,8 +89,10 @@ const ttl = tryRaw['pendingTtlMs'];
 const tryRead = await readTryAttempts({ policy: tryRaw['policy'], agent: tryRaw['agent'], book: tryRaw['book'] as string[], nowMs: Date.now(), ttlMs: ttl, fetch: history });
 const tries = tryRead.attempts.filter((a) => a.atMs <= cut);
 const c = countsOfTry(tries);
-const replayed = new Set(Object.entries(replay.ids).flatMap(([hash, xs]) => xs.map((i) => `${hash}:${String(i)}`)));
-const browsers = countsOfTry(tries.filter((a) => !replayed.has(a.requestId)));
+// the team's own runs (the bench replay, AIR-360, and the uncensored-model run, AIR-364) are told apart from the browsers' attempts, the same
+// way the page does when it reads the chain history itself (live/teamRuns.ts)
+const split = splitAttempts(tries);
+const browsers = split.browsers;
 // the card's limits as its contract states them, so the page prints the card's own numbers (null when a view does not answer)
 const tryLimits = await readLimits(rpc, tryRaw['policy']).catch(() => null);
 const newest = (xs: readonly TryAttempt[], n: number): TryAttempt[] => [...xs].sort((a, b) => b.atMs - a.atMs || b.requestId.localeCompare(a.requestId)).slice(0, n);
@@ -129,7 +131,7 @@ const state: SiteState = {
     last_ms: c.lastMs,
     truncated: tryRead.truncated,
     ttl_ms: ttl,
-    from_browsers: { attempts: browsers.attempts, paid_outside: browsers.paidOutside },
+    from_browsers: { attempts: browsers.attempts, paid_outside: browsers.paidOutside, paid_shop: browsers.paidShop, excludes: [...TEAM_RUN_NAMES] },
     rows: newest(tries, 25),
     limits: tryLimits,
   },
@@ -149,7 +151,7 @@ const lines = [
   `pool assets ${state.pool.assets} shares ${state.pool.shares} losses ${state.pool.losses} fees_earned ${state.pool.fees_earned} lines ${String(state.pool.lines)}`,
   `lenders outside_team ${String(outside.length)} lending_now ${String(outsideNow)} newest_part ${poolRead.truncated ? 'yes' : 'no'}`,
   `loop cycles ${String(state.loop.cycles)} last ${state.loop.last_ms === null ? 'none' : new Date(state.loop.last_ms).toISOString()} tx ${state.loop.last_tx ?? 'none'}`,
-  `rob attempts ${String(c.attempts)} held ${String(c.held + c.expired)} blocked ${String(c.blocked)} paid_shop ${String(c.paidShop)} paid_elsewhere ${String(c.paidOutside)} from_browsers ${String(browsers.attempts)} replay_requests ${String(replay.requests)}`,
+  `rob attempts ${String(c.attempts)} held ${String(c.held + c.expired)} blocked ${String(c.blocked)} paid_shop ${String(c.paidShop)} paid_elsewhere ${String(c.paidOutside)} from_browsers ${String(browsers.attempts)} replay ${String(split.replay.attempts)} of ${String(REPLAY.requests)} model ${String(split.model.attempts)} of ${String(MODEL_RUN.attempts)}`,
   `credit events ${String(creditEvents.length)} arena attempts ${String(state.arena.attempts.length)}${challenge === null ? ' challenge none' : ` challenge attempts ${String(challenge.board.attempts)} stolen ${challenge.board.stolenYocto}`}`,
   `history requests ${String(s.sent)} throttled ${String(s.throttled)} bytes ${String(Buffer.byteLength(text))}`,
 ];

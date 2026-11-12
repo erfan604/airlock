@@ -8,7 +8,8 @@ import { App } from '../src/App.tsx';
 import { PAGES } from '../src/pages.ts';
 import { ROUTES } from '../src/routes.ts';
 import { NAV } from '../src/shell/SiteNav.tsx';
-import RobPage, { HOLD_SAFE, RobView, boardOfState, fieldsOf, nearOf, payeeText, sendsSentence } from '../src/live/RobPage.tsx';
+import RobPage, { HOLD_SAFE, MODEL_RUN, RobView, boardOfState, browsersOfBoard, fieldsOf, nearOf, payeeText, sendsSentence, utcText } from '../src/live/RobPage.tsx';
+import { splitAttempts, teamSentence } from '../src/live/teamRuns.ts';
 import type { RobViewProps } from '../src/live/RobPage.tsx';
 import { countsOfTry } from '../src/live/tryChain.ts';
 import type { TryAttempt } from '../src/live/tryChain.ts';
@@ -129,17 +130,18 @@ test('rob: amounts and payees print in the short form', () => {
 
 // AIR-360: the bench replay on the board
 const REPLAY = { date: '2026-11-11', requests: 3, held: 2, paidShop: 1, paidElsewhere: 0, firstTx: ROWS[0]!.tx, lastTx: ROWS[2]!.tx, ids: { ['a'.repeat(64)]: [1, 3] } };
+const NO_MODEL = { ...MODEL_RUN, requests: 0, attempts: 0, ids: {} };
 
 test('rob: the board says who sent what, from the replay file, marks replayed rows and counts the browsers apart', () => {
-  const html = view({ replay: REPLAY });
+  const html = view({ replay: REPLAY, model: NO_MODEL });
   const t = text(html);
   assert.ok(t.includes('The team replayed the 3 payment requests its bench recorded in strict mode on Nov 11, 2026: 2 were held and 1, the legitimate payment, were paid to the booked shop. Every other attempt here was sent from a browser like yours.'));
-  assert.ok(t.includes('From browsers so far: 1 attempt, 0 paid to anyone but the booked shop.'));
+  assert.ok(t.includes('From browsers so far: 1 attempt, 0 paid to anyone but the booked shop, 0 paid to the booked shop.'));
   assert.equal((html.match(/data-replay="true"/g) ?? []).length, 2);
   assert.equal((t.match(/bench replay, /g) ?? []).length, 2);
   assert.deepEqual(copyProblems(t), []);
   // no replay yet: no sentence
-  assert.ok(!text(view({ replay: { ...REPLAY, requests: 0, held: 0, paidShop: 0, ids: {} } })).includes('The team replayed'));
+  assert.ok(!text(view({ replay: { ...REPLAY, requests: 0, held: 0, paidShop: 0, ids: {} }, model: NO_MODEL })).includes('The team replayed'));
 });
 
 test('rob: a long board shows its newest rows with a visible count and a "Show more" in the page style', () => {
@@ -183,7 +185,7 @@ test('rob: a board from the site state file shows its totals at once, dated, and
     pool: { id: 'p', assets: '0', shares: '0', losses: '0', idle: '0', lent: '0', fees_earned: '0', lines: 0 },
     lenders: { outside: [], outside_now: 0, truncated: false },
     loop: { cycles: 0, last_ms: null, last_tx: null, fees_earned_by_loop: '0' },
-    rob: { policy: 'x', attempts: 100, blocked: 0, held_open_ms: [NOW - 650_000], expired: 90, paid_shop: 9, paid_outside: 0, failed: 0, last_ms: NOW - 650_000, truncated: false, ttl_ms: 60_000, from_browsers: { attempts: 7, paid_outside: 0 }, rows: ROWS },
+    rob: { policy: 'x', attempts: 100, blocked: 0, held_open_ms: [NOW - 650_000], expired: 90, paid_shop: 9, paid_outside: 0, failed: 0, last_ms: NOW - 650_000, truncated: false, ttl_ms: 60_000, from_browsers: { attempts: 7, paid_outside: 0, excludes: ['replay', 'model'] }, rows: ROWS },
     credit: { events: [] }, arena: { attempts: [], truncated: false }, challenge: null,
   } as const;
   const s = JSON.parse(JSON.stringify(site)) as Parameters<typeof boardOfState>[0];
@@ -202,4 +204,69 @@ test('rob: a board from the site state file shows its totals at once, dated, and
   assert.equal(later.asOfMs, null, 'a live read was added: no date');
   assert.equal(later.rows[0]?.requestId, 'new:1');
   assert.equal(later.fromBrowsers?.attempts, 8);
+});
+
+// AIR-364 follow-up: the uncensored-model run is the team's too, told apart from the browsers' attempts on both paths
+const HASH_M = 'b'.repeat(64);
+const MODEL = { date: '2026-11-12', requests: 4, attempts: 3, held: 1, blocked: 1, paidShop: 1, paidOutside: 0, failed: 1, firstTx: 'm1', lastTx: 'm3', lastMs: NOW - 200 * 60_000, ids: { [HASH_M]: [7, 8, 9] } };
+const MIXED: TryAttempt[] = [
+  ...ROWS.map((r) => ({ ...r, atMs: r.atMs - 300 * 60_000 })),
+  row(21, 'expired', { requestId: `${HASH_M}:7`, atMs: NOW - 210 * 60_000 }),
+  row(22, 'blocked', { requestId: `${HASH_M}:8`, atMs: NOW - 205 * 60_000, reason: 'BookLabelNotInBook' }),
+  row(23, 'paid_shop', { requestId: `${HASH_M}:9`, atMs: NOW - 200 * 60_000, payee: PUB.shop.payee, reason: null }),
+  row(24, 'expired', { requestId: `${'c'.repeat(64)}:1`, atMs: NOW - 30 * 60_000 }),
+  row(25, 'paid_shop', { requestId: `${'c'.repeat(64)}:2`, atMs: NOW - 20 * 60_000, payee: PUB.shop.payee, reason: null }),
+];
+
+test('rob: the bench replay and the uncensored-model run are the team\'s, each said in words, and the browsers are counted apart', () => {
+  const split = splitAttempts(MIXED, REPLAY, MODEL);
+  assert.deepEqual([split.replay.attempts, split.model.attempts, split.browsers.attempts], [2, 3, 3]);
+  assert.deepEqual([split.replay.paidShop, split.model.paidShop, split.browsers.paidShop], [1, 1, 1]);
+  const html = view({ board: { counts: countsOfTry(MIXED), rows: MIXED, truncated: false }, replay: REPLAY, model: MODEL, shown: 20 });
+  const t = text(html);
+  assert.ok(t.includes(`${teamSentence(REPLAY, MODEL)} From browsers so far: 3 attempts, 0 paid to anyone but the booked shop, 1 paid to the booked shop.`), t);
+  assert.ok(t.includes('The team also sent 4 attacks written by an uncensored model on Nov 12, 2026: 1 were held, 1 blocked, 1 were refused before the card decided, and 1, sent with forged labels, were paid to the booked shop within the task the owner signed; 0 were paid to anyone but the booked shop. Every other attempt here was sent from a browser like yours.'));
+  assert.equal((html.match(/data-team="model"/g) ?? []).length, 3);
+  assert.equal((html.match(/data-team="replay"/g) ?? []).length, 2);
+  assert.equal((t.match(/uncensored model, /g) ?? []).length, 3);
+  assert.deepEqual(copyProblems(t), []);
+});
+
+test('rob: the state file and a page that reads the chain history itself reach the same browsers count', () => {
+  // the state script's path: split the history, write from_browsers with the runs it left out
+  const split = splitAttempts(MIXED, REPLAY, MODEL);
+  const c = countsOfTry(MIXED);
+  const site = {
+    format: 'airlock-site-state-v1', as_of_ms: NOW - 60_000, block_height: 1, cut_ms: NOW - 120_000, command: 'pnpm site-state',
+    pool: { id: 'p', assets: '0', shares: '0', losses: '0', idle: '0', lent: '0', fees_earned: '0', lines: 0 },
+    lenders: { outside: [], outside_now: 0, truncated: false },
+    loop: { cycles: 0, last_ms: null, last_tx: null, fees_earned_by_loop: '0' },
+    rob: { policy: 'x', attempts: c.attempts, blocked: c.blocked, held_open_ms: [], expired: c.expired, paid_shop: c.paidShop, paid_outside: c.paidOutside, failed: 0, last_ms: c.lastMs, truncated: false, ttl_ms: 60_000, from_browsers: { attempts: split.browsers.attempts, paid_outside: split.browsers.paidOutside, paid_shop: split.browsers.paidShop, excludes: ['replay', 'model'] }, rows: MIXED },
+    credit: { events: [] }, arena: { attempts: [], truncated: false }, challenge: null,
+  };
+  const s = JSON.parse(JSON.stringify(site)) as Parameters<typeof boardOfState>[0];
+  const fromState = boardOfState(s, null, NOW, REPLAY, MODEL);
+  const fromChain = { counts: c, rows: MIXED, truncated: false };
+  if (fromState === null || fromState === 'unreadable') return assert.fail('no board');
+  assert.deepEqual(browsersOfBoard(fromState, REPLAY, MODEL), browsersOfBoard(fromChain, REPLAY, MODEL));
+  const line = (b: Parameters<typeof browsersOfBoard>[0]): string => /From browsers so far: [^.]*\./.exec(text(view({ board: b, replay: REPLAY, model: MODEL })))?.[0] ?? '';
+  assert.equal(line(fromState), line(fromChain));
+  assert.equal(line(fromChain), 'From browsers so far: 3 attempts, 0 paid to anyone but the booked shop, 1 paid to the booked shop.');
+  // a file written before the model run was left out (no excludes) still reads right: the run's own totals are taken off
+  const old = JSON.parse(JSON.stringify({ ...site, rob: { ...site.rob, from_browsers: { attempts: split.browsers.attempts + 3, paid_outside: 0, paid_shop: 2 } } })) as Parameters<typeof boardOfState>[0];
+  const fixed = boardOfState(old, null, NOW, REPLAY, MODEL);
+  if (fixed === null || fixed === 'unreadable') return assert.fail('no board');
+  assert.deepEqual(fixed.fromBrowsers, { attempts: 3, paidOutside: 0, paidShop: 1 });
+});
+
+test('rob: the prerender prints absolute UTC times, relative ones come after the page mounts', () => {
+  assert.equal(utcText(Date.parse('2026-11-12T03:04:00Z')), 'Nov 12, 03:04 UTC');
+  const pre = text(view({ relative: false }));
+  assert.ok(!/\bago\b/.test(pre), pre);
+  assert.ok(pre.includes(`Last attempt at ${utcText(NOW - 60_000)}.`));
+  assert.ok(pre.includes(`at ${utcText(NOW - 2 * 60_000)}`));
+  const live = text(view());
+  assert.ok(live.includes('Last attempt 1 min ago.'));
+  // the page itself starts with UTC times, so the prerendered HTML has no relative time
+  assert.ok(!/\bago\b/.test(text(renderToStaticMarkup(<App pathname="/rob" page={<RobPage />} />))));
 });

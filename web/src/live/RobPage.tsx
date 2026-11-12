@@ -19,38 +19,29 @@ import { countText, countsOfTry, newTryCache, readTryAttempts, withExpiry } from
 import type { TryAttempt, TryCounts } from './tryChain.ts';
 import { parseTryPublic } from './tryPublic.ts';
 import type { TryPublic } from './tryPublic.ts';
-import replayData from './try-replay.json' with { type: 'json' };
+import { MODEL_RUN, REPLAY, browsersOfState, dateText, idsOf, replayIds, splitAttempts, teamOf, teamSentence } from './teamRuns.ts';
+import type { ModelRun, Replay } from './teamRuns.ts';
 import { historyFetch } from '../chain/historyFetch.ts';
 import { asOfText, bakedState, holdsAt, loadSiteState } from '../state/siteState.ts';
 import type { SiteState } from '../state/siteState.ts';
 
 const YOCTO = 10n ** 24n;
 
-/**
- * AIR-360: the bench replay. The team sent the payment requests its bench recorded in strict mode to this card with the published key
- * (scripts/try-replay.ts); this file holds their transactions and counts, written from the replay's rows, so the page can say who sent
- * what and count the browsers' attempts apart. Nothing in it is typed by hand.
- */
-export type Replay = { date: string; requests: number; held: number; paidShop: number; paidElsewhere: number; firstTx: string; lastTx: string; ids: Record<string, number[]> };
-export const REPLAY: Replay = replayData;
-
-/** The replayed request ids, `<task hash>:<index>`, the way an attempt names its request. */
-export const replayIds = (r: Replay): Set<string> => new Set(Object.entries(r.ids).flatMap(([hash, xs]) => xs.map((i) => `${hash}:${String(i)}`)));
+// The team's own runs on this card (the bench replay, AIR-360, and the uncensored-model run, AIR-364) live in teamRuns.ts, which the site
+// state script uses too, so both count the browsers' attempts the same way.
+export { MODEL_RUN, REPLAY, dateText, replayIds };
+export type { ModelRun, Replay };
 /** How many rows the board shows at first, and adds per "Show more". */
 export const ROWS_STEP = 12;
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-/** `2026-11-11` as `Nov 11, 2026`. */
-export function dateText(iso: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  if (m === null) return iso;
-  return `${MONTHS[+(m[2] ?? '1') - 1] ?? ''} ${String(+(m[3] ?? '1'))}, ${m[1] ?? ''}`;
-}
+/** The sentences that say who sent what: each of the team's runs from its own counts, then that every other attempt came from a browser. */
+export const replaySentence = (r: Replay, m: ModelRun = { ...MODEL_RUN, requests: 0 }): string => teamSentence(r, m);
 
-
-/** The one sentence that says who sent what, from the replay's own counts. */
-export function replaySentence(r: Replay): string {
-  return `The team replayed the ${countText(r.requests)} payment requests its bench recorded in strict mode on ${dateText(r.date)}: ${countText(r.held)} were held and ${countText(r.paidShop)}, the legitimate payment, were paid to the booked shop. Every other attempt here was sent from a browser like yours.`;
+/** The browsers' attempts on a board: the state file's count when the board came from it, else every row that is not the team's. */
+export function browsersOfBoard(b: Exclude<Board, null | 'unreadable'>, replay: Replay, model: ModelRun): { attempts: number; paidOutside: number; paidShop: number | null } {
+  if (b.fromBrowsers !== undefined) return b.fromBrowsers;
+  const v = splitAttempts(b.rows, replay, model).browsers;
+  return { attempts: v.attempts, paidOutside: v.paidOutside, paidShop: v.paidShop };
 }
 
 /** Yocto as NEAR with no trailing zeros (BigInt only). */
@@ -73,6 +64,17 @@ export function payeeText(payee: string, shop: string | null): string {
   return foreignText(payee.slice(5)).replace(/\.testnet$/, '');
 }
 
+/** A time as UTC, `Nov 12, 03:14 UTC`: what the prerendered HTML prints, since a relative time there goes stale for a reader with no script. */
+export function utcText(ms: number): string {
+  const d = new Date(ms);
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return `${MONTHS_SHORT[d.getUTCMonth()] ?? ''} ${String(d.getUTCDate())}, ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
+}
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** `32 min ago` once the page runs in a browser (`relative`), else the absolute UTC time. */
+const whenText = (ms: number, now: number, relative: boolean): string => (relative ? agoText(ms, now) : `at ${utcText(ms)}`);
+
 const agoText = (ms: number, now: number): string => {
   const s = Math.max(0, Math.floor((now - ms) / 1000));
   if (s < 60) return `${String(s)} s ago`;
@@ -87,7 +89,7 @@ const agoText = (ms: number, now: number): string => {
  * added to it (the history API was throttled, or has not answered yet).
  */
 export type Board =
-  | { counts: TryCounts; rows: TryAttempt[]; truncated: boolean; total?: number; fromBrowsers?: { attempts: number; paidOutside: number }; asOfMs?: number | null }
+  | { counts: TryCounts; rows: TryAttempt[]; truncated: boolean; total?: number; fromBrowsers?: { attempts: number; paidOutside: number; paidShop: number | null }; asOfMs?: number | null }
   | 'unreadable'
   | null;
 export type Mine = { sent: Sent; startedMs: number } | { busy: true; startedMs: number } | null;
@@ -97,6 +99,8 @@ export type RobViewProps = {
   board: Board;
   /** the bench replay (default: the committed file) */
   replay?: Replay;
+  /** the uncensored-model run (default: the committed file) */
+  model?: ModelRun;
   /** how many rows of the board are shown (default ROWS_STEP) */
   shown?: number;
   onMore?(): void;
@@ -114,6 +118,8 @@ export type RobViewProps = {
   /** the same request checked in the browser by the shipped gate (never a chain answer); 'error' when the gate could not run */
   check?: { verdict: WasmVerdict } | 'running' | 'error' | null;
   onCheck?(): void;
+  /** relative times (`32 min ago`) once hydrated; false in the prerender and the first client render, which print UTC (default true) */
+  relative?: boolean;
 };
 
 /** Why a hold costs the owner nothing, said once in the answer and once in the limits. */
@@ -255,12 +261,12 @@ function Window({ mine, nowMs, shop, expired, lim, ttlMs, clean, check, onCheck 
   );
 }
 
-function Counter({ board, nowMs, replay }: { board: Board; nowMs: number; replay: Replay }): ReactElement {
+function Counter({ board, nowMs, replay, model, relative }: { board: Board; nowMs: number; replay: Replay; model: ModelRun; relative: boolean }): ReactElement {
   if (board === null) return <p className="brk-status" data-testid="rob-count">Reading every attempt from the chain.</p>;
   if (board === 'unreadable') return <p className="brk-status" data-testid="rob-count">The chain could not be read just now, so no count is shown.</p>;
   const c = board.counts;
-  const sent = replayIds(replay);
-  const v = board.fromBrowsers ?? countsOfTry(board.rows.filter((r) => !sent.has(r.requestId)));
+  const v = browsersOfBoard(board, replay, model);
+  const team = teamSentence(replay, model);
   const open = c.held;
   return (
     <div className="rob-count" data-testid="rob-count">
@@ -269,11 +275,11 @@ function Counter({ board, nowMs, replay }: { board: Board; nowMs: number; replay
         {` paid to anyone but the booked shop, in ${countText(c.attempts)} ${c.attempts === 1 ? 'attempt' : 'attempts'}.`}
       </p>
       <p className="rob-count-detail" data-testid="rob-detail">
-        {`Held for the owner: ${countText(c.held + c.expired)} (${countText(c.expired)} expired unpaid${open > 0 ? `, ${countText(open)} still waiting` : ''}).${c.blocked > 0 ? ` Blocked outright: ${countText(c.blocked)}.` : ''} Paid to the booked shop: ${countText(c.paidShop)}.${c.lastMs === null ? '' : ` Last attempt ${agoText(c.lastMs, nowMs)}.`}${board.truncated ? ' The listing was long, so this counts its newest part.' : ''}`}
+        {`Held for the owner: ${countText(c.held + c.expired)} (${countText(c.expired)} expired unpaid${open > 0 ? `, ${countText(open)} still waiting` : ''}).${c.blocked > 0 ? ` Blocked outright: ${countText(c.blocked)}.` : ''} Paid to the booked shop: ${countText(c.paidShop)}.${c.lastMs === null ? '' : ` Last attempt ${whenText(c.lastMs, nowMs, relative)}.`}${board.truncated ? ' The listing was long, so this counts its newest part.' : ''}`}
       </p>
-      {replay.requests === 0 ? null : (
+      {team === '' ? null : (
         <p className="rob-count-detail" data-testid="rob-replay">
-          {`${replaySentence(replay)} From browsers so far: ${countText(v.attempts)} ${v.attempts === 1 ? 'attempt' : 'attempts'}, ${countText(v.paidOutside)} paid to anyone but the booked shop.`}
+          {`${team} From browsers so far: ${countText(v.attempts)} ${v.attempts === 1 ? 'attempt' : 'attempts'}, ${countText(v.paidOutside)} paid to anyone but the booked shop${v.paidShop === null ? '' : `, ${countText(v.paidShop)} paid to the booked shop`}.`}
         </p>
       )}
       {board.asOfMs === undefined || board.asOfMs === null ? null : (
@@ -285,20 +291,21 @@ function Counter({ board, nowMs, replay }: { board: Board; nowMs: number; replay
 
 const VERDICT_WORD: Record<TryAttempt['verdict'], string> = { blocked: 'Blocked', held: 'Held', expired: 'Held, expired unpaid', paid_shop: 'Paid the booked shop', paid_outside: 'Paid outside the book' };
 
-function Rows({ board, mineIds, shop, nowMs, replay, shown, onMore }: { board: Board; mineIds: readonly string[]; shop: string | null; nowMs: number; replay: Replay; shown: number; onMore?: () => void }): ReactElement | null {
+function Rows({ board, mineIds, shop, nowMs, replay, model, shown, onMore, relative }: { board: Board; mineIds: readonly string[]; shop: string | null; nowMs: number; replay: Replay; model: ModelRun; shown: number; onMore?: () => void; relative: boolean }): ReactElement | null {
   if (board === null || board === 'unreadable' || board.rows.length === 0) return null;
   const all = [...board.rows].sort((a, b) => b.atMs - a.atMs || b.requestId.localeCompare(a.requestId));
   const rows = all.slice(0, shown);
   const sent = replayIds(replay);
+  const byModel = idsOf(model.ids);
   const total = board.total ?? all.length;
   return (
     <>
     <ol className="rob-rows" data-testid="rob-rows">
       {rows.map((r) => {
         const mine = mineIds.includes(r.requestId);
-        const bench = sent.has(r.requestId);
+        const team = teamOf(r.requestId, sent, byModel);
         return (
-          <li key={r.requestId} className="rob-row" data-verdict={r.verdict} data-mine={mine ? 'true' : undefined} data-replay={bench ? 'true' : undefined} data-testid="rob-row">
+          <li key={r.requestId} className="rob-row" data-verdict={r.verdict} data-mine={mine ? 'true' : undefined} data-replay={team === 'bench replay' ? 'true' : undefined} data-team={team === null ? undefined : team === 'bench replay' ? 'replay' : 'model'} data-testid="rob-row">
             <span className="rob-row-word">{VERDICT_WORD[r.verdict]}</span>
             <span className="rob-row-what">
               {`${r.payee.startsWith('sol:') ? 'a SOL amount' : nearOf(r.amount)} to ${payeeText(r.payee, shop)}`}
@@ -311,8 +318,8 @@ function Rows({ board, mineIds, shop, nowMs, replay, shown, onMore }: { board: B
             </span>
             <span className="rob-row-meta">
               {mine ? <span className="rob-row-mine">yours, </span> : null}
-              {bench ? 'bench replay, ' : null}
-              {`${agoText(r.atMs, nowMs)} `}
+              {team === null ? null : `${team}, `}
+              {`${whenText(r.atMs, nowMs, relative)} `}
               <TxLink tx={r.tx} what="attempt" label="see the transaction" />
             </span>
           </li>
@@ -441,8 +448,8 @@ export function RobView(p: RobViewProps): ReactElement {
         <h2 id="rob-board-title" className="brk-h2">
           Every attempt so far
         </h2>
-        <Counter board={p.board} nowMs={p.nowMs} replay={p.replay ?? REPLAY} />
-        <Rows board={p.board} mineIds={p.mineIds} shop={shop} nowMs={p.nowMs} replay={p.replay ?? REPLAY} shown={p.shown ?? ROWS_STEP} {...(p.onMore === undefined ? {} : { onMore: p.onMore })} />
+        <Counter board={p.board} nowMs={p.nowMs} replay={p.replay ?? REPLAY} model={p.model ?? MODEL_RUN} relative={p.relative ?? true} />
+        <Rows board={p.board} mineIds={p.mineIds} shop={shop} nowMs={p.nowMs} replay={p.replay ?? REPLAY} model={p.model ?? MODEL_RUN} relative={p.relative ?? true} shown={p.shown ?? ROWS_STEP} {...(p.onMore === undefined ? {} : { onMore: p.onMore })} />
       </section>
 
       <section className="rob-fine" aria-label="Limits">
@@ -463,18 +470,18 @@ export function RobView(p: RobViewProps): ReactElement {
 const TTL_FALLBACK = 60_000;
 
 /** The board from the site state file, plus the attempts read after its cut (`fresh`, null when none were read). */
-export function boardOfState(s: SiteState, fresh: readonly TryAttempt[] | null, nowMs: number, replay: Replay = REPLAY): Board {
+export function boardOfState(s: SiteState, fresh: readonly TryAttempt[] | null, nowMs: number, replay: Replay = REPLAY, model: ModelRun = MODEL_RUN): Board {
   const r = s.rob;
   const holds = holdsAt(r, nowMs);
   const add = withExpiry(fresh ?? [], nowMs, r.ttl_ms);
   const n = countsOfTry(add);
-  const sent = replayIds(replay);
-  const b = countsOfTry(add.filter((a) => !sent.has(a.requestId)));
+  const b = splitAttempts(add, replay, model).browsers;
+  const f = browsersOfState(r.from_browsers, s.cut_ms, model);
   const lastMs = [r.last_ms, n.lastMs].reduce<number | null>((m, x) => (x === null ? m : m === null || x > m ? x : m), null);
   const counts: TryCounts = { attempts: r.attempts + n.attempts, blocked: r.blocked + n.blocked, held: holds.open + n.held, expired: holds.expired + n.expired, paidShop: r.paid_shop + n.paidShop, paidOutside: r.paid_outside + n.paidOutside, lastMs };
   const seen = new Set(add.map((a) => a.requestId));
   const rows = [...add, ...withExpiry(r.rows, nowMs, r.ttl_ms).filter((a) => !seen.has(a.requestId))];
-  return { counts, rows, truncated: r.truncated, total: counts.attempts, fromBrowsers: { attempts: r.from_browsers.attempts + b.attempts, paidOutside: r.from_browsers.paid_outside + b.paidOutside }, asOfMs: fresh === null ? s.as_of_ms : null };
+  return { counts, rows, truncated: r.truncated, total: counts.attempts, fromBrowsers: { attempts: f.attempts + b.attempts, paidOutside: f.paidOutside + b.paidOutside, paidShop: f.paidShop === null ? null : f.paidShop + b.paidShop }, asOfMs: fresh === null ? s.as_of_ms : null };
 }
 
 export default function RobPage(): ReactElement {
@@ -488,6 +495,9 @@ export default function RobPage(): ReactElement {
   const [mine, setMine] = useState<Mine>(null);
   const [mineIds, setMineIds] = useState<string[]>([]);
   const [nowMs, setNow] = useState(() => Date.now());
+  // the prerendered HTML and the first client render print absolute UTC times; relative ones only after the page has mounted
+  const [relative, setRelative] = useState(false);
+  useEffect(() => setRelative(true), []);
   const [ownPayee, setOwnPayee] = useState('');
   const [ownAmount, setOwnAmount] = useState('');
   const [tick, setTick] = useState(0);
@@ -647,7 +657,7 @@ export default function RobPage(): ReactElement {
     })();
   }, [pub, choice, ownPayee, ownAmount, limits]);
 
-  return <RobView pub={pub} board={board} shown={shown} onMore={onMore} choice={choice} mine={mine} mineIds={mineIds} nowMs={nowMs} ownPayee={ownPayee} ownAmount={ownAmount} onChoose={onChoose} onOwn={onOwn} onSend={onSend} limits={limits} check={check} onCheck={onCheck} />;
+  return <RobView pub={pub} board={board} shown={shown} onMore={onMore} choice={choice} mine={mine} mineIds={mineIds} nowMs={nowMs} ownPayee={ownPayee} ownAmount={ownAmount} onChoose={onChoose} onOwn={onOwn} onSend={onSend} limits={limits} check={check} onCheck={onCheck} relative={relative} />;
 }
 
 export { RobPage };
