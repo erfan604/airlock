@@ -1,0 +1,100 @@
+{
+ "startMs": 1794445164042,
+ "requestId": "00e68a85e0d8af90435091cfac44f5336e51290f429f7cd3336889fddfcc100c:0",
+ "pendingId": "37",
+ "taskId": "bounds-1794445157443-ccd197",
+ "taskHash": "00e68a85e0d8af90435091cfac44f5336e51290f429f7cd3336889fddfcc100c",
+ "expiresMs": 1794448760975,
+ "clear": "expire",
+ "steps": [
+  {
+   "what": "held OverTaskBound",
+   "signer": "agent.airlock-credit-c1108d.testnet",
+   "tx": "qMUBqtZy6VDATxbkqPWW5fjjHLfDxseCyn8Fmj9iBsJ"
+  },
+  {
+   "what": "borrower approve refused",
+   "signer": "borrower.airlock-credit-c1108d.testnet",
+   "tx": "CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni"
+  },
+  {
+   "what": "agent expire",
+   "signer": "agent.airlock-credit-c1108d.testnet",
+   "tx": "74t8UB6KyVwggFNQeMzkmRwV96F5CquCg6vTJUeUJqgo"
+  }
+ ],
+ "ledgersBefore": {
+  "asset_day": {
+   "spent": "90000000000000000000000",
+   "cap": "20000000000000000000000000",
+   "remaining": "19910000000000000000000000"
+  },
+  "payee_day": {
+   "spent": "90000000000000000000000",
+   "cap": "0",
+   "remaining": "0"
+  },
+  "payee_untrusted_day": {
+   "spent": "0",
+   "cap": "0",
+   "remaining": "0"
+  },
+  "task_spent": null
+ },
+ "ledgersAfter": {
+  "asset_day": {
+   "spent": "90000000000000000000000",
+   "cap": "20000000000000000000000000",
+   "remaining": "19910000000000000000000000"
+  },
+  "payee_day": {
+   "spent": "90000000000000000000000",
+   "cap": "0",
+   "remaining": "0"
+  },
+  "payee_untrusted_day": {
+   "spent": "0",
+   "cap": "0",
+   "remaining": "0"
+  },
+  "task_spent": null
+ },
+ "poolBefore": {
+  "idle": "5490000000000000000000004",
+  "lent": "0",
+  "shares": "4908323387813118576727657",
+  "fees_earned": "420000000000000000000000",
+  "lines": [
+   {
+    "card": "card.airlock-credit-c1108d.testnet",
+    "borrower": "borrower.airlock-credit-c1108d.testnet",
+    "limit": "90000000000000000000000",
+    "drawn": "90000000000000000000000",
+    "returned": "90000000000000000000000",
+    "fee_bps": 1000,
+    "due_ms": "1794531480445",
+    "collateral": "0",
+    "state": "Repaid"
+   }
+  ]
+ },
+ "poolAfter": {
+  "idle": "5490000000000000000000004",
+  "lent": "0",
+  "shares": "4908323387813118576727657",
+  "fees_earned": "420000000000000000000000",
+  "lines": [
+   {
+    "card": "card.airlock-credit-c1108d.testnet",
+    "borrower": "borrower.airlock-credit-c1108d.testnet",
+    "limit": "90000000000000000000000",
+    "drawn": "90000000000000000000000",
+    "returned": "90000000000000000000000",
+    "fee_bps": 1000,
+    "due_ms": "1794531480445",
+    "collateral": "0",
+    "state": "Repaid"
+   }
+  ]
+ }
+}

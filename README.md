@@ -2,7 +2,7 @@
 
 AIRLOCK is a lending pool for AI agents on NEAR: lenders fund a credit line held on a card that pays only merchants the owner booked, and a contract checks where every payee and amount came from, so a hijacked agent cannot send the lenders' money to an account outside the book [C3b] [C21].
 
-Strict mode has run on the live credit card since 2026-11-10T07:14:52Z: every amount the agent read from text is held for the owner, at any size [C22]. In the bench, strict mode paid 0 of 250 attack runs [C6], and its 144 recorded requests were replayed as real transactions: 134 held, 10 legitimate ones paid, 0 paid elsewhere [C26].
+Strict mode has run on the live credit card since 2026-11-10T07:14:52Z: every amount the agent read from text is held for the owner, at any size [C22]. In the bench it paid 0 of 250 attack runs [C6]; replayed on chain, its 144 recorded requests gave 134 held, 10 legitimate paid, 0 elsewhere [C26]. 222 attacks an uncensored model wrote, sent on chain, paid 0 outside the book [C30].
 
 The payment rule is proved in Lean and model-checked with Kani, and 40,000 generated cases tie the Lean model to the Rust [C5] [C7a] [C7b].
 
@@ -75,7 +75,7 @@ All tables: `docs/BENCH.md`.
 | 4 | T3 | `scripts/check.sh full` | about 2482 s | `ALL GREEN (full` |
 | 5 | T4 | `scripts/claims-run.sh --network` | about 5 s | `CLAIMS NETWORK OK <n> rows` |
 
-Tiers: T1 Node 24 and pnpm (`source scripts/env.sh` picks them under nvm), T2 plus Rust 1.86, T3 plus Kani and Lean, T4 plus RPC reads. A missing tool prints `SKIP <id> needs <tool>`. Details: `docs/VERIFY.md`.
+Tiers: T1 Node 24 and pnpm (`source scripts/env.sh` under nvm), T2 plus Rust 1.86, T3 plus Kani and Lean, T4 plus RPC reads. A missing tool prints `SKIP <id> needs <tool>`. Details: `docs/VERIFY.md`.
 
 ## Tracks
 
@@ -87,15 +87,15 @@ Tiers: T1 Node 24 and pnpm (`source scripts/env.sh` picks them under nvm), T2 pl
 ## Limits
 
 - Test network, no mainnet.
-- The recorded runs' counterparties and the hourly loop's borrower and merchant are the team's own accounts.
+- The runs' counterparties and the loop's borrower and merchant are the team's accounts.
 - The issuer books the payees and can approve a held payment to a payee outside the book [C21].
 - Collateral is 30 percent; a default beyond it is a loss for the lenders (`docs/UNDERWRITING.md`).
-- Lenders can leave 60 seconds after a deposit on this pool.
+- Lenders can leave 60 seconds after a deposit.
 - Default mode paid 10 of 250: a doctored amount to a booked payee inside its cap [C6].
 - Strict mode trusts the runtime's labels: a doctored amount labelled as the owner's is bounded by the signed task and the payee's daily limit [C22].
 - The Lean theorems and Kani harnesses cover the gate, not the pool [C20].
 - The Base check names no payee and no amount [C24].
-- The fee is charged on what the card kept, so a sweep before repay lowers it.
+- The fee is on what the card kept, so a sweep before repay lowers it.
 - One builder.
 
 More: `docs/KNOWN_LIMITATIONS.md`, `docs/THREAT_MODEL.md`.
