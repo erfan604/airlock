@@ -74,8 +74,10 @@ export type BoundsIo = {
   /** whether that lock file exists (read only: a dry run never takes the lock) */
   lockHeld(): boolean;
   agent(): Promise<AgentClient>;
-  /** a function call on the card signed from the near CLI keychain */
+  /** a function call on the card signed from the near CLI keychain; `tx` is '' when the CLI printed no hash (a failed call prints none) */
   send(call: NearCall): Promise<{ ok: boolean; tx: string; out: string }>;
+  /** the newest transaction since `sinceMs` that `call.signer` sent to the card with exactly `call`'s method and arguments, or null */
+  findTx(call: NearCall, sinceMs: number): Promise<string | null>;
   /** EXPERIMENTAL_tx_status, FINAL, from the fast RPC then the archival one */
   txStatus(hash: string, sender: string): Promise<unknown>;
   sleep(ms: number): Promise<void>;
@@ -233,14 +235,22 @@ async function live(io: BoundsIo, clear: 'expire' | 'reject'): Promise<number> {
       io.log(`APPROVER BOUNDS FAILED the hold is not in_book (${String(card.book)}): the refusal would be the book rule, not the bounds`);
       return 1;
     }
-    const tap = await io.send({ signer: A.borrower, method: 'approve', args: card, deposit: '1 yoctoNEAR', gas: '65 Tgas' });
-    rec.steps.push({ what: 'borrower approve refused', signer: A.borrower, tx: tap.tx });
+    const approveCall: NearCall = { signer: A.borrower, method: 'approve', args: card, deposit: '1 yoctoNEAR', gas: '65 Tgas' };
+    const sentAt = io.nowMs();
+    const tap = await io.send(approveCall);
+    // the near CLI prints no transaction hash when the call fails on chain: look the borrower's approve up in the transaction index
+    const tapTx = tap.tx !== '' ? tap.tx : await io.findTx(approveCall, sentAt - 60_000);
+    if (tapTx === null || tapTx === '') {
+      io.log(`APPROVER BOUNDS FAILED the borrower's approve has no transaction hash (the near CLI printed none and the transaction index has no approve of pending id ${o.pending_id} from ${A.borrower} to the card): find it by hand before --verify`);
+      return 1;
+    }
+    rec.steps.push({ what: 'borrower approve refused', signer: A.borrower, tx: tapTx });
     io.writeRecord(rec);
     if (tap.ok || !tap.out.includes(REFUSAL)) {
       io.log(`APPROVER BOUNDS FAILED the borrower's approve was not refused with the bounds text: ${tap.out.slice(-400).replace(/\s+/g, ' ')}`);
       return 1;
     }
-    io.log(`STEP 2 approve refused, tx ${tap.tx}`);
+    io.log(`STEP 2 approve refused, tx ${tapTx}`);
     const st = await stateOf(io, o.request_id);
     if (st !== 'Pending') {
       io.log(`APPROVER BOUNDS FAILED the request is ${st} after the refused approve, not Pending`);
@@ -314,6 +324,26 @@ async function finish(io: BoundsIo, rec: RunRecord): Promise<number> {
   return 0;
 }
 
+/** Among FastNEAR transaction objects (newest first), the hash of the first that `call.signer` sent to the card with one function call
+ * of `call.method` whose arguments equal `call.args`, or null. */
+export function matchCall(txs: readonly unknown[], call: NearCall): string | null {
+  for (const raw of txs) {
+    const t = isObj(raw) && isObj(raw['transaction']) ? raw['transaction'] : null;
+    if (t === null || t['signer_id'] !== call.signer || t['receiver_id'] !== A.card || !Array.isArray(t['actions']) || t['actions'].length !== 1) continue;
+    const a = t['actions'][0];
+    const fc = isObj(a) && isObj(a['FunctionCall']) ? a['FunctionCall'] : null;
+    if (fc === null || fc['method_name'] !== call.method || typeof fc['args'] !== 'string') continue;
+    let args: unknown;
+    try {
+      args = JSON.parse(Buffer.from(fc['args'], 'base64').toString('utf8')) as unknown;
+    } catch {
+      continue;
+    }
+    if (JSON.stringify(args) === JSON.stringify(call.args) && typeof t['hash'] === 'string') return t['hash'];
+  }
+  return null;
+}
+
 /** Every receipt failure text of a transaction status, joined. */
 export function failureText(status: unknown): string {
   return JSON.stringify(status)
@@ -346,6 +376,7 @@ export async function verify(io: BoundsIo): Promise<number> {
   if (rec === null) return no('no record: the live run writes it');
   const [held, tap, cleared] = rec.steps;
   if (held === undefined || tap === undefined || cleared === undefined) return no('the record has fewer than three steps');
+  for (const st of rec.steps) if (!/^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(st.tx)) return no(`the step "${st.what}" has no transaction hash in the record (${JSON.stringify(st.tx)})`);
   const h = await io.txStatus(held.tx, held.signer);
   const ht = txOf(h);
   const outs = successValue(h);
@@ -475,6 +506,16 @@ export function liveIo(recordFile: string): BoundsIo {
       const out = clean(`${r.stdout}${r.stderr}`);
       const tx = /Transaction ID: *([A-Za-z0-9]+)/.exec(out)?.[1] ?? '';
       return { ok: !(r.status !== 0 || tx === '' || /ExecutionError|Failure|panicked/.test(out)), tx, out };
+    },
+    findTx: async (call, sinceMs) => {
+      const fast = 'https://tx.test.fastnear.com';
+      const listed = await fetch(`${fast}/v0/account`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ account_id: call.signer, is_signer: true, limit: 20 }), signal: AbortSignal.timeout(30_000) });
+      const l = (await listed.json()) as { account_txs?: { transaction_hash?: string; tx_block_timestamp?: string }[] };
+      const recent = (l.account_txs ?? []).filter((t) => typeof t.transaction_hash === 'string' && Number(BigInt(t.tx_block_timestamp ?? '0') / 1_000_000n) >= sinceMs);
+      if (recent.length === 0) return null;
+      const got = await fetch(`${fast}/v0/transactions`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tx_hashes: recent.map((t) => t.transaction_hash) }), signal: AbortSignal.timeout(30_000) });
+      const g = (await got.json()) as { transactions?: unknown[] };
+      return matchCall(g.transactions ?? [], call);
     },
     txStatus: async (hash, sender) => {
       const params = { tx_hash: hash, sender_account_id: sender, wait_until: 'FINAL' };

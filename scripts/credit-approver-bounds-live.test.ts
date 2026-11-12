@@ -9,6 +9,7 @@ import type { BatchResult } from '../runtime/src/chain/types.ts';
 import { ECONOMY_ACCOUNTS as A } from '../runtime/src/economy/index.ts';
 import {
   AMOUNT_YOCTO,
+  matchCall,
   BOUND_YOCTO,
   EXPECTED_CODE_HASH,
   MAX_AT_STAKE_YOCTO,
@@ -64,7 +65,7 @@ test('every stop rule', () => {
 });
 
 /** A fake card: one hold, the approver refused, expire or reject clears it. */
-function fake(over: { codeHash?: string; refusal?: string; minute?: number } = {}) {
+function fake(over: { codeHash?: string; refusal?: string; minute?: number; cliHash?: boolean; indexed?: string | null } = {}) {
   const log: string[] = [];
   const sent: NearCall[] = [];
   const order: string[] = [];
@@ -115,7 +116,7 @@ function fake(over: { codeHash?: string; refusal?: string; minute?: number } = {
       submit: async (): Promise<BatchResult> => {
         order.push('submit');
         reqState = 'Pending';
-        return { taskHash: 'a'.repeat(64), outcomes: [{ request_id: requestId, outcome: 'escalated', reason: 'OverTaskBound', pending_id: '7' }], txHash: 'TxHold', events: [], recovered: false, views: [] } as unknown as BatchResult;
+        return { taskHash: 'a'.repeat(64), outcomes: [{ request_id: requestId, outcome: 'escalated', reason: 'OverTaskBound', pending_id: '7' }], txHash: 'qMUBqtZy6VDATxbkqPWW5fjjHLfDxseCyn8Fmj9iBsJ', events: [], recovered: false, views: [] } as unknown as BatchResult;
       },
       latestBlockMs: async () => now,
       expire: async (id) => {
@@ -123,18 +124,22 @@ function fake(over: { codeHash?: string; refusal?: string; minute?: number } = {
         assert.ok(now >= expiresMs(), 'expire only after the time to live');
         order.push('expire');
         reqState = 'Expired';
-        return 'TxExpire';
+        return 'GW23AJv14hiQgH6HLAX7JsZ46jH789hgLAyj9F4hHn7q';
       },
     }),
     send: async (c) => {
       sent.push(c);
       order.push(c.method);
-      if (c.method === 'approve') return { ok: false, tx: 'TxApprove', out: `Error: Smart contract panicked: ${over.refusal ?? REFUSAL}; reject it, or let it expire` };
+      if (c.method === 'approve') return { ok: false, tx: over.cliHash === false ? '' : 'CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni', out: `Error: Smart contract panicked: ${over.refusal ?? REFUSAL}; reject it, or let it expire` };
       if (c.method === 'reject') {
         reqState = 'Rejected';
-        return { ok: true, tx: 'TxReject', out: 'Transaction ID: TxReject' };
+        return { ok: true, tx: '3T3Y8d7sP8JX7f3SdpJsJDEbXsm2Xbe4T3Rb2Ce6wWvq', out: 'Transaction ID: 3T3Y8d7sP8JX7f3SdpJsJDEbXsm2Xbe4T3Rb2Ce6wWvq' };
       }
       return { ok: false, tx: '', out: 'unexpected' };
+    },
+    findTx: async (c) => {
+      order.push(`find:${c.method}`);
+      return over.indexed === undefined ? 'CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni' : over.indexed;
     },
     txStatus: async () => ({}),
     sleep: async (ms) => {
@@ -168,8 +173,8 @@ test('live, cleared by expire: hold, refused approve, still pending, wait withou
   const r = f.record();
   assert.ok(r !== null);
   assert.equal(r.clear, 'expire');
-  assert.deepEqual(r.steps.map((s) => s.tx), ['TxHold', 'TxApprove', 'TxExpire']);
-  assert.match(f.log.at(-1) ?? '', /^APPROVER BOUNDS LIVE OK TxHold TxApprove TxExpire$/);
+  assert.deepEqual(r.steps.map((s) => s.tx), ['qMUBqtZy6VDATxbkqPWW5fjjHLfDxseCyn8Fmj9iBsJ', 'CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni', 'GW23AJv14hiQgH6HLAX7JsZ46jH789hgLAyj9F4hHn7q']);
+  assert.match(f.log.at(-1) ?? '', /^APPROVER BOUNDS LIVE OK qMUBqtZy6VDATxbkqPWW5fjjHLfDxseCyn8Fmj9iBsJ CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni GW23AJv14hiQgH6HLAX7JsZ46jH789hgLAyj9F4hHn7q$/);
   assert.ok(f.log.some((l) => l.includes('unchanged')));
 });
 
@@ -178,7 +183,7 @@ test('live, cleared by reject: the borrower rejects at once, no wait', async () 
   assert.equal(await main(['--live', '--reject'], { io: f.io }), 0);
   assert.deepEqual(f.order, ['lock', 'submit', 'approve', 'reject', 'unlock']);
   assert.equal(f.record()?.clear, 'reject');
-  assert.match(f.log.at(-1) ?? '', /LIVE OK TxHold TxApprove TxReject$/);
+  assert.match(f.log.at(-1) ?? '', /LIVE OK qMUBqtZy6VDATxbkqPWW5fjjHLfDxseCyn8Fmj9iBsJ CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni 3T3Y8d7sP8JX7f3SdpJsJDEbXsm2Xbe4T3Rb2Ce6wWvq$/);
 });
 
 test('live: an approve refused with another text is a failure, and nothing more is sent', async () => {
@@ -208,15 +213,15 @@ test('--verify: checks the three recorded transactions and the final state', asy
   const f = fake();
   assert.equal(await main(['--live'], { io: f.io }), 0);
   const statuses: Record<string, unknown> = {
-    TxHold: { transaction: { signer_id: A.agent, receiver_id: A.card }, status: { SuccessValue: Buffer.from(JSON.stringify([{ request_id: 'r'.repeat(64), outcome: 'escalated', reason: 'OverTaskBound' }])).toString('base64') } },
-    TxApprove: { transaction: { signer_id: A.borrower, receiver_id: A.card }, receipts_outcome: [{ outcome: { status: { Failure: { ActionError: { kind: { FunctionCallError: { ExecutionError: `Smart contract panicked: ${REFUSAL}` } } } } } } }] },
-    TxExpire: { transaction: { signer_id: A.agent, receiver_id: A.card }, status: { SuccessValue: '' } },
+    qMUBqtZy6VDATxbkqPWW5fjjHLfDxseCyn8Fmj9iBsJ: { transaction: { signer_id: A.agent, receiver_id: A.card }, status: { SuccessValue: Buffer.from(JSON.stringify([{ request_id: 'r'.repeat(64), outcome: 'escalated', reason: 'OverTaskBound' }])).toString('base64') } },
+    CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni: { transaction: { signer_id: A.borrower, receiver_id: A.card }, receipts_outcome: [{ outcome: { status: { Failure: { ActionError: { kind: { FunctionCallError: { ExecutionError: `Smart contract panicked: ${REFUSAL}` } } } } } } }] },
+    GW23AJv14hiQgH6HLAX7JsZ46jH789hgLAyj9F4hHn7q: { transaction: { signer_id: A.agent, receiver_id: A.card }, status: { SuccessValue: '' } },
   };
   f.io.txStatus = async (hash) => statuses[hash];
   assert.equal(await main(['--verify'], { io: f.io }), 0);
-  assert.match(f.log.at(-1) ?? '', /^APPROVER BOUNDS VERIFY OK TxHold TxApprove TxExpire$/);
+  assert.match(f.log.at(-1) ?? '', /^APPROVER BOUNDS VERIFY OK qMUBqtZy6VDATxbkqPWW5fjjHLfDxseCyn8Fmj9iBsJ CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni GW23AJv14hiQgH6HLAX7JsZ46jH789hgLAyj9F4hHn7q$/);
   // an approve that failed with the book rule does not pass
-  statuses['TxApprove'] = { transaction: { signer_id: A.borrower, receiver_id: A.card }, receipts_outcome: [{ outcome: { status: { Failure: 'the payee is not in the book at this epoch' } } }] };
+  statuses['CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni'] = { transaction: { signer_id: A.borrower, receiver_id: A.card }, receipts_outcome: [{ outcome: { status: { Failure: 'the payee is not in the book at this epoch' } } }] };
   assert.equal(await main(['--verify'], { io: f.io }), 1);
 });
 
@@ -224,4 +229,35 @@ test('--verify before any live run says so', async () => {
   const f = fake();
   assert.equal(await main(['--verify'], { io: f.io }), 1);
   assert.match(f.log.at(-1) ?? '', /no record/);
+});
+
+test('a failed approve with no hash from the near CLI: the hash comes from the transaction index, or the run stops', async () => {
+  const f = fake({ cliHash: false });
+  assert.equal(await main(['--live', '--reject'], { io: f.io }), 0);
+  assert.deepEqual(f.order, ['lock', 'submit', 'approve', 'find:approve', 'reject', 'unlock']);
+  assert.equal(f.record()?.steps[1]?.tx, 'CB1RC9RRWVeeax5W42ZeuZiwKdr6rt5u6uWd84hT66ni');
+  const g = fake({ cliHash: false, indexed: null });
+  assert.equal(await main(['--live', '--reject'], { io: g.io }), 1);
+  assert.deepEqual(g.order, ['lock', 'submit', 'approve', 'find:approve', 'unlock']);
+  assert.match(g.log.at(-1) ?? '', /^APPROVER BOUNDS FAILED the borrower's approve has no transaction hash/);
+});
+
+test('matchCall finds the borrower approve with exactly the card fields, newest first', () => {
+  const args = { id: '37', to: `near:${A.merchant}`, asset: 'NEAR', amount: '0.002', why: 'OverTaskBound', book: 'in_book' };
+  const call: NearCall = { signer: A.borrower, method: 'approve', args, deposit: '1 yoctoNEAR', gas: '65 Tgas' };
+  const tx = (hash: string, over: Record<string, unknown> = {}, a: object = args, method = 'approve') => ({ transaction: { hash, signer_id: A.borrower, receiver_id: A.card, actions: [{ FunctionCall: { method_name: method, args: Buffer.from(JSON.stringify(a)).toString('base64') } }], ...over } });
+  assert.equal(matchCall([tx('A'.repeat(44), {}, { ...args, id: '36' }), tx('B'.repeat(44), { receiver_id: A.pool }), tx('C'.repeat(44), {}, args, 'reject'), tx('D'.repeat(44)), tx('E'.repeat(44))], call), 'D'.repeat(44));
+  assert.equal(matchCall([tx('A'.repeat(44), { signer_id: A.agent })], call), null);
+  assert.equal(matchCall([], call), null);
+});
+
+test('--verify refuses a record whose step has an empty transaction hash', async () => {
+  const f = fake();
+  assert.equal(await main(['--live'], { io: f.io }), 0);
+  const r = f.record();
+  assert.ok(r !== null && r.steps[1] !== undefined);
+  r.steps[1].tx = '';
+  f.io.readRecord = () => r;
+  assert.equal(await main(['--verify'], { io: f.io }), 1);
+  assert.match(f.log.at(-1) ?? '', /borrower approve refused" has no transaction hash/);
 });
