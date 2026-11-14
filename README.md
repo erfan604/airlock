@@ -102,7 +102,7 @@ More: `docs/KNOWN_LIMITATIONS.md`, `docs/THREAT_MODEL.md`.
 
 ## Prior art
 
-Provenance labels are published in CaMeL and FIDES, which ships in `microsoft/agent-framework` [PA3]; `deconvolute-labs/interbolt` gates tool calls on argument provenance [PA4]. Pc taint, amount provenance and enforcement at the signer are not documented in either at the pinned commits [PA3] [PA4]. Comparison: `docs/PRIOR_ART.md`. Adapted code: `docs/THIRD_PARTY.md`, `docs/PRIOR_WORK.md`. AI disclosure: Claude Code (Anthropic Claude models) wrote the code under the author's direction; NEAR AI Cloud models run inside the system and the bench.
+Provenance labels are published in CaMeL and FIDES, which ships in `microsoft/agent-framework` [PA3]; `deconvolute-labs/interbolt` gates tool calls on argument provenance [PA4]. Pc taint, amount provenance and enforcement at the signer are not documented in either at the pinned commits [PA3] [PA4]. Comparison: `docs/PRIOR_ART.md`. Adapted code: `docs/THIRD_PARTY.md`, `docs/PRIOR_WORK.md`. NEAR AI Cloud models run inside the system and the bench.
 
 ## Hackathon window
 
